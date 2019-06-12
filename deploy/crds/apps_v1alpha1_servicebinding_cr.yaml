@@ -1,0 +1,7 @@
+apiVersion: apps.openshift.io/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: example-servicebinding
+spec:
+  # Add fields here
+  size: 3
