@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
 )
 
 func init() {

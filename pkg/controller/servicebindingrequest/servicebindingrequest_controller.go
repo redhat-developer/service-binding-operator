@@ -26,7 +26,7 @@ var log = logf.Log.WithName("controller_servicebinding")
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new ServiceBinding Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new ServiceBindingRequest Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -34,7 +34,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileServiceBinding{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileServiceBindingRequest{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -45,17 +45,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	// Watch for changes to primary resource ServiceBinding
-	err = c.Watch(&source.Kind{Type: &appsv1alpha1.ServiceBinding{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource ServiceBindingRequest
+	err = c.Watch(&source.Kind{Type: &appsv1alpha1.ServiceBindingRequest{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner ServiceBinding
+	// Watch for changes to secondary resource Pods and requeue the owner ServiceBindingRequest
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &appsv1alpha1.ServiceBinding{},
+		OwnerType:    &appsv1alpha1.ServiceBindingRequest{},
 	})
 	if err != nil {
 		return err
@@ -64,30 +64,30 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileServiceBinding implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileServiceBinding{}
+// blank assignment to verify that ReconcileServiceBindingRequest implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileServiceBindingRequest{}
 
-// ReconcileServiceBinding reconciles a ServiceBinding object
-type ReconcileServiceBinding struct {
+// ReconcileServiceBindingRequest reconciles a ServiceBindingRequest object
+type ReconcileServiceBindingRequest struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a ServiceBinding object and makes changes based on the state read
-// and what is in the ServiceBinding.Spec
+// Reconcile reads that state of the cluster for a ServiceBindingRequest object and makes changes based on the state read
+// and what is in the ServiceBindingRequest.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileServiceBinding) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling ServiceBinding")
+	reqLogger.Info("Reconciling ServiceBindingRequest")
 
-	// Fetch the ServiceBinding instance
-	instance := &appsv1alpha1.ServiceBinding{}
+	// Fetch the ServiceBindingRequest instance
+	instance := &appsv1alpha1.ServiceBindingRequest{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -103,7 +103,7 @@ func (r *ReconcileServiceBinding) Reconcile(request reconcile.Request) (reconcil
 	// Define a new Pod object
 	pod := newPodForCR(instance)
 
-	// Set ServiceBinding instance as the owner and controller
+	// Set ServiceBindingRequest instance as the owner and controller
 	if err := controllerutil.SetControllerReference(instance, pod, r.scheme); err != nil {
 		return reconcile.Result{}, err
 	}
@@ -130,7 +130,7 @@ func (r *ReconcileServiceBinding) Reconcile(request reconcile.Request) (reconcil
 }
 
 // newPodForCR returns a busybox pod with the same name/namespace as the cr
-func newPodForCR(cr *appsv1alpha1.ServiceBinding) *corev1.Pod {
+func newPodForCR(cr *appsv1alpha1.ServiceBindingRequest) *corev1.Pod {
 	labels := map[string]string{
 		"app": cr.Name,
 	}
