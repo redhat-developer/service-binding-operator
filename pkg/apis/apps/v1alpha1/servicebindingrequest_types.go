@@ -4,21 +4,46 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+
+	// Refer: https://12factor.net/backing-services
+	// A backing service is any service the app consumes over the network as
+	// part of its normal operation. Examples include datastores (such as
+	// MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
+	// Beanstalkd), SMTP services for outbound email (such as Postfix), and
+	// caching systems (such as Memcached).
+	BackingOperatorName string `json:"backingOperatorName"`
+
+	// The namespace where Cluster Service Version of backing service operator is installed
+	CSVNamespace string `json:"csvNamespace"`
+
+	// ApplicationSelector is used to identify the application connecting to the
+	// backing service operator.
+	// Example:
+	//	applicationSelector:
+	//		matchLabels:
+	//			connects-to: postgres
+	//			environment: stage
+	//		kind: Deployment
+	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
+}
+
+// ApplicationSelector defines the selector based on labels and resource kind
+// +k8s:openapi-gen=true
+type ApplicationSelector struct {
+	MatchLabels  map[string]string `json:"matchLabels"`
+	ResourceKind string            `json:"resourceKind"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 }
