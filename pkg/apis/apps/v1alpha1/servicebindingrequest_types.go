@@ -6,9 +6,9 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ServiceBindingSpec defines the desired state of ServiceBinding
+// ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 // +k8s:openapi-gen=true
-type ServiceBindingSpec struct {
+type ServiceBindingRequestSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	CSVName          string `json:"csvName"`
@@ -16,35 +16,35 @@ type ServiceBindingSpec struct {
 	ApplicationLabel string `json:"ApplicationLabel"`
 }
 
-// ServiceBindingStatus defines the observed state of ServiceBinding
+// ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
-type ServiceBindingStatus struct {
+type ServiceBindingRequestStatus struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceBinding is the Schema for the servicebindings API
+// ServiceBindingRequest is the Schema for the servicebindings API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
-type ServiceBinding struct {
+type ServiceBindingRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceBindingSpec   `json:"spec,omitempty"`
-	Status ServiceBindingStatus `json:"status,omitempty"`
+	Spec   ServiceBindingRequestSpec   `json:"spec,omitempty"`
+	Status ServiceBindingRequestStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceBindingList contains a list of ServiceBinding
-type ServiceBindingList struct {
+// ServiceBindingRequestList contains a list of ServiceBindingRequest
+type ServiceBindingRequestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ServiceBinding `json:"items"`
+	Items           []ServiceBindingRequest `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ServiceBinding{}, &ServiceBindingList{})
+	SchemeBuilder.Register(&ServiceBindingRequest{}, &ServiceBindingRequestList{})
 }

@@ -5,8 +5,8 @@ metadata:
 spec:
   group: apps.openshift.io
   names:
-    kind: ServiceBinding
-    listKind: ServiceBindingList
+    kind: ServiceBindingRequest
+    listKind: ServiceBindingRequestList
     plural: servicebindings
     singular: servicebinding
   scope: Namespaced
