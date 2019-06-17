@@ -20,10 +20,17 @@ type ServiceBindingRequestSpec struct {
 	// caching systems (such as Memcached).
 	BackingOperatorName string `json:"backingOperatorName"`
 
-	// The namespace where Cluster Service Version file is installed
+	// The namespace where Cluster Service Version of backing service operator is installed
 	CSVNamespace string `json:"csvNamespace"`
 
-	// ApplicationSelector defines the selector based on labels and resource kind
+	// ApplicationSelector is used to identify the application connecting to the
+	// backing service operator.
+	// Example:
+	//	applicationSelector:
+	//		matchLabels:
+	//			connects-to: postgres
+	//			environment: stage
+	//		kind: Deployment
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
