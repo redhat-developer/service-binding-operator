@@ -156,8 +156,11 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
-	for i, d := range dpl.Items {
-		fmt.Printf("Deployment %d: %+v\n", i, d)
+	for _, d := range dpl.Items {
+		//fmt.Printf("Deployment %d: %+v\n", i, d)
+		for _, c := range d.Spec.Template.Spec.Containers {
+			fmt.Printf("Container: %+v\n", c)
+		}
 	}
 
 	return reconcile.Result{Requeue: true}, nil
