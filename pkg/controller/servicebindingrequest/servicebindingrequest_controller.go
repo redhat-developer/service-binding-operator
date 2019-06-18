@@ -1,4 +1,4 @@
-package servicebinding
+package servicebindingrequest
 
 import (
 	"context"
@@ -22,7 +22,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var log = logf.Log.WithName("controller_servicebinding")
+var log = logf.Log.WithName("controller_servicebindingrequest")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -43,7 +43,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("servicebinding-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("servicebindingrequest-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		for _, spec := range crd.SpecDescriptors {
 			pt := spec.Path
 			for _, xd := range spec.XDescriptors {
-				if strings.HasPrefix(xd, "urn:alm:descriptor:servicebinding:secret:") {
+				if strings.HasPrefix(xd, "urn:alm:descriptor:servicebindingrequest:secret:") {
 					key := strings.Split(xd, ":")[5]
 					sks := &corev1.SecretKeySelector{
 						Key: key,

@@ -1,4 +1,4 @@
-package servicebinding
+package servicebindingrequest
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 						Name: "some name",
 						SpecDescriptors: []olmv1alpha1.SpecDescriptor{
 							{
-								XDescriptors: []string{"urn:alm:descriptor:servicebinding:secret:password", "aaa:ccc:aa"},
+								XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:secret:password", "aaa:ccc:aa"},
 							},
 						},
 					},
