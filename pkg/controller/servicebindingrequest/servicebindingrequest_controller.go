@@ -2,12 +2,15 @@ package servicebinding
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -141,6 +144,22 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 
 		}
 	}
+
+	lo := &client.ListOptions{
+		Namespace:     instance.Spec.CSVNamespace,
+		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
+	}
+
+	dpl := &appsv1.DeploymentList{}
+	err = r.client.List(context.TODO(), lo, dpl)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	for i, d := range dpl.Items {
+		fmt.Printf("Deployment %d: %+v\n", i, d)
+	}
+
 	return reconcile.Result{Requeue: true}, nil
 
 }

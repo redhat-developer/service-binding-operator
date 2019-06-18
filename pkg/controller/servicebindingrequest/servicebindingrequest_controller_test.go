@@ -5,6 +5,7 @@ import (
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -27,6 +28,12 @@ func TestServiceBindingRequestController(t *testing.T) {
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			BackingOperatorName: backingOperatorName,
 			CSVNamespace:        namespace,
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				MatchLabels: map[string]string{
+					"connects-to": "postgres",
+					"environment": "production",
+				},
+			},
 		},
 	}
 
@@ -61,8 +68,26 @@ func TestServiceBindingRequestController(t *testing.T) {
 
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, csv)
 
+	// Add Deployment scheme
+	if err := appsv1.AddToScheme(s); err != nil {
+		t.Fatalf("Unable to add Deployment scheme: (%v)", err)
+	}
+
+	dp := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+			Labels: map[string]string{
+				"connects-to": "postgres",
+				"environment": "production",
+			},
+		},
+	}
+
+	s.AddKnownTypes(appsv1.SchemeGroupVersion, dp)
+
 	// Objects to track in the fake client.
-	objs := []runtime.Object{sbr, csv}
+	objs := []runtime.Object{sbr, csv, dp}
 
 	cl := fake.NewFakeClient(objs...)
 
