@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"context"
 	"testing"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -19,6 +20,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 	var (
 		backingOperatorName = "postgresql-operator.v0.1.0"
 		name                = "postgres"
+		deploymentName      = "my-app"
 		namespace           = "default"
 	)
 	sbr := &v1alpha1.ServiceBindingRequest{
@@ -76,7 +78,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 
 	dp := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      deploymentName,
 			Namespace: namespace,
 			Labels: map[string]string{
 				"connects-to": "postgres",
@@ -121,5 +123,19 @@ func TestServiceBindingRequestController(t *testing.T) {
 	// Check the result of reconciliation to make sure it has the desired state.
 	if !res.Requeue {
 		t.Error("reconcile did not requeue request as expected")
+	}
+
+	dpOut := &appsv1.Deployment{}
+	nn := types.NamespacedName{
+		Name:      deploymentName,
+		Namespace: namespace,
+	}
+	err = r.client.Get(context.TODO(), nn, dpOut)
+	if err != nil {
+		t.Fatalf("get deployment: (%v)", err)
+	}
+	n := dpOut.Spec.Template.Spec.Containers[0].Env[0].Name
+	if n != "POSTGRES_PASSWORD" {
+		t.Errorf("Environment name not matching: %s", n)
 	}
 }

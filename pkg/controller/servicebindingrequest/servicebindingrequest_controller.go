@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -157,10 +156,15 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 	}
 
 	for _, d := range dpl.Items {
-		//fmt.Printf("Deployment %d: %+v\n", i, d)
-		for _, c := range d.Spec.Template.Spec.Containers {
-			fmt.Printf("Container: %+v\n", c)
+		for i, c := range d.Spec.Template.Spec.Containers {
+			c.Env = evList
+			d.Spec.Template.Spec.Containers[i] = c
 		}
+		err = r.client.Update(context.TODO(), &d)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
 	}
 
 	return reconcile.Result{Requeue: true}, nil
