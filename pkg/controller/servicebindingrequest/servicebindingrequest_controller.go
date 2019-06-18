@@ -2,11 +2,14 @@ package servicebinding
 
 import (
 	"context"
+	"strings"
 
-	appsv1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -43,7 +46,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to primary resource ServiceBindingRequest
-	err = c.Watch(&source.Kind{Type: &appsv1alpha1.ServiceBindingRequest{}}, &handler.EnqueueRequestForObject{})
+	err = c.Watch(&source.Kind{Type: &v1alpha1.ServiceBindingRequest{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -52,7 +55,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource Pods and requeue the owner ServiceBindingRequest
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &appsv1alpha1.ServiceBindingRequest{},
+		OwnerType:    &v1alpha1.ServiceBindingRequest{},
 	})
 	if err != nil {
 		return err
@@ -84,7 +87,7 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 	reqLogger.Info("Reconciling ServiceBindingRequest")
 
 	// Fetch the ServiceBindingRequest instance
-	instance := &appsv1alpha1.ServiceBindingRequest{}
+	instance := &v1alpha1.ServiceBindingRequest{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -97,5 +100,47 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
-	return reconcile.Result{}, nil
+	nn := types.NamespacedName{Namespace: instance.Spec.CSVNamespace,
+		Name: instance.Spec.BackingOperatorName}
+	csv := &olmv1alpha1.ClusterServiceVersion{}
+	err = r.client.Get(context.TODO(), nn, csv)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		return reconcile.Result{}, err
+	}
+
+	evList := []corev1.EnvVar{}
+
+	for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
+		for _, spec := range crd.SpecDescriptors {
+			pt := spec.Path
+			for _, xd := range spec.XDescriptors {
+				if strings.HasPrefix(xd, "urn:alm:descriptor:servicebinding:secret:") {
+					key := strings.Split(xd, ":")[5]
+					sks := &corev1.SecretKeySelector{
+						Key: key,
+					}
+					sks.Name = pt
+					evs := &corev1.EnvVarSource{
+						SecretKeyRef: sks,
+					}
+					evn := strings.ToUpper(strings.ReplaceAll(instance.Name, "-", "_")) + "_" + strings.ToUpper(strings.ReplaceAll(key, "-", "_"))
+					ev := corev1.EnvVar{
+						Name:      evn,
+						ValueFrom: evs,
+					}
+					evList = append(evList, ev)
+				}
+			}
+
+		}
+	}
+	return reconcile.Result{Requeue: true}, nil
+
 }

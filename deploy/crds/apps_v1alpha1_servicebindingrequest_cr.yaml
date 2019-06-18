@@ -1,0 +1,12 @@
+apiVersion: apps.openshift.io/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: example-servicebinding
+spec:
+  backingOperatorName: postgresql-operator.v0.1.0
+  csvNamespace: default
+  applicationSelector:
+    matchLabels:
+      - connects-to: postgres
+      - environment: production
+    resourceKind: Deployment               
