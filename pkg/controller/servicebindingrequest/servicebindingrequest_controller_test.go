@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	osappsv1 "github.com/openshift/api/apps/v1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -72,71 +73,291 @@ func TestServiceBindingRequestController(t *testing.T) {
 
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, csv)
 
-	// Add Deployment scheme
-	if err := appsv1.AddToScheme(s); err != nil {
-		t.Fatalf("Unable to add Deployment scheme: (%v)", err)
-	}
+	t.Run("Deployment", func(t *testing.T) {
 
-	dp := &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      deploymentName,
-			Namespace: namespace,
-			Labels: map[string]string{
-				"connects-to": "postgres",
-				"environment": "production",
+		// Add Deployment scheme
+		if err := appsv1.AddToScheme(s); err != nil {
+			t.Fatalf("Unable to add Deployment scheme: (%v)", err)
+		}
+
+		dp := &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"connects-to": "postgres",
+					"environment": "production",
+				},
 			},
-		},
-		Spec: appsv1.DeploymentSpec{
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{Name: "app"},
+			Spec: appsv1.DeploymentSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "app"},
+						},
 					},
 				},
 			},
-		},
-	}
+		}
 
-	s.AddKnownTypes(appsv1.SchemeGroupVersion, dp)
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, dp)
 
-	// Objects to track in the fake client.
-	objs := []runtime.Object{sbr, csv, dp}
+		// Objects to track in the fake client.
+		objs := []runtime.Object{sbr, csv, dp}
 
-	cl := fake.NewFakeClient(objs...)
+		cl := fake.NewFakeClient(objs...)
 
-	// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-	r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
+		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
 
-	// Mock request to simulate Reconcile() being called on an event for a
-	// watched resource .
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Name:      name,
+		// Mock request to simulate Reconcile() being called on an event for a
+		// watched resource .
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+
+		res, err := r.Reconcile(req)
+		if err != nil {
+			t.Fatalf("reconcile: (%v)", err)
+		}
+
+		// Check the result of reconciliation to make sure it has the desired state.
+		if !res.Requeue {
+			t.Error("reconcile did not requeue request as expected")
+		}
+
+		dpOut := &appsv1.Deployment{}
+		nn := types.NamespacedName{
+			Name:      deploymentName,
 			Namespace: namespace,
-		},
-	}
+		}
+		err = r.client.Get(context.TODO(), nn, dpOut)
+		if err != nil {
+			t.Fatalf("get deployment: (%v)", err)
+		}
+		n := dpOut.Spec.Template.Spec.Containers[0].Env[0].Name
+		if n != "POSTGRES_PASSWORD" {
+			t.Errorf("Environment name not matching: %s", n)
+		}
+	})
 
-	res, err := r.Reconcile(req)
-	if err != nil {
-		t.Fatalf("reconcile: (%v)", err)
-	}
+	t.Run("DeploymentConfig", func(t *testing.T) {
 
-	// Check the result of reconciliation to make sure it has the desired state.
-	if !res.Requeue {
-		t.Error("reconcile did not requeue request as expected")
-	}
+		// Add DeploymentConfig scheme
+		if err := osappsv1.AddToScheme(s); err != nil {
+			t.Fatalf("Unable to add DeploymentConfig scheme: (%v)", err)
+		}
 
-	dpOut := &appsv1.Deployment{}
-	nn := types.NamespacedName{
-		Name:      deploymentName,
-		Namespace: namespace,
-	}
-	err = r.client.Get(context.TODO(), nn, dpOut)
-	if err != nil {
-		t.Fatalf("get deployment: (%v)", err)
-	}
-	n := dpOut.Spec.Template.Spec.Containers[0].Env[0].Name
-	if n != "POSTGRES_PASSWORD" {
-		t.Errorf("Environment name not matching: %s", n)
-	}
+		dp := &osappsv1.DeploymentConfig{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"connects-to": "postgres",
+					"environment": "production",
+				},
+			},
+			Spec: osappsv1.DeploymentConfigSpec{
+				Template: &corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "app"},
+						},
+					},
+				},
+			},
+		}
+
+		s.AddKnownTypes(osappsv1.SchemeGroupVersion, dp)
+
+		sbr.Spec.ApplicationSelector.ResourceKind = "DeploymentConfig"
+		// Objects to track in the fake client.
+		objs := []runtime.Object{sbr, csv, dp}
+
+		cl := fake.NewFakeClient(objs...)
+
+		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
+		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+
+		// Mock request to simulate Reconcile() being called on an event for a
+		// watched resource .
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+
+		res, err := r.Reconcile(req)
+		if err != nil {
+			t.Fatalf("reconcile: (%v)", err)
+		}
+
+		// Check the result of reconciliation to make sure it has the desired state.
+		if !res.Requeue {
+			t.Error("reconcile did not requeue request as expected")
+		}
+
+		dpOut := &osappsv1.DeploymentConfig{}
+		nn := types.NamespacedName{
+			Name:      deploymentName,
+			Namespace: namespace,
+		}
+		err = r.client.Get(context.TODO(), nn, dpOut)
+		if err != nil {
+			t.Fatalf("get deployment: (%v)", err)
+		}
+		n := dpOut.Spec.Template.Spec.Containers[0].Env[0].Name
+		if n != "POSTGRES_PASSWORD" {
+			t.Errorf("Environment name not matching: %s", n)
+		}
+	})
+
+	t.Run("StatefulSet", func(t *testing.T) {
+
+		// Add StatefulSet scheme
+		if err := appsv1.AddToScheme(s); err != nil {
+			t.Fatalf("Unable to add StatefulSet scheme: (%v)", err)
+		}
+
+		dp := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"connects-to": "postgres",
+					"environment": "production",
+				},
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "app"},
+						},
+					},
+				},
+			},
+		}
+
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, dp)
+
+		sbr.Spec.ApplicationSelector.ResourceKind = "StatefulSet"
+		// Objects to track in the fake client.
+		objs := []runtime.Object{sbr, csv, dp}
+
+		cl := fake.NewFakeClient(objs...)
+
+		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
+		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+
+		// Mock request to simulate Reconcile() being called on an event for a
+		// watched resource .
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+
+		res, err := r.Reconcile(req)
+		if err != nil {
+			t.Fatalf("reconcile: (%v)", err)
+		}
+
+		// Check the result of reconciliation to make sure it has the desired state.
+		if !res.Requeue {
+			t.Error("reconcile did not requeue request as expected")
+		}
+
+		dpOut := &appsv1.StatefulSet{}
+		nn := types.NamespacedName{
+			Name:      deploymentName,
+			Namespace: namespace,
+		}
+		err = r.client.Get(context.TODO(), nn, dpOut)
+		if err != nil {
+			t.Fatalf("get deployment: (%v)", err)
+		}
+		n := dpOut.Spec.Template.Spec.Containers[0].Env[0].Name
+		if n != "POSTGRES_PASSWORD" {
+			t.Errorf("Environment name not matching: %s", n)
+		}
+	})
+
+	t.Run("DaemonSet", func(t *testing.T) {
+
+		// Add DaemonSet scheme
+		if err := appsv1.AddToScheme(s); err != nil {
+			t.Fatalf("Unable to add DaemonSet scheme: (%v)", err)
+		}
+
+		dp := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentName,
+				Namespace: namespace,
+				Labels: map[string]string{
+					"connects-to": "postgres",
+					"environment": "production",
+				},
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							{Name: "app"},
+						},
+					},
+				},
+			},
+		}
+
+		s.AddKnownTypes(appsv1.SchemeGroupVersion, dp)
+
+		sbr.Spec.ApplicationSelector.ResourceKind = "DaemonSet"
+		// Objects to track in the fake client.
+		objs := []runtime.Object{sbr, csv, dp}
+
+		cl := fake.NewFakeClient(objs...)
+
+		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
+		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+
+		// Mock request to simulate Reconcile() being called on an event for a
+		// watched resource .
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
+
+		res, err := r.Reconcile(req)
+		if err != nil {
+			t.Fatalf("reconcile: (%v)", err)
+		}
+
+		// Check the result of reconciliation to make sure it has the desired state.
+		if !res.Requeue {
+			t.Error("reconcile did not requeue request as expected")
+		}
+
+		dpOut := &appsv1.DaemonSet{}
+		nn := types.NamespacedName{
+			Name:      deploymentName,
+			Namespace: namespace,
+		}
+		err = r.client.Get(context.TODO(), nn, dpOut)
+		if err != nil {
+			t.Fatalf("get deployment: (%v)", err)
+		}
+		n := dpOut.Spec.Template.Spec.Containers[0].Env[0].Name
+		if n != "POSTGRES_PASSWORD" {
+			t.Errorf("Environment name not matching: %s", n)
+		}
+	})
+
 }
