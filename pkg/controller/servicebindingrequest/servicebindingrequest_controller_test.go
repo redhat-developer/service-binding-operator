@@ -29,8 +29,9 @@ func TestServiceBindingRequestController(t *testing.T) {
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BackingOperatorName: backingOperatorName,
-			CSVNamespace:        namespace,
+			BackingSelector: v1alpha1.BackingSelector{
+				ResourceName: "specialdb.example.org",
+			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				MatchLabels: map[string]string{
 					"connects-to": "postgres",
@@ -57,7 +58,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
 				Owned: []olmv1alpha1.CRDDescription{
 					{
-						Name: "some name",
+						Name: "specialdb.example.org",
 						SpecDescriptors: []olmv1alpha1.SpecDescriptor{
 							{
 								XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:secret:password", "aaa:ccc:aa"},

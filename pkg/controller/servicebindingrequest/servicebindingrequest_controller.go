@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	errs "errors"
 	"strings"
 
 	osappsv1 "github.com/openshift/api/apps/v1"
@@ -103,8 +104,42 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
-	nn := types.NamespacedName{Namespace: instance.Spec.CSVNamespace,
-		Name: instance.Spec.BackingOperatorName}
+	crdName := instance.Spec.BackingSelector.ResourceName
+	crdKind := instance.Spec.BackingSelector.ResourceKind
+	crdVersion := instance.Spec.BackingSelector.Version
+
+	clo := &client.ListOptions{
+		Namespace: request.Namespace,
+	}
+	csvl := &olmv1alpha1.ClusterServiceVersionList{}
+	err = r.client.List(context.TODO(), clo, csvl)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	operatorName := ""
+outerLoop:
+	for _, csv := range csvl.Items {
+		for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
+			if crdName == crd.Name {
+				if crdKind != "" {
+					if crdKind != crd.Kind {
+						return reconcile.Result{}, errs.New("Kind not matching")
+					}
+				}
+				if crdVersion != "" {
+					if crdVersion != crd.Version {
+						return reconcile.Result{}, errs.New("Version not matching")
+					}
+				}
+				operatorName = csv.Name
+				break outerLoop
+			}
+		}
+	}
+
+	nn := types.NamespacedName{Namespace: request.Namespace,
+		Name: operatorName}
 	csv := &olmv1alpha1.ClusterServiceVersion{}
 	err = r.client.Get(context.TODO(), nn, csv)
 	if err != nil {
@@ -146,7 +181,7 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 	}
 
 	lo := &client.ListOptions{
-		Namespace:     instance.Spec.CSVNamespace,
+		Namespace:     request.Namespace,
 		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
 	}
 

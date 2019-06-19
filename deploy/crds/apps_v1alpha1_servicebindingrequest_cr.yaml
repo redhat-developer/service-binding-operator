@@ -3,8 +3,10 @@ kind: ServiceBindingRequest
 metadata:
   name: example-servicebinding
 spec:
-  backingOperatorName: postgresql-operator.v0.1.0
-  csvNamespace: default
+  backingSelector:
+    resourceKind: Database
+    resourceName: database.example.org
+    version: v1alpha1
   applicationSelector:
     matchLabels:
       - connects-to: postgres
