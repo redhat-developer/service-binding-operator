@@ -30,6 +30,11 @@ ifeq ($(VERBOSE),2)
        X_FLAG = -x
 endif
 
+# Create output directory for artifacts and test results. ./out is supposed to
+# be a safe place for all targets to write to while knowing that all content
+# inside of ./out is wiped once "make clean" is run.
+$(shell mkdir -p ./out);
+
 #----------------------------------------------------------------
 # HELP target
 #----------------------------------------------------------------
@@ -108,7 +113,7 @@ get-test-namespace: ./out/test-namespace
 
 # E2E test
 .PHONY: e2e-setup
-e2e-setup: e2e-cleanup 
+e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
 .PHONY: e2e-cleanup
