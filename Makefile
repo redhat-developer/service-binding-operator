@@ -93,3 +93,30 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
 
+
+#------------------------------------------------------
+# Test targets
+#------------------------------------------------------
+
+# Generate namespace name for test
+./out/test-namespace:
+	@echo -n "test-namespace-$(shell uuidgen)" > ./out/test-namespace
+
+.PHONY: get-test-namespace
+get-test-namespace: ./out/test-namespace
+	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
+
+# E2E test
+.PHONY: e2e-setup
+e2e-setup: e2e-cleanup 
+	$(Q)kubectl create namespace $(TEST_NAMESPACE)
+
+.PHONY: e2e-cleanup
+e2e-cleanup: get-test-namespace
+	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=10s --wait
+
+.PHONY: test-e2e
+## Runs the e2e tests locally from test/e2e dir
+test-e2e: e2e-setup
+	$(info Running E2E test: $@)
+	$(Q)operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
