@@ -23,11 +23,9 @@ type ServiceBindingRequestSpec struct {
 	//
 	// Example 1:
 	//	backingSelector:
-	//		resourceKind: Database
 	//		resourceName: database.example.org
 	// Example 2:
 	//	backingSelector:
-	//		resourceKind: Database
 	//		resourceName: database.example.org
 	//		resourceVersion: v1alpha1
 	BackingSelector BackingSelector `json:"backingSelector"`
@@ -50,7 +48,6 @@ type ServiceBindingRequestSpec struct {
 // BackingSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingSelector struct {
-	ResourceKind    string `json:"resourceKind"`
 	ResourceName    string `json:"resourceName"`
 	ResourceVersion string `json:"resourceVersion"`
 }
