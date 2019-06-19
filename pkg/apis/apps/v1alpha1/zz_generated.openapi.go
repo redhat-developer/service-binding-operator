@@ -45,8 +45,14 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 							Format: "",
 						},
 					},
+					"resourceName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"matchLabels", "resourceKind"},
+				Required: []string{"matchLabels", "resourceKind", "resourceName"},
 			},
 		},
 		Dependencies: []string{},
@@ -118,7 +124,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"applicationSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator. Example:\n\tapplicationSelector:\n\t\tmatchLabels:\n\t\t\tconnects-to: postgres\n\t\t\tenvironment: stage\n\t\tkind: Deployment",
+							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator. Example 1:\n\tapplicationSelector:\n\t\tmatchLabels:\n\t\t\tconnects-to: postgres\n\t\t\tenvironment: stage\n\t\tresourceKind: Deployment\nExample 2:\n\tapplicationSelector:\n\t\tresourceKind: Deployment\n\t\tresourceName: my-app",
 							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},

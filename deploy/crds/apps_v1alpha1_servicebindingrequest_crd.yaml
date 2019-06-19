@@ -31,9 +31,10 @@ spec:
           properties:
             applicationSelector:
               description: "ApplicationSelector is used to identify the application
-                connecting to the backing service operator. Example: \tapplicationSelector:
+                connecting to the backing service operator. Example 1: \tapplicationSelector:
                 \t\tmatchLabels: \t\t\tconnects-to: postgres \t\t\tenvironment: stage
-                \t\tkind: Deployment"
+                \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tresourceKind:
+                Deployment \t\tresourceName: my-app"
               properties:
                 matchLabels:
                   additionalProperties:
@@ -41,9 +42,12 @@ spec:
                   type: object
                 resourceKind:
                   type: string
+                resourceName:
+                  type: string
               required:
               - matchLabels
               - resourceKind
+              - resourceName
               type: object
             backingOperatorName:
               description: 'Refer: https://12factor.net/backing-services A backing
