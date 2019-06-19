@@ -25,12 +25,16 @@ type ServiceBindingRequestSpec struct {
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
-	// Example:
+	// Example 1:
 	//	applicationSelector:
 	//		matchLabels:
 	//			connects-to: postgres
 	//			environment: stage
-	//		kind: Deployment
+	//		resourceKind: Deployment
+	// Example 2:
+	//	applicationSelector:
+	//		resourceKind: Deployment
+	//		resourceName: my-app
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
@@ -39,6 +43,7 @@ type ServiceBindingRequestSpec struct {
 type ApplicationSelector struct {
 	MatchLabels  map[string]string `json:"matchLabels"`
 	ResourceKind string            `json:"resourceKind"`
+	ResourceName string            `json:"resourceName"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
