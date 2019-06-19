@@ -105,7 +105,6 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 	}
 
 	crdName := instance.Spec.BackingSelector.ResourceName
-	crdKind := instance.Spec.BackingSelector.ResourceKind
 	crdVersion := instance.Spec.BackingSelector.Version
 
 	clo := &client.ListOptions{
@@ -122,11 +121,6 @@ outerLoop:
 	for _, csv := range csvl.Items {
 		for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
 			if crdName == crd.Name {
-				if crdKind != "" {
-					if crdKind != crd.Kind {
-						return reconcile.Result{}, errs.New("Kind not matching")
-					}
-				}
 				if crdVersion != "" {
 					if crdVersion != crd.Version {
 						return reconcile.Result{}, errs.New("Version not matching")
