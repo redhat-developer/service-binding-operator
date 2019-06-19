@@ -105,7 +105,7 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 	}
 
 	crdName := instance.Spec.BackingSelector.ResourceName
-	crdVersion := instance.Spec.BackingSelector.Version
+	crdVersion := instance.Spec.BackingSelector.ResourceVersion
 
 	clo := &client.ListOptions{
 		Namespace: request.Namespace,

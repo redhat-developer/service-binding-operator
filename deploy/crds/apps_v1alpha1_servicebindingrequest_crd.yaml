@@ -51,26 +51,22 @@ spec:
               type: object
             backingSelector:
               description: "BackingSelector is used to identify the backing service
-                operator. If version is not specified, the latest version will be
-                picked up  Refer: https://12factor.net/backing-services A backing
+                operator.  Refer: https://12factor.net/backing-services A backing
                 service is any service the app consumes over the network as part of
                 its normal operation. Examples include datastores (such as MySQL or
                 CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd),
                 SMTP services for outbound email (such as Postfix), and caching systems
-                (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceKind:
-                Database \t\tresourceName: my-db Example 2: \tbackingSelector: \t\tresourceKind:
-                Database \t\tresourceName: my-db \t\tversion: v0.1.2"
+                (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceName:
+                database.example.org Example 2: \tbackingSelector: \t\tresourceName:
+                database.example.org \t\tresourceVersion: v1alpha1"
               properties:
-                resourceKind:
-                  type: string
                 resourceName:
                   type: string
-                version:
+                resourceVersion:
                   type: string
               required:
-              - resourceKind
               - resourceName
-              - version
+              - resourceVersion
               type: object
           required:
           - backingSelector

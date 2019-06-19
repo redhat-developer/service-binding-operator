@@ -4,7 +4,6 @@ metadata:
   name: example-servicebinding
 spec:
   backingSelector:
-    resourceKind: Database
     resourceName: database.example.org
     version: v1alpha1
   applicationSelector:

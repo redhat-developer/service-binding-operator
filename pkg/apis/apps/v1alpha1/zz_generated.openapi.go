@@ -66,26 +66,20 @@ func schema_pkg_apis_apps_v1alpha1_BackingSelector(ref common.ReferenceCallback)
 			SchemaProps: spec.SchemaProps{
 				Description: "BackingSelector defines the selector based on resource name, version, and resource kind",
 				Properties: map[string]spec.Schema{
-					"resourceKind": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 					"resourceName": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"version": {
+					"resourceVersion": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
 				},
-				Required: []string{"resourceKind", "resourceName", "version"},
+				Required: []string{"resourceName", "resourceVersion"},
 			},
 		},
 		Dependencies: []string{},
@@ -143,7 +137,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 				Properties: map[string]spec.Schema{
 					"backingSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingSelector is used to identify the backing service operator. If version is not specified, the latest version will be picked up\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingSelector:\n\t\tresourceKind: Database\n\t\tresourceName: my-db\nExample 2:\n\tbackingSelector:\n\t\tresourceKind: Database\n\t\tresourceName: my-db\n\t\tversion: v0.1.2",
+							Description: "BackingSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingSelector:\n\t\tresourceName: database.example.org\nExample 2:\n\tbackingSelector:\n\t\tresourceName: database.example.org\n\t\tresourceVersion: v1alpha1",
 							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector"),
 						},
 					},
