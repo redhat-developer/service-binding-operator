@@ -12,16 +12,26 @@ type ServiceBindingRequestSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
+	// BackingSelector is used to identify the backing service operator.
+	// If version is not specified, the latest version will be picked up
+	//
 	// Refer: https://12factor.net/backing-services
 	// A backing service is any service the app consumes over the network as
 	// part of its normal operation. Examples include datastores (such as
 	// MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
 	// Beanstalkd), SMTP services for outbound email (such as Postfix), and
 	// caching systems (such as Memcached).
-	BackingOperatorName string `json:"backingOperatorName"`
-
-	// The namespace where Cluster Service Version of backing service operator is installed
-	CSVNamespace string `json:"csvNamespace"`
+	//
+	// Example 1:
+	//	backingSelector:
+	//		resourceKind: Database
+	//		resourceName: my-db
+	// Example 2:
+	//	backingSelector:
+	//		resourceKind: Database
+	//		resourceName: my-db
+	//		version: v0.1.2
+	BackingSelector BackingSelector `json:"backingSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
@@ -38,7 +48,15 @@ type ServiceBindingRequestSpec struct {
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
-// ApplicationSelector defines the selector based on labels and resource kind
+// BackingSelector defines the selector based on resource name, version, and resource kind
+// +k8s:openapi-gen=true
+type BackingSelector struct {
+	ResourceKind string `json:"resourceKind"`
+	ResourceName string `json:"resourceName"`
+	Version      string `json:"version"`
+}
+
+// ApplicationSelector defines the selector based on labels, resource name, and resource kind
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	MatchLabels  map[string]string `json:"matchLabels"`
