@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	osappsv1 "github.com/openshift/api/apps/v1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -149,22 +150,76 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
 	}
 
-	dpl := &appsv1.DeploymentList{}
-	err = r.client.List(context.TODO(), lo, dpl)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
-	for _, d := range dpl.Items {
-		for i, c := range d.Spec.Template.Spec.Containers {
-			c.Env = evList
-			d.Spec.Template.Spec.Containers[i] = c
-		}
-		err = r.client.Update(context.TODO(), &d)
+	switch strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind) {
+	case "deploymentconfig":
+		dcl := &osappsv1.DeploymentConfigList{}
+		err = r.client.List(context.TODO(), lo, dcl)
 		if err != nil {
 			return reconcile.Result{}, err
 		}
 
+		for _, d := range dcl.Items {
+			for i, c := range d.Spec.Template.Spec.Containers {
+				c.Env = evList
+				d.Spec.Template.Spec.Containers[i] = c
+			}
+			err = r.client.Update(context.TODO(), &d)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+	case "statefulset":
+		ssl := &appsv1.StatefulSetList{}
+		err = r.client.List(context.TODO(), lo, ssl)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		for _, d := range ssl.Items {
+			for i, c := range d.Spec.Template.Spec.Containers {
+				c.Env = evList
+				d.Spec.Template.Spec.Containers[i] = c
+			}
+			err = r.client.Update(context.TODO(), &d)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+	case "daemonset":
+		ssl := &appsv1.DaemonSetList{}
+		err = r.client.List(context.TODO(), lo, ssl)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		for _, d := range ssl.Items {
+			for i, c := range d.Spec.Template.Spec.Containers {
+				c.Env = evList
+				d.Spec.Template.Spec.Containers[i] = c
+			}
+			err = r.client.Update(context.TODO(), &d)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
+
+	default:
+		dpl := &appsv1.DeploymentList{}
+		err = r.client.List(context.TODO(), lo, dpl)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
+
+		for _, d := range dpl.Items {
+			for i, c := range d.Spec.Template.Spec.Containers {
+				c.Env = evList
+				d.Spec.Template.Spec.Containers[i] = c
+			}
+			err = r.client.Update(context.TODO(), &d)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+		}
 	}
 
 	return reconcile.Result{Requeue: true}, nil
