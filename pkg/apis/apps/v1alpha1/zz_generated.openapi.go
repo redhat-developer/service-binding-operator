@@ -14,6 +14,7 @@ import (
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
+		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector":             schema_pkg_apis_apps_v1alpha1_BackingSelector(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
@@ -24,7 +25,7 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ApplicationSelector defines the selector based on labels and resource kind",
+				Description: "ApplicationSelector defines the selector based on labels, resource name, and resource kind",
 				Properties: map[string]spec.Schema{
 					"matchLabels": {
 						SchemaProps: spec.SchemaProps{
@@ -53,6 +54,38 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 					},
 				},
 				Required: []string{"matchLabels", "resourceKind", "resourceName"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_BackingSelector(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "BackingSelector defines the selector based on resource name, version, and resource kind",
+				Properties: map[string]spec.Schema{
+					"resourceKind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"resourceName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"resourceKind", "resourceName", "version"},
 			},
 		},
 		Dependencies: []string{},
@@ -108,18 +141,10 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest",
 				Properties: map[string]spec.Schema{
-					"backingOperatorName": {
+					"backingSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Refer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"csvNamespace": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The namespace where Cluster Service Version of backing service operator is installed",
-							Type:        []string{"string"},
-							Format:      "",
+							Description: "BackingSelector is used to identify the backing service operator. If version is not specified, the latest version will be picked up\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingSelector:\n\t\tresourceKind: Database\n\t\tresourceName: my-db\nExample 2:\n\tbackingSelector:\n\t\tresourceKind: Database\n\t\tresourceName: my-db\n\t\tversion: v0.1.2",
+							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector"),
 						},
 					},
 					"applicationSelector": {
@@ -129,11 +154,11 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"backingOperatorName", "csvNamespace", "applicationSelector"},
+				Required: []string{"backingSelector", "applicationSelector"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector"},
+			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector"},
 	}
 }
 
