@@ -42,12 +42,9 @@ spec:
                   type: object
                 resourceKind:
                   type: string
-                resourceName:
-                  type: string
               required:
               - matchLabels
               - resourceKind
-              - resourceName
               type: object
             backingSelector:
               description: "BackingSelector is used to identify the backing service

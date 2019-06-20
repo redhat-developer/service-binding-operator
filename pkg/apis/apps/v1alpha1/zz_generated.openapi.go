@@ -25,7 +25,7 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ApplicationSelector defines the selector based on labels, resource name, and resource kind",
+				Description: "ApplicationSelector defines the selector based on labels and resource kind",
 				Properties: map[string]spec.Schema{
 					"matchLabels": {
 						SchemaProps: spec.SchemaProps{
@@ -46,14 +46,8 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 							Format: "",
 						},
 					},
-					"resourceName": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
 				},
-				Required: []string{"matchLabels", "resourceKind", "resourceName"},
+				Required: []string{"matchLabels", "resourceKind"},
 			},
 		},
 		Dependencies: []string{},
