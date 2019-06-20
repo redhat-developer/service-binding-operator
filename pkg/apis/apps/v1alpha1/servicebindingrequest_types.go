@@ -52,12 +52,11 @@ type BackingSelector struct {
 	ResourceVersion string `json:"resourceVersion"`
 }
 
-// ApplicationSelector defines the selector based on labels, resource name, and resource kind
+// ApplicationSelector defines the selector based on labels and resource kind
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	MatchLabels  map[string]string `json:"matchLabels"`
 	ResourceKind string            `json:"resourceKind"`
-	ResourceName string            `json:"resourceName"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

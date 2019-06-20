@@ -1,0 +1,13 @@
+apiVersion: apps.openshift.io/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: example-servicebindingrequest
+spec:
+  backingSelector:
+    resourceName: database.example.org
+    resourceVersion: v1alpha1
+  applicationSelector:
+    matchLabels:
+      connects-to: postgres
+      environment: production
+    resourceKind: Deployment               
