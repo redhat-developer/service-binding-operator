@@ -10,4 +10,4 @@ spec:
     matchLabels:
       connects-to: postgres
       environment: production
-    resourceKind: Deployment               
+    resourceKind: Deployment
