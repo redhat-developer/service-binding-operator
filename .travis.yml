@@ -36,6 +36,8 @@ before_script:
 - kubectl create namespace operator-test
 
 script:
+# Run lint
+- make lint
 # Run unit tests
 - go test $(go list ./...|grep -v e2e) -v
 # Run e2e tests
