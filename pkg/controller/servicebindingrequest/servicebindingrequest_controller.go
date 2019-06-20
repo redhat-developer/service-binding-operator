@@ -144,7 +144,7 @@ outerLoop:
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		return reconcile.Result{}, err
+		return reconcile.Result{Requeue: true}, err
 	}
 
 	evList := []corev1.EnvVar{}
@@ -169,6 +169,23 @@ outerLoop:
 					}
 					evList = append(evList, ev)
 				}
+				if strings.HasPrefix(xd, "urn:alm:descriptor:servicebindingrequest:configmap:") {
+					key := strings.Split(xd, ":")[5]
+					cmks := &corev1.ConfigMapKeySelector{
+						Key: key,
+					}
+					cmks.Name = pt
+					evs := &corev1.EnvVarSource{
+						ConfigMapKeyRef: cmks,
+					}
+					evn := strings.ToUpper(strings.ReplaceAll(instance.Name, "-", "_")) + "_" + strings.ToUpper(strings.ReplaceAll(key, "-", "_"))
+					ev := corev1.EnvVar{
+						Name:      evn,
+						ValueFrom: evs,
+					}
+					evList = append(evList, ev)
+				}
+
 			}
 
 		}
