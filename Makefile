@@ -85,12 +85,12 @@ lint: lint-go-code lint-yaml
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
-lint-yaml: ${YAML_FILES}
+lint-yaml: ./vendor ${YAML_FILES}
 	$(Q)yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
 ## Checks the code with golangci-lint
-lint-go-code: $(GOLANGCI_LINT_BIN)
+lint-go-code: ./vendor $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
 	$(Q)GOCACHE=$(shell pwd)/out/gocache ./out/golangci-lint ${V_FLAG} run --deadline=30m
@@ -112,7 +112,7 @@ get-test-namespace: ./out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
 
 # E2E test
-.PHONY: e2e-setup
+.PHONY: ./vendor e2e-setup
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
@@ -125,3 +125,14 @@ e2e-cleanup: get-test-namespace
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
+
+
+#---------------------------------------------------------
+# Build and vendor tarets
+#---------------------------------------------------------
+
+# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
+# test all of the module's packages based on the state of the go.mod files and Go source code.
+./vendor: go.mod go.sum
+	$(Q) GO111MODULE=on go mod vendor ${V_FLAG}
+
