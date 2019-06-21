@@ -114,7 +114,7 @@ get-test-namespace: ./out/test-namespace
 
 # E2E test
 .PHONY: e2e-setup
-e2e-setup: ./vendor  e2e-cleanup
+e2e-setup: ./vendor e2e-cleanup
 	$(info Setting E2E tests up: $@)
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
