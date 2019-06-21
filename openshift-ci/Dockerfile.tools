@@ -25,6 +25,7 @@ ENV PATH=:$GOPATH/bin:/tmp/goroot/go/bin:$PATH
 WORKDIR /tmp
 
 RUN mkdir -p $GOPATH/bin
+RUN mkdir -p /tmp/goroot
 
 RUN curl -Lo go1.12.6.linux-amd64.tar.gz https://dl.google.com/go/go1.12.6.linux-amd64.tar.gz && tar -C /tmp/goroot -xzf go1.12.6.linux-amd64.tar.gz
 RUN curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl $GOPATH/bin/
