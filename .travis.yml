@@ -19,6 +19,8 @@ env:
     - KUBE_VERSION="1.14.3"
 
 before_install:
+# Install deps
+- sudo apt-get install -y yamllint
 # Download Operator SDK
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
 # Download kubectl
