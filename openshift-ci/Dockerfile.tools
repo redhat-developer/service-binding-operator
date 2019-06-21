@@ -25,6 +25,8 @@ ENV PATH=$PATH:$GOPATH/bin
 
 WORKDIR /tmp
 
+RUN mkdir $GOPATH/bin
+
 RUN curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl $GOPATH/bin/
 
 RUN curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
