@@ -1,0 +1,37 @@
+FROM centos:7 as build-tools
+ENV LANG=en_US.utf8
+ENV GOPATH /tmp/go
+ARG GO_PACKAGE_PATH=github.com/redhat-developer/service-binding-operator
+
+ENV GIT_COMMITTER_NAME devtools
+ENV GIT_COMMITTER_EMAIL devtools@redhat.com
+
+RUN yum install epel-release -y \
+    && yum install --enablerepo=centosplus install -y --quiet \
+    findutils \
+    git \
+    golang \
+    make \
+    procps-ng \
+    tar \
+    wget \
+    which \
+    bc \
+    yamllint \
+    python36-virtualenv \
+    && yum clean all
+
+ENV PATH=$PATH:$GOPATH/bin
+
+# download, verify and install openshift client tools (oc and kubectl)
+WORKDIR /tmp
+
+RUN curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/
+
+RUN curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
+
+RUN mkdir -p ${GOPATH}/src/${GO_PACKAGE_PATH}/
+
+WORKDIR ${GOPATH}/src/${GO_PACKAGE_PATH}
+
+ENTRYPOINT [ "/bin/bash" ]
