@@ -17,6 +17,7 @@ env:
     - SDK_VERSION="0.8.1"
     - MINIKUBE_VERSION="1.1.1"
     - KUBE_VERSION="1.14.3"
+    - GO111MODULE=on
 
 before_install:
 # Install deps
@@ -41,6 +42,6 @@ script:
 # Run lint
 - make lint
 # Run unit tests
-- go test $(go list ./...|grep -v e2e) -v
+- go test -mod vendor $(go list ./...|grep -v e2e) -v
 # Run e2e tests
-- operator-sdk test local ./test/e2e --namespace=operator-test --up-local --go-test-flags "-v"
+- operator-sdk test local ./test/e2e --namespace=operator-test --up-local --go-test-flags "-v -mod vendor"
