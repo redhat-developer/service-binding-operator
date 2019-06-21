@@ -44,4 +44,4 @@ script:
 # Run unit tests
 - go test -mod vendor $(go list ./...|grep -v e2e) -v
 # Run e2e tests
-- operator-sdk test local ./test/e2e --namespace=operator-test --up-local --go-test-flags "-v -mod vendor"
+- operator-sdk test local ./test/e2e --namespace=operator-test --up-local --go-test-flags "-v"
