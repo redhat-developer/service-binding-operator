@@ -109,21 +109,24 @@ $(GOLANGCI_LINT_BIN):
 
 .PHONY: get-test-namespace
 get-test-namespace: ./out/test-namespace
+	$(info Getting E2E tests' namespace: $@)
 	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
 
 # E2E test
-.PHONY: ./vendor e2e-setup
-e2e-setup: e2e-cleanup
+.PHONY: e2e-setup
+e2e-setup: ./vendor  e2e-cleanup
+	$(info Setting E2E tests up: $@)
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
+	$(info Cleaning E2E tests: $@)
 	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=10s --wait
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
-	$(info Running E2E test: $@)
+	$(info Running E2E tests: $@)
 	$(Q)operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
 
 
@@ -134,5 +137,5 @@ test-e2e: e2e-setup
 # Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
 # test all of the module's packages based on the state of the go.mod files and Go source code.
 ./vendor: go.mod go.sum
+	$(info Refreshing vendor directory: $@)
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
-

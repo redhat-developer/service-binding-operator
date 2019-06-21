@@ -64,6 +64,8 @@ anaconda-mode/
 *.test
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+# Vendor directory
+vendor/
 ### Vim ###
 # swap
 .sw[a-p]
