@@ -25,7 +25,7 @@ ENV PATH=$PATH:$GOPATH/bin
 
 WORKDIR /tmp
 
-RUN mkdir $GOPATH/bin
+RUN mkdir -p $GOPATH/bin
 
 RUN curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl $GOPATH/bin/
 
