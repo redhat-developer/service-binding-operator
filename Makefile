@@ -134,5 +134,5 @@ test-e2e: e2e-setup
 # Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
 # test all of the module's packages based on the state of the go.mod files and Go source code.
 ./vendor: go.mod go.sum
-	$(Q) GO111MODULE=on go mod vendor ${V_FLAG}
+	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
 
