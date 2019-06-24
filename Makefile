@@ -112,7 +112,7 @@ get-test-namespace: ./out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
 
 # E2E test
-.PHONY: ./vendor e2e-setup
+.PHONY: e2e-setup
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
@@ -126,6 +126,11 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=on operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
 
+.PHONY: test-e2e
+## Runs the unit tests
+test-unit:
+	$(info Running unit test: $@)
+	$(Q)go test $(shell go list ./...|grep -v e2e) -v
 
 #---------------------------------------------------------
 # Build and vendor tarets
