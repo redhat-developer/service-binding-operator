@@ -39,8 +39,6 @@ $(shell mkdir -p ./out);
 # HELP target
 #----------------------------------------------------------------
 
-## This target is used to display all other target
-.PHONY: help
 # Based on https://gist.github.com/rcmachado/af3db315e31383502660
 ## Display this help text
 help:/
