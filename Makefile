@@ -126,8 +126,8 @@ e2e-cleanup: get-test-namespace
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
-	$(info Running E2E tests: $@)
-	$(Q)operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
+	$(info Running E2E test: $@)
+	$(Q)GO111MODULE=on operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
 
 
 #---------------------------------------------------------

@@ -17,8 +17,11 @@ env:
     - SDK_VERSION="0.8.1"
     - MINIKUBE_VERSION="1.1.1"
     - KUBE_VERSION="1.14.3"
+    - GO111MODULE=on
 
 before_install:
+# Install deps
+- sudo apt-get install -y yamllint
 # Download Operator SDK
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
 # Download kubectl
@@ -36,5 +39,9 @@ before_script:
 - make e2e-setup
 
 script:
+# Run lint
+- make lint
+# Run unit tests
+- go test -mod vendor $(go list ./...|grep -v e2e) -v
 # Run e2e tests
 - make test-e2e
