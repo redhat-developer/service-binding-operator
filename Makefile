@@ -45,7 +45,7 @@ help:/
 	$(info Available targets)
 	$(info -----------------)
 	@awk '/^[a-zA-Z\-%\_0-9]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/); \
+		helpMessage = match(lastLine, /^## (.*)/);
 		helpCommand = substr($$1, 0, index($$1, ":")-1); \
 		if (helpMessage) { \
 			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
@@ -55,13 +55,12 @@ help:/
 		} \
 	} \
 	{ hasComment = match(lastLine, /^## (.*)/); \
-          if(hasComment) { \
+		if(hasComment) { \
             lastLine=lastLine$$0; \
-	  } \
-          else { \
-	    lastLine = $$0 \
-          } \
-        }' $(MAKEFILE_LIST)
+		} else { \
+			lastLine = $$0 \
+		} \
+	}' $(MAKEFILE_LIST)
 
 
 
