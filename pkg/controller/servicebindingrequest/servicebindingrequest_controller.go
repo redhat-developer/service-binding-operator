@@ -157,7 +157,7 @@ outerLoop:
 					evs := &corev1.EnvVarSource{
 						SecretKeyRef: sks,
 					}
-					evn := strings.ToUpper(strings.ReplaceAll(instance.Name, "-", "_")) + "_" + strings.ToUpper(strings.ReplaceAll(key, "-", "_"))
+					evn := strings.ToUpper(strings.Replace(instance.Name, "-", "_", -1)) + "_" + strings.ToUpper(strings.Replace(key, "-", "_", -1))
 					ev := corev1.EnvVar{
 						Name:      evn,
 						ValueFrom: evs,
@@ -173,7 +173,7 @@ outerLoop:
 					evs := &corev1.EnvVarSource{
 						ConfigMapKeyRef: cmks,
 					}
-					evn := strings.ToUpper(strings.ReplaceAll(instance.Name, "-", "_")) + "_" + strings.ToUpper(strings.ReplaceAll(key, "-", "_"))
+					evn := strings.ToUpper(strings.Replace(instance.Name, "-", "_", -1)) + "_" + strings.ToUpper(strings.Replace(key, "-", "_", -1))
 					ev := corev1.EnvVar{
 						Name:      evn,
 						ValueFrom: evs,
