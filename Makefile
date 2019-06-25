@@ -102,7 +102,7 @@ $(GOLANGCI_LINT_BIN):
 
 # Generate namespace name for test
 ./out/test-namespace:
-	@echo -n "test-namespace-$(shell uuidgen)" > ./out/test-namespace
+	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > ./out/test-namespace
 
 .PHONY: get-test-namespace
 get-test-namespace: ./out/test-namespace
