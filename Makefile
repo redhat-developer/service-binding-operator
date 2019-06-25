@@ -133,7 +133,12 @@ test-unit:
 # Build and vendor tarets
 #---------------------------------------------------------
 
-# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
+.PHONY: build
+## Build: using operator-sdk to build a new image
+build:
+	$(Q)GO111MODULE=on operator-sdk build "$(GO_PACKAGE_ORG_NAME)/$(GO_PACKAGE_REPO_NAME):latest"
+
+# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and
 # test all of the module's packages based on the state of the go.mod files and Go source code.
 ./vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
