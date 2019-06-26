@@ -141,3 +141,9 @@ test-unit:
 ./vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
 
+
+.PHONY: build
+build: ./out/operator
+
+./out/operator:
+	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build  ${V_FLAG} -o ./out/operator  cmd/manager/main.go
