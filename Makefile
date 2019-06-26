@@ -126,7 +126,7 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=on operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
 
-.PHONY: test-e2e
+.PHONY: test-unit
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
