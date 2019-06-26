@@ -136,6 +136,7 @@ test-unit:
 # Build and vendor tarets
 #---------------------------------------------------------
 
+.PHONEY: ./vendor
 # Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
 # test all of the module's packages based on the state of the go.mod files and Go source code.
 ./vendor: go.mod go.sum
