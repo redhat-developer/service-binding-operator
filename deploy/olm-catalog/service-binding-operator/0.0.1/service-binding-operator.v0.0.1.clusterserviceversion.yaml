@@ -113,6 +113,6 @@ spec:
   - supported: true
     type: AllNamespaces
   maturity: alpha
-  provider: 
+  provider:
     name: Red Hat, Inc.
   version: 0.0.1
