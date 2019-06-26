@@ -80,17 +80,17 @@ GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 GOLANGCI_LINT_BIN=./out/golangci-lint
 .PHONY: lint
 ## Runs linters on Go code files and YAML files
-lint: ./vendor lint-go-code lint-yaml
+lint: lint-go-code lint-yaml
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
-lint-yaml: ${YAML_FILES}
+lint-yaml: ./vendor ${YAML_FILES}
 	$(Q)yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
 ## Checks the code with golangci-lint
-lint-go-code: $(GOLANGCI_LINT_BIN)
+lint-go-code: ./vendor $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
 	$(Q)GOCACHE=$(shell pwd)/out/gocache ./out/golangci-lint ${V_FLAG} run --deadline=30m
@@ -113,7 +113,7 @@ get-test-namespace: ./out/test-namespace
 
 # E2E test
 .PHONY: e2e-setup
-e2e-setup: ./vendor e2e-cleanup
+e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
 .PHONY: e2e-cleanup
