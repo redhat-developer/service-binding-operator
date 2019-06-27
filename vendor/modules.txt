@@ -65,6 +65,8 @@ github.com/gogo/protobuf/sortkeys
 github.com/golang/glog
 # github.com/golang/groupcache v0.0.0-20180924190550-6f2cf27854a4
 github.com/golang/groupcache/lru
+# github.com/golang/mock v1.2.0
+github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
 github.com/golang/protobuf/ptypes/any
@@ -135,6 +137,10 @@ github.com/openshift/api/apps/v1
 # github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible
 github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1
 github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators
+github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install
+github.com/operator-framework/operator-lifecycle-manager/pkg/api/wrappers
+github.com/operator-framework/operator-lifecycle-manager/pkg/lib/operatorclient
+github.com/operator-framework/operator-lifecycle-manager/pkg/lib/ownerutil
 # github.com/operator-framework/operator-sdk v0.8.2-0.20190522220659-031d71ef8154 => github.com/operator-framework/operator-sdk v0.8.1
 github.com/operator-framework/operator-sdk/pkg/k8sutil
 github.com/operator-framework/operator-sdk/pkg/leader
@@ -346,6 +352,8 @@ k8s.io/api/admission/v1beta1
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
 k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/scheme
 k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
+k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset
+k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/typed/apiextensions/v1beta1
 # k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628 => k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
 k8s.io/apimachinery/pkg/runtime
 k8s.io/apimachinery/pkg/apis/meta/v1
