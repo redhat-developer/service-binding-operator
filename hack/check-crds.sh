@@ -3,7 +3,7 @@ function check_crds() {
 	local crd_name=$1
 	for i in {1..120}
 	do
-		oc get crds | grep $crd_name
+		kubectl get crds | grep $crd_name
 		if [ $? == 0 ]
 		then
 			echo "CRD exists: " $crd_name

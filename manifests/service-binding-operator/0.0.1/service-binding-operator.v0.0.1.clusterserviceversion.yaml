@@ -52,7 +52,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: quay.io/redhat-developer/service-binding-operator:v0.0.1
+                image: REPLACE_IMAGE
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
