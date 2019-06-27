@@ -15,8 +15,6 @@ import (
 
 // ReconcileServiceBindingRequest reconciles a ServiceBindingRequest object
 type ReconcileServiceBindingRequest struct {
-	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
 }
@@ -66,14 +64,12 @@ func (r *ReconcileServiceBindingRequest) intermediarySecret(csv *olmv1alpha1.Clu
 // 	The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // 	Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	var err error
-
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling ServiceBindingRequest")
 
 	// Fetch the ServiceBindingRequest instance
 	instance := &v1alpha1.ServiceBindingRequest{}
-	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// binding-request is not found, empty result means requeue
@@ -96,8 +92,10 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 
 	csv := r.selectClusterServiceVersion(instance, csvList)
 	if csv == nil {
+		// unable to obtain a CSV, requeueing
 		return reconcile.Result{}, nil
 	}
+	reqLogger.WithValues("ClusterServiceVersion.Name", csv.Name).Info("Found CSV to inspect!")
 
 	/*
 		evList := []corev1.EnvVar{}
