@@ -126,7 +126,7 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=on operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
 
-.PHONY: test-e2e
+.PHONY: test-unit
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
@@ -149,3 +149,9 @@ test-e2e-olm-ci:
 ./vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
 
+
+.PHONY: build
+build: ./out/operator
+
+./out/operator:
+	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build  ${V_FLAG} -o ./out/operator  cmd/manager/main.go
