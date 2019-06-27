@@ -10,6 +10,7 @@ import (
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
+	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -27,13 +28,10 @@ var (
 	replicas             = 1
 	operatorKind         = "ServiceBindingRequest"
 	operatorAPIVersion   = "apps.openshift.io/v1alpha1"
-	olmKind              = "CustomResourceDefinition"
-	olmAPIVersion        = "apiextensions.k8s.io/v1beta1"
-	crdName              = "e2e-resource-name"
-	crdVersion           = "0.0.1"
-	secretName           = "e2e-secret"
 )
 
+// TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
+// during end-to-end tests.
 func TestAddSchemesToFramework(t *testing.T) {
 	serviceBindingRequestList := &v1alpha1.ServiceBindingRequestList{
 		Items: []v1alpha1.ServiceBindingRequest{v1alpha1.ServiceBindingRequest{}},
@@ -41,9 +39,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Log("Adding ServiceBindingRequest scheme to cluster...")
 	err := framework.AddToFrameworkScheme(apis.AddToScheme, serviceBindingRequestList)
-	if err != nil {
-		t.Fatalf("Error on adding ServiceBindingRequest CRD: '%s'", err)
-	}
+	assert.Nil(t, err)
 
 	clusterServiceVersionListObj := &olmv1alpha1.ClusterServiceVersionList{
 		Items: []olmv1alpha1.ClusterServiceVersion{olmv1alpha1.ClusterServiceVersion{}},
@@ -51,15 +47,14 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Log("Adding ClusterServiceVersion scheme to cluster...")
 	err = framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, clusterServiceVersionListObj)
-	if err != nil {
-		t.Fatalf("Error on adding ClusterServiceVersion CRD: '%s'", err)
-	}
+	assert.Nil(t, err)
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-1", ServiceBindingRequest)
 	})
 }
 
+// cleanUpOptions using global variables to create the object.
 func cleanUpOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
@@ -90,23 +85,25 @@ func ServiceBindingRequest(t *testing.T) {
 
 	// namespace name is informed on command-line or defined dinamically
 	ns, err := ctx.GetNamespace()
-	if err != nil {
-		t.Fatalf("Error on acquiring a test namespace: '%s'", err)
-	}
+	assert.Nil(t, err)
 
 	t.Logf("Using namespace '%s' for testing...", ns)
-
 	f := framework.Global
-	err = e2eutil.WaitForOperatorDeployment(t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout)
-	if err != nil {
-		t.Fatalf("Error on waiting for operator deployment: '%s'", err)
-	}
+	err = e2eutil.WaitForOperatorDeployment(
+		t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout)
+	assert.Nil(t, err)
 
+	// populating cluster with mocked CRDs
+	mockedObjects(t, ns, f, ctx)
+	// executing testing steps on operator
 	serviceBindingRequestTest(t, ns, f, ctx)
 }
 
+// mockedObjects creates all required CRDs in the cluster.
 func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
-	t.Log("Starting end-to-end tests for operator...")
+	crdName := "e2e-resource-name"
+	crdVersion := "0.0.1"
+	secretName := "e2e-secret"
 
 	strategy := olminstall.StrategyDetailsDeployment{
 		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
@@ -116,9 +113,7 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 	}
 
 	strategyJSON, err := json.Marshal(strategy)
-	if err != nil {
-		t.Fatalf("Error on encoding install strategy to JSON: '%s'", err)
-	}
+	assert.Nil(t, err)
 
 	clusterServiceVersionObj := olmv1alpha1.ClusterServiceVersion{
 		TypeMeta: metav1.TypeMeta{
@@ -154,9 +149,7 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 
 	t.Log("Creating ClusterServiceVersion object...")
 	err = f.Client.Create(context.TODO(), &clusterServiceVersionObj, cleanUpOptions(ctx))
-	if err != nil {
-		t.Fatalf("Error on creating ClusterServiceVersion object: '%s'", err)
-	}
+	assert.Nil(t, err)
 
 	secretObj := corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -172,9 +165,7 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 
 	t.Log("Creating secret object...")
 	err = f.Client.Create(context.TODO(), &secretObj, cleanUpOptions(ctx))
-	if err != nil {
-		t.Fatalf("Error on creating secret object: '%s'", err)
-	}
+	assert.Nil(t, err)
 
 	serviceBindingRequestObj := v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -201,10 +192,9 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 
 	t.Log("Creating ServiceBindingRequest object...")
 	err = f.Client.Create(context.TODO(), &serviceBindingRequestObj, cleanUpOptions(ctx))
-	if err != nil {
-		t.Fatalf("Error on creating service-binding-request object: '%s'", err)
-	}
+	assert.Nil(t, err)
 }
 func serviceBindingRequestTest(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
-	mockedObjects(t, ns, f, ctx)
+	t.Log("Starting end-to-end tests for operator...")
+
 }
