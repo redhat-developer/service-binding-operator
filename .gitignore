@@ -1,6 +1,9 @@
 # Temporary Build Files
-build/_output
-build/_test
+build/
+
+# dot-env files, local project environment variables
+.env
+
 
 #gocache
 out/
