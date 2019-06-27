@@ -39,15 +39,13 @@ $(shell mkdir -p ./out);
 # HELP target
 #----------------------------------------------------------------
 
-## This target is used to display all other target
-.PHONY: help
 # Based on https://gist.github.com/rcmachado/af3db315e31383502660
 ## Display this help text
 help:/
 	$(info Available targets)
 	$(info -----------------)
 	@awk '/^[a-zA-Z\-%\_0-9]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/); \
+		helpMessage = match(lastLine, /^## (.*)/);
 		helpCommand = substr($$1, 0, index($$1, ":")-1); \
 		if (helpMessage) { \
 			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
@@ -57,13 +55,12 @@ help:/
 		} \
 	} \
 	{ hasComment = match(lastLine, /^## (.*)/); \
-          if(hasComment) { \
+		if(hasComment) { \
             lastLine=lastLine$$0; \
-	  } \
-          else { \
-	    lastLine = $$0 \
-          } \
-        }' $(MAKEFILE_LIST)
+		} else { \
+			lastLine = $$0 \
+		} \
+	}' $(MAKEFILE_LIST)
 
 
 
@@ -126,7 +123,7 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=on operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
 
-.PHONY: test-unit
+.PHONY: test-e2e
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
@@ -136,14 +133,13 @@ test-unit:
 # Build and vendor tarets
 #---------------------------------------------------------
 
-# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
+.PHONY: build
+## Build: using operator-sdk to build a new image
+build:
+	$(Q)GO111MODULE=on operator-sdk build "$(GO_PACKAGE_ORG_NAME)/$(GO_PACKAGE_REPO_NAME):latest"
+
+# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and
 # test all of the module's packages based on the state of the go.mod files and Go source code.
 ./vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
 
-
-.PHONY: build
-build: ./out/operator
-
-./out/operator:
-	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build  ${V_FLAG} -o ./out/operator  cmd/manager/main.go
