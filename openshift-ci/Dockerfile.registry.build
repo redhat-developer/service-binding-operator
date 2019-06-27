@@ -1,0 +1,13 @@
+FROM quay.io/openshift/origin-operator-registry:latest
+
+ARG version=0.0.1
+
+COPY manifests manifests
+COPY deploy/olm-catalog/service-binding-operator/${version}/*.yaml manifests/service-binding/${version}/
+
+RUN sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator," -i manifests/service-binding/${version}/service-binding-operator.v${version}.clusterserviceversion.yaml
+RUN initializer
+
+USER 1001
+EXPOSE 50051
+CMD ["registry-server", "--termination-log=log.txt"]
