@@ -147,3 +147,13 @@ build: ./out/operator
 
 ./out/operator:
 	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build  ${V_FLAG} -o ./out/operator  cmd/manager/main.go
+
+
+#-------------------------------------------------------------
+# Cleanup targets
+#-------------------------------------------------------------
+.PHONY: clean
+# Removes temp directorys
+clean:
+	$(Q)-rm -rf ${V_FLAG} ./out
+	$(Q)-rm -rf ${V_FLAG} ./vendor
