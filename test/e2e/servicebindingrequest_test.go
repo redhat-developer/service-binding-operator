@@ -3,6 +3,7 @@ package e2e
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -109,10 +110,12 @@ func ServiceBindingRequest(t *testing.T) {
 	serviceBindingRequestTest(t, ns, f, ctx)
 }
 
-// mockedObjects creates all required CRDs in the cluster.
+// mockedObjects creates all required CRDs in the cluster, using common values to link them as
+// service-binding-operator expects.
 func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
 	crdName := "databases.postgresql.baiju.dev"
 	crdVersion := "v1alpha1"
+	crdKind := "Database"
 	secretName := "e2e-secret"
 
 	labelConnectTo := "postgresql"
@@ -145,11 +148,11 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 			},
 			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
 				Owned: []olmv1alpha1.CRDDescription{{
-					Name:        "databases.postgresql.baiju.dev",
-					DisplayName: "Database",
+					Name:        crdName,
+					DisplayName: crdKind,
 					Description: "e2e csv based on postgresql-operator",
-					Kind:        "Database",
-					Version:     "v1alpha1",
+					Kind:        crdKind,
+					Version:     crdVersion,
 					StatusDescriptors: []olmv1alpha1.StatusDescriptor{{
 						DisplayName: "DB Password Credentials",
 						Description: "Database credentials secret",
@@ -171,8 +174,8 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 
 	pgDatabaseObj := pgsql.Database{
 		TypeMeta: metav1.TypeMeta{
-			Kind:       "Database",
-			APIVersion: "postgresql.baiju.dev/v1alpha1",
+			Kind:       crdKind,
+			APIVersion: fmt.Sprintf("%s/%s", crdKind, crdVersion),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      labelConnectTo,
@@ -237,7 +240,7 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 	err = f.Client.Create(context.TODO(), &serviceBindingRequestObj, cleanUpOptions(ctx))
 	assert.Nil(t, err)
 }
+
 func serviceBindingRequestTest(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
 	t.Log("Starting end-to-end tests for operator...")
-
 }

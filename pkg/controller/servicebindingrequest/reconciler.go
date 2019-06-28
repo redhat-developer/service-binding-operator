@@ -39,13 +39,18 @@ func (r *ReconcileServiceBindingRequest) selectClusterServiceVersion(
 	for _, csv := range csvList.Items {
 		logger.WithValues("ClusterServiceVersion.Name", csv.Name).Info("Inspecting CSV...")
 		for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
-			logger.WithValues("CRD.Name", crd.Name, "CRD.Version", crd.Version).Info("Inspecting CRD...")
+			logger = logger.WithValues("CRD.Name", crd.Name, "CRD.Version", crd.Version)
+			logger.Info("Inspecting CRD...")
+
+			// skpping entries that don't match backing selector name and version
 			if backingSelector.ResourceName != crd.Name {
 				continue
 			}
 			if crd.Version != "" && backingSelector.ResourceVersion != crd.Version {
 				continue
 			}
+
+			logger.Info("CRD matches backing-selector!")
 			return &csv
 		}
 	}
@@ -53,7 +58,7 @@ func (r *ReconcileServiceBindingRequest) selectClusterServiceVersion(
 	return nil
 }
 
-func (r *ReconcileServiceBindingRequest) retrieveData() {
+func (r *ReconcileServiceBindingRequest) retriveTargetServiceCRD(crdName, crdVersion, name string) {
 
 }
 
@@ -117,6 +122,8 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 	}
 	reqLogger.WithValues("ClusterServiceVersion.Name", csv.Name).
 		Info("Found cluster-service-version to inspect")
+
+	// TODO: based in the CSV/CRD define what to read
 
 	/*
 		evList := []corev1.EnvVar{}
