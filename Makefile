@@ -157,4 +157,3 @@ build: ./out/operator
 clean:
 	$(Q)-rm -rf ${V_FLAG} ./out
 	$(Q)-rm -rf ${V_FLAG} ./vendor
-	
