@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	pgsqlapis "github.com/baijum/postgresql-operator/pkg/apis"
+	pgsql "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
@@ -34,7 +36,7 @@ var (
 // during end-to-end tests.
 func TestAddSchemesToFramework(t *testing.T) {
 	serviceBindingRequestList := &v1alpha1.ServiceBindingRequestList{
-		Items: []v1alpha1.ServiceBindingRequest{v1alpha1.ServiceBindingRequest{}},
+		Items: []v1alpha1.ServiceBindingRequest{{}},
 	}
 
 	t.Log("Adding ServiceBindingRequest scheme to cluster...")
@@ -42,11 +44,19 @@ func TestAddSchemesToFramework(t *testing.T) {
 	assert.Nil(t, err)
 
 	clusterServiceVersionListObj := &olmv1alpha1.ClusterServiceVersionList{
-		Items: []olmv1alpha1.ClusterServiceVersion{olmv1alpha1.ClusterServiceVersion{}},
+		Items: []olmv1alpha1.ClusterServiceVersion{{}},
 	}
 
 	t.Log("Adding ClusterServiceVersion scheme to cluster...")
 	err = framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, clusterServiceVersionListObj)
+	assert.Nil(t, err)
+
+	databaseListObj := &pgsql.DatabaseList{
+		Items: []pgsql.Database{{}},
+	}
+
+	t.Log("Adding Database scheme to cluster...")
+	err = framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, databaseListObj)
 	assert.Nil(t, err)
 
 	t.Run("end-to-end", func(t *testing.T) {
@@ -101,9 +111,12 @@ func ServiceBindingRequest(t *testing.T) {
 
 // mockedObjects creates all required CRDs in the cluster.
 func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
-	crdName := "e2e-resource-name"
-	crdVersion := "0.0.1"
+	crdName := "databases.postgresql.baiju.dev"
+	crdVersion := "v1alpha1"
 	secretName := "e2e-secret"
+
+	labelConnectTo := "postgresql"
+	labelEnvironment := "e2e"
 
 	strategy := olminstall.StrategyDetailsDeployment{
 		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
@@ -125,22 +138,27 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 			Namespace: ns,
 		},
 		Spec: olmv1alpha1.ClusterServiceVersionSpec{
-			DisplayName: "e2e csv",
+			DisplayName: "e2e database csv",
 			InstallStrategy: olmv1alpha1.NamedInstallStrategy{
 				StrategyName:    "deployment",
 				StrategySpecRaw: strategyJSON,
 			},
 			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
 				Owned: []olmv1alpha1.CRDDescription{{
-					DisplayName: crdName,
-					Name:        crdName,
-					Version:     crdVersion,
-					Description: "e2e csv example",
-					SpecDescriptors: []olmv1alpha1.SpecDescriptor{{
-						DisplayName:  secretName,
-						Description:  "e2e csv example secret",
-						Path:         secretName,
-						XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret"},
+					Name:        "databases.postgresql.baiju.dev",
+					DisplayName: "Database",
+					Description: "e2e csv based on postgresql-operator",
+					Kind:        "Database",
+					Version:     "v1alpha1",
+					StatusDescriptors: []olmv1alpha1.StatusDescriptor{{
+						DisplayName: "DB Password Credentials",
+						Description: "Database credentials secret",
+						Path:        "dbCredentials",
+						XDescriptors: []string{
+							"urn:alm:descriptor:io.kubernetes:Secret",
+							"urn:alm:descriptor:io.servicebindingrequest:secret:user",
+							"urn:alm:descriptor:io.servicebindingrequest:secret:password",
+						},
 					}},
 				}},
 			},
@@ -149,6 +167,28 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 
 	t.Log("Creating ClusterServiceVersion object...")
 	err = f.Client.Create(context.TODO(), &clusterServiceVersionObj, cleanUpOptions(ctx))
+	assert.Nil(t, err)
+
+	pgDatabaseObj := pgsql.Database{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Database",
+			APIVersion: "postgresql.baiju.dev/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      labelConnectTo,
+			Namespace: ns,
+		},
+		Spec: pgsql.DatabaseSpec{
+			Image:     "database/image",
+			ImageName: "database",
+		},
+		Status: pgsql.DatabaseStatus{
+			DBCredentials: secretName,
+		},
+	}
+
+	t.Log("Creating a database CRD object...")
+	err = f.Client.Create(context.TODO(), &pgDatabaseObj, cleanUpOptions(ctx))
 	assert.Nil(t, err)
 
 	secretObj := corev1.Secret{
@@ -160,7 +200,10 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 			Name:      secretName,
 			Namespace: ns,
 		},
-		Data: map[string][]byte{"secret-entry": []byte("secret-value")},
+		Data: map[string][]byte{
+			"user":     []byte("user"),
+			"password": []byte("password"),
+		},
 	}
 
 	t.Log("Creating secret object...")
@@ -173,7 +216,7 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 			APIVersion: operatorAPIVersion,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "e2e-bind-request",
+			Name:      "e2e-service-binding-request",
 			Namespace: ns,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
@@ -183,8 +226,8 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				MatchLabels: map[string]string{
-					"connects-to": "postgres",
-					"environment": "production",
+					"connects-to": labelConnectTo,
+					"environment": labelEnvironment,
 				},
 			},
 		},
