@@ -3,12 +3,14 @@ package servicebindingrequest
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
@@ -22,14 +24,22 @@ type ReconcileServiceBindingRequest struct {
 // selectClusterServiceVersion based on ServiceBindingRequest and a list of CSV (Cluster Service Version)
 // picking the one that matches backing-selector rule.
 func (r *ReconcileServiceBindingRequest) selectClusterServiceVersion(
+	logger logr.Logger,
 	instance *v1alpha1.ServiceBindingRequest,
 	csvList *olmv1alpha1.ClusterServiceVersionList,
 ) *olmv1alpha1.ClusterServiceVersion {
 	// based on backing-selector, looking for custom resource definition
 	backingSelector := instance.Spec.BackingSelector
 
+	logger.WithValues(
+		"BackingSelector.ResourceName", backingSelector.ResourceName,
+		"BackingSelector.ResourceVersion", backingSelector.ResourceVersion,
+	).Info("Looking for a CSV based on backing-selector")
+
 	for _, csv := range csvList.Items {
+		logger.WithValues("ClusterServiceVersion.Name", csv.Name).Info("Inspecting CSV...")
 		for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
+			logger.WithValues("CRD.Name", crd.Name, "CRD.Version", crd.Version).Info("Inspecting CRD...")
 			if backingSelector.ResourceName != crd.Name {
 				continue
 			}
@@ -41,6 +51,10 @@ func (r *ReconcileServiceBindingRequest) selectClusterServiceVersion(
 	}
 
 	return nil
+}
+
+func (r *ReconcileServiceBindingRequest) retrieveData() {
+
 }
 
 // intermediarySecret create a secret to be used as a intermediary place beteween operator descriptor
@@ -64,7 +78,7 @@ func (r *ReconcileServiceBindingRequest) intermediarySecret(csv *olmv1alpha1.Clu
 // 	The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // 	Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger := logf.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling ServiceBindingRequest")
 
 	// Fetch the ServiceBindingRequest instance
@@ -79,6 +93,9 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
+	reqLogger.WithValues("ServiceBindingRequest.Name", instance.Name).
+		Info("Found service binding request to inspect")
+
 	// list of cluster service version in the namespace
 	csvList := &olmv1alpha1.ClusterServiceVersionList{}
 	err = r.client.List(context.TODO(), &client.ListOptions{Namespace: request.Namespace}, csvList)
@@ -87,15 +104,19 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 			reqLogger.Info("Empty CSV list, requeueing the request")
 			return reconcile.Result{}, nil
 		}
+		reqLogger.Error(err, "Error on retrieving CSV list")
 		return reconcile.Result{Requeue: true}, err
 	}
 
-	csv := r.selectClusterServiceVersion(instance, csvList)
+	// selecting a CSV that matches backing-selector
+	csv := r.selectClusterServiceVersion(reqLogger, instance, csvList)
 	if csv == nil {
 		// unable to obtain a CSV, requeueing
+		reqLogger.Info("Warning: Unable to select a CSV object, requeueing!")
 		return reconcile.Result{}, nil
 	}
-	reqLogger.WithValues("ClusterServiceVersion.Name", csv.Name).Info("Found CSV to inspect!")
+	reqLogger.WithValues("ClusterServiceVersion.Name", csv.Name).
+		Info("Found cluster-service-version to inspect")
 
 	/*
 		evList := []corev1.EnvVar{}
