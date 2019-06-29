@@ -22,7 +22,7 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileServiceBindingRequest{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &Reconciler{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -53,4 +53,4 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 }
 
 // blank assignment to verify that ReconcileServiceBindingRequest implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileServiceBindingRequest{}
+var _ reconcile.Reconciler = &Reconciler{}
