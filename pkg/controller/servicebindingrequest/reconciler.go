@@ -36,6 +36,7 @@ type Reconciler struct {
 	scheme *runtime.Scheme
 }
 
+// decodeString encoded with base64.
 func decodeString(encoded string) (string, error) {
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
@@ -84,6 +85,7 @@ func (r *Reconciler) selectCRDDescription(
 	return nil
 }
 
+// selectCRDByName based in a list of CRDs select the one with matching name.
 func (r *Reconciler) selectCRDByName(
 	list *unstructured.UnstructuredList,
 	name string,
@@ -96,10 +98,8 @@ func (r *Reconciler) selectCRDByName(
 	return nil
 }
 
-func (r *Reconciler) pathValue(
-	crd *unstructured.Unstructured,
-	path string,
-) (string, error) {
+// pathValue read value of a given "path" inside of informed custom resource definition instance.
+func (r *Reconciler) pathValue(crd *unstructured.Unstructured, path string) (string, error) {
 	object := crd.Object
 	status, exists := object["status"].(map[string]interface{})
 	if !exists {
@@ -114,6 +114,8 @@ func (r *Reconciler) pathValue(
 	return value.(string), nil
 }
 
+// parseXDescriptor parse's OLM CustomResourceDefinition descripton in order to return it's kind
+// and attribute.
 func (r *Reconciler) parseXDescriptor(xDescriptor string) (string, string) {
 	if !strings.HasPrefix(xDescriptor, almDescriptorPrefix) {
 		return "", ""
@@ -274,6 +276,7 @@ func (r *Reconciler) retrieveBindingData(
 	return data, nil
 }
 
+// extractConnectTo based on a service-binding-request extract the special "connects-to" label value.
 func (r *Reconciler) extractConnectTo(instance *v1alpha1.ServiceBindingRequest) (string, error) {
 	value, exists := instance.Spec.ApplicationSelector.MatchLabels[connectsToLabel]
 	if !exists {
@@ -328,10 +331,18 @@ func (r *Reconciler) appendEnvFrom(envList []corev1.EnvFromSource, secret string
 	})
 }
 
-// Reconcile reads that state of the cluster for a ServiceBindingRequest object and makes changes
-// based on the state read and what is in the ServiceBindingRequest.Spec
-// TODO: very long method that needs to be extracted;
+// Reconcile a ServiceBindingRequest by the following steps:
+// 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
+//    kind, and by inspecting "connects-to" label identify the name of service instance;
+// 2. Using OperatorLifecycleManager standards, identifying which items are intersting for binding
+//    by parsing CustomResourceDefinitionDescripton object;
+// 3. Search and read contents identified in previous step, creating a intermediary secret to hold
+//    data formatted as environment variables key/value.
+// 4. Search applications that are interested to bind with given service, by inspecting labels. The
+//    Deployment (and other kinds) will be updated in PodTeamplate level updating `envFrom` entry
+// 	  to load interdiary secret;
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	// TODO: very long method that needs to be extracted;
 	ctx := context.TODO()
 	logger := logf.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	logger.Info("Reconciling ServiceBindingRequest")
