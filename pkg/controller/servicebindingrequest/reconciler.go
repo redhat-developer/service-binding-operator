@@ -523,5 +523,5 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	logger.Info("All done!")
-	return reconcile.Result{Requeue: true}, nil
+	return reconcile.Result{}, nil
 }
