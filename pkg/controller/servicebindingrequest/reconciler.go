@@ -9,14 +9,13 @@ import (
 	"github.com/go-logr/logr"
 	osappsv1 "github.com/openshift/api/apps/v1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -130,7 +129,6 @@ func (r *Reconciler) parseXDescriptor(xDescriptor string) (string, string) {
 	attribute := sections[len(sections)-1]
 
 	return kind, attribute
-
 }
 
 // generateFieldName based on the x-descriptor value, generating a string with the same standards
@@ -140,10 +138,6 @@ func (r *Reconciler) generateFieldName(xDescriptor string) string {
 	name := strings.Join(sections, "_")
 	name = strings.ReplaceAll(name, ".", "_")
 	return strings.ToUpper(name)
-}
-
-func (r *Reconciler) extractKV(kind string, unstructuredObj *unstructured.Unstructured) (map[string]string, error) {
-	return nil, nil
 }
 
 // readObjectAttributes read a unstructured object in order to read the attributes informed.
@@ -290,6 +284,7 @@ func (r *Reconciler) extractConnectTo(instance *v1alpha1.ServiceBindingRequest) 
 
 func (r *Reconciler) searchByLabel(
 	ns string,
+	kind string,
 	matchLabels map[string]string,
 ) (*unstructured.UnstructuredList, error) {
 	listOpts := &client.ListOptions{
@@ -297,7 +292,15 @@ func (r *Reconciler) searchByLabel(
 		LabelSelector: labels.SelectorFromSet(matchLabels),
 	}
 
-	listObj := &unstructured.UnstructuredList{}
+	apiVersion := "extensions/v1beta1"
+	if strings.ToLower(kind) == "deploymentconfig" {
+		apiVersion = "deploymentconfigs.apps.openshift.io/v1"
+	}
+
+	listObj := &unstructured.UnstructuredList{Object: map[string]interface{}{
+		"kind":       kind,
+		"apiVersion": apiVersion,
+	}}
 	err := r.client.List(context.TODO(), listOpts, listObj)
 	if err != nil {
 		return nil, err
@@ -329,12 +332,13 @@ func (r *Reconciler) appendEnvFrom(envList []corev1.EnvFromSource, secret string
 // based on the state read and what is in the ServiceBindingRequest.Spec
 // TODO: very long method that needs to be extracted;
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx := context.TODO()
 	logger := logf.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	logger.Info("Reconciling ServiceBindingRequest")
 
 	// Fetch the ServiceBindingRequest instance
 	instance := &v1alpha1.ServiceBindingRequest{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// binding-request is not found, empty result means requeue
@@ -349,7 +353,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// list of cluster service version in the namespace
 	csvList := &olmv1alpha1.ClusterServiceVersionList{}
-	err = r.client.List(context.TODO(), &client.ListOptions{Namespace: request.Namespace}, csvList)
+	err = r.client.List(ctx, &client.ListOptions{Namespace: request.Namespace}, csvList)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Empty CSV list, requeueing the request")
@@ -380,7 +384,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	unstructuredObjList := &unstructured.UnstructuredList{Object: unstructuredObj}
 
-	err = r.client.List(context.TODO(), &client.ListOptions{Namespace: request.Namespace}, unstructuredObjList)
+	err = r.client.List(ctx, &client.ListOptions{Namespace: request.Namespace}, unstructuredObjList)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			logger.Info("Empty CRD list, requeueing the request")
@@ -415,8 +419,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{Requeue: true}, err
 	}
 
-	logger.WithValues("data", fmt.Sprintf("%#v", bindingData)).Info("The secret!!")
-
 	bindingSecretObj := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -429,8 +431,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		Data: bindingData,
 	}
 
-	err = r.client.Create(context.TODO(), bindingSecretObj)
-	if err != nil {
+	err = r.client.Create(ctx, bindingSecretObj)
+	if err != nil && !errors.IsAlreadyExists(err) {
 		logger.Error(err, "Error on creating secret")
 		return reconcile.Result{Requeue: true}, err
 	}
@@ -439,139 +441,76 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Updating applications to use intermediary secret
 	//
 
+	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
 	logger.Info("Searching applications to receive intermediary secret bind...")
 
-	resourceListOjb, err := r.searchByLabel(request.Namespace, instance.Spec.ApplicationSelector.MatchLabels)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return reconcile.Result{}, nil
-		}
-		return reconcile.Result{Requeue: true}, err
-	}
-
 	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind)
-	// TODO: is there a way to execute the same casting without going back to JSON?
-	decode := scheme.Codecs.UniversalDeserializer().Decode
+	searchByLabelsOpts := client.ListOptions{
+		Namespace:     request.Namespace,
+		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
+	}
 
-	for _, resourceObj := range resourceListOjb.Items {
-		logger = logger.WithValues(
-			"binding.Resource.Kind", resourceObj.GetKind(),
-			"binding.Resource.Name", resourceObj.GetName(),
-		)
+	switch resourceKind {
+	case "deploymentconfig":
+		logger.Info("Inspecting DeploymentConfig objects matching labels")
 
-		if resourceKind != strings.ToLower(resourceObj.GetKind()) {
-			logger.Info("Skipping object, does not match resource kind!")
-			continue
-		}
-
-		jsonBytes, err := resourceObj.MarshalJSON()
+		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
+		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
 		if err != nil {
+			if errors.IsNotFound(err) {
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{Requeue: true}, err
 		}
 
-		rawObj, _, err := decode(jsonBytes, nil, nil)
+		for _, deploymentConfigObj := range deploymentConfigListObj.Items {
+			logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
+				Info("Inspecting DeploymentConfig object...")
+
+			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
+				logger.Info("Adding EnvFrom to container")
+				deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
+					c.EnvFrom, instance.GetName())
+			}
+
+			logger.Info("Updating DeploymentConfig object")
+			err = r.client.Update(ctx, &deploymentConfigObj)
+			if err != nil {
+				logger.Error(err, "Error on updating object!")
+				return reconcile.Result{}, err
+			}
+		}
+	default:
+		logger.Info("Inspecting Deployment objects matching labels")
+
+		deploymentListObj := &extv1beta1.DeploymentList{}
+		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
 		if err != nil {
+			if errors.IsNotFound(err) {
+				return reconcile.Result{}, nil
+			}
 			return reconcile.Result{Requeue: true}, err
 		}
 
-		switch resourceKind {
-		case "deploymentconfig":
-			deploymentObj := rawObj.(*osappsv1.DeploymentConfig)
-			for _, c := range deploymentObj.Spec.Template.Spec.Containers {
-				c.EnvFrom = r.appendEnvFrom(c.EnvFrom, instance.GetName())
-			}
-			err = r.client.Update(context.TODO(), deploymentObj)
-		default:
-			deploymentObj := rawObj.(*appsv1.Deployment)
-			for _, c := range deploymentObj.Spec.Template.Spec.Containers {
-				c.EnvFrom = r.appendEnvFrom(c.EnvFrom, instance.GetName())
-			}
-			err = r.client.Update(context.TODO(), deploymentObj)
-		}
+		for _, deploymentObj := range deploymentListObj.Items {
+			logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
+			logger.Info("Inspecting Deploymen object...")
 
-		if err != nil {
-			return reconcile.Result{}, err
+			for i, c := range deploymentObj.Spec.Template.Spec.Containers {
+				logger.Info("Adding EnvFrom to container")
+				deploymentObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
+					c.EnvFrom, instance.GetName())
+			}
+
+			logger.Info("Updating Deployment object")
+			err = r.client.Update(ctx, &deploymentObj)
+			if err != nil {
+				logger.Error(err, "Error on updating object!")
+				return reconcile.Result{}, err
+			}
 		}
 	}
 
-	/*
-	   lo := &client.ListOptions{
-	       Namespace:     request.Namespace,
-	       LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
-	   }
-
-	   switch strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind) {
-	   case "deploymentconfig":
-	       dcl := &osappsv1.DeploymentConfigList{}
-	       err = r.client.List(context.TODO(), lo, dcl)
-	       if err != nil {
-	           return reconcile.Result{}, err
-	       }
-
-	       for _, d := range dcl.Items {
-	           for i, c := range d.Spec.Template.Spec.Containers {
-	               c.Env = evList
-	               d.Spec.Template.Spec.Containers[i] = c
-	           }
-	           err = r.client.Update(context.TODO(), &d)
-	           if err != nil {
-	               return reconcile.Result{}, err
-	           }
-	       }
-	   case "statefulset":
-	       ssl := &appsv1.StatefulSetList{}
-	       err = r.client.List(context.TODO(), lo, ssl)
-	       if err != nil {
-	           return reconcile.Result{}, err
-	       }
-
-	       for _, d := range ssl.Items {
-	           for i, c := range d.Spec.Template.Spec.Containers {
-	               c.Env = evList
-	               d.Spec.Template.Spec.Containers[i] = c
-	           }
-	           err = r.client.Update(context.TODO(), &d)
-	           if err != nil {
-	               return reconcile.Result{}, err
-	           }
-	       }
-	   case "daemonset":
-	       ssl := &appsv1.DaemonSetList{}
-	       err = r.client.List(context.TODO(), lo, ssl)
-	       if err != nil {
-	           return reconcile.Result{}, err
-	       }
-
-	       for _, d := range ssl.Items {
-	           for i, c := range d.Spec.Template.Spec.Containers {
-	               c.Env = evList
-	               d.Spec.Template.Spec.Containers[i] = c
-	           }
-	           err = r.client.Update(context.TODO(), &d)
-	           if err != nil {
-	               return reconcile.Result{}, err
-	           }
-	       }
-
-	   default:
-	       dpl := &appsv1.DeploymentList{}
-	       err = r.client.List(context.TODO(), lo, dpl)
-	       if err != nil {
-	           return reconcile.Result{}, err
-	       }
-
-	       for _, d := range dpl.Items {
-	           for i, c := range d.Spec.Template.Spec.Containers {
-	               c.Env = evList
-	               d.Spec.Template.Spec.Containers[i] = c
-	           }
-	           err = r.client.Update(context.TODO(), &d)
-	           if err != nil {
-	               return reconcile.Result{}, err
-	           }
-	       }
-	   }
-	*/
-
+	logger.Info("All done!")
 	return reconcile.Result{Requeue: true}, nil
 }
