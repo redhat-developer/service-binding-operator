@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -24,6 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+
+	osappsv1 "github.com/openshift/api/apps/v1"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -99,7 +102,12 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "")
+		log.Error(err, "Error adding local operator scheme!")
+		os.Exit(1)
+	}
+
+	if err := osappsv1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Error(err, "Error on adding OS APIs to scheme!")
 		os.Exit(1)
 	}
 
