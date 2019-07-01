@@ -17,6 +17,7 @@ type DatabaseSpec struct {
 
 	// Name of the PostgreSQL container image. e.g., postgres
 	ImageName string `json:"imageName"`
+	DBName    string `json:"dbName"`
 }
 
 // DatabaseStatus defines the observed state of Database
