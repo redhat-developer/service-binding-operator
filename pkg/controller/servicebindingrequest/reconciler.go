@@ -58,7 +58,7 @@ func (r *Reconciler) pathValue(crd *unstructured.Unstructured, path string) (str
 		return "", fmt.Errorf("unable to find attribute for path '%s'", path)
 	}
 
-	return value.(string), nil
+	return fmt.Sprintf("%v", value), nil
 }
 
 // parseXDescriptor parse's OLM CustomResourceDefinition descripton in order to return it's kind
