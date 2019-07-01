@@ -54,9 +54,15 @@ spec:
                 CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd),
                 SMTP services for outbound email (such as Postfix), and caching systems
                 (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceName:
-                database.example.org Example 2: \tbackingSelector: \t\tresourceName:
-                database.example.org \t\tresourceVersion: v1alpha1"
+                database.example.org \t\tmatchLabels: \t\t\tdatabase: postgres \t\t\tenvironment:
+                stage Example 2: \tbackingSelector: \t\tresourceName: database.example.org
+                \t\tresourceVersion: v1alpha1 \t\tmatchLabels: \t\t\tdatabase: postgres
+                \t\t\tenvironment: stage"
               properties:
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  type: object
                 resourceName:
                   type: string
                 resourceVersion:
@@ -64,6 +70,7 @@ spec:
               required:
               - resourceName
               - resourceVersion
+              - matchLabels
               type: object
           required:
           - backingSelector

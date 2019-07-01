@@ -24,10 +24,16 @@ type ServiceBindingRequestSpec struct {
 	// Example 1:
 	//	backingSelector:
 	//		resourceName: database.example.org
+	//		matchLabels:
+	//			database: postgres
+	//			environment: stage
 	// Example 2:
 	//	backingSelector:
 	//		resourceName: database.example.org
 	//		resourceVersion: v1alpha1
+	//		matchLabels:
+	//			database: postgres
+	//			environment: stage
 	BackingSelector BackingSelector `json:"backingSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
@@ -48,8 +54,9 @@ type ServiceBindingRequestSpec struct {
 // BackingSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingSelector struct {
-	ResourceName    string `json:"resourceName"`
-	ResourceVersion string `json:"resourceVersion"`
+	ResourceName    string            `json:"resourceName"`
+	ResourceVersion string            `json:"resourceVersion"`
+	MatchLabels     map[string]string `json:"matchLabels"`
 }
 
 // ApplicationSelector defines the selector based on labels and resource kind
