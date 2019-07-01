@@ -5,7 +5,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// RequeueOnNotFound inspect error, if related o not-found returns Requeue, otherwise expose error.
+// RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func RequeueOnNotFound(err error) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {
 		return Requeue()
