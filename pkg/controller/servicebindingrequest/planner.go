@@ -29,9 +29,10 @@ type Planner struct {
 
 // Plan outcome, after executing planner.
 type Plan struct {
-	ns             string                      // namespace name
-	crdDescription *olmv1alpha1.CRDDescription // custom resource definition description
-	crd            *ustrv1.Unstructured        // custom resource definition
+	Ns             string                      // namespace name
+	Name           string                      // plan name, same than ServiceBindingRequest
+	CRDDescription *olmv1alpha1.CRDDescription // custom resource definition description
+	CRD            *ustrv1.Unstructured        // custom resource definition
 }
 
 const (
@@ -148,7 +149,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		return nil, err
 	}
 
-	return &Plan{ns: p.ns, crdDescription: crdDescription, crd: crd}, nil
+	return &Plan{Ns: p.ns, Name: p.sbr.GetName(), CRDDescription: crdDescription, CRD: crd}, nil
 }
 
 // NewPlanner instantiate Planner type.
