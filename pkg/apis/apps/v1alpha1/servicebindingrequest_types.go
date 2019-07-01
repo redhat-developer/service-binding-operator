@@ -50,7 +50,7 @@ type ServiceBindingRequestSpec struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	ResourceType    string `json:"resourceType"`
+	ResourceKind    string `json:"resourceKind"`
 	ResourceVersion string `json:"resourceVersion"`
 	ResourceRef      string `json:"resourceRef"`
 }
