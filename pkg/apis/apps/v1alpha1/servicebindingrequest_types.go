@@ -12,7 +12,7 @@ type ServiceBindingRequestSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// BackingSelector is used to identify the backing service operator.
+	// BackingServiceSelector is used to identify the backing service operator.
 	//
 	// Refer: https://12factor.net/backing-services
 	// A backing service is any service the app consumes over the network as
@@ -22,15 +22,15 @@ type ServiceBindingRequestSpec struct {
 	// caching systems (such as Memcached).
 	//
 	// Example 1:
-	//	backingSelector:
+	//	backingServiceSelector:
 	//		resourceType: database.example.org
 	//      resourceRef: mysql-database
 	// Example 2:
-	//	backingSelector:
+	//	backingServiceSelector:
 	//		resourceType: database.example.org
 	//		resourceVersion: v1alpha1
 	//      resourceRef: mysql-database
-	BackingSelector BackingSelector `json:"backingSelector"`
+	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
@@ -47,9 +47,9 @@ type ServiceBindingRequestSpec struct {
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
-// BackingSelector defines the selector based on resource name, version, and resource kind
+// BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
-type BackingSelector struct {
+type BackingServiceSelector struct {
 	ResourceType    string `json:"resourceType"`
 	ResourceVersion string `json:"resourceVersion"`
 	ResourceRef      string `json:"resourceRef"`

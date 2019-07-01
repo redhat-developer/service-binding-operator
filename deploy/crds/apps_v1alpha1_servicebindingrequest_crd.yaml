@@ -46,19 +46,19 @@ spec:
               - matchLabels
               - resourceKind
               type: object
-            backingSelector:
-              description: "BackingSelector is used to identify the backing service
+            backingServiceSelector:
+              description: "backingServiceSelector is used to identify the backing service
                 operator.  Refer: https://12factor.net/backing-services A backing
                 service is any service the app consumes over the network as part of
                 its normal operation. Examples include datastores (such as MySQL or
                 CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd),
                 SMTP services for outbound email (such as Postfix), and caching systems
-                (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceName:
-                database.example.org      objectName: mysql-database Example 2: \tbackingSelector:
+                (such as Memcached).  Example 1: \tbackingServiceSelector: \t\tresourceName:
+                database.example.org      resourceRef: mysql-database Example 2: \tbackingServiceSelector:
                 \t\tresourceKind: database.example.org \t\tresourceVersion: v1alpha1
-                \     objectName: mysql-database"
+                \     resourceRef: mysql-database"
               properties:
-                objectName:
+                resourceRef:
                   type: string
                 resourceName:
                   type: string
@@ -67,10 +67,10 @@ spec:
               required:
               - resourceName
               - resourceVersion
-              - objectName
+              - resourceRef
               type: object
           required:
-          - backingSelector
+          - backingServiceSelector
           - applicationSelector
           type: object
         status:

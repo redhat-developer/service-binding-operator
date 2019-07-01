@@ -14,7 +14,7 @@ import (
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector":             schema_pkg_apis_apps_v1alpha1_BackingSelector(ref),
+		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector":             schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
@@ -54,11 +54,11 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 	}
 }
 
-func schema_pkg_apis_apps_v1alpha1_BackingSelector(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "BackingSelector defines the selector based on resource name, version, and resource kind",
+				Description: "BackingServiceSelector defines the selector based on resource name, version, and resource kind",
 				Properties: map[string]spec.Schema{
 					"resourceType": {
 						SchemaProps: spec.SchemaProps{
@@ -135,10 +135,10 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest",
 				Properties: map[string]spec.Schema{
-					"backingSelector": {
+					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingSelector:\n\t\tresourceType: database.example.org\n     resourceRef: mysql-database\nExample 2:\n\tbackingSelector:\n\t\tresourceType: database.example.org\n\t\tresourceVersion: v1alpha1\n     resourceRef: mysql-database",
-							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector"),
+							Description: "BackingServiceSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingServiceSelector:\n\t\tresourceType: database.example.org\n     resourceRef: mysql-database\nExample 2:\n\tbackingServiceSelector:\n\t\tresourceType: database.example.org\n\t\tresourceVersion: v1alpha1\n     resourceRef: mysql-database",
+							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
 						},
 					},
 					"applicationSelector": {
@@ -148,11 +148,11 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"backingSelector", "applicationSelector"},
+				Required: []string{"backingServiceSelector", "applicationSelector"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector"},
+			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"},
 	}
 }
 

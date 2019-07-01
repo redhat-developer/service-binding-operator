@@ -3,7 +3,7 @@ kind: ServiceBindingRequest
 metadata:
   name: example-servicebindingrequest
 spec:
-  backingSelector:
+  backingServiceSelector:
     resourceKind: database.example.org
     resourceVersion: v1alpha1
     resourceRef: mysqldb
