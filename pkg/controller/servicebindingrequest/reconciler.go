@@ -338,7 +338,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	switch resourceKind {
 	case "deploymentconfig":
-		logger.Info("Inspecting DeploymentConfig objects matching labels")
+		logger.Info("Searching DeploymentConfig objects matching labels")
 
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
@@ -347,6 +347,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				return reconcile.Result{}, nil
 			}
 			return reconcile.Result{Requeue: true}, err
+		}
+
+		if len(deploymentConfigListObj.Items) == 0 {
+			logger.Info("No DeploymentConfig objects found, requeueing request!")
+			return Requeue()
 		}
 
 		for _, deploymentConfigObj := range deploymentConfigListObj.Items {
@@ -367,7 +372,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			}
 		}
 	default:
-		logger.Info("Inspecting Deployment objects matching labels")
+		logger.Info("Searching Deployment objects matching labels")
 
 		deploymentListObj := &extv1beta1.DeploymentList{}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
@@ -376,6 +381,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				return reconcile.Result{}, nil
 			}
 			return reconcile.Result{Requeue: true}, err
+		}
+
+		if len(deploymentListObj.Items) == 0 {
+			logger.Info("No Deployment objects found, requeueing request!")
+			return Requeue()
 		}
 
 		for _, deploymentObj := range deploymentListObj.Items {
