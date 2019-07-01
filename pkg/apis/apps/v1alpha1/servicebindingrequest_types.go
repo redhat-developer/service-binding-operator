@@ -23,13 +23,13 @@ type ServiceBindingRequestSpec struct {
 	//
 	// Example 1:
 	//	backingSelector:
-	//		resourceName: database.example.org
-	//      objectName: mysql-database
+	//		resourceType: database.example.org
+	//      resourceRef: mysql-database
 	// Example 2:
 	//	backingSelector:
-	//		resourceName: database.example.org
+	//		resourceType: database.example.org
 	//		resourceVersion: v1alpha1
-	//      objectName: mysql-database
+	//      resourceRef: mysql-database
 	BackingSelector BackingSelector `json:"backingSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
@@ -43,16 +43,16 @@ type ServiceBindingRequestSpec struct {
 	// Example 2:
 	//	applicationSelector:
 	//		resourceKind: Deployment
-	//		resourceName: my-app
+	//		resourceType: my-app
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
 // BackingSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingSelector struct {
-	ResourceName    string `json:"resourceName"`
+	ResourceType    string `json:"resourceType"`
 	ResourceVersion string `json:"resourceVersion"`
-	ObjectName      string `json:"objectName"`
+	ResourceRef      string `json:"resourceRef"`
 }
 
 // ApplicationSelector defines the selector based on labels and resource kind

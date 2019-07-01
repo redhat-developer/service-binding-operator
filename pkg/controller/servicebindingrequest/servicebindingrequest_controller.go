@@ -99,7 +99,7 @@ func (r *ReconcileServiceBindingRequest) Reconcile(request reconcile.Request) (r
 		return reconcile.Result{}, err
 	}
 
-	crdName := instance.Spec.BackingSelector.ResourceName
+	crdName := instance.Spec.BackingSelector.ResourceType
 	crdVersion := instance.Spec.BackingSelector.ResourceVersion
 
 	clo := &client.ListOptions{

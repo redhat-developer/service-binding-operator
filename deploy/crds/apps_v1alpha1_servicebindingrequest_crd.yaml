@@ -34,7 +34,7 @@ spec:
                 connecting to the backing service operator. Example 1: \tapplicationSelector:
                 \t\tmatchLabels: \t\t\tconnects-to: postgres \t\t\tenvironment: stage
                 \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tresourceKind:
-                Deployment \t\tresourceName: my-app"
+                Deployment \t\tresourceKind: my-app"
               properties:
                 matchLabels:
                   additionalProperties:
@@ -55,7 +55,7 @@ spec:
                 SMTP services for outbound email (such as Postfix), and caching systems
                 (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceName:
                 database.example.org      objectName: mysql-database Example 2: \tbackingSelector:
-                \t\tresourceName: database.example.org \t\tresourceVersion: v1alpha1
+                \t\tresourceKind: database.example.org \t\tresourceVersion: v1alpha1
                 \     objectName: mysql-database"
               properties:
                 objectName:
