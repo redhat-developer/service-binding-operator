@@ -7,7 +7,6 @@ import (
 	osappsv1 "github.com/openshift/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,16 +16,10 @@ import (
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
-const (
-	almDescriptorPrefix            = "urn:alm:descriptor"
-	almKubernetesPrefix            = "io.kubernetes"
-	almServiceBindingRequestPrefix = "io.servicebindingrequest"
-)
-
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	client client.Client
-	scheme *runtime.Scheme
+	client client.Client   // kubernetes api client
+	scheme *runtime.Scheme // api scheme
 }
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
@@ -59,7 +52,6 @@ func (r *Reconciler) appendEnvFrom(envList []corev1.EnvFromSource, secret string
 //    Deployment (and other kinds) will be updated in PodTeamplate level updating `envFrom` entry
 // 	  to load interdiary secret;
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	// TODO: very long method that needs to be extracted;
 	ctx := context.TODO()
 	logger := logf.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	logger.Info("Reconciling ServiceBindingRequest")
@@ -68,12 +60,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	instance := &v1alpha1.ServiceBindingRequest{}
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
-		if errors.IsNotFound(err) {
-			// binding-request is not found, empty result means requeue
-			return reconcile.Result{}, nil
-		}
-		// error on executing the request, requeue informing the error
-		return reconcile.Result{}, err
+		return RequeueOnNotFound(err)
 	}
 
 	logger.WithValues("ServiceBindingRequest.Name", instance.Name).
@@ -94,6 +81,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Updating applications to use intermediary secret
 	//
 
+	// TODO: very long block that needs to be extracted;
 	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
 	logger.Info("Searching applications to receive intermediary secret bind...")
 
@@ -111,10 +99,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				return reconcile.Result{}, nil
-			}
-			return reconcile.Result{Requeue: true}, err
+			return RequeueOnNotFound(err)
 		}
 
 		if len(deploymentConfigListObj.Items) == 0 {
@@ -145,10 +130,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		deploymentListObj := &extv1beta1.DeploymentList{}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
 		if err != nil {
-			if errors.IsNotFound(err) {
-				return reconcile.Result{}, nil
-			}
-			return reconcile.Result{Requeue: true}, err
+			return RequeueOnNotFound(err)
 		}
 
 		if len(deploymentListObj.Items) == 0 {
@@ -176,5 +158,5 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	logger.Info("All done!")
-	return reconcile.Result{}, nil
+	return Done()
 }
