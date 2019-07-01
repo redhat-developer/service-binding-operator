@@ -45,59 +45,6 @@ func decodeString(encoded string) (string, error) {
 	return string(decoded), nil
 }
 
-// selectCRDDescription based on ServiceBindingRequest and a list of CSV (Cluster Service Version)
-// picking the one that matches backing-selector rule, and returning the CRD description object.
-func (r *Reconciler) selectCRDDescription(
-	logger logr.Logger,
-	instance *v1alpha1.ServiceBindingRequest,
-	csvList *olmv1alpha1.ClusterServiceVersionList,
-) *olmv1alpha1.CRDDescription {
-	// based on backing-selector, looking for custom resource definition
-	backingSelector := instance.Spec.BackingSelector
-
-	logger.WithValues(
-		"BackingSelector.ResourceName", backingSelector.ResourceName,
-		"BackingSelector.ResourceVersion", backingSelector.ResourceVersion,
-	).Info("Looking for a CSV based on backing-selector")
-
-	for _, csv := range csvList.Items {
-		logger.WithValues("ClusterServiceVersion.Name", csv.Name).Info("Inspecting CSV...")
-		for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
-			logger = logger.WithValues(
-				"CRD.Name", crd.Name,
-				"CRD.Version", crd.Version,
-				"CRD.Kind", crd.Kind)
-			logger.Info("Inspecting CRD...")
-
-			// skipping entries that don't match backing selector name and version
-			if backingSelector.ResourceName != crd.Name {
-				continue
-			}
-			if crd.Version != "" && backingSelector.ResourceVersion != crd.Version {
-				continue
-			}
-
-			logger.Info("CRD matches backing-selector!")
-			return &crd
-		}
-	}
-
-	return nil
-}
-
-// selectCRDByName based in a list of CRDs select the one with matching name.
-func (r *Reconciler) selectCRDByName(
-	list *unstructured.UnstructuredList,
-	name string,
-) *unstructured.Unstructured {
-	for _, unstructuredObj := range list.Items {
-		if name == unstructuredObj.GetName() {
-			return &unstructuredObj
-		}
-	}
-	return nil
-}
-
 // pathValue read value of a given "path" inside of informed custom resource definition instance.
 func (r *Reconciler) pathValue(crd *unstructured.Unstructured, path string) (string, error) {
 	object := crd.Object
@@ -276,43 +223,7 @@ func (r *Reconciler) retrieveBindingData(
 	return data, nil
 }
 
-// extractConnectTo based on a service-binding-request extract the special "connects-to" label value.
-func (r *Reconciler) extractConnectTo(instance *v1alpha1.ServiceBindingRequest) (string, error) {
-	value, exists := instance.Spec.ApplicationSelector.MatchLabels[connectsToLabel]
-	if !exists {
-		return "", fmt.Errorf("unable to find '%s' in service-binding-request", connectsToLabel)
-	}
-	return value, nil
-}
-
-func (r *Reconciler) searchByLabel(
-	ns string,
-	kind string,
-	matchLabels map[string]string,
-) (*unstructured.UnstructuredList, error) {
-	listOpts := &client.ListOptions{
-		Namespace:     ns,
-		LabelSelector: labels.SelectorFromSet(matchLabels),
-	}
-
-	apiVersion := "extensions/v1beta1"
-	if strings.ToLower(kind) == "deploymentconfig" {
-		apiVersion = "deploymentconfigs.apps.openshift.io/v1"
-	}
-
-	listObj := &unstructured.UnstructuredList{Object: map[string]interface{}{
-		"kind":       kind,
-		"apiVersion": apiVersion,
-	}}
-	err := r.client.List(context.TODO(), listOpts, listObj)
-	if err != nil {
-		return nil, err
-	}
-
-	return listObj, nil
-}
-
-// appendEnvFrom based on secret name and list of EnvFromSource instances, making sure scret is
+// appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
 func (r *Reconciler) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
 	for _, env := range envList {
@@ -362,66 +273,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.WithValues("ServiceBindingRequest.Name", instance.Name).
 		Info("Found service binding request to inspect")
 
-	// list of cluster service version in the namespace
-	csvList := &olmv1alpha1.ClusterServiceVersionList{}
-	err = r.client.List(ctx, &client.ListOptions{Namespace: request.Namespace}, csvList)
+	planner := NewPlanner(ctx, r.client, request.Namespace, instance)
+	plan, err := planner.Plan()
 	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("Empty CSV list, requeueing the request")
-			return reconcile.Result{}, nil
-		}
-		logger.Error(err, "Error on retrieving CSV list")
-		return reconcile.Result{Requeue: true}, err
+		return RequeueOnNotFound(err)
 	}
 
-	// selecting a CSV that matches backing-selector
-	crdDescription := r.selectCRDDescription(logger, instance, csvList)
-	if crdDescription == nil {
-		// unable to obtain a CSV, requeueing
-		logger.Info("Warning: Unable to select a CSV object, requeueing!")
-		return reconcile.Result{}, nil
-	}
-
-	logger = logger.WithValues(
-		"CRDDescription.Name", crdDescription.Name,
-		"CRDDescription.Version", crdDescription.Version,
-		"CRDDescription.Kind", crdDescription.Kind)
-	logger.Info("Found CRDDescription of service to start binding...")
-
-	// based in the selected CSV
-	unstructuredObj := map[string]interface{}{
-		"kind":       crdDescription.Kind,
-		"apiVersion": fmt.Sprintf("%s/%s", crdDescription.Name, crdDescription.Version),
-	}
-	unstructuredObjList := &unstructured.UnstructuredList{Object: unstructuredObj}
-
-	err = r.client.List(ctx, &client.ListOptions{Namespace: request.Namespace}, unstructuredObjList)
-	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("Empty CRD list, requeueing the request")
-			return reconcile.Result{}, nil
-		}
-		logger.Error(err, "Error on retrieving CRD list")
-		return reconcile.Result{Requeue: true}, err
-	}
-
-	// extracing label that informs the CRD name of backend service
-	crdName, err := r.extractConnectTo(instance)
-	if err != nil {
-		logger.Error(err, "Unable to define target backend CRD")
-		return reconcile.Result{Requeue: true}, err
-	}
-
-	logger = logger.WithValues(connectsToLabel, crdName)
-	logger.Info("Target CRD service")
-
-	targetCRD := r.selectCRDByName(unstructuredObjList, crdName)
-	if targetCRD == nil {
-		logger.Info("Unable to find backend service to connect!")
-		return reconcile.Result{Requeue: true}, err
-	}
-
-	bindingData, err := r.retrieveBindingData(logger, request.Namespace, crdDescription, targetCRD)
+	bindingData, err := r.retrieveBindingData(logger, plan.ns, plan.crdDescription, plan.crd)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// when underlying objects are not found, simple requeue without error
