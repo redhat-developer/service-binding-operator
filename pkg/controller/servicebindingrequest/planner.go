@@ -34,9 +34,9 @@ type Plan struct {
 	crd            *ustrv1.Unstructured        // custom resource definition
 }
 
-// const (
-// 	connectsToLabel = "connects-to"
-// )
+const (
+	connectsToLabel = "connects-to"
+)
 
 // extractConnectTo inspect ServiceBindingRequest to extract connects-to value.
 func (p *Planner) extractConnectsTo() string {
