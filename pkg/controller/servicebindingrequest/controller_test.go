@@ -6,7 +6,6 @@ import (
 
 	osappsv1 "github.com/openshift/api/apps/v1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,6 +14,8 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 func TestServiceBindingRequestController(t *testing.T) {
@@ -116,7 +117,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 		cl := fake.NewFakeClient(objs...)
 
 		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+		r := &Reconciler{client: cl, scheme: s}
 
 		// Mock request to simulate Reconcile() being called on an event for a
 		// watched resource .
@@ -192,7 +193,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 		cl := fake.NewFakeClient(objs...)
 
 		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+		r := &Reconciler{client: cl, scheme: s}
 
 		// Mock request to simulate Reconcile() being called on an event for a
 		// watched resource .
@@ -268,7 +269,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 		cl := fake.NewFakeClient(objs...)
 
 		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+		r := &Reconciler{client: cl, scheme: s}
 
 		// Mock request to simulate Reconcile() being called on an event for a
 		// watched resource .
@@ -344,7 +345,7 @@ func TestServiceBindingRequestController(t *testing.T) {
 		cl := fake.NewFakeClient(objs...)
 
 		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+		r := &Reconciler{client: cl, scheme: s}
 
 		// Mock request to simulate Reconcile() being called on an event for a
 		// watched resource .
@@ -401,7 +402,7 @@ func TestCornerCasesServiceBindingRequestController(t *testing.T) {
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			BackingSelector: v1alpha1.BackingSelector{
 				ResourceName:    "specialdb.example.org",
-				ResourceVersion: "v1apha1",
+				ResourceVersion: "v1alpha1",
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				MatchLabels: map[string]string{
@@ -423,7 +424,7 @@ func TestCornerCasesServiceBindingRequestController(t *testing.T) {
 		cl := fake.NewFakeClient(objs...)
 
 		// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-		r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+		r := &Reconciler{client: cl, scheme: s}
 
 		// Mock request to simulate Reconcile() being called on an event for a
 		// watched resource .
@@ -515,7 +516,7 @@ func TestCornerCasesServiceBindingRequestController(t *testing.T) {
 			cl := fake.NewFakeClient(objs...)
 
 			// Create a ReconcileServiceBindingRequest object with the scheme and fake client.
-			r := &ReconcileServiceBindingRequest{client: cl, scheme: s}
+			r := &Reconciler{client: cl, scheme: s}
 
 			// Mock request to simulate Reconcile() being called on an event for a
 			// watched resource .
