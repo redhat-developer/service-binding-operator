@@ -111,8 +111,10 @@ func (r *Reconciler) readObjectAttributes(
 	// selecting object based on name
 	var unstructuredObj *unstructured.Unstructured
 	for _, object := range unstructuredObjList.Items {
+		logger.WithValues("Object.Name", object.GetName()).Info("Inspecting object")
 		if name == object.GetName() {
 			unstructuredObj = &object
+			break
 		}
 	}
 
@@ -122,12 +124,16 @@ func (r *Reconciler) readObjectAttributes(
 		return nil, errors.NewNotFound(corev1.Resource(kind), name)
 	}
 
-	logger.Info("Object found, extracting attributes...")
+	logger.WithValues("Object.Name", unstructuredObj.GetName()).
+		Info("Object found, extracting attributes...")
+
 	rawData, exists := unstructuredObj.Object["data"].(map[string]interface{})
 	if !exists {
 		logger.Info("Warning: unable to find 'data' field in object!")
 		return nil, errors.NewNotFound(corev1.Resource(kind), name)
 	}
+
+	logger.WithValues("RAWDATA", fmt.Sprintf("%#v", rawData)).Info("DEBUG")
 
 	data := make(map[string]string)
 	for _, attribute := range attributes {
@@ -207,6 +213,17 @@ func (r *Reconciler) retrieveBindingData(
 		}
 
 		for kind, attributes := range kindAttributes {
+			logger = logger.WithValues(
+				"xDescriptor.Kind", kind,
+				"xDescriptor.Attributes", attributes,
+			)
+			logger.Info("Loading attributes...")
+
+			if kind == "descriptor" {
+				logger.Info("DEBUG: Skipping descriptor!")
+				continue
+			}
+
 			// read all keys from object that we intent to bind
 			descriptorData, err := r.readObjectAttributes(logger, ns, kind, objectName, attributes)
 			if err != nil {
