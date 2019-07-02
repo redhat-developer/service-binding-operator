@@ -44,15 +44,14 @@ spec:
               - command:
                 - service-binding-operator
                 env:
-                - name: WATCH_NAMESPACE
-                  value: ""
+                - name: ""
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: REPLACE_IMAGE
+                image: quay.io/redhat-developer/app-binding-operator:v0.0.4
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
@@ -122,3 +121,4 @@ spec:
   provider:
     name: Red Hat, Inc.
   version: 0.0.4
+  replaces: service-binding-operator.v0.0.1
