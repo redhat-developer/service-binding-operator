@@ -16,6 +16,9 @@ spec:
     - kind: ServiceBindingRequest
       name: servicebindingrequests.apps.openshift.io
       version: v1alpha1
+      group: apps.openshift.io
+      description: Service Binding Operator
+      displayName: ServiceBindingRequest
   description: Placeholder description
   displayName: Operator Service Binding Operator
   install:

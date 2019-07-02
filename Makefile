@@ -62,13 +62,26 @@ help:/
 		} \
 	}' $(MAKEFILE_LIST)
 
-
+#-----------------------------------------------------------------------------
+# Global Variables
+#-----------------------------------------------------------------------------
 
 # By default the project should be build under GOPATH/src/github.com/<orgname>/<reponame>
 GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
+GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
+
+OPERATOR_VERSION ?= 0.0.1
+OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
+OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
+OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
+OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+QUAY_TOKEN ?= ""
+
+MANIFESTS_DIR ?= ./manifests
+MANIFESTS_TMP ?= ./tmp/manifests
 
 #---------------------------------------------------
 # Lint targets
@@ -136,10 +149,35 @@ test-unit:
 .PHONY: build
 ## Build: using operator-sdk to build a new image
 build:
-	$(Q)GO111MODULE=on operator-sdk build "$(GO_PACKAGE_ORG_NAME)/$(GO_PACKAGE_REPO_NAME):latest"
+	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
-# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and
-# test all of the module's packages based on the state of the go.mod files and Go source code.
+## Vendor: "go mod vendor" resets the vendor folder to what's defined in go.mod
 ./vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
 
+## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
+generate-csv:
+	operator-sdk olm-catalog gen-csv --csv-version=$(OPERATOR_VERSION) --verbose
+
+generate-olm:
+	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
+
+#---------------------------------------------------------
+# Deploy
+#---------------------------------------------------------
+
+prepare-csv: build
+	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
+	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
+	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
+	operator-courier --verbose verify $(MANIFESTS_TMP)
+
+.PHONY: push-operator
+push-operator: prepare-csv
+	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
+
+push-image: build
+	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
