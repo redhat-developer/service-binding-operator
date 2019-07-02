@@ -8,12 +8,7 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	"github.com/redhat-developer/service-binding-operator/pkg/apis"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller"
-
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
@@ -25,8 +20,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-
 	osappsv1 "github.com/openshift/api/apps/v1"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller"
 )
 
 // Change below variables to serve metrics on different host or port.
