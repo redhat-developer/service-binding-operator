@@ -154,8 +154,14 @@ test-e2e-olm-ci:
 # Build and vendor tarets
 #---------------------------------------------------------
 
-.PHONY: build-image
-## Build: using operator-sdk to build a new image
+.PHONY: build
+## Build: compile the operator for Linux/AMD64.
+build: ./out/operator
+
+./out/operator:
+$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+
+## Build-Image: using operator-sdk to build a new image
 build-image:
 	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
