@@ -44,10 +44,7 @@ spec:
               - command:
                 - service-binding-operator
                 env:
-                - name: WATCH_NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: ""
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
