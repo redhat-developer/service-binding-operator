@@ -155,9 +155,14 @@ test-e2e-olm-ci:
 #---------------------------------------------------------
 
 .PHONY: build
-## Build: using operator-sdk to build a new image
+## Build: compile the operator for Linux/AMD64.
 build: ./out/operator
+
 ./out/operator:
+$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+
+## Build-Image: using operator-sdk to build a new image
+build-image:
 	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Vendor: "go mod vendor" resets the vendor folder to what's defined in go.mod
@@ -177,7 +182,7 @@ generate-olm:
 #---------------------------------------------------------
 
 ## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
-prepare-csv: build
+prepare-csv: build-image
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}
@@ -193,7 +198,7 @@ push-operator: prepare-csv
 	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
 
 ## Push-Image: push docker image to upstream, including latest tag.
-push-image: build
+push-image: build-image
 	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
 	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 	docker push "$(OPERATOR_IMAGE):latest"
