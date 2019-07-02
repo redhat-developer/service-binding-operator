@@ -167,17 +167,25 @@ generate-olm:
 # Deploy
 #---------------------------------------------------------
 
+## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
 prepare-csv: build
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
+	@rm -rf $(MANIFESTS_TMP) || true
+	@mkdir -p ${MANIFESTS_TMP}
 	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
 	operator-courier --verbose verify $(MANIFESTS_TMP)
+	@rm -rf $(MANIFESTS_TMP)
 
 .PHONY: push-operator
+## Push-Operator: Uplaod operator to Quay.io application repository
 push-operator: prepare-csv
 	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
 
+## Push-Image: push docker image to upstream, including latest tag.
 push-image: build
+	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
 	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	docker push "$(OPERATOR_IMAGE):latest"
