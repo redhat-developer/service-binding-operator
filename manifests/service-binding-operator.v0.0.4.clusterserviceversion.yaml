@@ -44,7 +44,8 @@ spec:
               - command:
                 - service-binding-operator
                 env:
-                - name: ""
+                - name: WATCH_NAMESPACE
+                  value: ""
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
@@ -121,4 +122,3 @@ spec:
   provider:
     name: Red Hat, Inc.
   version: 0.0.4
-  replaces: service-binding-operator.v0.0.1
