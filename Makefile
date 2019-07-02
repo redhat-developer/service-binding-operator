@@ -45,7 +45,7 @@ help:/
 	$(info Available targets)
 	$(info -----------------)
 	@awk '/^[a-zA-Z\-%\_0-9]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/);
+		helpMessage = match(lastLine, /^## (.*)/); \
 		helpCommand = substr($$1, 0, index($$1, ":")-1); \
 		if (helpMessage) { \
 			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
@@ -148,7 +148,8 @@ test-unit:
 
 .PHONY: build
 ## Build: using operator-sdk to build a new image
-build:
+build: ./out/operator
+./out/operator:
 	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Vendor: "go mod vendor" resets the vendor folder to what's defined in go.mod
