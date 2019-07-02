@@ -73,7 +73,7 @@ GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.0.1
+OPERATOR_VERSION ?= 0.0.4
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
@@ -177,7 +177,6 @@ prepare-csv: build
 	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
 	operator-courier --verbose verify $(MANIFESTS_TMP)
-	@rm -rf $(MANIFESTS_TMP)
 
 .PHONY: push-operator
 ## Push-Operator: Uplaod operator to Quay.io application repository
