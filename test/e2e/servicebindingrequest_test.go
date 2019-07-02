@@ -24,13 +24,12 @@ import (
 )
 
 var (
-	retryInterval        = time.Second * 5
-	timeout              = time.Second * 120
-	cleanupRetryInterval = time.Second * 1
-	cleanupTimeout       = time.Second * 5
-	replicas             = 1
-	operatorKind         = "ServiceBindingRequest"
-	operatorAPIVersion   = "apps.openshift.io/v1alpha1"
+	retryInterval      = time.Second * 5
+	timeout            = time.Second * 120
+	cleanupTimeout     = time.Second * 5
+	replicas           = 1
+	operatorKind       = "ServiceBindingRequest"
+	operatorAPIVersion = "apps.openshift.io/v1alpha1"
 )
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
