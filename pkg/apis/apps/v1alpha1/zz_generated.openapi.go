@@ -72,8 +72,14 @@ func schema_pkg_apis_apps_v1alpha1_BackingSelector(ref common.ReferenceCallback)
 							Format: "",
 						},
 					},
+					"objectName": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
-				Required: []string{"resourceName", "resourceVersion"},
+				Required: []string{"resourceName", "resourceVersion", "objectName"},
 			},
 		},
 		Dependencies: []string{},
@@ -131,7 +137,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 				Properties: map[string]spec.Schema{
 					"backingSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingSelector:\n\t\tresourceName: database.example.org\nExample 2:\n\tbackingSelector:\n\t\tresourceName: database.example.org\n\t\tresourceVersion: v1alpha1",
+							Description: "BackingSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingSelector:\n\t\tresourceName: database.example.org\n     objectName: mysql-database\nExample 2:\n\tbackingSelector:\n\t\tresourceName: database.example.org\n\t\tresourceVersion: v1alpha1\n     objectName: mysql-database",
 							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingSelector"),
 						},
 					},
