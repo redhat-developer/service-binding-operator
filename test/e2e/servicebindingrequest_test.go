@@ -234,7 +234,7 @@ func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framewo
 			Namespace: ns,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BackingSelector: v1alpha1.BackingSelector{
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				ResourceKind:    crdName,
 				ResourceVersion: crdVersion,
 			},

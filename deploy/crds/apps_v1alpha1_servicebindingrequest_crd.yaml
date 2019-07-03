@@ -53,8 +53,8 @@ spec:
                 its normal operation. Examples include datastores (such as MySQL or
                 CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd),
                 SMTP services for outbound email (such as Postfix), and caching systems
-                (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceName:
-                database.example.org      resourceRef: mysql-database Example 2: \tbackingSelector:
+                (such as Memcached).  Example 1: \tbackingServiceSelector: \t\tresourceName:
+                database.example.org      resourceRef: mysql-database Example 2: \tbackingServiceSelector:
                 \t\tresourceName: database.example.org \t\tresourceVersion: v1alpha1
                 \     resourceRef: mysql-database"
               properties:
