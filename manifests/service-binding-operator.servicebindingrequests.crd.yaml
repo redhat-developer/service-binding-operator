@@ -1,0 +1,82 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: servicebindingrequests.apps.openshift.io
+spec:
+  group: apps.openshift.io
+  names:
+    kind: ServiceBindingRequest
+    listKind: ServiceBindingRequestList
+    plural: servicebindingrequests
+    singular: servicebindingrequest
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            applicationSelector:
+              description: "ApplicationSelector is used to identify the application
+                connecting to the backing service operator. Example 1: \tapplicationSelector:
+                \t\tmatchLabels: \t\t\tconnects-to: postgres \t\t\tenvironment: stage
+                \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tresourceKind:
+                Deployment \t\tresourceName: my-app"
+              properties:
+                matchLabels:
+                  additionalProperties:
+                    type: string
+                  type: object
+                resourceKind:
+                  type: string
+              required:
+              - matchLabels
+              - resourceKind
+              type: object
+            backingSelector:
+              description: "BackingSelector is used to identify the backing service
+                operator.  Refer: https://12factor.net/backing-services A backing
+                service is any service the app consumes over the network as part of
+                its normal operation. Examples include datastores (such as MySQL or
+                CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd),
+                SMTP services for outbound email (such as Postfix), and caching systems
+                (such as Memcached).  Example 1: \tbackingSelector: \t\tresourceName:
+                database.example.org      objectName: mysql-database Example 2: \tbackingSelector:
+                \t\tresourceName: database.example.org \t\tresourceVersion: v1alpha1
+                \     objectName: mysql-database"
+              properties:
+                objectName:
+                  type: string
+                resourceName:
+                  type: string
+                resourceVersion:
+                  type: string
+              required:
+              - resourceName
+              - resourceVersion
+              - objectName
+              type: object
+          required:
+          - backingSelector
+          - applicationSelector
+          type: object
+        status:
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

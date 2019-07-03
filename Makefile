@@ -39,8 +39,6 @@ $(shell mkdir -p ./out);
 # HELP target
 #----------------------------------------------------------------
 
-## This target is used to display all other target
-.PHONY: help
 # Based on https://gist.github.com/rcmachado/af3db315e31383502660
 ## Display this help text
 help:/
@@ -57,21 +55,33 @@ help:/
 		} \
 	} \
 	{ hasComment = match(lastLine, /^## (.*)/); \
-          if(hasComment) { \
+		if(hasComment) { \
             lastLine=lastLine$$0; \
-	  } \
-          else { \
-	    lastLine = $$0 \
-          } \
-        }' $(MAKEFILE_LIST)
+		} else { \
+			lastLine = $$0 \
+		} \
+	}' $(MAKEFILE_LIST)
 
-
+#-----------------------------------------------------------------------------
+# Global Variables
+#-----------------------------------------------------------------------------
 
 # By default the project should be build under GOPATH/src/github.com/<orgname>/<reponame>
 GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
+GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
+
+OPERATOR_VERSION ?= 0.0.4
+OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
+OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
+OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
+OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+QUAY_TOKEN ?= ""
+
+MANIFESTS_DIR ?= ./manifests
+MANIFESTS_TMP ?= ./tmp/manifests
 
 #---------------------------------------------------
 # Lint targets
@@ -144,14 +154,51 @@ test-e2e-olm-ci:
 # Build and vendor tarets
 #---------------------------------------------------------
 
-# Vendor target: "go mod vendor" resets the main module's vendor directory to include all packages needed to build and 
-# test all of the module's packages based on the state of the go.mod files and Go source code.
-./vendor: go.mod go.sum
-	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
-
-
-.PHONY: build
+.PHONY: build 
+## Build: compile the operator for Linux/AMD64.
 build: ./out/operator
 
 ./out/operator:
-	$(Q)CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build  ${V_FLAG} -o ./out/operator  cmd/manager/main.go
+	$(Q)CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+
+## Build-Image: using operator-sdk to build a new image
+build-image:
+	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+
+## Vendor: "go mod vendor" resets the vendor folder to what's defined in go.mod
+./vendor: go.mod go.sum
+	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
+
+## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
+generate-csv:
+	operator-sdk olm-catalog gen-csv --csv-version=$(OPERATOR_VERSION) --verbose
+
+generate-olm:
+	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
+
+#---------------------------------------------------------
+# Deploy
+#---------------------------------------------------------
+
+## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
+prepare-csv: build-image
+	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
+	@rm -rf $(MANIFESTS_TMP) || true
+	@mkdir -p ${MANIFESTS_TMP}
+	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
+	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
+	operator-courier --verbose verify $(MANIFESTS_TMP)
+
+.PHONY: push-operator
+## Push-Operator: Uplaod operator to Quay.io application repository
+push-operator: prepare-csv
+	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
+
+## Push-Image: push docker image to upstream, including latest tag.
+push-image: build-image
+	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
+	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	docker push "$(OPERATOR_IMAGE):latest"
