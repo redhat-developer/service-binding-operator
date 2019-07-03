@@ -2,11 +2,11 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"example-servicebindingrequest"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"production"},"resourceKind":"Deployment"},"backingServiceSelector":{"resourceName":"database.example.org","resourceVersion":"v1alpha1"}}}]'
+    alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"example-servicebindingrequest"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"production"},"resourceKind":"Deployment"},"backingSelector":{"resourceName":"database.example.org","resourceVersion":"v1alpha1"}}}]'
     capabilities: Basic Install
-    containerImage: quay.io/redhat-developer/app-binding-operator:v0.0.7
+    containerImage: quay.io/redhat-developer/app-binding-operator:v0.0.10
     description: An operator to support binding capabilities between imported apps and operator backed services
-  name: service-binding-operator.v0.0.7
+  name: service-binding-operator.v0.0.10
   namespace: placeholder
 spec:
   links:
@@ -52,7 +52,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: quay.io/redhat-developer/app-binding-operator:v0.0.7
+                image: quay.io/redhat-developer/app-binding-operator:v0.0.10
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
@@ -102,11 +102,12 @@ spec:
           verbs:
           - '*'
         - apiGroups:
-          - ""
+          - "*"
           resources:
           - "*"
           verbs:
           - "get"
+          - "list"
         serviceAccountName: service-binding-operator
     strategy: deployment
   installModes:
@@ -121,4 +122,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat, Inc.
-  version: 0.0.7
+  version: 0.0.10
