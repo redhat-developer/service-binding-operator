@@ -3,9 +3,10 @@ kind: ServiceBindingRequest
 metadata:
   name: example-servicebindingrequest
 spec:
-  backingSelector:
-    resourceName: database.example.org
+  backingServiceSelector:
+    resourceKind: database.example.org
     resourceVersion: v1alpha1
+    resourceRef: mysqldb
   applicationSelector:
     matchLabels:
       connects-to: postgres

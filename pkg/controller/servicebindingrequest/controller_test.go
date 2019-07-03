@@ -31,8 +31,8 @@ func TestServiceBindingRequestController(t *testing.T) {
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BackingSelector: v1alpha1.BackingSelector{
-				ResourceName: "specialdb.example.org",
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+				ResourceKind: "specialdb.example.org",
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				MatchLabels: map[string]string{
@@ -400,9 +400,9 @@ func TestCornerCasesServiceBindingRequestController(t *testing.T) {
 			Namespace: namespace,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BackingSelector: v1alpha1.BackingSelector{
-				ResourceName:    "specialdb.example.org",
-				ResourceVersion: "v1alpha1",
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+				ResourceKind:    "specialdb.example.org",
+				ResourceVersion: "v1apha1",
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				MatchLabels: map[string]string{

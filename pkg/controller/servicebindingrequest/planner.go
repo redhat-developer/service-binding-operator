@@ -48,13 +48,13 @@ func (p *Planner) extractConnectsTo() string {
 	return value
 }
 
-// searchCRDDescription based on BackingSelector instance, find a CustomResourceDefinitionDescription
+// searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
-	var backingSelector = p.sbr.Spec.BackingSelector
+	var backingServiceSelector = p.sbr.Spec.BackingServiceSelector
 	var logger = p.logger.WithValues(
-		"BackingSelector.ResourceName", backingSelector.ResourceName,
-		"BackingSelector.ResourceVersion", backingSelector.ResourceVersion,
+		"BackingServiceSelector.ResourceKind", backingServiceSelector.ResourceKind,
+		"BackingServiceSelector.ResourceVersion", backingServiceSelector.ResourceVersion,
 	)
 	var err error
 
@@ -78,10 +78,10 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 			)
 			logger.Info("Inspecting CustomResourceDefinitionDescription object...")
 
-			if !strings.HasSuffix(crd.Name, backingSelector.ResourceName) {
+			if !strings.HasSuffix(crd.Name, backingServiceSelector.ResourceKind) {
 				continue
 			}
-			if crd.Version != "" && backingSelector.ResourceVersion != crd.Version {
+			if crd.Version != "" && backingServiceSelector.ResourceVersion != crd.Version {
 				continue
 			}
 
@@ -98,9 +98,9 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 func (p *Planner) searchCRD(
 	kind, name string,
 ) (*ustrv1.Unstructured, error) {
-	var backingSelector = p.sbr.Spec.BackingSelector
+	var backingServiceSelector = p.sbr.Spec.BackingServiceSelector
 
-	apiVersion := fmt.Sprintf("%s/%s", backingSelector.ResourceName, backingSelector.ResourceVersion)
+	apiVersion := fmt.Sprintf("%s/%s", backingServiceSelector.ResourceKind, backingServiceSelector.ResourceVersion)
 	obj := map[string]interface{}{"kind": kind, "apiVersion": apiVersion}
 	objList := &ustrv1.UnstructuredList{Object: obj}
 
