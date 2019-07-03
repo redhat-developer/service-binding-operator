@@ -14,7 +14,7 @@ import (
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector":             schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
+		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
 		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
@@ -60,7 +60,7 @@ func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCa
 			SchemaProps: spec.SchemaProps{
 				Description: "BackingServiceSelector defines the selector based on resource name, version, and resource kind",
 				Properties: map[string]spec.Schema{
-					"resourceType": {
+					"resourceKind": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
@@ -79,7 +79,7 @@ func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCa
 						},
 					},
 				},
-				Required: []string{"resourceType", "resourceVersion", "resourceRef"},
+				Required: []string{"resourceKind", "resourceVersion", "resourceRef"},
 			},
 		},
 		Dependencies: []string{},
