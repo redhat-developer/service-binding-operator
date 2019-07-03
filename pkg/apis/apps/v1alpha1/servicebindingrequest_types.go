@@ -41,9 +41,11 @@ type ServiceBindingRequestSpec struct {
 	//			environment: stage
 	//		resourceKind: Deployment
 	// Example 2:
+	// (By default resourceKind is Deployment)
 	//	applicationSelector:
-	//		resourceKind: Deployment
-	//		resourceType: my-app
+	//		matchLabels:
+	//			connects-to: postgres
+	//			environment: stage
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
