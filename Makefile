@@ -220,6 +220,8 @@ push-image: build-image
 	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 	docker push "$(OPERATOR_IMAGE):latest"
 
+## -- Local deployment targets --
+
 .PHONY: local
 ## Run operator locally
 local: deploy-clean deploy-rbac deploy-crds deploy-cr
@@ -253,9 +255,7 @@ deploy-clean:
 	$(Q)-kubectl delete -f deploy/service_account.yaml
 
 
-#---------------------------------------------------------
-# Cleaning targets
-#---------------------------------------------------------
+## -- Cleanup targets --
 
 .PHONY: clean
 ## Removes temp directories
