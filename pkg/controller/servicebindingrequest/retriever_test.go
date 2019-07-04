@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,7 +24,7 @@ func TestRetrieverNew(t *testing.T) {
 	crd := mocks.DatabaseCRDMock(ns, crdName)
 
 	genericCRDObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&crd)
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
 	plan := &Plan{
 		Ns:             ns,
@@ -36,7 +38,7 @@ func TestRetrieverNew(t *testing.T) {
 	fakeClient := fake.NewFakeClient(objs...)
 
 	retriever = NewRetriever(context.TODO(), fakeClient, plan)
-	assert.NotNil(t, retriever)
+	require.NotNil(t, retriever)
 }
 
 func TestRetrieverGetCRDKey(t *testing.T) {
