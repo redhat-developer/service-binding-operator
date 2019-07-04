@@ -103,7 +103,7 @@ MANIFESTS_TMP ?= ./tmp/manifests
 GOLANGCI_LINT_BIN=./out/golangci-lint
 .PHONY: lint
 ## Runs linters on Go code files and YAML files
-lint: lint-go-code lint-yaml
+lint: lint-go-code lint-yaml courier
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
@@ -121,6 +121,15 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
 
+.PHONY: courier
+## Validate manifests using operator-courier
+courier:
+	$(Q)python3 -m venv ./out/venv3
+	$(Q)./out/venv3/bin/pip install --upgrade setuptools
+	$(Q)./out/venv3/bin/pip install --upgrade pip
+	$(Q)./out/venv3/bin/pip install operator-courier
+	$(Q)./out/venv3/bin/operator-courier flatten ./manifests ./out/manifests
+	$(Q)./out/venv3/bin/operator-courier verify ./out/manifests
 
 ## -- Test targets --
 
@@ -210,3 +219,45 @@ push-image: build-image
 	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
 	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 	docker push "$(OPERATOR_IMAGE):latest"
+
+## -- Local deployment targets --
+
+.PHONY: local
+## Run operator locally
+local: deploy-clean deploy-rbac deploy-crds deploy-cr
+	$(Q)operator-sdk up local
+
+.PHONY: deploy-rbac
+## Setup service account and deploy RBAC
+deploy-rbac:
+	$(Q)kubectl create -f deploy/service_account.yaml
+	$(Q)kubectl create -f deploy/role.yaml
+	$(Q)kubectl create -f deploy/role_binding.yaml
+
+.PHONY: deploy-crds
+## Deploy CRD
+deploy-crds:
+	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+
+.PHONY: deploy-cr
+## Deploy CRs
+deploy-cr:
+	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
+
+.PHONY: deploy-clean
+## Removing CRDs and CRs
+deploy-clean:
+	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
+	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+	$(Q)-kubectl delete -f deploy/operator.yaml
+	$(Q)-kubectl delete -f deploy/role_binding.yaml
+	$(Q)-kubectl delete -f deploy/role.yaml
+	$(Q)-kubectl delete -f deploy/service_account.yaml
+
+
+## -- Cleanup targets --
+
+.PHONY: clean
+## Removes temp directories
+clean:
+	$(Q)-rm -rf ${V_FLAG} ./out
