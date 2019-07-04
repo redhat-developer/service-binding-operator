@@ -83,6 +83,8 @@ QUAY_TOKEN ?= ""
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
 
+TEST_EXTRA_ARGS ?= ""
+
 #---------------------------------------------------
 # Lint targets
 #---------------------------------------------------
@@ -140,7 +142,7 @@ test-e2e: e2e-setup
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)GO111MODULE=on GOCACHE=$(shell pwd)/out/gocache go test $(shell GOCACHE=$(shell pwd)/out/gocache go list ./...|grep -v e2e) -v -mod vendor
+	$(Q)GO111MODULE=on GOCACHE=$(shell pwd)/out/gocache go test $(shell GOCACHE=$(shell pwd)/out/gocache go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
 
 .PHONY: test-e2e-olm-ci
 test-e2e-olm-ci:
@@ -154,7 +156,7 @@ test-e2e-olm-ci:
 # Build and vendor tarets
 #---------------------------------------------------------
 
-.PHONY: build 
+.PHONY: build
 ## Build: compile the operator for Linux/AMD64.
 build: ./out/operator
 
