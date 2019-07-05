@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 # It's necessary to set this because some environments don't link sh -> bash.
 SHELL := /bin/bash
 
@@ -19,15 +21,15 @@ V_FLAG =
 S_FLAG = -s
 X_FLAG =
 ifeq ($(VERBOSE),1)
-       Q =
+	Q =
 endif
 ifeq ($(VERBOSE),2)
-       Q =
-       Q_FLAG =
-       QUIET_FLAG =
-       S_FLAG =
-       V_FLAG = -v
-       X_FLAG = -x
+	Q =
+	Q_FLAG =
+	QUIET_FLAG =
+	S_FLAG =
+	V_FLAG = -v
+	X_FLAG = -x
 endif
 
 # Create output directory for artifacts and test results. ./out is supposed to
@@ -35,32 +37,45 @@ endif
 # inside of ./out is wiped once "make clean" is run.
 $(shell mkdir -p ./out);
 
-#----------------------------------------------------------------
-# HELP target
-#----------------------------------------------------------------
+## -- Utility targets --
 
-# Based on https://gist.github.com/rcmachado/af3db315e31383502660
-## Display this help text
-help:/
-	$(info Available targets)
-	$(info -----------------)
-	@awk '/^[a-zA-Z\-%\_0-9]+:/ { \
-		helpMessage = match(lastLine, /^## (.*)/); \
-		helpCommand = substr($$1, 0, index($$1, ":")-1); \
-		if (helpMessage) { \
-			helpMessage = substr(lastLine, RSTART + 3, RLENGTH); \
-			gsub(/##/, "\n                                     ", helpMessage); \
-			printf "%-35s - %s\n", helpCommand, helpMessage; \
-			lastLine = "" \
-		} \
-	} \
-	{ hasComment = match(lastLine, /^## (.*)/); \
-		if(hasComment) { \
-            lastLine=lastLine$$0; \
-		} else { \
-			lastLine = $$0 \
-		} \
-	}' $(MAKEFILE_LIST)
+## Print help message for all Makefile targets
+## Run `make` or `make help` to see the help
+.PHONY: help
+help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
+
+	@printf "Usage:\n  make <target>";
+
+	@awk '{ \
+			if ($$0 ~ /^.PHONY: [a-zA-Z\-\_0-9]+$$/) { \
+				helpCommand = substr($$0, index($$0, ":") + 2); \
+				if (helpMessage) { \
+					printf "\033[36m%-20s\033[0m %s\n", \
+						helpCommand, helpMessage; \
+					helpMessage = ""; \
+				} \
+			} else if ($$0 ~ /^[a-zA-Z\-\_0-9.]+:/) { \
+				helpCommand = substr($$0, 0, index($$0, ":")); \
+				if (helpMessage) { \
+					printf "\033[36m%-20s\033[0m %s\n", \
+						helpCommand, helpMessage; \
+					helpMessage = ""; \
+				} \
+			} else if ($$0 ~ /^##/) { \
+				if (helpMessage) { \
+					helpMessage = helpMessage"\n                     "substr($$0, 3); \
+				} else { \
+					helpMessage = substr($$0, 3); \
+				} \
+			} else { \
+				if (helpMessage) { \
+					print "\n                     "helpMessage"\n" \
+				} \
+				helpMessage = ""; \
+			} \
+		}' \
+		$(MAKEFILE_LIST)
+
 
 #-----------------------------------------------------------------------------
 # Global Variables
@@ -83,24 +98,22 @@ QUAY_TOKEN ?= ""
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
 
-#---------------------------------------------------
-# Lint targets
-#---------------------------------------------------
+## -- Static code analysis (lint) targets --
 
 GOLANGCI_LINT_BIN=./out/golangci-lint
 .PHONY: lint
 ## Runs linters on Go code files and YAML files
-lint: lint-go-code lint-yaml
+lint: lint-go-code lint-yaml courier
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
-lint-yaml: ./vendor ${YAML_FILES}
+lint-yaml: ${YAML_FILES}
 	$(Q)yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
 ## Checks the code with golangci-lint
-lint-go-code: ./vendor $(GOLANGCI_LINT_BIN)
+lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
 	$(Q)GOCACHE=$(shell pwd)/out/gocache ./out/golangci-lint ${V_FLAG} run --deadline=30m
@@ -108,17 +121,24 @@ lint-go-code: ./vendor $(GOLANGCI_LINT_BIN)
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
 
+.PHONY: courier
+## Validate manifests using operator-courier
+courier:
+	$(Q)python3 -m venv ./out/venv3
+	$(Q)./out/venv3/bin/pip install --upgrade setuptools
+	$(Q)./out/venv3/bin/pip install --upgrade pip
+	$(Q)./out/venv3/bin/pip install operator-courier
+	$(Q)./out/venv3/bin/operator-courier flatten ./manifests ./out/manifests
+	$(Q)./out/venv3/bin/operator-courier verify ./out/manifests
 
-#------------------------------------------------------
-# Test targets
-#------------------------------------------------------
+## -- Test targets --
 
 # Generate namespace name for test
-./out/test-namespace:
+out/test-namespace:
 	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > ./out/test-namespace
 
 .PHONY: get-test-namespace
-get-test-namespace: ./out/test-namespace
+get-test-namespace: out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
 
 # E2E test
@@ -150,23 +170,22 @@ test-e2e-olm-ci:
 	$(Q)./hack/check-crds.sh
 	$(Q)operator-sdk test local ./test/e2e --no-setup --go-test-flags "-v -timeout=15m"
 
-#---------------------------------------------------------
-# Build and vendor tarets
-#---------------------------------------------------------
+## -- Build Go binary and OCI image targets --
 
 .PHONY: build 
 ## Build: compile the operator for Linux/AMD64.
-build: ./out/operator
+build: out/operator
 
-./out/operator:
+out/operator:
 	$(Q)CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
 	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
-## Vendor: "go mod vendor" resets the vendor folder to what's defined in go.mod
-./vendor: go.mod go.sum
+
+## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
+vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
@@ -177,9 +196,7 @@ generate-olm:
 	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 
-#---------------------------------------------------------
-# Deploy
-#---------------------------------------------------------
+## -- Publish image and manifests targets --
 
 ## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
 prepare-csv: build-image
@@ -202,3 +219,45 @@ push-image: build-image
 	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
 	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 	docker push "$(OPERATOR_IMAGE):latest"
+
+## -- Local deployment targets --
+
+.PHONY: local
+## Run operator locally
+local: deploy-clean deploy-rbac deploy-crds deploy-cr
+	$(Q)operator-sdk up local
+
+.PHONY: deploy-rbac
+## Setup service account and deploy RBAC
+deploy-rbac:
+	$(Q)kubectl create -f deploy/service_account.yaml
+	$(Q)kubectl create -f deploy/role.yaml
+	$(Q)kubectl create -f deploy/role_binding.yaml
+
+.PHONY: deploy-crds
+## Deploy CRD
+deploy-crds:
+	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+
+.PHONY: deploy-cr
+## Deploy CRs
+deploy-cr:
+	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
+
+.PHONY: deploy-clean
+## Removing CRDs and CRs
+deploy-clean:
+	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
+	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+	$(Q)-kubectl delete -f deploy/operator.yaml
+	$(Q)-kubectl delete -f deploy/role_binding.yaml
+	$(Q)-kubectl delete -f deploy/role.yaml
+	$(Q)-kubectl delete -f deploy/service_account.yaml
+
+
+## -- Cleanup targets --
+
+.PHONY: clean
+## Removes temp directories
+clean:
+	$(Q)-rm -rf ${V_FLAG} ./out
