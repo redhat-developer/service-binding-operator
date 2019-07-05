@@ -4,15 +4,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Add custom validation using kubebuilder tags:
+	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
-	// BackingServiceSelector is used to identify the backing service operator.
+	// BackingSelector is used to identify the backing service operator.
 	//
 	// Refer: https://12factor.net/backing-services
 	// A backing service is any service the app consumes over the network as
@@ -22,15 +23,15 @@ type ServiceBindingRequestSpec struct {
 	// caching systems (such as Memcached).
 	//
 	// Example 1:
-	//	backingServiceSelector:
-	//		resourceKind: database.example.org
-	//      	resourceRef: mysql-database
+	//	backingSelector:
+	//		resourceName: database.example.org
+	//      objectName: mysql-database
 	// Example 2:
-	//	backingServiceSelector:
-	//		resourceKind: database.example.org
+	//	backingSelector:
+	//		resourceName: database.example.org
 	//		resourceVersion: v1alpha1
-	//      	resourceRef: mysql-database
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
+	//      objectName: mysql-database
+	BackingSelector BackingSelector `json:"backingSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
@@ -41,20 +42,18 @@ type ServiceBindingRequestSpec struct {
 	//			environment: stage
 	//		resourceKind: Deployment
 	// Example 2:
-	// (By default resourceKind is Deployment)
 	//	applicationSelector:
-	//		matchLabels:
-	//			connects-to: postgres
-	//			environment: stage
+	//		resourceKind: Deployment
+	//		resourceName: my-app
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 }
 
-// BackingServiceSelector defines the selector based on resource name, version, and resource kind
+// BackingSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
-type BackingServiceSelector struct {
-	ResourceKind    string `json:"resourceKind"`
+type BackingSelector struct {
+	ResourceName    string `json:"resourceName"`
 	ResourceVersion string `json:"resourceVersion"`
-	ResourceRef      string `json:"resourceRef"`
+	ObjectName      string `json:"objectName"`
 }
 
 // ApplicationSelector defines the selector based on labels and resource kind
@@ -66,10 +65,7 @@ type ApplicationSelector struct {
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
-type ServiceBindingRequestStatus struct {
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-}
+type ServiceBindingRequestStatus struct{}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

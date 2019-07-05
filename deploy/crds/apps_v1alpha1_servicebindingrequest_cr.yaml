@@ -1,12 +1,13 @@
+---
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
 metadata:
   name: example-servicebindingrequest
 spec:
-  backingServiceSelector:
-    resourceKind: database.example.org
+  backingSelector:
+    objectName: pg-instance
+    resourceName: database.example.org
     resourceVersion: v1alpha1
-    resourceRef: mysqldb
   applicationSelector:
     matchLabels:
       connects-to: postgres
