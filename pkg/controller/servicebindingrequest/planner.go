@@ -8,9 +8,9 @@ import (
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
-	apiextv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -51,13 +51,14 @@ func (p *Planner) extractConnectsTo() string {
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
-	var backingServiceSelector = p.sbr.Spec.BackingServiceSelector
-	var logger = p.logger.WithValues(
-		"BackingServiceSelector.ResourceKind", backingServiceSelector.ResourceKind,
-		"BackingServiceSelector.ResourceVersion", backingServiceSelector.ResourceVersion,
-	)
+	var resourceName = strings.ToLower(fmt.Sprintf(".%s", p.sbr.Spec.BackingSelector.ResourceName))
+	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingSelector.ResourceVersion)
 	var err error
 
+	logger := p.logger.WithValues(
+		"BackingSelector.ResourceName", resourceName,
+		"BackingSelector.ResourceVersion", resourceVersion,
+	)
 	logger.Info("Looking for a CSV based on backing-selector")
 	csvList := &olmv1alpha1.ClusterServiceVersionList{}
 
@@ -78,10 +79,11 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 			)
 			logger.Info("Inspecting CustomResourceDefinitionDescription object...")
 
-			if !strings.HasSuffix(crd.Name, backingServiceSelector.ResourceKind) {
+			// checking for suffix since is expected to have object type as prefix
+			if !strings.HasSuffix(strings.ToLower(crd.Name), resourceName) {
 				continue
 			}
-			if crd.Version != "" && backingServiceSelector.ResourceVersion != crd.Version {
+			if crd.Version != "" && resourceVersion != strings.ToLower(crd.Version) {
 				continue
 			}
 
@@ -95,48 +97,31 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 }
 
 // searchCRD based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCRD(
-	kind, name string,
-) (*ustrv1.Unstructured, error) {
-	var backingServiceSelector = p.sbr.Spec.BackingServiceSelector
-
-	apiVersion := fmt.Sprintf("%s/%s", backingServiceSelector.ResourceKind, backingServiceSelector.ResourceVersion)
-	obj := map[string]interface{}{"kind": kind, "apiVersion": apiVersion}
-	objList := &ustrv1.UnstructuredList{Object: obj}
+func (p *Planner) searchCRD(kind string) (*ustrv1.Unstructured, error) {
+	var objectName = p.sbr.Spec.BackingSelector.ObjectName
+	var apiVersion = fmt.Sprintf("%s/%s",
+		p.sbr.Spec.BackingSelector.ResourceName, p.sbr.Spec.BackingSelector.ResourceVersion)
+	var err error
 
 	logger := p.logger.WithValues(
-		"CustomResourceDefinition.Kind", name,
-		"CustomResourceDefinition.Name", name,
-		"CRDDescription.APIVersion", apiVersion,
-	)
+		"CRD.Name", objectName, "CRD.Kind", kind, "CRD.APIVersion", apiVersion)
 	logger.Info("Searching for CRD instance...")
 
-	err := p.client.List(p.ctx, &client.ListOptions{Namespace: p.ns}, objList)
-	if err != nil {
+	crd := ustrv1.Unstructured{Object: map[string]interface{}{
+		"kind":       kind,
+		"apiVersion": apiVersion,
+	}}
+	namespacedName := types.NamespacedName{Namespace: p.ns, Name: objectName}
+
+	if err = p.client.Get(p.ctx, namespacedName, &crd); err != nil {
 		return nil, err
 	}
 
-	// TODO: find a way to load the object directory, without having to loop a list;
-	for _, item := range objList.Items {
-		if name == item.GetName() {
-			logger.Info("CustomResourceDefintion found!")
-			return &item, nil
-		}
-	}
-
-	logger.Info("Warning: not able to find the CustomResourceDefinition!")
-	return nil, errors.NewNotFound(apiextv1beta1.Resource("CustomResourceDefinition"), name)
+	return &crd, nil
 }
 
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
-	// extracting label conects-to, it shows the CRD name we are looking for
-	connectsToValue := p.extractConnectsTo()
-	if connectsToValue == "" {
-		return nil, fmt.Errorf("unable to find label '%s' in service-binding-request '%s'",
-			connectsToValue, p.sbr.GetName())
-	}
-
 	// find the CRD description object
 	crdDescription, err := p.searchCRDDescription()
 	if err != nil {
@@ -144,7 +129,7 @@ func (p *Planner) Plan() (*Plan, error) {
 	}
 
 	// retrieve the CRD based on kind, api-version and name
-	crd, err := p.searchCRD(crdDescription.Kind, connectsToValue)
+	crd, err := p.searchCRD(crdDescription.Kind)
 	if err != nil {
 		return nil, err
 	}
