@@ -85,6 +85,7 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
+GOCACHE ?= "./out/gocache"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
@@ -116,7 +117,7 @@ lint-yaml: ${YAML_FILES}
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)GOCACHE=$(shell pwd)/out/gocache ./out/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
@@ -160,7 +161,7 @@ test-e2e: e2e-setup
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)GO111MODULE=on GOCACHE=$(shell pwd)/out/gocache go test $(shell GOCACHE=$(shell pwd)/out/gocache go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)GO111MODULE=on GOCACHE=$(GOCACHE) go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
 
 .PHONY: test-e2e-olm-ci
 test-e2e-olm-ci:
@@ -172,7 +173,7 @@ test-e2e-olm-ci:
 
 ## -- Build Go binary and OCI image targets --
 
-.PHONY: build 
+.PHONY: build
 ## Build: compile the operator for Linux/AMD64.
 build: out/operator
 
@@ -183,10 +184,13 @@ out/operator:
 build-image:
 	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
+## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
+generate-k8s:
+	$(Q)GO111MODULE=on operator-sdk generate k8s
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
-	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
+	$(Q)GOCACHE=$(GOCACHE) GO111MODULE=on go mod vendor ${V_FLAG}
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
