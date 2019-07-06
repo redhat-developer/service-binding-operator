@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -32,7 +32,7 @@ func TestRetrieverNew(t *testing.T) {
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
-		CRD:            &unstructured.Unstructured{Object: genericCRDObj},
+		CRD:            &ustrv1.Unstructured{Object: genericCRDObj},
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
