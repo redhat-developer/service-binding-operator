@@ -2,25 +2,24 @@ package e2e
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
 	pgsqlapis "github.com/baijum/postgresql-operator/pkg/apis"
-	pgsql "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
-	olm "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
+	pgv1alpha1 "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	"github.com/stretchr/testify/assert"
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 var (
@@ -35,29 +34,19 @@ var (
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
 // during end-to-end tests.
 func TestAddSchemesToFramework(t *testing.T) {
-	serviceBindingRequestList := &v1alpha1.ServiceBindingRequestList{
-		Items: []v1alpha1.ServiceBindingRequest{{}},
-	}
+	logf.SetLogger(logf.ZapLogger(true))
 
-	t.Log("Adding ServiceBindingRequest scheme to cluster...")
-	err := framework.AddToFrameworkScheme(apis.AddToScheme, serviceBindingRequestList)
-	assert.Nil(t, err)
+	t.Log("Adding ServiceBindingRequestList scheme to cluster...")
+	sbrlist := v1alpha1.ServiceBindingRequestList{}
+	require.Nil(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist))
 
-	clusterServiceVersionListObj := &olm.ClusterServiceVersionList{
-		Items: []olm.ClusterServiceVersion{{}},
-	}
+	t.Log("Adding ClusterServiceVersionList scheme to cluster...")
+	csvList := olmv1alpha1.ClusterServiceVersionList{}
+	require.Nil(t, framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, &csvList))
 
-	t.Log("Adding ClusterServiceVersion scheme to cluster...")
-	err = framework.AddToFrameworkScheme(olm.AddToScheme, clusterServiceVersionListObj)
-	assert.Nil(t, err)
-
-	databaseListObj := &pgsql.DatabaseList{
-		Items: []pgsql.Database{{}},
-	}
-
-	t.Log("Adding Database scheme to cluster...")
-	err = framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, databaseListObj)
-	assert.Nil(t, err)
+	t.Log("Adding DatabaseList scheme to cluster...")
+	dbList := pgv1alpha1.DatabaseList{}
+	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-1", ServiceBindingRequest)
@@ -66,14 +55,33 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 // cleanUpOptions using global variables to create the object.
 func cleanUpOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
-	return nil
-	/*
-	   return &framework.CleanupOptions{
-	       TestContext:   ctx,
-	       Timeout:       cleanupTimeout,
-	       RetryInterval: time.Duration(time.Second * retryInterval),
-	   }
-	*/
+	return &framework.CleanupOptions{
+		TestContext:   ctx,
+		Timeout:       cleanupTimeout,
+		RetryInterval: time.Duration(time.Second * retryInterval),
+	}
+}
+
+// bootstrapNamespace execute scaffolding to have a new cluster initialized, and acquire a test
+// namespace, the namespace name is returned and framework global variables are returned.
+func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framework.Framework) {
+	t.Log("Initializing cluster resources...")
+	err := ctx.InitializeClusterResources(cleanUpOptions(ctx))
+	if err != nil {
+		t.Logf("Cluster resources initialization error: '%s'", err)
+		require.True(t, errors.IsAlreadyExists(err), "failed to setup cluster resources")
+	}
+
+	// namespace name is informed on command-line or defined dinamically
+	ns, err := ctx.GetNamespace()
+	require.Nil(t, err)
+	t.Logf("Using namespace '%s' for testing...", ns)
+
+	f := framework.Global
+	require.Nil(t, e2eutil.WaitForOperatorDeployment(
+		t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout))
+
+	return ns, f
 }
 
 // ServiceBindingRequest bootstrap method to initialize cluster resources and setup a testing
@@ -83,176 +91,87 @@ func ServiceBindingRequest(t *testing.T) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 
-	t.Log("Initializing cluster resources...")
+	ns, f := bootstrapNamespace(t, ctx)
 
-	err := ctx.InitializeClusterResources(&framework.CleanupOptions{
-		TestContext:   ctx,
-		Timeout:       cleanupTimeout,
-		RetryInterval: time.Duration(time.Second * retryInterval),
-	})
-	if err != nil {
-		if !errors.IsAlreadyExists(err) {
-			t.Fatalf("Failed to setup cluster resources: '%s'", err)
-		}
-	}
-
-	// namespace name is informed on command-line or defined dinamically
-	ns, err := ctx.GetNamespace()
-	assert.Nil(t, err)
-
-	t.Logf("Using namespace '%s' for testing...", ns)
-	f := framework.Global
-	err = e2eutil.WaitForOperatorDeployment(
-		t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout)
-	assert.Nil(t, err)
-
-	// populating cluster with mocked CRDs
-	mockedObjects(t, ns, f, ctx)
 	// executing testing steps on operator
-	serviceBindingRequestTest(t, ns, f, ctx)
+	serviceBindingRequestTest(t, ctx, f, ns)
 }
 
-// mockedObjects creates all required CRDs in the cluster, using common values to link them as
-// service-binding-operator expects.
-func mockedObjects(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
+// serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
+// expecting for changes caused by the operator.
+func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) {
 	todoCtx := context.TODO()
 
-	crdName := "postgresql.baiju.dev"
-	crdVersion := "v1alpha1"
-	crdKind := "Database"
-	secretName := "e2e-secret"
-
-	labelConnectTo := "postgresql"
-	labelEnvironment := "e2e"
-
-	strategy := olminstall.StrategyDetailsDeployment{
-		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
-			Name: "deployment",
-			Spec: appsv1.DeploymentSpec{},
-		}},
+	name := "e2e-service-binding-request"
+	objectName := "e2e-db-testing"
+	secretName := "e2e-db-credentials"
+	appName := "e2e-application"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "e2e",
 	}
 
-	strategyJSON, err := json.Marshal(strategy)
-	assert.Nil(t, err)
+	t.Log("Starting end-to-end tests for operator!")
 
-	clusterServiceVersionObj := olm.ClusterServiceVersion{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ClusterServiceVersion",
-			APIVersion: "operators.coreos.com/v1alpha1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "e2e-cluster-service-version",
-			Namespace: ns,
-		},
-		Spec: olm.ClusterServiceVersionSpec{
-			DisplayName: "e2e database csv",
-			InstallStrategy: olm.NamedInstallStrategy{
-				StrategyName:    "deployment",
-				StrategySpecRaw: strategyJSON,
-			},
-			CustomResourceDefinitions: olm.CustomResourceDefinitions{
-				Owned: []olm.CRDDescription{{
-					Name:        crdName,
-					DisplayName: crdKind,
-					Description: "e2e csv based on postgresql-operator",
-					Kind:        crdKind,
-					Version:     crdVersion,
-					StatusDescriptors: []olm.StatusDescriptor{{
-						DisplayName: "DB Password Credentials",
-						Description: "Database credentials secret",
-						Path:        "dbCredentials",
-						XDescriptors: []string{
-							"urn:alm:descriptor:io.kubernetes:Secret",
-							"urn:alm:descriptor:io.servicebindingrequest:secret:user",
-							"urn:alm:descriptor:io.servicebindingrequest:secret:password",
-						},
-					}},
-				}},
-			},
-		},
-	}
+	t.Log("Creating ClusterServiceVersion mock object...")
+	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
+	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
 
-	t.Log("Creating ClusterServiceVersion object...")
-	// err = f.Client.Create(todoCtx, &clusterServiceVersionObj, cleanUpOptions(ctx))
-	_ = f.Client.Create(todoCtx, &clusterServiceVersionObj, cleanUpOptions(ctx))
-	// assert.Nil(t, err)
+	t.Log("Creating Database mock object...")
+	db := mocks.DatabaseCRDMock(ns, objectName)
+	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
 
-	pgDatabaseObj := pgsql.Database{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       crdKind,
-			APIVersion: fmt.Sprintf("%s/%s", crdName, crdVersion),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      labelConnectTo,
-			Namespace: ns,
-		},
-		Spec: pgsql.DatabaseSpec{
-			Image:     "database/image",
-			ImageName: "database",
-		},
-	}
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: objectName}, &db))
+	db.Status.DBCredentials = secretName
+	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
 
-	t.Log("Creating a database CRD object...")
-	// err = f.Client.Create(todoCtx, &pgDatabaseObj, cleanUpOptions(ctx))
-	_ = f.Client.Create(todoCtx, &pgDatabaseObj, nil)
-	// assert.Nil(t, err)
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName)
+	require.Nil(t, f.Client.Create(todoCtx, &dbSecret, cleanUpOptions(ctx)))
 
-	/*
-	   t.Log("Adding db-credentials to status...")
-	   pgDatabaseObj.Status.DBCredentials = secretName
-	   err = f.Client.Status().Update(todoCtx, &pgDatabaseObj)
-	   assert.Nil(t, err)
-	*/
+	t.Log("Creating Deployment mock object...")
+	d := mocks.DeploymentMock(ns, appName, matchLabels)
+	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
 
-	secretObj := corev1.Secret{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Secret",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretName,
-			Namespace: ns,
-		},
-		Data: map[string][]byte{
-			"user":     []byte("user"),
-			"password": []byte("password"),
-		},
-	}
+	// waiting for application deployment to reach one replica
+	t.Log("Waiting for application deployment reach one replica...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
-	t.Log("Creating secret object...")
-	// err = f.Client.Create(todoCtx, &secretObj, cleanUpOptions(ctx))
-	_ = f.Client.Create(todoCtx, &secretObj, cleanUpOptions(ctx))
-	// assert.Nil(t, err)
+	// creating service-binding-request, which will trigger actions in the controller
+	t.Log("Creating ServiceBindingRequest mock object...")
+	sbr := mocks.ServiceBindingRequestMock(ns, name, objectName, matchLabels)
+	// making sure object does not exist before testing
+	_ = f.Client.Delete(todoCtx, &sbr)
+	require.Nil(t, f.Client.Create(todoCtx, &sbr, cleanUpOptions(ctx)))
 
-	serviceBindingRequestObj := v1alpha1.ServiceBindingRequest{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       operatorKind,
-			APIVersion: operatorAPIVersion,
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "e2e-service-binding-request",
-			Namespace: ns,
-		},
-		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				ResourceKind:    crdName,
-				ResourceVersion: crdVersion,
-			},
-			ApplicationSelector: v1alpha1.ApplicationSelector{
-				MatchLabels: map[string]string{
-					"connects-to": labelConnectTo,
-					"environment": labelEnvironment,
-				},
-			},
-		},
-	}
+	time.Sleep(time.Second * 5)
 
-	t.Log("Creating ServiceBindingRequest object...")
-	// err = f.Client.Create(todoCtx, &serviceBindingRequestObj, cleanUpOptions(ctx))
-	_ = f.Client.Create(todoCtx, &serviceBindingRequestObj, cleanUpOptions(ctx))
-	// assert.Nil(t, err)
-}
+	// waiting again for deployment
+	t.Log("Waiting for application deployment reach one replica, again...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
-func serviceBindingRequestTest(t *testing.T, ns string, f *framework.Framework, ctx *framework.TestCtx) {
-	t.Log("Starting end-to-end tests for operator...")
+	// retrieveing deployment again
+	t.Logf("Reading application deployment '%s'", appName)
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+
+	// making sure envFrom is added to the container
+	t.Logf("Inspecting '%s' searching for 'envFrom'...", appName)
+	containers := d.Spec.Template.Spec.Containers
+	assert.Equal(t, 1, len(containers))
+	assert.Equal(t, 1, len(containers[0].EnvFrom))
+	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
+	assert.Equal(t, name, containers[0].EnvFrom[0].SecretRef.Name)
+
+	// checking intermediary secret
+	sbrSecret := corev1.Secret{}
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
+	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_USER")
+	assert.Equal(t, []byte("user"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_USER"])
+	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
+	assert.Equal(t, []byte("password"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_PASSWORD"])
+
+	// cleaning up
+	_ = f.Client.Delete(todoCtx, &sbr)
+	_ = f.Client.Delete(todoCtx, &sbrSecret)
+	_ = f.Client.Delete(todoCtx, &d)
 }
