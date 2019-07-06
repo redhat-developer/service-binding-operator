@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
@@ -17,6 +17,8 @@ import (
 var retriever *Retriever
 
 func TestRetrieverNew(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+
 	ns := "testing"
 	crdName := "db-testing"
 
