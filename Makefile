@@ -227,29 +227,29 @@ push-image: build-image
 ## -- Local deployment targets --
 
 .PHONY: local
-## Run operator locally
+## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds deploy-cr
 	$(Q)operator-sdk up local
 
 .PHONY: deploy-rbac
-## Setup service account and deploy RBAC
+## Deploy-RBAC: Setup service account and deploy RBAC
 deploy-rbac:
 	$(Q)kubectl create -f deploy/service_account.yaml
 	$(Q)kubectl create -f deploy/role.yaml
 	$(Q)kubectl create -f deploy/role_binding.yaml
 
 .PHONY: deploy-crds
-## Deploy CRD
+## Deploy-CRD: Deploy CRD
 deploy-crds:
 	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 
 .PHONY: deploy-cr
-## Deploy CRs
+## Deploy-CR: Deploy CRs
 deploy-cr:
 	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 
 .PHONY: deploy-clean
-## Removing CRDs and CRs
+## Deploy-Clean: Removing CRDs and CRs
 deploy-clean:
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
@@ -257,6 +257,10 @@ deploy-clean:
 	$(Q)-kubectl delete -f deploy/role_binding.yaml
 	$(Q)-kubectl delete -f deploy/role.yaml
 	$(Q)-kubectl delete -f deploy/service_account.yaml
+
+.PHONY: deploy
+## Deploy:
+deploy: deploy-rbac deploy-crds
 
 
 ## -- Cleanup targets --
