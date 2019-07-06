@@ -164,9 +164,14 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) extv1beta1.D
 			Labels:    matchLabels,
 		},
 		Spec: extv1beta1.DeploymentSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels: matchLabels,
+			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: matchLabels,
+					Namespace: ns,
+					Name:      name,
+					Labels:    matchLabels,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
