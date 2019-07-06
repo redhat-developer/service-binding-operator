@@ -165,6 +165,9 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) extv1beta1.D
 		},
 		Spec: extv1beta1.DeploymentSpec{
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: matchLabels,
+				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:    "busybox",
