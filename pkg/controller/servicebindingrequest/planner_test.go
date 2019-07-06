@@ -12,26 +12,29 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 var planner *Planner
 
 func TestPlannerNew(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+
 	ns := "testing"
 	objectName := "db-testing"
 	s := scheme.Scheme
 
 	sbr := mocks.ServiceBindingRequestMock(ns, "binding-request", objectName, map[string]string{
-		"connects-to": objectName,
+		"connects-to": "database",
 		"environment": "planner",
 	})
 	s.AddKnownTypes(v1alpha1.SchemeGroupVersion, &sbr)
 
 	require.Nil(t, olmv1alpha1.AddToScheme(s))
-	csvList := mocks.ClusterServiceVersionListMock(ns, "cluster-service-version-lis")
+	csvList := mocks.ClusterServiceVersionListMock(ns, "cluster-service-version-list")
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
 
 	require.Nil(t, pgapis.AddToScheme(s))
