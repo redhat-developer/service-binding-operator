@@ -9,6 +9,7 @@ import (
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -90,6 +91,8 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 // DatabaseCRDMock based on PostgreSQL operator, returning a instantiated object.
 func DatabaseCRDMock(ns, name string) pgv1alpha1.Database {
 	return pgv1alpha1.Database{
+		// usually TypeMeta should not be explicitly defined in mocked objects, however, on using
+		// it via *unstructured.Unstructured it could not find this CRD without it.
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
 			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
@@ -147,6 +150,28 @@ func ServiceBindingRequestMock(
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				ResourceKind: "Deployment",
 				MatchLabels:  matchLabels,
+			},
+		},
+	}
+}
+
+// DeploymentMock creates a mocked Deployment object of busybox.
+func DeploymentMock(ns, name string, matchLabels map[string]string) extv1beta1.Deployment {
+	return extv1beta1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+			Labels:    matchLabels,
+		},
+		Spec: extv1beta1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:    "busybox",
+						Image:   "busybox:latest",
+						Command: []string{"sleep", "3600"},
+					}},
+				},
 			},
 		},
 	}
