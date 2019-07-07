@@ -85,7 +85,7 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
-GOCACHE ?= "./out/gocache"
+GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
@@ -149,7 +149,7 @@ e2e-setup: e2e-cleanup
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
-	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=10s --wait
+	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
@@ -162,6 +162,10 @@ test-e2e: e2e-setup
 test-unit:
 	$(info Running unit test: $@)
 	$(Q)GO111MODULE=on GOCACHE=$(GOCACHE) go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+
+.PHONY: test
+## Test: Runs unit and integration (e2e) tests
+test: test-unit test-e2e
 
 .PHONY: test-e2e-olm-ci
 test-e2e-olm-ci:
