@@ -35,19 +35,6 @@ type Plan struct {
 	CRD            *ustrv1.Unstructured        // custom resource definition
 }
 
-const (
-	connectsToLabel = "connects-to"
-)
-
-// extractConnectTo inspect ServiceBindingRequest to extract connects-to value.
-func (p *Planner) extractConnectsTo() string {
-	value, exists := p.sbr.Spec.ApplicationSelector.MatchLabels[connectsToLabel]
-	if !exists {
-		return ""
-	}
-	return value
-}
-
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {

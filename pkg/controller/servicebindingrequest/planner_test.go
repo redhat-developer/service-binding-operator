@@ -48,10 +48,6 @@ func TestPlannerNew(t *testing.T) {
 	require.NotNil(t, planner)
 }
 
-func TestPlannerExtractConnectsTo(t *testing.T) {
-	assert.NotEmpty(t, planner.extractConnectsTo())
-}
-
 func TestPlannerSearchCRDDescription(t *testing.T) {
 	TestPlannerNew(t)
 	crdDescription, err := planner.searchCRDDescription()
