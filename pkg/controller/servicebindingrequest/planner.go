@@ -32,7 +32,7 @@ type Plan struct {
 	Ns             string                      // namespace name
 	Name           string                      // plan name, same than ServiceBindingRequest
 	CRDDescription *olmv1alpha1.CRDDescription // custom resource definition description
-	CRD            *ustrv1.Unstructured        // custom resource definition
+	CR             *ustrv1.Unstructured        // custom resource object
 }
 
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
@@ -83,28 +83,27 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 	return nil, errors.NewNotFound(extv1beta1.Resource("CustomResourceDefinition"), "")
 }
 
-// searchCRD based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCRD(kind string) (*ustrv1.Unstructured, error) {
+// searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
+func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	var objectName = p.sbr.Spec.BackingSelector.ObjectName
 	var apiVersion = fmt.Sprintf("%s/%s",
 		p.sbr.Spec.BackingSelector.ResourceName, p.sbr.Spec.BackingSelector.ResourceVersion)
 	var err error
 
-	logger := p.logger.WithValues(
-		"CRD.Name", objectName, "CRD.Kind", kind, "CRD.APIVersion", apiVersion)
-	logger.Info("Searching for CRD instance...")
+	p.logger.WithValues("CR.Name", objectName, "CR.Kind", kind, "CR.APIVersion", apiVersion).
+		Info("Searching for CR instance...")
 
-	crd := ustrv1.Unstructured{Object: map[string]interface{}{
+	cr := ustrv1.Unstructured{Object: map[string]interface{}{
 		"kind":       kind,
 		"apiVersion": apiVersion,
 	}}
 	namespacedName := types.NamespacedName{Namespace: p.ns, Name: objectName}
 
-	if err = p.client.Get(p.ctx, namespacedName, &crd); err != nil {
+	if err = p.client.Get(p.ctx, namespacedName, &cr); err != nil {
 		return nil, err
 	}
 
-	return &crd, nil
+	return &cr, nil
 }
 
 // Plan by retrieving the necessary resources related to binding a service backend.
@@ -115,13 +114,13 @@ func (p *Planner) Plan() (*Plan, error) {
 		return nil, err
 	}
 
-	// retrieve the CRD based on kind, api-version and name
-	crd, err := p.searchCRD(crdDescription.Kind)
+	// retrieve the CR based on kind, api-version and name
+	cr, err := p.searchCR(crdDescription.Kind)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Plan{Ns: p.ns, Name: p.sbr.GetName(), CRDDescription: crdDescription, CRD: crd}, nil
+	return &Plan{Ns: p.ns, Name: p.sbr.GetName(), CRDDescription: crdDescription, CR: cr}, nil
 }
 
 // NewPlanner instantiate Planner type.

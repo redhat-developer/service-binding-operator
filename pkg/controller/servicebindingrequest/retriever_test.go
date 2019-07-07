@@ -20,19 +20,19 @@ func TestRetrieverNew(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 
 	ns := "testing"
-	crdName := "db-testing"
+	crName := "db-testing"
 
 	crdDescription := mocks.CRDDescriptionMock()
-	crd := mocks.DatabaseCRDMock(ns, crdName)
+	cr := mocks.DatabaseCRMock(ns, crName)
 
-	genericCRDObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&crd)
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
 	plan := &Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
-		CRD:            &ustrv1.Unstructured{Object: genericCRDObj},
+		CR:             &ustrv1.Unstructured{Object: genericCR},
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
@@ -43,8 +43,8 @@ func TestRetrieverNew(t *testing.T) {
 	require.NotNil(t, retriever)
 }
 
-func TestRetrieverGetCRDKey(t *testing.T) {
-	imageName, err := retriever.getCRDKey("spec", "imageName")
+func TestRetrieverGetCRKey(t *testing.T) {
+	imageName, err := retriever.getCRKey("spec", "imageName")
 	assert.Nil(t, err)
 	assert.Equal(t, "postgres", imageName)
 }

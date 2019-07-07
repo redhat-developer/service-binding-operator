@@ -88,11 +88,11 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	}
 }
 
-// DatabaseCRDMock based on PostgreSQL operator, returning a instantiated object.
-func DatabaseCRDMock(ns, name string) pgv1alpha1.Database {
+// DatabaseCRMock based on PostgreSQL operator, returning a instantiated object.
+func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 	return pgv1alpha1.Database{
 		// usually TypeMeta should not be explicitly defined in mocked objects, however, on using
-		// it via *unstructured.Unstructured it could not find this CRD without it.
+		// it via *unstructured.Unstructured it could not find this CR without it.
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
 			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
@@ -111,10 +111,10 @@ func DatabaseCRDMock(ns, name string) pgv1alpha1.Database {
 	}
 }
 
-// DatabaseCRDListMock returns a list with a single database CRD inside, reusing existing mock.
-func DatabaseCRDListMock(ns, name string) pgv1alpha1.DatabaseList {
+// DatabaseCRListMock returns a list with a single database CR inside, reusing existing mock.
+func DatabaseCRListMock(ns, name string) pgv1alpha1.DatabaseList {
 	return pgv1alpha1.DatabaseList{
-		Items: []pgv1alpha1.Database{DatabaseCRDMock(ns, name)},
+		Items: []pgv1alpha1.Database{DatabaseCRMock(ns, name)},
 	}
 }
 

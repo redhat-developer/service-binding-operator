@@ -38,10 +38,10 @@ func TestPlannerNew(t *testing.T) {
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
 
 	require.Nil(t, pgapis.AddToScheme(s))
-	crdList := mocks.DatabaseCRDListMock(ns, objectName)
-	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crdList)
+	crList := mocks.DatabaseCRListMock(ns, objectName)
+	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crList)
 
-	objs := []runtime.Object{&sbr, &csvList, &crdList}
+	objs := []runtime.Object{&sbr, &csvList, &crList}
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
 	planner = NewPlanner(context.TODO(), fakeClient, ns, &sbr)
@@ -56,11 +56,11 @@ func TestPlannerSearchCRDDescription(t *testing.T) {
 	assert.NotNil(t, crdDescription)
 }
 
-func TestPlannerSearchCRD(t *testing.T) {
-	crd, err := planner.searchCRD("Database")
+func TestPlannerSearchCR(t *testing.T) {
+	cr, err := planner.searchCR("Database")
 
 	assert.Nil(t, err)
-	assert.NotNil(t, crd)
+	assert.NotNil(t, cr)
 }
 
 func TestPlannerPlan(t *testing.T) {
@@ -69,7 +69,7 @@ func TestPlannerPlan(t *testing.T) {
 	assert.Nil(t, err)
 	assert.NotNil(t, plan)
 	assert.NotNil(t, plan.CRDDescription)
-	assert.NotNil(t, plan.CRD)
+	assert.NotNil(t, plan.CR)
 	assert.Equal(t, "testing", plan.Ns)
 	assert.Equal(t, "binding-request", plan.Name)
 }

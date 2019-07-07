@@ -50,8 +50,8 @@ func TestReconcilerNew(t *testing.T) {
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
 
 	require.Nil(t, pgapis.AddToScheme(s))
-	crdList := mocks.DatabaseCRDListMock(reconcilerNs, objectName)
-	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crdList)
+	crList := mocks.DatabaseCRListMock(reconcilerNs, objectName)
+	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crList)
 
 	dbSecret := mocks.SecretMock(reconcilerNs, "db-credentials")
 
@@ -59,7 +59,7 @@ func TestReconcilerNew(t *testing.T) {
 	d := mocks.DeploymentMock(reconcilerNs, reconcilerName, matchLabels)
 	s.AddKnownTypes(extv1beta1.SchemeGroupVersion, &d)
 
-	objs := []runtime.Object{&sbr, &csvList, &crdList, &dbSecret, &d}
+	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
 	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
 	reconciler = &Reconciler{client: reconcilerFakeClient, scheme: s}
 }
