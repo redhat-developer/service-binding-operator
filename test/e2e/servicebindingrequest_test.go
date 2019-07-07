@@ -121,6 +121,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	db := mocks.DatabaseCRDMock(ns, objectName)
 	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
 
+	t.Log("Updating Database status, adding 'DBCredentials'")
 	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: objectName}, &db))
 	db.Status.DBCredentials = secretName
 	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
@@ -163,6 +164,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	assert.Equal(t, name, containers[0].EnvFrom[0].SecretRef.Name)
 
 	// checking intermediary secret
+	t.Logf("Checking intermediary secret '%s'...", name)
 	sbrSecret := corev1.Secret{}
 	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
 	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_USER")
@@ -171,6 +173,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	assert.Equal(t, []byte("password"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_PASSWORD"])
 
 	// cleaning up
+	t.Log("Cleaning all up!")
 	_ = f.Client.Delete(todoCtx, &sbr)
 	_ = f.Client.Delete(todoCtx, &sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
