@@ -4,7 +4,7 @@ kind: ServiceBindingRequest
 metadata:
   name: example-servicebindingrequest
 spec:
-  backingSelector:
+  backingServiceSelector:
     objectName: pg-instance
     resourceName: database.example.org
     resourceVersion: v1alpha1

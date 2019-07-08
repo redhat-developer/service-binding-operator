@@ -142,7 +142,7 @@ func ServiceBindingRequestMock(
 			Name:      name,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BackingSelector: v1alpha1.BackingSelector{
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				ResourceName:    CRDName,
 				ResourceVersion: CRDVersion,
 				ObjectName:      objectName,

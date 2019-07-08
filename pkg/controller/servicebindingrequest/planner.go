@@ -38,14 +38,14 @@ type Plan struct {
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
-	var resourceName = strings.ToLower(fmt.Sprintf(".%s", p.sbr.Spec.BackingSelector.ResourceName))
-	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingSelector.ResourceVersion)
+	var resourceName = strings.ToLower(
+		fmt.Sprintf(".%s", p.sbr.Spec.BackingServiceSelector.ResourceName))
+	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingServiceSelector.ResourceVersion)
 	var err error
 
 	logger := p.logger.WithValues(
-		"BackingSelector.ResourceName", resourceName,
-		"BackingSelector.ResourceVersion", resourceVersion,
-	)
+		"BackingServiceSelector.ResourceName", resourceName,
+		"BackingServiceSelector.ResourceVersion", resourceVersion)
 	logger.Info("Looking for a CSV based on backing-selector")
 	csvList := &olmv1alpha1.ClusterServiceVersionList{}
 
@@ -85,9 +85,10 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
-	var objectName = p.sbr.Spec.BackingSelector.ObjectName
+	var objectName = p.sbr.Spec.BackingServiceSelector.ObjectName
 	var apiVersion = fmt.Sprintf("%s/%s",
-		p.sbr.Spec.BackingSelector.ResourceName, p.sbr.Spec.BackingSelector.ResourceVersion)
+		p.sbr.Spec.BackingServiceSelector.ResourceName,
+		p.sbr.Spec.BackingServiceSelector.ResourceVersion)
 	var err error
 
 	p.logger.WithValues("CR.Name", objectName, "CR.Kind", kind, "CR.APIVersion", apiVersion).
