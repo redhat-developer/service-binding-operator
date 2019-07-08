@@ -118,7 +118,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
 
 	t.Log("Creating Database mock object...")
-	db := mocks.DatabaseCRDMock(ns, objectName)
+	db := mocks.DatabaseCRMock(ns, objectName)
 	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
 
 	t.Log("Updating Database status, adding 'DBCredentials'")
