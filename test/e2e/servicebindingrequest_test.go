@@ -136,6 +136,10 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Log("Waiting for application deployment reach one replica...")
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
+	// retrieveing deployment, to inspect it's generation
+	t.Logf("Reading application deployment, extrating generation from '%s'", appName)
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+
 	// creating service-binding-request, which will trigger actions in the controller
 	t.Log("Creating ServiceBindingRequest mock object...")
 	sbr := mocks.ServiceBindingRequestMock(ns, name, objectName, matchLabels)
@@ -147,9 +151,18 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Log("Waiting for application deployment reach one replica, again...")
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
-	// retrieveing deployment again
-	t.Logf("Reading application deployment '%s'", appName)
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+	// retrieveing deployment again until new generation or timeout
+	for attempts := 0; attempts < 30; attempts++ {
+		t.Logf("Reading application deployment '%s' ('%d')", appName, attempts)
+		require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+
+		generation := d.GetGeneration()
+		t.Logf("Deployment generation: '%d'", generation)
+		if generation > 1 {
+			break
+		}
+		time.Sleep(time.Second * 1)
+	}
 
 	// making sure envFrom is added to the container
 	t.Logf("Inspecting '%s' searching for 'envFrom'...", appName)
