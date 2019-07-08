@@ -143,8 +143,6 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	_ = f.Client.Delete(todoCtx, &sbr)
 	require.Nil(t, f.Client.Create(todoCtx, &sbr, cleanUpOptions(ctx)))
 
-	time.Sleep(time.Second * 5)
-
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
@@ -156,8 +154,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// making sure envFrom is added to the container
 	t.Logf("Inspecting '%s' searching for 'envFrom'...", appName)
 	containers := d.Spec.Template.Spec.Containers
-	assert.Equal(t, 1, len(containers))
-	assert.Equal(t, 1, len(containers[0].EnvFrom))
+	require.Equal(t, 1, len(containers))
+	require.Equal(t, 1, len(containers[0].EnvFrom))
 	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
 	assert.Equal(t, name, containers[0].EnvFrom[0].SecretRef.Name)
 
