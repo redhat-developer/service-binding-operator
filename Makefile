@@ -146,6 +146,7 @@ get-test-namespace: out/test-namespace
 .PHONY: e2e-setup
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
+	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
