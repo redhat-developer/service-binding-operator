@@ -152,7 +152,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
 	// retrieveing deployment again until new generation or timeout
-	for attempts := 0; attempts < 30; attempts++ {
+	for attempts := 0; attempts < 10; attempts++ {
 		t.Logf("Reading application deployment '%s' ('%d')", appName, attempts)
 		require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
 
@@ -161,7 +161,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 		if generation > 1 {
 			break
 		}
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Second * 3)
 	}
 
 	// making sure envFrom is added to the container
