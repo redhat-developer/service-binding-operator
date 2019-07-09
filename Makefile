@@ -88,11 +88,13 @@ GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.0.10
+OPERATOR_STABLE_VERSION ?= 0.0.10
+OPERATOR_DEV_VERSION ?= 0.0.11
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
+OPERATOR_PACKAGE ?= service-binding
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
-OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
-OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+OPERATOR_TAG_SHORT ?= $(OPERATOR_DEV_VERSION)
+OPERATOR_TAG_LONG ?= $(OPERATOR_DEV_VERSION)-$(GIT_COMMIT_ID)
 QUAY_TOKEN ?= ""
 
 MANIFESTS_DIR ?= ./manifests
@@ -188,7 +190,6 @@ out/operator:
 build-image:
 	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
-
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
 	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
@@ -208,16 +209,20 @@ prepare-csv: build-image
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}
-	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	cp -vf $(MANIFESTS_DIR)/stable/* $(MANIFESTS_TMP)
+	cp -vf $(MANIFESTS_DIR)/dev/* $(MANIFESTS_TMP)
+	cp -vf $(MANIFESTS_DIR)/*.package.yaml $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
-	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,REPLACE_PACKAGE,$(OPERATOR_PACKAGE),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,REPLACE_VERSION,$(OPERATOR_TAG_LONG),g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
 	operator-courier --verbose verify $(MANIFESTS_TMP)
 
 .PHONY: push-operator
 ## Push-Operator: Uplaod operator to Quay.io application repository
 push-operator: prepare-csv
-	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
+	$(Q)operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(OPERATOR_PACKAGE) $(OPERATOR_TAG_LONG) "$(QUAY_TOKEN)"
 
 ## Push-Image: push docker image to upstream, including latest tag.
 push-image: build-image
@@ -265,4 +270,4 @@ deploy-clean:
 .PHONY: clean
 ## Removes temp directories
 clean:
-	$(Q)-rm -rf ${V_FLAG} ./out
+	$(Q)-rm -rf ${V_FLAG} ./out ./tmp

@@ -4,9 +4,9 @@ metadata:
   annotations:
     alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"example-servicebindingrequest"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"production"},"resourceKind":"Deployment"},"backingSelector":{"resourceName":"database.example.org","resourceVersion":"v1alpha1"}}}]'
     capabilities: Basic Install
-    containerImage: quay.io/redhat-developer/app-binding-operator:v0.0.10
+    containerImage: REPLACE_IMAGE:REPLACE_VERSION
     description: An operator to support binding capabilities between imported apps and operator backed services
-  name: service-binding-operator.v0.0.10
+  name: service-binding-operator.vREPLACE_VERSION
   namespace: placeholder
 spec:
   links:
@@ -25,6 +25,9 @@ spec:
       description: Expresses intent to bind an operator-backed service with an Deployment.
   description: Placeholder description
   displayName: Operator Service Binding Operator
+  icon: 
+  - base64data: REPLACE_ICON_BASE64_DATA
+    mediatype: image/png
   install:
     spec:
       deployments:
@@ -52,7 +55,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: quay.io/redhat-developer/app-binding-operator:v0.0.10
+                image: REPLACE_IMAGE:REPLACE_VERSION
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
@@ -122,4 +125,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat, Inc.
-  version: 0.0.10
+  version: REPLACE_VERSION
