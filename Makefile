@@ -186,7 +186,7 @@ out/operator:
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	$(Q)GO111MODULE=on operator-sdk build --image-builder=buildah "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
@@ -219,11 +219,11 @@ prepare-csv: build-image
 push-operator: prepare-csv
 	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
 
-## Push-Image: push docker image to upstream, including latest tag.
+## Push-Image: push container image to upstream, including latest tag.
 push-image: build-image
-	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	docker push "$(OPERATOR_IMAGE):latest"
+	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
+	podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	podman push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
