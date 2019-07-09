@@ -76,8 +76,10 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framewor
 	t.Logf("Using namespace '%s' for testing...", ns)
 
 	f := framework.Global
-	require.Nil(t, e2eutil.WaitForOperatorDeployment(
-		t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout))
+	/*
+		require.Nil(t, e2eutil.WaitForOperatorDeployment(
+			t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout))
+	*/
 
 	return ns, f
 }
