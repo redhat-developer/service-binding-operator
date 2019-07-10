@@ -1,7 +1,7 @@
 packageName: REPLACE_PACKAGE
 channels:
-- name: stable
-  currentCSV: service-binding-operator.v0.0.11
 - name: dev
   currentCSV: service-binding-operator.vREPLACE_VERSION
+- name: stable
+  currentCSV: service-binding-operator.v0.0.11
 defaultChannel: stable

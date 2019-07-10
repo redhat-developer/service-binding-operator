@@ -25,7 +25,7 @@ spec:
       description: Expresses intent to bind an operator-backed service with an Deployment.
   description: Placeholder description
   displayName: Operator Service Binding Operator
-  icon: 
+  icon:
   - base64data: REPLACE_ICON_BASE64_DATA
     mediatype: image/png
   install:
