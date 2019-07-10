@@ -71,7 +71,7 @@ func main() {
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		log.Error(err, "")
+		log.Error(err, "Failed to acquire a configuration to talk to the API server")
 		os.Exit(1)
 	}
 
@@ -80,7 +80,7 @@ func main() {
 	// Become the leader before proceeding
 	err = leader.Become(ctx, "service-binding-operator-lock")
 	if err != nil {
-		log.Error(err, "")
+		log.Error(err, "Failed to become the leader!")
 		os.Exit(1)
 	}
 
@@ -110,7 +110,7 @@ func main() {
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Error(err, "")
+		log.Error(err, "Failed to setup the controller manager")
 		os.Exit(1)
 	}
 
