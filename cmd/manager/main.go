@@ -39,25 +39,29 @@ func printVersion() {
 	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
+// getOperatorName based on environment variable OPERATOR_NAME, or returns the default name for
+// the operatator.
+func getOperatorName() string {
+	envName := os.Getenv("OPERATOR_NAME")
+	if envName != "" {
+		return envName
+	}
+	return "service-binding-operator"
+}
+
+// isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION,
+// check if any value is set this method returns false.
+func isLeaderElectionEnabled() bool {
+	if os.Getenv("SERVICE_BINDING_OPERATOR_DISABLE_ELECTION") != "" {
+		return false
+	}
+	return true
+}
+
 func main() {
-	// Add the zap logger flag set to the CLI. The flag set must
-	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
-
-	// Add flags registered by imported packages (e.g. glog and
-	// controller-runtime)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-
 	pflag.Parse()
-
-	// Use a zap logr.Logger implementation. If none of the zap
-	// flags are configured (or if the zap flag set is not being
-	// used), this defaults to a production zap logger.
-	//
-	// The logger instantiated here can be changed to any logger
-	// implementing the logr.Logger interface. This logger will
-	// be propagated through the whole operator, generating
-	// uniform and structured logs.
 	logf.SetLogger(zap.Logger())
 
 	printVersion()
@@ -77,11 +81,15 @@ func main() {
 
 	ctx := context.TODO()
 
-	// Become the leader before proceeding
-	err = leader.Become(ctx, "service-binding-operator-lock")
-	if err != nil {
-		log.Error(err, "Failed to become the leader!")
-		os.Exit(1)
+	if isLeaderElectionEnabled() {
+		// Become the leader before proceeding
+		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
+		if err != nil {
+			log.Error(err, "Failed to become the leader!")
+			os.Exit(1)
+		}
+	} else {
+		log.Info("Warning: Leader election is disabled!")
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
