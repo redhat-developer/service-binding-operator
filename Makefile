@@ -122,7 +122,7 @@ lint-yaml: ${YAML_FILES}
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)./out/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
@@ -159,13 +159,14 @@ e2e-setup: e2e-cleanup
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
-	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
+	$(Q)kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true operator-sdk --verbose test local ./test/e2e \
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
+		operator-sdk --verbose test local ./test/e2e \
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
@@ -175,7 +176,8 @@ test-e2e: e2e-setup
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v $(TEST_EXTRA_ARGS)
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -208,7 +210,7 @@ generate-k8s:
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
-	$(Q)go mod vendor ${V_FLAG}
+	$(Q)GOCACHE=$(GOCACHE) go mod vendor ${V_FLAG}
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
