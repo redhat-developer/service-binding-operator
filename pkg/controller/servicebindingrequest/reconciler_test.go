@@ -36,13 +36,13 @@ func TestReconcilerNew(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 
 	s := scheme.Scheme
-	objectName := "db-testing"
+	resourceRef := "db-testing"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "planner",
 	}
 
-	sbr := mocks.ServiceBindingRequestMock(reconcilerNs, reconcilerName, objectName, matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(reconcilerNs, reconcilerName, resourceRef, matchLabels)
 	s.AddKnownTypes(v1alpha1.SchemeGroupVersion, &sbr)
 
 	require.Nil(t, olmv1alpha1.AddToScheme(s))
@@ -50,7 +50,7 @@ func TestReconcilerNew(t *testing.T) {
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
 
 	require.Nil(t, pgapis.AddToScheme(s))
-	crList := mocks.DatabaseCRListMock(reconcilerNs, objectName)
+	crList := mocks.DatabaseCRListMock(reconcilerNs, resourceRef)
 	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crList)
 
 	dbSecret := mocks.SecretMock(reconcilerNs, "db-credentials")

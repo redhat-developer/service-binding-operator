@@ -134,7 +134,7 @@ func SecretMock(ns, name string) corev1.Secret {
 
 // ServiceBindingRequestMock return a binding-request mock of informed name and match labels.
 func ServiceBindingRequestMock(
-	ns, name, objectName string, matchLabels map[string]string,
+	ns, name, resourceRef string, matchLabels map[string]string,
 ) v1alpha1.ServiceBindingRequest {
 	return v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -145,7 +145,7 @@ func ServiceBindingRequestMock(
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				ResourceName:    CRDName,
 				ResourceVersion: CRDVersion,
-				ObjectName:      objectName,
+				ResourceRef:     resourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				ResourceKind: "Deployment",

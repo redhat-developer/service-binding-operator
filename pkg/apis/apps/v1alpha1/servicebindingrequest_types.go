@@ -25,12 +25,12 @@ type ServiceBindingRequestSpec struct {
 	// Example 1:
 	//	backingServiceSelector:
 	//		resourceName: database.example.org
-	//      objectName: mysql-database
+	//      resourceRef: mysql-database
 	// Example 2:
 	//	backingServiceSelector:
 	//		resourceName: database.example.org
 	//		resourceVersion: v1alpha1
-	//      objectName: mysql-database
+	//      resourceRef: mysql-database
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
@@ -53,7 +53,7 @@ type ServiceBindingRequestSpec struct {
 type BackingServiceSelector struct {
 	ResourceName    string `json:"resourceName"`
 	ResourceVersion string `json:"resourceVersion"`
-	ObjectName      string `json:"objectName"`
+	ResourceRef     string `json:"resourceRef"`
 }
 
 // ApplicationSelector defines the selector based on labels and resource kind

@@ -85,20 +85,20 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
-	var objectName = p.sbr.Spec.BackingServiceSelector.ObjectName
+	var resourceRef = p.sbr.Spec.BackingServiceSelector.ResourceRef
 	var apiVersion = fmt.Sprintf("%s/%s",
 		p.sbr.Spec.BackingServiceSelector.ResourceName,
 		p.sbr.Spec.BackingServiceSelector.ResourceVersion)
 	var err error
 
-	p.logger.WithValues("CR.Name", objectName, "CR.Kind", kind, "CR.APIVersion", apiVersion).
+	p.logger.WithValues("CR.Name", resourceRef, "CR.Kind", kind, "CR.APIVersion", apiVersion).
 		Info("Searching for CR instance...")
 
 	cr := ustrv1.Unstructured{Object: map[string]interface{}{
 		"kind":       kind,
 		"apiVersion": apiVersion,
 	}}
-	namespacedName := types.NamespacedName{Namespace: p.ns, Name: objectName}
+	namespacedName := types.NamespacedName{Namespace: p.ns, Name: resourceRef}
 
 	if err = p.client.Get(p.ctx, namespacedName, &cr); err != nil {
 		return nil, err

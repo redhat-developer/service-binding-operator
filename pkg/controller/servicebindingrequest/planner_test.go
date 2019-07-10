@@ -24,10 +24,10 @@ func TestPlannerNew(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 
 	ns := "testing"
-	objectName := "db-testing"
+	resourceRef := "db-testing"
 	s := scheme.Scheme
 
-	sbr := mocks.ServiceBindingRequestMock(ns, "binding-request", objectName, map[string]string{
+	sbr := mocks.ServiceBindingRequestMock(ns, "binding-request", resourceRef, map[string]string{
 		"connects-to": "database",
 		"environment": "planner",
 	})
@@ -38,7 +38,7 @@ func TestPlannerNew(t *testing.T) {
 	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
 
 	require.Nil(t, pgapis.AddToScheme(s))
-	crList := mocks.DatabaseCRListMock(ns, objectName)
+	crList := mocks.DatabaseCRListMock(ns, resourceRef)
 	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crList)
 
 	objs := []runtime.Object{&sbr, &csvList, &crList}

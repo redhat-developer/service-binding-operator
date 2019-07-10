@@ -5,7 +5,7 @@ metadata:
   name: example-servicebindingrequest
 spec:
   backingServiceSelector:
-    objectName: pg-instance
+    resourceRef: pg-instance
     resourceName: database.example.org
     resourceVersion: v1alpha1
   applicationSelector:

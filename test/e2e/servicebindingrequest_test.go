@@ -97,7 +97,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	todoCtx := context.TODO()
 
 	name := "e2e-service-binding-request"
-	objectName := "e2e-db-testing"
+	resourceRef := "e2e-db-testing"
 	secretName := "e2e-db-credentials"
 	appName := "e2e-application"
 	matchLabels := map[string]string{
@@ -112,11 +112,11 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
 
 	t.Log("Creating Database mock object...")
-	db := mocks.DatabaseCRMock(ns, objectName)
+	db := mocks.DatabaseCRMock(ns, resourceRef)
 	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
 
 	t.Log("Updating Database status, adding 'DBCredentials'")
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: objectName}, &db))
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, &db))
 	db.Status.DBCredentials = secretName
 	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
 
@@ -138,7 +138,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	// creating service-binding-request, which will trigger actions in the controller
 	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, objectName, matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, &sbr)
 	require.Nil(t, f.Client.Create(todoCtx, &sbr, cleanUpOptions(ctx)))

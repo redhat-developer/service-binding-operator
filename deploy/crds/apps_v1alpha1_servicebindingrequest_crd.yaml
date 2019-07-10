@@ -54,11 +54,11 @@ spec:
                 CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd),
                 SMTP services for outbound email (such as Postfix), and caching systems
                 (such as Memcached).  Example 1: \tbackingServiceSelector: \t\tresourceName:
-                database.example.org      objectName: mysql-database
+                database.example.org      resourceRef: mysql-database
                 Example 2: \tbackingServiceSelector: \t\tresourceName: database.example.org\t\t
-                resourceVersion: v1alpha1\t\tobjectName: mysql-database"
+                resourceVersion: v1alpha1\t\tresourceRef: mysql-database"
               properties:
-                objectName:
+                resourceRef:
                   type: string
                 resourceName:
                   type: string
@@ -67,7 +67,7 @@ spec:
               required:
               - resourceName
               - resourceVersion
-              - objectName
+              - resourceRef
               type: object
           required:
           - backingServiceSelector
