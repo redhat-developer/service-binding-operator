@@ -88,11 +88,12 @@ GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
-OPERATOR_STABLE_VERSION ?= 0.0.10
-OPERATOR_DEV_VERSION ?= 0.0.11
+OPERATOR_STABLE_VERSION ?= 0.0.11
+OPERATOR_DEV_VERSION ?= $(OPERATOR_STABLE_VERSION)-dev
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
-OPERATOR_PACKAGE ?= service-binding
-OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
+OPERATOR_APP ?= ${GO_PACKAGE_REPO_NAME}
+OPERATOR_IMAGE_NAME ?= app-binding-operator
+OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${OPERATOR_IMAGE_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_DEV_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_DEV_VERSION)-$(GIT_COMMIT_ID)
 QUAY_TOKEN ?= ""
@@ -214,7 +215,7 @@ prepare-csv: build-image
 	cp -vf $(MANIFESTS_DIR)/*.package.yaml $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE),g' $(MANIFESTS_TMP)/*.yaml
-	sed -i -e 's,REPLACE_PACKAGE,$(OPERATOR_PACKAGE),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,REPLACE_PACKAGE,$(OPERATOR_APP),g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_VERSION,$(OPERATOR_TAG_LONG),g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
 	operator-courier --verbose verify $(MANIFESTS_TMP)
@@ -222,7 +223,7 @@ prepare-csv: build-image
 .PHONY: push-operator
 ## Push-Operator: Uplaod operator to Quay.io application repository
 push-operator: prepare-csv
-	$(Q)operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(OPERATOR_PACKAGE) $(OPERATOR_TAG_LONG) "$(QUAY_TOKEN)"
+	$(Q)operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(OPERATOR_APP) $(OPERATOR_TAG_LONG) "$(QUAY_TOKEN)"
 
 ## Push-Image: push docker image to upstream, including latest tag.
 push-image: build-image
