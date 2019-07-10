@@ -103,8 +103,6 @@ QUAY_TOKEN ?= ""
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
 
-SERVICE_BINDING_OPERATOR_DISABLE_ELECTION ?= true
-
 ## -- Static code analysis (lint) targets --
 
 GOLANGCI_LINT_BIN=./out/golangci-lint
@@ -167,7 +165,7 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)operator-sdk --verbose test local ./test/e2e \
+	$(Q)SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true operator-sdk --verbose test local ./test/e2e \
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
