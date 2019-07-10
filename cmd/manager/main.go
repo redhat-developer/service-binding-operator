@@ -52,10 +52,7 @@ func getOperatorName() string {
 // isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION,
 // check if any value is set this method returns false.
 func isLeaderElectionEnabled() bool {
-	if os.Getenv("SERVICE_BINDING_OPERATOR_DISABLE_ELECTION") != "" {
-		return false
-	}
-	return true
+	return os.Getenv("SERVICE_BINDING_OPERATOR_DISABLE_ELECTION") == ""
 }
 
 func main() {
