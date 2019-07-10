@@ -67,7 +67,7 @@ spec:
               required:
               - resourceName
               - resourceVersion
-              - resourceRef
+              - objectName
               type: object
           required:
           - backingServiceSelector
