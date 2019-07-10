@@ -82,11 +82,11 @@ func main() {
 		// Become the leader before proceeding
 		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
 		if err != nil {
-			log.Error(err, "Failed to become the leader!")
+			log.Error(err, "Failed to become the leader")
 			os.Exit(1)
 		}
 	} else {
-		log.Info("Warning: Leader election is disabled!")
+		log.Info("Warning: Leader election is disabled")
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
@@ -96,7 +96,7 @@ func main() {
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
-		log.Error(err, "")
+		log.Error(err, "Error on creating a new manager instance")
 		os.Exit(1)
 	}
 
@@ -104,12 +104,12 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "Error adding local operator scheme!")
+		log.Error(err, "Error adding local operator scheme")
 		os.Exit(1)
 	}
 
 	if err := osappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "Error on adding OS APIs to scheme!")
+		log.Error(err, "Error on adding OS APIs to scheme")
 		os.Exit(1)
 	}
 
