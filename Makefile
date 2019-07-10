@@ -161,7 +161,7 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)GO111MODULE=on POD_NAME=e2e operator-sdk --verbose test local ./test/e2e --debug --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-timeout=15m"
+	$(Q)GO111MODULE=on operator-sdk --verbose test local ./test/e2e --debug --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
 ## Runs the unit tests

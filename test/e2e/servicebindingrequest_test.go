@@ -26,7 +26,6 @@ var (
 	retryInterval  = time.Second * 5
 	timeout        = time.Second * 120
 	cleanupTimeout = time.Second * 5
-	replicas       = 1
 )
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
@@ -76,11 +75,6 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framewor
 	t.Logf("Using namespace '%s' for testing...", ns)
 
 	f := framework.Global
-	/*
-		require.Nil(t, e2eutil.WaitForOperatorDeployment(
-			t, f.KubeClient, ns, "service-binding-operator", replicas, retryInterval, timeout))
-	*/
-
 	return ns, f
 }
 
