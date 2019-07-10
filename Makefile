@@ -21,15 +21,15 @@ V_FLAG =
 S_FLAG = -s
 X_FLAG =
 ifeq ($(VERBOSE),1)
-	Q =
+    Q =
 endif
 ifeq ($(VERBOSE),2)
-	Q =
-	Q_FLAG =
-	QUIET_FLAG =
-	S_FLAG =
-	V_FLAG = -v
-	X_FLAG = -x
+    Q =
+    Q_FLAG =
+    QUIET_FLAG =
+    S_FLAG =
+    V_FLAG = -v
+    X_FLAG = -x
 endif
 
 # Create output directory for artifacts and test results. ./out is supposed to
@@ -85,6 +85,9 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
+
+CGO_ENABLED ?= 0
+GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
@@ -94,10 +97,13 @@ OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+
 QUAY_TOKEN ?= ""
 
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
+
+SERVICE_BINDING_OPERATOR_DISABLE_ELECTION ?= true
 
 ## -- Static code analysis (lint) targets --
 
@@ -161,7 +167,11 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)GO111MODULE=on KUBECONFIG=$(shell echo ${KUBECONFIG}) operator-sdk --verbose test local ./test/e2e --debug --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-timeout=15m" || sleep 1800
+	$(Q)operator-sdk --verbose test local ./test/e2e \
+			--debug \
+			--namespace $(TEST_NAMESPACE) \
+			--up-local \
+			--go-test-flags "-timeout=15m" || sleep 1800
 
 .PHONY: test-unit
 ## Runs the unit tests
@@ -188,7 +198,7 @@ test-e2e-olm-ci:
 build: out/operator
 
 out/operator:
-	$(Q)CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
