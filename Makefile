@@ -171,7 +171,7 @@ test-e2e: e2e-setup
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m" || sleep 1800
+			--go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
 ## Runs the unit tests
