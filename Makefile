@@ -124,7 +124,7 @@ lint-yaml: ${YAML_FILES}
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)./out/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
@@ -177,7 +177,7 @@ test-e2e: e2e-setup
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)GO111MODULE=on GOCACHE=$(GOCACHE) go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -202,15 +202,15 @@ out/operator:
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	$(Q)operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
-	$(Q)GO111MODULE=on operator-sdk generate k8s
+	$(Q)operator-sdk generate k8s
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
-	$(Q)GOCACHE=$(GOCACHE) GO111MODULE=on go mod vendor ${V_FLAG}
+	$(Q)go mod vendor ${V_FLAG}
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
