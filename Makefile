@@ -159,7 +159,7 @@ e2e-setup: e2e-cleanup
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
-	$(Q)kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
+	$(Q)kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait || true
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
