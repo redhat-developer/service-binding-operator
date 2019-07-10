@@ -49,8 +49,7 @@ func getOperatorName() string {
 	return "service-binding-operator"
 }
 
-// isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION,
-// check if any value is set this method returns false.
+// isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION.
 func isLeaderElectionEnabled() bool {
 	return os.Getenv("SERVICE_BINDING_OPERATOR_DISABLE_ELECTION") == ""
 }
@@ -78,6 +77,7 @@ func main() {
 
 	ctx := context.TODO()
 
+	// FIXME: is there a way to tell k8s-client that is not running in-cluster?
 	if isLeaderElectionEnabled() {
 		// Become the leader before proceeding
 		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
