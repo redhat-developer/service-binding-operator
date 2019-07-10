@@ -175,7 +175,7 @@ test-e2e: e2e-setup
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v $(TEST_EXTRA_ARGS)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
