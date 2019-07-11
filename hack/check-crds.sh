@@ -1,21 +1,26 @@
 #!/bin/bash
 
 function check_crds () {
-	local crd_name="$1"
+    local crd_name="$1"
 
-	for i in  1..120 ; do
-		if kubectl get crds $crd_name -o wide ; then
-			echo "CRD is found: ${crd_name}"
-			return 0
-		fi
+    for i in  {1..120} ; do
+        if ( kubectl get crds |grep ${crd_name} 2>&1 > /dev/null ) ; then
+            return 0
+        fi
 
-		sleep 3
-	done
+        sleep 3
+    done
 
-	echo "CRD doesn't exist: ${crd_name}"
-	return 1
+    return 1
 }
 
-if ! check_crds servicebindingrequests.apps.openshift.io ; then
-	exit 1
+CRD_NAME="servicebindingrequests.apps.openshift.io"
+
+echo "# Searching for '${CRD_NAME}'..."
+
+if ! check_crds ${CRD_NAME} ; then
+    echo "CRD doesn't exist: ${crd_name}"
+    exit 1
 fi
+
+echo "CRD is found: ${crd_name}"

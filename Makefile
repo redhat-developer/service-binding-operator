@@ -184,12 +184,13 @@ test-unit:
 test: test-unit test-e2e
 
 .PHONY: test-e2e-olm-ci
-test-e2e-olm-ci:
+test-e2e-olm-ci: test-subscription test-e2e
+
+test-subscription:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
 	$(Q)./hack/check-crds.sh
-	$(Q)operator-sdk test local ./test/e2e --no-setup --go-test-flags "-v -timeout=15m"
 
 ## -- Build Go binary and OCI image targets --
 
