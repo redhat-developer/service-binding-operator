@@ -103,9 +103,10 @@ QUAY_TOKEN ?= ""
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
 
+GOLANGCI_LINT_BIN=./out/golangci-lint
+
 ## -- Static code analysis (lint) targets --
 
-GOLANGCI_LINT_BIN=./out/golangci-lint
 .PHONY: lint
 ## Runs linters on Go code files and YAML files
 lint: setup-venv lint-go-code lint-yaml courier
@@ -208,6 +209,10 @@ build-image:
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
 	$(Q)operator-sdk generate k8s
+
+## Generate-OpenAPI: after modifying _types, generate OpenAPI scaffolding.
+generate-openapi:
+	$(Q)operator-sdk generate openapi
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
