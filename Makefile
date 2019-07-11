@@ -21,15 +21,15 @@ V_FLAG =
 S_FLAG = -s
 X_FLAG =
 ifeq ($(VERBOSE),1)
-    Q =
+	Q =
 endif
 ifeq ($(VERBOSE),2)
-    Q =
-    Q_FLAG =
-    QUIET_FLAG =
-    S_FLAG =
-    V_FLAG = -v
-    X_FLAG = -x
+	Q =
+	Q_FLAG =
+	QUIET_FLAG =
+	S_FLAG =
+	V_FLAG = -v
+	X_FLAG = -x
 endif
 
 # Create output directory for artifacts and test results. ./out is supposed to
