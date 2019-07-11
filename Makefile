@@ -185,13 +185,13 @@ test-unit:
 test: test-unit test-e2e
 
 .PHONY: test-e2e-olm-ci
-test-e2e-olm-ci: test-subscription test-e2e
-
-test-subscription:
+## OLM-E2E: Adds the operator as a subscription, and run e2e tests without any setup.
+test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
 	$(Q)./hack/check-crds.sh
+	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m"
 
 ## -- Build Go binary and OCI image targets --
 
