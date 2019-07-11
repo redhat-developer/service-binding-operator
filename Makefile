@@ -208,11 +208,11 @@ build-image:
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
-	$(Q)operator-sdk generate k8s
+	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate k8s
 
 ## Generate-OpenAPI: after modifying _types, generate OpenAPI scaffolding.
 generate-openapi:
-	$(Q)operator-sdk generate openapi
+	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate openapi
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
