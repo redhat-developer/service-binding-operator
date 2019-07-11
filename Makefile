@@ -86,6 +86,10 @@ GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
+CGO_ENABLED ?= 0
+GO111MODULE ?= on
+GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
+
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.0.10
@@ -93,14 +97,16 @@ OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+
 QUAY_TOKEN ?= ""
 
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
 
+GOLANGCI_LINT_BIN=./out/golangci-lint
+
 ## -- Static code analysis (lint) targets --
 
-GOLANGCI_LINT_BIN=./out/golangci-lint
 .PHONY: lint
 ## Runs linters on Go code files and YAML files
 lint: setup-venv lint-go-code lint-yaml courier
@@ -117,7 +123,7 @@ lint-yaml: ${YAML_FILES}
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)GOCACHE=$(shell pwd)/out/gocache ./out/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
@@ -150,48 +156,67 @@ get-test-namespace: out/test-namespace
 .PHONY: e2e-setup
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
+	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
-	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=10s --wait
+	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)GO111MODULE=on operator-sdk test local ./test/e2e --namespace $(TEST_NAMESPACE) --up-local --go-test-flags "-v -timeout=15m"
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
+		operator-sdk --verbose test local ./test/e2e \
+			--debug \
+			--namespace $(TEST_NAMESPACE) \
+			--up-local \
+			--go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)GO111MODULE=on GOCACHE=$(shell pwd)/out/gocache go test $(shell GOCACHE=$(shell pwd)/out/gocache go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+
+.PHONY: test
+## Test: Runs unit and integration (e2e) tests
+test: test-unit test-e2e
 
 .PHONY: test-e2e-olm-ci
+## OLM-E2E: Adds the operator as a subscription, and run e2e tests without any setup.
 test-e2e-olm-ci:
-	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/e2e/catalog_source.yaml | kubectl apply -f -
-	$(Q)kubectl apply -f ./test/e2e/subscription.yaml
+	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
+	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
 	$(Q)./hack/check-crds.sh
-	$(Q)operator-sdk test local ./test/e2e --no-setup --go-test-flags "-v -timeout=15m"
+	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m"
 
 ## -- Build Go binary and OCI image targets --
 
-.PHONY: build 
+.PHONY: build
 ## Build: compile the operator for Linux/AMD64.
 build: out/operator
 
 out/operator:
-	$(Q)CGO_ENABLED=0 GO111MODULE=on GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)GO111MODULE=on operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	$(Q)operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
+## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
+generate-k8s:
+	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate k8s
+
+## Generate-OpenAPI: after modifying _types, generate OpenAPI scaffolding.
+generate-openapi:
+	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate openapi
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
-	$(Q)GOCACHE=$(shell pwd)/out/gocache GO111MODULE=on go mod vendor ${V_FLAG}
+	$(Q)GOCACHE=$(GOCACHE) go mod vendor ${V_FLAG}
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
@@ -228,29 +253,29 @@ push-image: build-image
 ## -- Local deployment targets --
 
 .PHONY: local
-## Run operator locally
+## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds deploy-cr
 	$(Q)operator-sdk up local
 
 .PHONY: deploy-rbac
-## Setup service account and deploy RBAC
+## Deploy-RBAC: Setup service account and deploy RBAC
 deploy-rbac:
 	$(Q)kubectl create -f deploy/service_account.yaml
 	$(Q)kubectl create -f deploy/role.yaml
 	$(Q)kubectl create -f deploy/role_binding.yaml
 
 .PHONY: deploy-crds
-## Deploy CRD
+## Deploy-CRD: Deploy CRD
 deploy-crds:
 	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 
 .PHONY: deploy-cr
-## Deploy CRs
+## Deploy-CR: Deploy CRs
 deploy-cr:
 	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 
 .PHONY: deploy-clean
-## Removing CRDs and CRs
+## Deploy-Clean: Removing CRDs and CRs
 deploy-clean:
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
@@ -258,6 +283,10 @@ deploy-clean:
 	$(Q)-kubectl delete -f deploy/role_binding.yaml
 	$(Q)-kubectl delete -f deploy/role.yaml
 	$(Q)-kubectl delete -f deploy/service_account.yaml
+
+.PHONY: deploy
+## Deploy:
+deploy: deploy-rbac deploy-crds
 
 
 ## -- Cleanup targets --

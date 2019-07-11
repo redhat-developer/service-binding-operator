@@ -5,7 +5,7 @@ metadata:
   name: my-service-binding
   namespace: openshift-operators
 spec:
-  channel: alpha
+  channel: dev
   name: service-binding
   source: my-catalog
   sourceNamespace: openshift-operator-lifecycle-manager
