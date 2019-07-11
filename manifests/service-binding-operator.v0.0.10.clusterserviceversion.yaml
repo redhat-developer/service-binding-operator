@@ -24,7 +24,7 @@ spec:
       displayName: ServiceBindingRequest
       description: Expresses intent to bind an operator-backed service with an Deployment.
   description: Placeholder description
-  displayName: Operator Service Binding Operator
+  displayName: Service Binding Operator
   install:
     spec:
       deployments:
