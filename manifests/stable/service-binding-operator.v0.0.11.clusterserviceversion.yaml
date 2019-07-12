@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"example-servicebindingrequest"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"production"},"resourceKind":"Deployment"},"backingSelector":{"resourceName":"database.example.org","resourceVersion":"v1alpha1"}}}]'
+    alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"example-servicebindingrequest"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"production"},"resourceKind":"Deployment"},"backingServiceSelector":{"resourceName":"database.example.org","resourceVersion":"v1alpha1"}}}]'
     capabilities: Basic Install
     containerImage: quay.io/redhat-developer/app-binding-operator:v0.0.11
     description: An operator to support binding capabilities between imported apps and operator backed services
@@ -24,7 +24,7 @@ spec:
       displayName: ServiceBindingRequest
       description: Expresses intent to bind an operator-backed service with an Deployment.
   description: Placeholder description
-  displayName: Operator Service Binding Operator
+  displayName: Service Binding Operator
   icon:
   - base64data: REPLACE_ICON_BASE64_DATA
     mediatype: image/png

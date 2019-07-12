@@ -1,12 +1,13 @@
 FROM quay.io/openshift/origin-operator-registry:latest
 
 ARG version=0.0.10
-
-COPY manifests manifests
+RUN mkdir -p manifests/service-binding-operator/${version}
+COPY manifests/service-binding-operator.package.yaml manifests/service-binding-operator/
+COPY manifests/service-binding-operator*.crd.yaml manifests/service-binding-operator/${version}/
+COPY manifests/service-binding-operator*.clusterserviceversion.yaml manifests/service-binding-operator/${version}/
 
 USER root
-RUN rm manifests/*.package.yaml
-RUN sed -e "s,quay.io/redhat-developer/app-binding-operator,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator," -i manifests/service-binding-operator.v${version}.clusterserviceversion.yaml
+RUN sed -e "s,quay.io/redhat-developer/app-binding-operator:v${version},registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator," -i manifests/service-binding-operator/${version}/service-binding-operator.v${version}.clusterserviceversion.yaml
 RUN initializer
 
 USER 1001

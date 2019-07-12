@@ -8,7 +8,7 @@ import (
 	"runtime"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	osappsv1 "github.com/openshift/api/apps/v1"
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
@@ -16,11 +16,11 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/restmapper"
 	sdkVersion "github.com/operator-framework/operator-sdk/version"
 	"github.com/spf13/pflag"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
-	osappsv1 "github.com/openshift/api/apps/v1"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller"
@@ -39,25 +39,25 @@ func printVersion() {
 	log.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
+// getOperatorName based on environment variable OPERATOR_NAME, or returns the default name for
+// the operatator.
+func getOperatorName() string {
+	envName := os.Getenv("OPERATOR_NAME")
+	if envName != "" {
+		return envName
+	}
+	return "service-binding-operator"
+}
+
+// isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION.
+func isLeaderElectionEnabled() bool {
+	return os.Getenv("SERVICE_BINDING_OPERATOR_DISABLE_ELECTION") == ""
+}
+
 func main() {
-	// Add the zap logger flag set to the CLI. The flag set must
-	// be added before calling pflag.Parse().
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
-
-	// Add flags registered by imported packages (e.g. glog and
-	// controller-runtime)
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-
 	pflag.Parse()
-
-	// Use a zap logr.Logger implementation. If none of the zap
-	// flags are configured (or if the zap flag set is not being
-	// used), this defaults to a production zap logger.
-	//
-	// The logger instantiated here can be changed to any logger
-	// implementing the logr.Logger interface. This logger will
-	// be propagated through the whole operator, generating
-	// uniform and structured logs.
 	logf.SetLogger(zap.Logger())
 
 	printVersion()
@@ -71,17 +71,22 @@ func main() {
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		log.Error(err, "")
+		log.Error(err, "Failed to acquire a configuration to talk to the API server")
 		os.Exit(1)
 	}
 
 	ctx := context.TODO()
 
-	// Become the leader before proceeding
-	err = leader.Become(ctx, "service-binding-operator-lock")
-	if err != nil {
-		log.Error(err, "")
-		os.Exit(1)
+	// FIXME: is there a way to tell k8s-client that is not running in-cluster?
+	if isLeaderElectionEnabled() {
+		// Become the leader before proceeding
+		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
+		if err != nil {
+			log.Error(err, "Failed to become the leader")
+			os.Exit(1)
+		}
+	} else {
+		log.Info("Warning: Leader election is disabled")
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
@@ -91,7 +96,7 @@ func main() {
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
-		log.Error(err, "")
+		log.Error(err, "Error on creating a new manager instance")
 		os.Exit(1)
 	}
 
@@ -99,18 +104,18 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "Error adding local operator scheme!")
+		log.Error(err, "Error adding local operator scheme")
 		os.Exit(1)
 	}
 
 	if err := osappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Error(err, "Error on adding OS APIs to scheme!")
+		log.Error(err, "Error on adding OS APIs to scheme")
 		os.Exit(1)
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Error(err, "")
+		log.Error(err, "Failed to setup the controller manager")
 		os.Exit(1)
 	}
 
