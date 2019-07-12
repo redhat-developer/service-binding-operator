@@ -47,7 +47,7 @@ func TestRetriever(t *testing.T) {
 		assert.NotEmpty(t, retriever.data)
 	})
 
-	t.Run("GetCRKey", func(t *testing.T) {
+	t.Run("getCRKey", func(t *testing.T) {
 		imageName, err := retriever.getCRKey("spec", "imageName")
 		assert.Nil(t, err)
 		assert.Equal(t, "postgres", imageName)
@@ -76,12 +76,12 @@ func TestRetriever(t *testing.T) {
 
 	})
 
-	t.Run("", func(t *testing.T) {
+	t.Run("extractSecretItemName", func(t *testing.T) {
 		assert.Equal(t, "user", retriever.extractSecretItemName(
 			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user"))
 	})
 
-	t.Run("ReadSecret", func(t *testing.T) {
+	t.Run("readSecret", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
 		err := retriever.readSecret("db-credentials", []string{"user", "password"})
@@ -91,15 +91,14 @@ func TestRetriever(t *testing.T) {
 		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
 	})
 
-	t.Run("Store", func(t *testing.T) {
+	t.Run("store", func(t *testing.T) {
 		retriever.store("test", []byte("test"))
 		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_TEST")
 		assert.Equal(t, []byte("test"), retriever.data["SERVICE_BINDING_DATABASE_TEST"])
 	})
 
-	t.Run("SaveDataOnSecret", func(t *testing.T) {
+	t.Run("saveDataOnSecret", func(t *testing.T) {
 		err := retriever.saveDataOnSecret()
 		assert.Nil(t, err)
 	})
-
 }
