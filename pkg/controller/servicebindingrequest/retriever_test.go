@@ -102,3 +102,44 @@ func TestRetriever(t *testing.T) {
 		assert.Nil(t, err)
 	})
 }
+
+func TestRetrieverNestedCRDKey(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
+
+	ns := "testing"
+	crName := "db-testing"
+
+	crdDescription := mocks.CRDDescriptionMock()
+	cr := mocks.NestedDatabaseCRMock(ns, crName)
+
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	require.Nil(t, err)
+
+	plan := &Plan{
+		Ns:             ns,
+		Name:           "retriever",
+		CRDDescription: &crdDescription,
+		CR:             &ustrv1.Unstructured{Object: genericCR},
+	}
+
+	dbSecret := mocks.SecretMock(ns, "db-credentials")
+	objs := []runtime.Object{&dbSecret}
+	fakeClient := fake.NewFakeClient(objs...)
+
+	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	require.NotNil(t, retriever)
+
+	t.Run("Second level", func(t *testing.T) {
+		imageName, err := retriever.getCRKey("spec", "image.name")
+		assert.Nil(t, err)
+		assert.Equal(t, "postgres", imageName)
+	})
+
+	t.Run("Third level", func(t *testing.T) {
+		something, err := retriever.getCRKey("spec", "image.third.something")
+		assert.Nil(t, err)
+		assert.Equal(t, "somevalue", something)
+	})
+
+}
