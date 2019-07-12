@@ -29,10 +29,8 @@ const (
 )
 
 func getNestedValue(key string, sectionMap interface{}) (string, error) {
-	var value interface{}
-	var exists bool
 	if !strings.Contains(key, ".") {
-		value, exists = sectionMap.(map[string]interface{})[key]
+		value, exists := sectionMap.(map[string]interface{})[key]
 		if !exists {
 			return "", fmt.Errorf("Can't find key '%s'", key)
 		}
