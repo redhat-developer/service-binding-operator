@@ -28,7 +28,8 @@ const (
 	secretPrefix  = "urn:alm:descriptor:servicebindingrequest:env:object:secret"
 )
 
-func getNestedValue(key string, sectionMap interface{}) (string, error) {
+// getNestedValue retrieve value from dotted key path
+func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, error) {
 	if !strings.Contains(key, ".") {
 		value, exists := sectionMap.(map[string]interface{})[key]
 		if !exists {
@@ -41,7 +42,7 @@ func getNestedValue(key string, sectionMap interface{}) (string, error) {
 	if !exists {
 		return "", fmt.Errorf("Can't find '%v' section in CR", attrs)
 	}
-	return getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
+	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
 }
 
 // getCRKey retrieve key in section from CR object, part of the "plan" instance.
@@ -56,7 +57,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, error) {
 		return "", fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
-	return getNestedValue(key, sectionMap)
+	return r.getNestedValue(key, sectionMap)
 }
 
 // read attributes from CR, where place means which top level key name contains the "path" actual
