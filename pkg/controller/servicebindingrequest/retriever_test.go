@@ -136,6 +136,11 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 		assert.Equal(t, "postgres", imageName)
 	})
 
+	t.Run("Second level error", func(t *testing.T) {
+		_, err := retriever.getCRKey("spec", "image..name")
+		assert.NotNil(t, err)
+	})
+
 	t.Run("Third level", func(t *testing.T) {
 		something, err := retriever.getCRKey("spec", "image.third.something")
 		assert.Nil(t, err)
