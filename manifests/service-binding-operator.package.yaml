@@ -3,5 +3,5 @@ channels:
 - name: dev
   currentCSV: service-binding-operator.vREPLACE_VERSION
 - name: stable
-  currentCSV: service-binding-operator.v0.0.11
+  currentCSV: service-binding-operator.v0.0.12
 defaultChannel: stable
