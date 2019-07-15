@@ -28,6 +28,23 @@ const (
 	secretPrefix  = "urn:alm:descriptor:servicebindingrequest:env:object:secret"
 )
 
+// getNestedValue retrieve value from dotted key path
+func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, error) {
+	if !strings.Contains(key, ".") {
+		value, exists := sectionMap.(map[string]interface{})[key]
+		if !exists {
+			return "", fmt.Errorf("Can't find key '%s'", key)
+		}
+		return fmt.Sprintf("%v", value), nil
+	}
+	attrs := strings.SplitN(key, ".", 2)
+	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
+	if !exists {
+		return "", fmt.Errorf("Can't find '%v' section in CR", attrs)
+	}
+	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
+}
+
 // getCRKey retrieve key in section from CR object, part of the "plan" instance.
 func (r *Retriever) getCRKey(section string, key string) (string, error) {
 	obj := r.plan.CR.Object
@@ -40,15 +57,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, error) {
 		return "", fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
-	value, exists := sectionMap.(map[string]interface{})[key]
-	if !exists {
-		return "", fmt.Errorf("Can't find key '%s' in section '%s', on object named '%s'",
-			key, section, objName)
-	}
-
-	logger.Info("CR attribute is found!")
-	// making sure we always return a string representation
-	return fmt.Sprintf("%v", value), nil
+	return r.getNestedValue(key, sectionMap)
 }
 
 // read attributes from CR, where place means which top level key name contains the "path" actual

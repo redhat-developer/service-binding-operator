@@ -184,3 +184,51 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) extv1beta1.D
 		},
 	}
 }
+
+//ThirdLevel ...
+type ThirdLevel struct {
+	Something string `json:"something"`
+}
+
+// NestedImage ...
+type NestedImage struct {
+	Name       string     `json:"name"`
+	ThirdLevel ThirdLevel `json:"third"`
+}
+
+// NestedDatabaseSpec ...
+type NestedDatabaseSpec struct {
+	Image NestedImage `json:"image"`
+}
+
+// NestedDatabase ...
+type NestedDatabase struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec NestedDatabaseSpec `json:"spec,omitempty"`
+}
+
+// NestedDatabaseCRMock based on PostgreSQL operator, returning a instantiated object.
+func NestedDatabaseCRMock(ns, name string) NestedDatabase {
+	return NestedDatabase{
+		// usually TypeMeta should not be explicitly defined in mocked objects, however, on using
+		// it via *unstructured.Unstructured it could not find this CR without it.
+		TypeMeta: metav1.TypeMeta{
+			Kind:       CRDKind,
+			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: NestedDatabaseSpec{
+			Image: NestedImage{
+				Name: "postgres",
+				ThirdLevel: ThirdLevel{
+					Something: "somevalue",
+				},
+			},
+		},
+	}
+}
