@@ -38,13 +38,13 @@ type Plan struct {
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
-	var resourceName = strings.ToLower(
-		fmt.Sprintf(".%s", p.sbr.Spec.BackingServiceSelector.ResourceName))
+	var resourceKind = strings.ToLower(
+		fmt.Sprintf(".%s", p.sbr.Spec.BackingServiceSelector.ResourceKind))
 	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingServiceSelector.ResourceVersion)
 	var err error
 
 	logger := p.logger.WithValues(
-		"BackingServiceSelector.ResourceName", resourceName,
+		"BackingServiceSelector.ResourceKind", resourceKind,
 		"BackingServiceSelector.ResourceVersion", resourceVersion)
 	logger.Info("Looking for a CSV based on backing-selector")
 	csvList := &olmv1alpha1.ClusterServiceVersionList{}
@@ -67,7 +67,7 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 			logger.Info("Inspecting CustomResourceDefinitionDescription object...")
 
 			// checking for suffix since is expected to have object type as prefix
-			if !strings.HasSuffix(strings.ToLower(crd.Name), resourceName) {
+			if !strings.HasSuffix(strings.ToLower(crd.Name), resourceKind) {
 				continue
 			}
 			if crd.Version != "" && resourceVersion != strings.ToLower(crd.Version) {
@@ -87,7 +87,7 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	var resourceRef = p.sbr.Spec.BackingServiceSelector.ResourceRef
 	var apiVersion = fmt.Sprintf("%s/%s",
-		p.sbr.Spec.BackingServiceSelector.ResourceName,
+		p.sbr.Spec.BackingServiceSelector.ResourceKind,
 		p.sbr.Spec.BackingServiceSelector.ResourceVersion)
 	var err error
 
