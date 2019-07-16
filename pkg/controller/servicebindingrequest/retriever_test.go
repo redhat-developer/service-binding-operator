@@ -4,33 +4,34 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"github.com/stretchr/testify/require"
+	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
-var retriever *Retriever
+func TestRetriever(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
 
-func TestRetrieverNew(t *testing.T) {
 	ns := "testing"
-	crdName := "db-testing"
+	crName := "db-testing"
 
 	crdDescription := mocks.CRDDescriptionMock()
-	crd := mocks.DatabaseCRDMock(ns, crdName)
+	cr := mocks.DatabaseCRMock(ns, crName)
 
-	genericCRDObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&crd)
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
 	plan := &Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
-		CRD:            &unstructured.Unstructured{Object: genericCRDObj},
+		CR:             &ustrv1.Unstructured{Object: genericCR},
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
@@ -39,65 +40,111 @@ func TestRetrieverNew(t *testing.T) {
 
 	retriever = NewRetriever(context.TODO(), fakeClient, plan)
 	require.NotNil(t, retriever)
-}
 
-func TestRetrieverGetCRDKey(t *testing.T) {
-	imageName, err := retriever.getCRDKey("spec", "imageName")
-	assert.Nil(t, err)
-	assert.Equal(t, "postgres", imageName)
-}
-
-func TestRetrieverRead(t *testing.T) {
-	// reading from secret, from status attribute
-	err := retriever.read("status", "dbCredentials", []string{
-		"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
-		"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
+	t.Run("retrive", func(t *testing.T) {
+		err := retriever.Retrieve()
+		assert.Nil(t, err)
+		assert.NotEmpty(t, retriever.data)
 	})
-	assert.Nil(t, err)
 
-	t.Logf("retriever.data '%#v'", retriever.data)
-	assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
-	assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
-
-	// reading from spec attribute
-	err = retriever.read("spec", "image", []string{
-		"urn:alm:descriptor:servicebindingrequest:env:attribute",
+	t.Run("getCRKey", func(t *testing.T) {
+		imageName, err := retriever.getCRKey("spec", "imageName")
+		assert.Nil(t, err)
+		assert.Equal(t, "postgres", imageName)
 	})
-	assert.Nil(t, err)
 
-	t.Logf("retriever.data '%#v'", retriever.data)
-	assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_IMAGE")
+	t.Run("read", func(t *testing.T) {
+		// reading from secret, from status attribute
+		err := retriever.read("status", "dbCredentials", []string{
+			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
+			"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
+		})
+		assert.Nil(t, err)
 
+		t.Logf("retriever.data '%#v'", retriever.data)
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
+
+		// reading from spec attribute
+		err = retriever.read("spec", "image", []string{
+			"urn:alm:descriptor:servicebindingrequest:env:attribute",
+		})
+		assert.Nil(t, err)
+
+		t.Logf("retriever.data '%#v'", retriever.data)
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_IMAGE")
+
+	})
+
+	t.Run("extractSecretItemName", func(t *testing.T) {
+		assert.Equal(t, "user", retriever.extractSecretItemName(
+			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user"))
+	})
+
+	t.Run("readSecret", func(t *testing.T) {
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		assert.Nil(t, err)
+
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
+	})
+
+	t.Run("store", func(t *testing.T) {
+		retriever.store("test", []byte("test"))
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_TEST")
+		assert.Equal(t, []byte("test"), retriever.data["SERVICE_BINDING_DATABASE_TEST"])
+	})
+
+	t.Run("saveDataOnSecret", func(t *testing.T) {
+		err := retriever.saveDataOnSecret()
+		assert.Nil(t, err)
+	})
 }
 
-func TestRetrieverExtractSecretItemName(t *testing.T) {
-	assert.Equal(t, "user", retriever.extractSecretItemName(
-		"urn:alm:descriptor:servicebindingrequest:env:object:secret:user"))
-}
+func TestRetrieverNestedCRDKey(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
 
-func TestRetrieverReadSecret(t *testing.T) {
-	retriever.data = make(map[string][]byte)
+	ns := "testing"
+	crName := "db-testing"
 
-	err := retriever.readSecret("db-credentials", []string{"user", "password"})
-	assert.Nil(t, err)
+	crdDescription := mocks.CRDDescriptionMock()
+	cr := mocks.NestedDatabaseCRMock(ns, crName)
 
-	assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
-	assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
-}
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	require.Nil(t, err)
 
-func TestRetrieverStore(t *testing.T) {
-	retriever.store("test", []byte("test"))
-	assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_TEST")
-	assert.Equal(t, []byte("test"), retriever.data["SERVICE_BINDING_DATABASE_TEST"])
-}
+	plan := &Plan{
+		Ns:             ns,
+		Name:           "retriever",
+		CRDDescription: &crdDescription,
+		CR:             &ustrv1.Unstructured{Object: genericCR},
+	}
 
-func TestRetrieverSaveDataOnSecret(t *testing.T) {
-	err := retriever.saveDataOnSecret()
-	assert.Nil(t, err)
-}
+	dbSecret := mocks.SecretMock(ns, "db-credentials")
+	objs := []runtime.Object{&dbSecret}
+	fakeClient := fake.NewFakeClient(objs...)
 
-func TestRetrieverRetrieve(t *testing.T) {
-	err := retriever.Retrieve()
-	assert.Nil(t, err)
-	assert.NotEmpty(t, retriever.data)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	require.NotNil(t, retriever)
+
+	t.Run("Second level", func(t *testing.T) {
+		imageName, err := retriever.getCRKey("spec", "image.name")
+		assert.Nil(t, err)
+		assert.Equal(t, "postgres", imageName)
+	})
+
+	t.Run("Second level error", func(t *testing.T) {
+		_, err := retriever.getCRKey("spec", "image..name")
+		assert.NotNil(t, err)
+	})
+
+	t.Run("Third level", func(t *testing.T) {
+		something, err := retriever.getCRKey("spec", "image.third.something")
+		assert.Nil(t, err)
+		assert.Equal(t, "somevalue", something)
+	})
+
 }

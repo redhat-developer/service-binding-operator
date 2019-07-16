@@ -4,13 +4,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Add custom validation using kubebuilder tags:
+	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	//
@@ -24,12 +25,12 @@ type ServiceBindingRequestSpec struct {
 	// Example 1:
 	//	backingServiceSelector:
 	//		resourceKind: database.example.org
-	//      	resourceRef: mysql-database
+	//      resourceRef: mysql-database
 	// Example 2:
 	//	backingServiceSelector:
 	//		resourceKind: database.example.org
 	//		resourceVersion: v1alpha1
-	//      	resourceRef: mysql-database
+	//      resourceRef: mysql-database
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
@@ -41,7 +42,6 @@ type ServiceBindingRequestSpec struct {
 	//			environment: stage
 	//		resourceKind: Deployment
 	// Example 2:
-	// (By default resourceKind is Deployment)
 	//	applicationSelector:
 	//		matchLabels:
 	//			connects-to: postgres
@@ -54,7 +54,7 @@ type ServiceBindingRequestSpec struct {
 type BackingServiceSelector struct {
 	ResourceKind    string `json:"resourceKind"`
 	ResourceVersion string `json:"resourceVersion"`
-	ResourceRef      string `json:"resourceRef"`
+	ResourceRef     string `json:"resourceRef"`
 }
 
 // ApplicationSelector defines the selector based on labels and resource kind
@@ -66,10 +66,7 @@ type ApplicationSelector struct {
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
-type ServiceBindingRequestStatus struct {
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
-}
+type ServiceBindingRequestStatus struct{}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

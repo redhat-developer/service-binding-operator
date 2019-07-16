@@ -28,39 +28,44 @@ const (
 	secretPrefix  = "urn:alm:descriptor:servicebindingrequest:env:object:secret"
 )
 
-// getCRDKey retrieve key in section from CRD object, part of the "plan" instance.
-func (r *Retriever) getCRDKey(section string, key string) (string, error) {
-	obj := r.plan.CRD.Object
-	objName := r.plan.CRD.GetName()
-	logger := r.logger.WithValues(
-		"read.CRD.Name", objName,
-		"read.CRD.section", section,
-		"read.CRD.key", key,
-	)
-	logger.Info("Reading CRD attributes...")
+// getNestedValue retrieve value from dotted key path
+func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, error) {
+	if !strings.Contains(key, ".") {
+		value, exists := sectionMap.(map[string]interface{})[key]
+		if !exists {
+			return "", fmt.Errorf("Can't find key '%s'", key)
+		}
+		return fmt.Sprintf("%v", value), nil
+	}
+	attrs := strings.SplitN(key, ".", 2)
+	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
+	if !exists {
+		return "", fmt.Errorf("Can't find '%v' section in CR", attrs)
+	}
+	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
+}
+
+// getCRKey retrieve key in section from CR object, part of the "plan" instance.
+func (r *Retriever) getCRKey(section string, key string) (string, error) {
+	obj := r.plan.CR.Object
+	objName := r.plan.CR.GetName()
+	logger := r.logger.WithValues("CR.Name", objName, "CR.section", section, "CR.key", key)
+	logger.Info("Reading CR attributes...")
 
 	sectionMap, exists := obj[section]
 	if !exists {
-		return "", fmt.Errorf("Can't find '%s' section in CRD named '%s'", section, objName)
+		return "", fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
-	value, exists := sectionMap.(map[string]interface{})[key]
-	if !exists {
-		return "", fmt.Errorf("Can't find key '%s' in section '%s', on object named '%s'",
-			key, section, objName)
-	}
-
-	logger.Info("CRD attribute is found!")
-	// making sure we always return a string representation
-	return fmt.Sprintf("%v", value), nil
+	return r.getNestedValue(key, sectionMap)
 }
 
-// read attributes from CRD, where place means which top level key name contains the "path" actual
-// value, and parsing x-descriptors in order to either directly read CRD data, or read items from
+// read attributes from CR, where place means which top level key name contains the "path" actual
+// value, and parsing x-descriptors in order to either directly read CR data, or read items from
 // a secret.
 func (r *Retriever) read(place, path string, xDescriptors []string) error {
 	logger := r.logger.WithValues(
-		"CRD.Section", place,
+		"CR.Section", place,
 		"CRDDescription.Path", path,
 		"CRDDescription.XDescriptors", xDescriptors,
 	)
@@ -72,7 +77,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 	for _, xDescriptor := range xDescriptors {
 		logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
 		logger.Info("Inspecting xDescriptor...")
-		pathValue, err := r.getCRDKey(place, path)
+		pathValue, err := r.getCRKey(place, path)
 		if err != nil {
 			return err
 		}
@@ -128,7 +133,7 @@ func (r *Retriever) readSecret(name string, items []string) error {
 func (r *Retriever) store(key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
 	key = strings.ReplaceAll(key, ".", "_")
-	key = fmt.Sprintf("%s_%s_%s", bindingPrefix, r.plan.CRD.GetKind(), key)
+	key = fmt.Sprintf("%s_%s_%s", bindingPrefix, r.plan.CR.GetKind(), key)
 	key = strings.ToUpper(key)
 	r.data[key] = value
 }
