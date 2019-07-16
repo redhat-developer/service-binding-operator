@@ -65,16 +65,19 @@ statusDescriptors:
 
  Alternatively, install the operator using
 
- ```apiVersion: operators.coreos.com/v1
-     kind: OperatorSource
-     metadata:
-       name: redhat-developer-operators
-       namespace: openshift-marketplace
-     spec:
-       type: appregistry
-       endpoint: https://quay.io/cnr
-       registryNamespace: redhat-developer
-   ```
+ ```yaml:
+ --- 
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata: 
+  name: redhat-developer-operators
+  namespace: openshift-marketplace
+spec: 
+  endpoint: "https://quay.io/cnr"
+  registryNamespace: redhat-developer
+  type: appregistry
+
+```
 
 ## Example Scenario
 
@@ -87,53 +90,59 @@ statusDescriptors:
  We'll use  https://github.com/baijum/postgresql-operator to demonstrate a 
  sample use case.
 
-  * The cluster-admin installs the database operator
+* The cluster-admin installs the database operator
   using an `OperatorSource`
-
-    ```apiVersion: operators.coreos.com/v1
-       kind: OperatorSource
-       metadata:
-         name: db-operators
-         namespace: openshift-marketplace
-       spec:
-         type: appregistry
-         endpoint: https://quay.io/cnr
-         registryNamespace: pmacik
-    ```
+```yaml:
+    --- 
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata: 
+  name: db-operators
+  namespace: openshift-marketplace
+spec: 
+  endpoint: "https://quay.io/cnr"
+  registryNamespace: pmacik
+  type: appregistry
+```
 
   * For example, Creation of a PostgreSQL operator-managed database 
  exposes the following binding information: 
 
-    ```
-    apiVersion: postgresql.baiju.dev/v1alpha1
-    kind: Database
-    metadata:
-      name: my-db
-      namespace: openshift-operators
-    spec:
-      dbName: postgres
-      image: docker.io/postgres
-      imageName: postgres
-    status:
-      dbConnectionIP: 172.30.24.255
-      dbConnectionPort: 5432
-      dbCredentials: demo-database-postgresql
-      dbName: postgres
-    ```
+```yaml:
+    --- 
+apiVersion: postgresql.baiju.dev/v1alpha1
+kind: Database
+metadata: 
+  name: my-db
+  namespace: openshift-operators
+spec: 
+  dbName: postgres
+  image: docker.io/postgres
+  imageName: postgres
+status: 
+  dbConnectionIP: "172.30.24.255"
+  dbConnectionPort: 5432
+  dbCredentials: demo-database-postgresql
+  dbName: postgres
+    
+```
+
 * The cluster-admin installs the Service Binding operator
   using an `OperatorSource` if not already done using 
   `make local`
 
-  ```apiVersion: operators.coreos.com/v1
-     kind: OperatorSource
-     metadata:
-       name: redhat-developer-operators
-       namespace: openshift-marketplace
-     spec:
-       type: appregistry
-       endpoint: https://quay.io/cnr
-       registryNamespace: redhat-developer
-   ```
+```yaml:
+     --- 
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata: 
+  name: redhat-developer-operators
+  namespace: openshift-marketplace
+spec: 
+  endpoint: "https://quay.io/cnr"
+  registryNamespace: redhat-developer
+  type: appregistry
+```
 
 
 *What the Application Author (Developer) does*
@@ -162,7 +171,7 @@ spec:
     resourceKind: DeploymentConfig
   backingSelector:
     resourceRef: db-demo
-    resourceKind: postgresql.baiju.dev
+    resourceKind: databases.postgresql.baiju.dev
     resourceVersion: v1alpha1
 ```
 
