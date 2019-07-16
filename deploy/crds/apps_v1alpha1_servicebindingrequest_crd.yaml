@@ -33,8 +33,8 @@ spec:
               description: "ApplicationSelector is used to identify the application
                 connecting to the backing service operator. Example 1: \tapplicationSelector:
                 \t\tmatchLabels: \t\t\tconnects-to: postgres \t\t\tenvironment: stage
-                \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tresourceKind:
-                Deployment \t\tresourceName: my-app"
+                \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tmatchLabels:
+                \t\t\tconnects-to: postgres \t\t\tenvironment: stage"
               properties:
                 matchLabels:
                   additionalProperties:
@@ -54,18 +54,18 @@ spec:
                 MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
                 Beanstalkd), SMTP services for outbound email (such as Postfix), and
                 caching systems (such as Memcached).  Example 1: \tbackingServiceSelector:
-                \t\tresourceName: database.example.org      resourceRef: mysql-database
-                Example 2: \tbackingServiceSelector: \t\tresourceName: database.example.org
+                \t\tresourceKind: database.example.org      resourceRef: mysql-database
+                Example 2: \tbackingServiceSelector: \t\tresourceKind: database.example.org
                 \t\tresourceVersion: v1alpha1      resourceRef: mysql-database"
               properties:
-                resourceName:
+                resourceKind:
                   type: string
                 resourceRef:
                   type: string
                 resourceVersion:
                   type: string
               required:
-              - resourceName
+              - resourceKind
               - resourceVersion
               - resourceRef
               type: object
