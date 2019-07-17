@@ -87,7 +87,7 @@ EOS
   applications. We'll use [postgresql-operator](https://github.com/baijum/postgresql-operator) to
   demonstrate a sample use case.
 
-  * The cluster-admin installs the database operator using an `OperatorSource`:
+* The cluster-admin installs the database operator using an `OperatorSource`:
 
 ``` yaml
 ---
