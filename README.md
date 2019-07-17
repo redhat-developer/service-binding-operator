@@ -164,7 +164,7 @@ spec:
     resourceKind: DeploymentConfig
   backingSelector:
     resourceRef: db-demo
-    resourceKind: postgresql.baiju.dev
+    resourceKind: databases.postgresql.baiju.dev
     resourceVersion: v1alpha1
 ```
 
