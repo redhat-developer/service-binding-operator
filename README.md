@@ -79,7 +79,7 @@ EOS
 
 ## Example Scenario
 
-*What the Cluster Admin does*
+### What the Cluster Admin does
 
 * A cluster admin installs into the cluster a Backing Service Operator that is "bind-able," in other
   words a Backing Service Operator that exposes binding information in secrets, status, and/or spec
@@ -139,7 +139,7 @@ spec:
   registryNamespace: redhat-developer
 ```
 
-*What the Application Author (Developer) does*
+### What the Application Author (Developer) does
 
 * Import or deploy a new application, the application doesn't make any other choices than the ones
   picked during regular import flow;
