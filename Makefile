@@ -231,7 +231,12 @@ generate-olm:
 ## -- Publish image and manifests targets --
 
 ## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
+.PHONY prepare-csv:
+ifndef PREPARE_CSV_DO_NOT_BUILD_IMAGE
 prepare-csv: build-image
+else
+prepare-csv:
+endif
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}

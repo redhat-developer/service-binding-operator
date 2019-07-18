@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"example-servicebindingrequest"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"production"},"resourceKind":"Deployment"},"backingSelector":{"resourceName":"database.example.org","resourceVersion":"v1alpha1"}}}]'
     capabilities: Basic Install
-    containerImage: REPLACE_IMAGE:REPLACE_VERSION
+    containerImage: REPLACE_IMAGE:vREPLACE_VERSION
     description: An operator to support binding capabilities between imported apps and operator backed services
   name: service-binding-operator.vREPLACE_VERSION
   namespace: placeholder
@@ -55,7 +55,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: REPLACE_IMAGE:REPLACE_VERSION
+                image: REPLACE_IMAGE:vREPLACE_VERSION
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
