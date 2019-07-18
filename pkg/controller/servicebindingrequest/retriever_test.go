@@ -149,3 +149,62 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	})
 
 }
+
+func TestConfigMapRetriever(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
+
+	ns := "testing"
+	crName := "db-testing"
+
+	crdDescription := mocks.CRDDescriptionConfigMapMock()
+
+	cr := mocks.DatabaseConfigMapMock(ns, crName)
+
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	require.Nil(t, err)
+
+	plan := &Plan{
+		Ns:             ns,
+		Name:           "retriever",
+		CRDDescription: &crdDescription,
+		CR:             &ustrv1.Unstructured{Object: genericCR},
+	}
+
+	dbConfigMap := mocks.ConfigMapMock(ns, "db-configmap")
+	objs := []runtime.Object{&dbConfigMap}
+	fakeClient := fake.NewFakeClient(objs...)
+
+	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	require.NotNil(t, retriever)
+
+	t.Run("read", func(t *testing.T) {
+
+		// reading from configMap, from status attribute
+		err = retriever.read("spec", "dbConfigMap", []string{
+			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
+			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
+		})
+		assert.Nil(t, err)
+
+		t.Logf("retriever.data '%#v'", retriever.data)
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_CONFIGMAP_USER")
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD")
+	})
+
+	t.Run("extractConfigMapItemName", func(t *testing.T) {
+		assert.Equal(t, "user", retriever.extractConfigMapItemName(
+			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user"))
+	})
+
+	t.Run("readConfigMap", func(t *testing.T) {
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readConfigMap("db-configmap", []string{"user", "password"})
+		assert.Nil(t, err)
+
+		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))
+		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
+	})
+
+}
