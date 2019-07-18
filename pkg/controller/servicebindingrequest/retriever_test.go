@@ -11,6 +11,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -27,7 +28,7 @@ func TestRetriever(t *testing.T) {
 	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
-	plan := &Plan{
+	plan := &planner.Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
@@ -116,7 +117,7 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
-	plan := &Plan{
+	plan := &planner.Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,

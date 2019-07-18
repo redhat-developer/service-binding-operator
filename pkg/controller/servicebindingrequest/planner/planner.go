@@ -1,4 +1,4 @@
-package servicebindingrequest
+package planner
 
 import (
 	"context"
