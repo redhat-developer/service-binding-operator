@@ -14,6 +14,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -66,8 +67,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.WithValues("ServiceBindingRequest.Name", instance.Name).
 		Info("Found service binding request to inspect")
 
-	planner := NewPlanner(ctx, r.client, request.Namespace, instance)
-	plan, err := planner.Plan()
+	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
+	plan, err := plnr.Plan()
 	if err != nil {
 		return RequeueOnNotFound(err)
 	}

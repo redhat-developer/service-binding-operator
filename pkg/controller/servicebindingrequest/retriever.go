@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +19,7 @@ import (
 type Retriever struct {
 	ctx    context.Context   // request context
 	client client.Client     // Kubernetes API client
-	plan   *Plan             // plan instance
+	plan   *planner.Plan     // plan instance
 	logger logr.Logger       // logger instance
 	data   map[string][]byte // data retrieved
 }
@@ -182,7 +183,7 @@ func (r *Retriever) Retrieve() error {
 }
 
 // NewRetriever instantiate a new retriever instance.
-func NewRetriever(ctx context.Context, client client.Client, plan *Plan) *Retriever {
+func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan) *Retriever {
 	return &Retriever{
 		ctx:    ctx,
 		client: client,
