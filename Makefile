@@ -206,7 +206,7 @@ out/operator:
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)operator-sdk build "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	$(Q)operator-sdk build --image-builder=buildah "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
@@ -250,11 +250,11 @@ prepare-csv: build-image
 push-operator: prepare-csv
 	$(Q)operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(OPERATOR_APP) $(OPERATOR_TAG_LONG) "$(QUAY_TOKEN)"
 
-## Push-Image: push docker image to upstream, including latest tag.
+## Push-Image: push container image to upstream, including latest tag.
 push-image: build-image
-	docker tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	docker push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	docker push "$(OPERATOR_IMAGE):latest"
+	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
+	podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	podman push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
