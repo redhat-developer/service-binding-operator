@@ -164,7 +164,7 @@ func TestConfigMapRetriever(t *testing.T) {
 	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
-	plan := &Plan{
+	plan := &planner.Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
