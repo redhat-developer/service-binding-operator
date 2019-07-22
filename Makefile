@@ -174,16 +174,12 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
-	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
-	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
-	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
+			--go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
 ## Runs the unit tests
@@ -192,9 +188,11 @@ test-unit:
 	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)mkdir -p $(GOCOV_DIR)
+	$(Q)rm -vf '$(GOCOV_DIR)/*.txt'
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
+	$(Q)make upload-codecov-report
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -206,12 +204,8 @@ test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
-	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
-	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
-	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)./hack/check-crds.sh
-	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
-	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
+	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m"
 
 ## -- Build Go binary and OCI image targets --
 
@@ -315,3 +309,40 @@ deploy: deploy-rbac deploy-crds
 ## Removes temp directories
 clean:
 	$(Q)-rm -rf ${V_FLAG} ./out
+
+.PHONY: upload-codecov-report
+# Uploads the test coverage reports to codecov.io.
+# DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
+upload-codecov-report:
+	# Upload coverage to codecov.io. Since we don't run on a supported CI platform (Jenkins, Travis-ci, etc.),
+	# we need to provide the PR metadata explicitely using env vars used coming from https://github.com/openshift/test-infra/blob/master/prow/jobs.md#job-environment-variables
+	#
+	# Also: not using the `-F unittests` flag for now as it's temporarily disabled in the codecov UI
+	# (see https://docs.codecov.io/docs/flags#section-flags-in-the-codecov-ui)
+	env
+ifneq ($(PR_COMMIT), null)
+	@echo "uploading test coverage report for pull-request #$(PULL_NUMBER)..."
+	bash <(curl -s https://codecov.io/bash) \
+		-t $(CODECOV_TOKEN) \
+		-f $(GOCOV_DIR)/*.txt \
+		-C $(PR_COMMIT) \
+		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-P $(PULL_NUMBER) \
+		-Z
+else
+	@echo "uploading test coverage report after PR was merged..."
+	bash <(curl -s https://codecov.io/bash) \
+		-t $(CODECOV_TOKEN) \
+		-f $(GOCOV_DIR)/*.txt \
+		-C $(BASE_COMMIT) \
+		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-Z
+endif
+
+CODECOV_TOKEN := "REPLACE_CODECOV_TOKEN"
+REPO_OWNER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].org')
+REPO_NAME := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].repo')
+BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
+PR_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].sha')
+PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
+

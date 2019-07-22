@@ -20,11 +20,13 @@ coverage:
 
   # See http://docs.codecov.io/docs/ignoring-paths
   ignore:
-    - "vendor/*"
-    - "make/*"
+    - "assets/*"
     - "build/*"
-    - "example/*"
+    - "deploy/*"
+    - "hack/*"
+    - "manifests/*"
     - "openshift-ci/*"
+    - "vendor/*"
 
 # See http://docs.codecov.io/docs/pull-request-comments-1
 comment:
