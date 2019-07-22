@@ -90,7 +90,12 @@ CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
-GOCOV_FILE_TEMPL ?= ./out/coverage.REPLACE_TEST.txt
+# This variable is for artifacts to be archived by Prow jobs at OpenShift CI
+# The actual value will be set by the OpenShift CI accordingly
+ARTIFACTS_DIR ?= ./out/artifacts
+
+GOCOV_DIR ?= $(ARTIFACTS_DIR)/test-coverage
+GOCOV_FILE_TEMPL ?= $(GOCOV_DIR)/REPLACE_TEST.txt
 GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
@@ -171,6 +176,7 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
+	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
 			--debug \
@@ -185,6 +191,7 @@ test-unit:
 	$(info Running unit test: $@)
 	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
+	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
@@ -201,6 +208,7 @@ test-e2e-olm-ci:
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
 	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
+	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)./hack/check-crds.sh
 	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
