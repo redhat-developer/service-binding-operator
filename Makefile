@@ -91,7 +91,7 @@ GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
 GOCOV_FILE_TEMPL ?= ./out/coverage.REPLACE_TEST.txt
-GOCOV ?= "-covermode=count -coverprofile REPLACE_FILE"
+GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
