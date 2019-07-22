@@ -90,6 +90,9 @@ CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
+GOCOV_FILE_TEMPL ?= ./out/coverage.REPLACE_TEST.txt
+GOCOV ?= "-covermode=count -coverprofile REPLACE_FILE"
+
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.0.10
@@ -166,19 +169,25 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
+	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
+	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m"
+			--go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
+	$(Q)go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test-unit
 ## Runs the unit tests
 test-unit:
 	$(info Running unit test: $@)
+	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
+	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -190,8 +199,11 @@ test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
+	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
+	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)./hack/check-crds.sh
-	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m"
+	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
+	$(Q)go tool cover -func=$(GOCOV_FILE)
 
 ## -- Build Go binary and OCI image targets --
 
