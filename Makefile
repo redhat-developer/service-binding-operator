@@ -92,7 +92,7 @@ GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
 # This variable is for artifacts to be archived by Prow jobs at OpenShift CI
 # The actual value will be set by the OpenShift CI accordingly
-ARTIFACT_DIR ?= "$(shell echo ${PWD})/out
+ARTIFACT_DIR ?= "$(shell echo ${PWD})/out"
 
 GOCOV_DIR ?= $(ARTIFACT_DIR)/test-coverage
 GOCOV_FILE_TEMPL ?= $(GOCOV_DIR)/REPLACE_TEST.txt
