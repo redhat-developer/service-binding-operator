@@ -7,6 +7,9 @@
     <a href="https://godoc.org/github.com/redhat-developer/service-binding-operator">
         <img alt="GoDoc Reference" src="https://godoc.org/github.com/redhat-developer/service-binding-operator?status.svg">
     </a>
+    <a href="https://codecov.io/gh/redhat-developer/service-binding-operator">
+        <img alt="Codecov.io - Code Coverage" src="https://codecov.io/gh/redhat-developer/service-binding-operator/branch/master/graph/badge.svg">
+    </a>
 </p>
 
 ## Introduction
