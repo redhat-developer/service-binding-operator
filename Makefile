@@ -177,7 +177,7 @@ test-e2e: e2e-setup
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
 			--go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
-	$(Q)go tool cover -func=$(GOCOV_FILE)
+	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test-unit
 ## Runs the unit tests
@@ -187,7 +187,7 @@ test-unit:
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
-	$(Q)go tool cover -func=$(GOCOV_FILE)
+	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -203,7 +203,7 @@ test-e2e-olm-ci:
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)./hack/check-crds.sh
 	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m $(GOCOV_FLAGS)"
-	$(Q)go tool cover -func=$(GOCOV_FILE)
+	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
 
 ## -- Build Go binary and OCI image targets --
 
