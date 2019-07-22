@@ -25,8 +25,10 @@ type Retriever struct {
 }
 
 const (
-	bindingPrefix = "SERVICE_BINDING"
-	secretPrefix  = "urn:alm:descriptor:servicebindingrequest:env:object:secret"
+	bindingPrefix   = "SERVICE_BINDING"
+	basePrefix      = "urn:alm:descriptor:servicebindingrequest:env:object"
+	secretPrefix    = basePrefix + ":secret"
+	configMapPrefix = basePrefix + ":configmap"
 )
 
 // getNestedValue retrieve value from dotted key path
@@ -74,7 +76,8 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	// holds the secret name and items
 	secrets := make(map[string][]string)
-
+	// holds the configMap name and items
+	configMaps := make(map[string][]string)
 	for _, xDescriptor := range xDescriptors {
 		logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
 		logger.Info("Inspecting xDescriptor...")
@@ -85,6 +88,8 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 		if strings.HasPrefix(xDescriptor, secretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+		} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
+			configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
 		} else {
 			r.store(path, []byte(pathValue))
 		}
@@ -97,7 +102,13 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			return err
 		}
 	}
-
+	for name, items := range configMaps {
+		// add the function readConfigMap
+		err := r.readConfigMap(name, items)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -107,24 +118,49 @@ func (r *Retriever) extractSecretItemName(xDescriptor string) string {
 	return strings.ReplaceAll(xDescriptor, fmt.Sprintf("%s:", secretPrefix), "")
 }
 
+// extractConfigMapItemName based in x-descriptor entry, removing prefix in order to keep only the
+// configMap item name.
+func (r *Retriever) extractConfigMapItemName(xDescriptor string) string {
+	return strings.ReplaceAll(xDescriptor, fmt.Sprintf("%s:", configMapPrefix), "")
+}
+
 // readSecret based in secret name and list of items, read a secret from the same namespace informed
 // in plan instance.
 func (r *Retriever) readSecret(name string, items []string) error {
 	logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
 	logger.Info("Reading secret items...")
-
 	secretObj := corev1.Secret{}
 	err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretObj)
 	if err != nil {
 		return err
 	}
-
 	logger.Info("Inspecting secret data...")
 	for key, value := range secretObj.Data {
 		logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
 			Info("Inspecting secret key...")
 		// making sure key name has a secret reference
 		r.store(fmt.Sprintf("secret_%s", key), value)
+	}
+	return nil
+}
+
+// readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
+// in plan instance.
+func (r *Retriever) readConfigMap(name string, items []string) error {
+	logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
+	logger.Info("Reading ConfigMap items...")
+	configMapObj := corev1.ConfigMap{}
+	err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &configMapObj)
+	if err != nil {
+		return err
+	}
+	logger.Info("Inspecting configMap data...")
+	for key, value := range configMapObj.Data {
+		logger.WithValues("configMap.Key.Name", key, "configMap.Key.Length", len(value)).
+			Info("Inspecting configMap key...")
+		// making sure key name has a configMap reference
+		// string to byte
+		r.store(fmt.Sprintf("configMap_%s", key), []byte(value))
 	}
 
 	return nil
@@ -172,7 +208,7 @@ func (r *Retriever) Retrieve() error {
 		}
 	}
 
-	r.logger.Info("Looking for spec-descriptors in 'status'...")
+	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
 		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return err
