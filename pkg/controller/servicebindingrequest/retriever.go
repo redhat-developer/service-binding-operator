@@ -26,8 +26,9 @@ type Retriever struct {
 
 const (
 	bindingPrefix   = "SERVICE_BINDING"
-	secretPrefix    = "urn:alm:descriptor:servicebindingrequest:env:object:secret"
-	configMapPrefix = "urn:alm:descriptor:servicebindingrequest:env:object:configmap"
+	basePrefix      = "urn:alm:descriptor:servicebindingrequest:env:object"
+	secretPrefix    = basePrefix + ":secret"
+	configMapPrefix = basePrefix + ":configmap"
 )
 
 // getNestedValue retrieve value from dotted key path
@@ -143,7 +144,7 @@ func (r *Retriever) readSecret(name string, items []string) error {
 	return nil
 }
 
-//readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
+// readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
 // in plan instance.
 func (r *Retriever) readConfigMap(name string, items []string) error {
 	logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
