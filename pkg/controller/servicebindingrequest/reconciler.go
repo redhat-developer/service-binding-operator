@@ -42,6 +42,49 @@ func (r *Reconciler) appendEnvFrom(envList []corev1.EnvFromSource, secret string
 	})
 }
 
+// appendVolumeMounts append volume mounts pointing to volumes created using secret
+func (r *Reconciler) appendVolumeMounts(vmList []corev1.VolumeMount, volumeName, mountPath string) []corev1.VolumeMount {
+	for _, vm := range vmList {
+		if vm.Name == volumeName {
+			// volume name already referenced
+			return vmList
+		}
+	}
+
+	return append(vmList, corev1.VolumeMount{
+		Name:      volumeName,
+		MountPath: mountPath,
+	})
+}
+
+// appendVolumes append volumes
+func (r *Reconciler) appendVolumes(volumeList []corev1.Volume, data map[string][]byte, volumeKeys []string, volumeName, secretName string) []corev1.Volume {
+	for _, vm := range volumeList {
+		if vm.Name == volumeName {
+			// volume name already referenced
+			return volumeList
+		}
+	}
+
+	items := []corev1.KeyToPath{}
+	for _, k := range volumeKeys {
+		items = append(items, corev1.KeyToPath{
+			Key:  k,
+			Path: k,
+		})
+	}
+
+	return append(volumeList, corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+				Items:      items,
+			},
+		},
+	})
+}
+
 // Reconcile a ServiceBindingRequest by the following steps:
 // 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
@@ -113,11 +156,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				Info("Inspecting DeploymentConfig object...")
 
 			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
-				logger.Info("Adding EnvFrom to container")
-				deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
-					c.EnvFrom, instance.GetName())
+				if len(retriever.data) > 0 {
+					logger.Info("Adding EnvFrom to container")
+					deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
+						c.EnvFrom, instance.GetName())
+				}
+				if len(retriever.volumeKeys) > 0 {
+					logger.Info("Adding VolumeMounts to container")
+					mountPath := "/var/data"
+					if instance.Spec.MountPathPrefix != "" {
+						mountPath = instance.Spec.MountPathPrefix
+					}
+					deploymentConfigObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
+						c.VolumeMounts, instance.GetName(), mountPath)
+					logger.Info("Adding Volumes to pod")
+					deploymentConfigObj.Spec.Template.Spec.Volumes = r.appendVolumes(
+						deploymentConfigObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
+				}
 			}
-
 			logger.Info("Updating DeploymentConfig object")
 			err = r.client.Update(ctx, &deploymentConfigObj)
 			if err != nil {
@@ -144,9 +200,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger.Info("Inspecting Deploymen object...")
 
 			for i, c := range deploymentObj.Spec.Template.Spec.Containers {
-				logger.Info("Adding EnvFrom to container")
-				deploymentObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
-					c.EnvFrom, instance.GetName())
+				if len(retriever.data) > 0 {
+					logger.Info("Adding EnvFrom to container")
+					deploymentObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
+						c.EnvFrom, instance.GetName())
+				}
+				if len(retriever.volumeKeys) > 0 {
+					logger.Info("Adding VolumeMounts to container")
+					mountPath := "/var/data"
+					if instance.Spec.MountPathPrefix != "" {
+						mountPath = instance.Spec.MountPathPrefix
+					}
+					deploymentObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
+						c.VolumeMounts, instance.GetName(), mountPath)
+					logger.Info("Adding Volumes to pod")
+					deploymentObj.Spec.Template.Spec.Volumes = r.appendVolumes(
+						deploymentObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
+				}
+
 			}
 
 			logger.Info("Updating Deployment object")
