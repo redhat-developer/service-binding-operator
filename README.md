@@ -105,7 +105,7 @@ spec:
   registryNamespace: pmacik
 ```
 
-  * For example, Creation of a PostgreSQL operator-managed database exposes the following binding
+* For example, Creation of a PostgreSQL operator-managed database exposes the following binding
     information:
 
 ``` yaml
