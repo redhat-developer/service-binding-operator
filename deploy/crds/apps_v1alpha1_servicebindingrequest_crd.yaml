@@ -54,8 +54,8 @@ spec:
                 MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
                 Beanstalkd), SMTP services for outbound email (such as Postfix), and
                 caching systems (such as Memcached).  Example 1: \tbackingServiceSelector:
-                \t\tresourceKind: database.example.org      resourceRef: mysql-database
-                Example 2: \tbackingServiceSelector: \t\tresourceKind: database.example.org
+                \t\tresourceKind: databases.example.org      resourceRef: mysql-database
+                Example 2: \tbackingServiceSelector: \t\tresourceKind: databases.example.org
                 \t\tresourceVersion: v1alpha1      resourceRef: mysql-database"
               properties:
                 resourceKind:
@@ -69,7 +69,15 @@ spec:
               - resourceVersion
               - resourceRef
               type: object
+            envVarPrefix:
+              description: EnvVarPrefix is the prefix for environment variables
+              type: string
+            mountPathPrefix:
+              description: MountPathPrefix is the prefix for volume mount
+              type: string
           required:
+          - mountPathPrefix
+          - envVarPrefix
           - backingServiceSelector
           - applicationSelector
           type: object
