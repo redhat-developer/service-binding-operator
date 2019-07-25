@@ -79,7 +79,7 @@ EOS
 
 ## Example Scenario
 
-In this example there a are 2 roles:
+In this example there are 2 roles:
 
 * Cluster Admin - Installs the operators to the cluster
 * Application Developer - Imports a Node.js application, creates a DB instance, creates a request to bind the application and DB (to connect the DB and the application).
@@ -92,12 +92,12 @@ The cluster admin needs to install 2 operators into the cluster:
 * Backing Service Operator
 
 A Backing Service Operator that is "bind-able," in other
-words a Backing Service Operator that exposes binding information in secrets, config maps,status, and/or spec
+words a Backing Service Operator that exposes binding information in secrets, config maps, status, and/or spec
 attributes. The Backing Service Operator may represent a database or other services required by
 applications. We'll use [postgresql-operator](https://github.com/baijum/postgresql-operator) to
 demonstrate a sample use case.
 
-#### Install the Service Binding Operator using and `OperatorSource`:
+#### Install the Service Binding Operator using an `OperatorSource`
 
 Apply the following `OperatorSource`:
 
@@ -124,7 +124,7 @@ and install a `stable` version.
 
 This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
 
-#### Install the DB operator using an `OperatorSource`:
+#### Install the DB operator using an `OperatorSource`
 
 Apply the following `OperatorSource`:
 
@@ -214,7 +214,6 @@ The labels are:
 * `connects-to=postgres` - indicates that the application needs to connect to a PostgreSQL DB
 * `environment=demo` - indicates the demo environment - it narrows the search
 
-
 ``` bash
  kubectl patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
 ```
@@ -247,6 +246,7 @@ EOS
 ```
 
 There are 2 parts in the request:
+
 * `applicationSelector` - used to search for the application based on the labels that we set earlier and the `resourceKind` of the application to be a `DeploymentConfig`.
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
