@@ -184,7 +184,7 @@ and click on the `[Create]` button.
 
 Notice, that during the import no DB config was mentioned or requestd.
 
-When the application is running navigate to it's route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That meens that the application is not connected to a DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
+When the application is running navigate to its route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That meens that the application is not connected to a DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
 
 #### Create a DB instance for the application
 
@@ -218,7 +218,7 @@ The labels are:
  kubectl patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
 ```
 
-#### Expres an intent to bind the DB and the application
+#### Express an intent to bind the DB and the application
 
 Now the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
 
@@ -252,7 +252,7 @@ There are 2 parts in the request:
 
 That causes the application to be re-deployed.
 
-Once the new version is up, go the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and it's name is `db-demo`. Now you can try the UI again but now it works!
+Once the new version is up, go the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
 
 When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information as specified in the OLM descriptor below, into the
 application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `bidning-request`:
