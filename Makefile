@@ -192,7 +192,6 @@ test-unit:
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
-	$(Q)make upload-codecov-report
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
