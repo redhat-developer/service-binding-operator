@@ -339,7 +339,7 @@ else
 		-Z
 endif
 
-CODECOV_TOKEN := "REPLACE_CODECOV_TOKEN"
+CODECOV_TOKEN ?= "REPLACE_CODECOV_TOKEN"
 REPO_OWNER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].org')
 REPO_NAME := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].repo')
 BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
