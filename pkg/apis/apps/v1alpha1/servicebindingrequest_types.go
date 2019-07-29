@@ -53,6 +53,9 @@ type ServiceBindingRequestSpec struct {
 	//			connects-to: postgres
 	//			environment: stage
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
+
+	// EnvVar defines a list of overrides for the environment variables
+	EnvVar []EnvMap `json:"envVar"`
 }
 
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
@@ -68,6 +71,13 @@ type BackingServiceSelector struct {
 type ApplicationSelector struct {
 	MatchLabels  map[string]string `json:"matchLabels"`
 	ResourceKind string            `json:"resourceKind"`
+}
+
+// EnvMap is a set of Name and Value of an environment variable
+// +k8s:openapi-gen=true
+type EnvMap struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

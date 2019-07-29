@@ -69,6 +69,18 @@ spec:
               - resourceVersion
               - resourceRef
               type: object
+            envVar:
+              items:
+                properties:
+                  name:
+                    type: string
+                  value:
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
@@ -80,6 +92,7 @@ spec:
           - envVarPrefix
           - backingServiceSelector
           - applicationSelector
+          - envVar
           type: object
         status:
           type: object
