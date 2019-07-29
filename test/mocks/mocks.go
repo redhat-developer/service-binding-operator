@@ -9,7 +9,6 @@ import (
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -17,11 +16,13 @@ import (
 
 // resource details employed in mocks
 const (
-	CRDName            = "postgresql.baiju.dev"
-	CRDVersion         = "v1alpha1"
-	CRDKind            = "Database"
-	OperatorKind       = "ServiceBindingRequest"
-	OperatorAPIVersion = "apps.openshift.io/v1alpha1"
+	CRDName               = "postgresql.baiju.dev"
+	CRDVersion            = "v1alpha1"
+	CRDKind               = "Database"
+	DeploymentRKind       = "Deployment"
+	DeploymentRAPIVersion = "apps/v1"
+	OperatorKind          = "ServiceBindingRequest"
+	OperatorAPIVersion    = "apps.openshift.io/v1alpha1"
 )
 
 // ClusterServiceVersionMock based on PostgreSQL operator.
@@ -148,7 +149,7 @@ func ServiceBindingRequestMock(
 				ResourceRef:     resourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				ResourceKind: "Deployment",
+				ResourceKind: DeploymentRKind,
 				MatchLabels:  matchLabels,
 			},
 		},
@@ -156,23 +157,26 @@ func ServiceBindingRequestMock(
 }
 
 // DeploymentMock creates a mocked Deployment object of busybox.
-func DeploymentMock(ns, name string, matchLabels map[string]string) extv1beta1.Deployment {
-	return extv1beta1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-			Labels:    matchLabels,
+func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deployment {
+	var replicas int32 = 1
+	meta := metav1.ObjectMeta{
+		Namespace: ns,
+		Name:      name,
+		Labels:    matchLabels,
+	}
+	return appsv1.Deployment{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       DeploymentRKind,
+			APIVersion: DeploymentRAPIVersion,
 		},
-		Spec: extv1beta1.DeploymentSpec{
+		ObjectMeta: meta,
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: matchLabels,
 			},
 			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: ns,
-					Name:      name,
-					Labels:    matchLabels,
-				},
+				ObjectMeta: meta,
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{{
 						Name:    "busybox",
