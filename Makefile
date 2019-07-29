@@ -192,8 +192,15 @@ test-e2e: e2e-setup
 			--go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
-## Runs the unit tests
+## Runs the unit tests without code coverage
 test-unit:
+	$(info Running unit test: $@)
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+
+.PHONY: test-unit-with-coverage
+## Runs the unit tests with code coverage
+test-unit-with-coverage:
 	$(info Running unit test: $@)
 	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
