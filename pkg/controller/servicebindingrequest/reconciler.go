@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -15,9 +14,8 @@ import (
 
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	client    client.Client     // kubernetes api client
-	dynClient dynamic.Interface // kubernetes dynamic api client
-	scheme    *runtime.Scheme   // api scheme
+	client client.Client   // kubernetes api client
+	scheme *runtime.Scheme // api scheme
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:

@@ -6,14 +6,11 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	osappsv1 "github.com/openshift/api/apps/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -23,11 +20,10 @@ import (
 // Binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
 type Binder struct {
-	ctx       context.Context                 // request context
-	dynClient dynamic.Interface               // kubernetes dynamic api client
-	client    client.Client                   // kubernetes API client
-	sbr       *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	logger    logr.Logger                     // logger instance
+	ctx    context.Context                 // request context
+	client client.Client                   // kubernetes API client
+	sbr    *v1alpha1.ServiceBindingRequest // instantiated service binding request
+	logger logr.Logger                     // logger instance
 }
 
 func (b *Binder) getResourceKind() string {
@@ -143,8 +139,10 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
 			logger.Info("Binding application!")
 			c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
 
-			var bindContainer interface{}
-			bindContainer, err = runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+			bindContainer, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+			if err != nil {
+				return err
+			}
 			containers[i] = bindContainer
 		}
 
@@ -153,48 +151,12 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
 		}
 
 		logger.Info("Updating object...")
-		if err = b.commit(&obj); err != nil {
+		if err = b.client.Update(b.ctx, &obj); err != nil {
 			return err
 		}
 	}
 
 	return nil
-}
-
-func (b *Binder) commitDeploymentConfig(obj *ustrv1.Unstructured) error {
-	b.logger.Info("Updating deployment-config object.")
-	d := osappsv1.DeploymentConfig{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, d)
-	if err != nil {
-		return err
-	}
-	return b.client.Update(b.ctx, &d)
-}
-
-func (b *Binder) commitDeployment(obj *ustrv1.Unstructured) error {
-	b.logger.Info("Updating deployment object.")
-	d := &appsv1.Deployment{}
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(obj.Object, d)
-	if err != nil {
-		return err
-	}
-	return b.client.Update(b.ctx, d)
-}
-
-// commit object converting it back to original kind.
-func (b *Binder) commit(obj *ustrv1.Unstructured) error {
-	return b.client.Update(b.ctx, obj)
-	/*
-		kind := b.getResourceKind()
-		switch kind {
-		case "deploymentconfig":
-			return b.commitDeploymentConfig(obj)
-		case "deployment":
-			return b.commitDeployment(obj)
-		default:
-			return fmt.Errorf("kind '%s' is not supported", kind)
-		}
-	*/
 }
 
 // Bind resources to intermediary secret, by searching informed ResourceKind containing the labels
