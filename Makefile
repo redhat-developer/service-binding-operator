@@ -113,6 +113,16 @@ MANIFESTS_TMP ?= ./tmp/manifests
 
 GOLANGCI_LINT_BIN=./out/golangci-lint
 
+# -- Variables for uploading code coverage reports to Codecov.io --
+# This default path is set by the OpenShift CI
+CODECOV_TOKEN_PATH ?= "/usr/local/redhat-developer-service-binding-operator-codecov-token/token"
+CODECOV_TOKEN ?= @$(CODECOV_TOKEN_PATH)
+REPO_OWNER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].org')
+REPO_NAME := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].repo')
+BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
+PR_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].sha')
+PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
+
 ## -- Static code analysis (lint) targets --
 
 .PHONY: lint
@@ -309,6 +319,9 @@ deploy: deploy-rbac deploy-crds
 clean:
 	$(Q)-rm -rf ${V_FLAG} ./out
 
+
+## -- Targets for uploading code coverage reports to Codecov.io--
+
 .PHONY: upload-codecov-report
 # Uploads the test coverage reports to codecov.io.
 # DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
@@ -331,13 +344,3 @@ else
 		-r $(REPO_OWNER)/$(REPO_NAME) \
 		-Z > codecov-upload.log
 endif
-
-# This default path is set by the OPENSHIFT_CI
-CODECOV_TOKEN_PATH ?= "/tmp/redhat-developer-service-binding-operator-codecov-token/token"
-CODECOV_TOKEN ?= @$(CODECOV_TOKEN_PATH)
-REPO_OWNER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].org')
-REPO_NAME := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].repo')
-BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
-PR_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].sha')
-PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
-
