@@ -17,6 +17,7 @@ RUN yum install epel-release -y \
     wget \
     which \
     bc \
+    jq \
     python36-virtualenv \
     && yum clean all
 

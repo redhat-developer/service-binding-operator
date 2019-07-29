@@ -89,6 +89,27 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	}
 }
 
+// CRDDescriptionConfigMapMock ...
+func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
+	return olmv1alpha1.CRDDescription{
+		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		DisplayName: CRDKind,
+		Description: "mock-crd-description",
+		Kind:        CRDKind,
+		Version:     CRDVersion,
+		SpecDescriptors: []olmv1alpha1.SpecDescriptor{{
+			DisplayName: "DB ConfigMap",
+			Description: "Database ConfigMap",
+			Path:        "dbConfigMap",
+			XDescriptors: []string{
+				"urn:alm:descriptor:io.kubernetes:ConfigMap",
+				"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
+				"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
+			},
+		}},
+	}
+}
+
 // DatabaseCRMock based on PostgreSQL operator, returning a instantiated object.
 func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 	return pgv1alpha1.Database{
@@ -129,6 +150,20 @@ func SecretMock(ns, name string) corev1.Secret {
 		Data: map[string][]byte{
 			"user":     []byte("user"),
 			"password": []byte("password"),
+		},
+	}
+}
+
+// ConfigMapMock ...
+func ConfigMapMock(ns, name string) corev1.ConfigMap {
+	return corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Data: map[string]string{
+			"user":     "user",
+			"password": "password",
 		},
 	}
 }
@@ -233,6 +268,36 @@ func NestedDatabaseCRMock(ns, name string) NestedDatabase {
 					Something: "somevalue",
 				},
 			},
+		},
+	}
+}
+
+// ConfigMapDatabaseSpec ...
+type ConfigMapDatabaseSpec struct {
+	DBConfigMap string `json:"dbConfigMap"`
+}
+
+// ConfigMapDatabase ...
+type ConfigMapDatabase struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec ConfigMapDatabaseSpec `json:"spec,omitempty"`
+}
+
+// DatabaseConfigMapMock ...
+func DatabaseConfigMapMock(ns, name string) ConfigMapDatabase {
+	return ConfigMapDatabase{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       CRDKind,
+			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: ConfigMapDatabaseSpec{
+			DBConfigMap: "db-configmap",
 		},
 	}
 }

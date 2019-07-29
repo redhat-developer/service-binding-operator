@@ -23,11 +23,11 @@ type Reconciler struct {
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
 // 2. Using OperatorLifecycleManager standards, identifying which items are intersting for binding
 //    by parsing CustomResourceDefinitionDescripton object;
-// 3. Search and read contents identified in previous step, creating a intermediary secret to hold
+// 3. Search and read contents identified in previous step, creating an intermediary secret to hold
 //    data formatted as environment variables key/value.
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
 //    Deployment (and other kinds) will be updated in PodTeamplate level updating `envFrom` entry
-// 	  to load interdiary secret;
+// 	  to load intermediary secret;
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx := context.TODO()
 	logger := logf.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
