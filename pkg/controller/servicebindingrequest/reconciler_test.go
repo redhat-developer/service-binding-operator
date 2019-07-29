@@ -9,7 +9,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -55,9 +55,9 @@ func TestReconcilerNew(t *testing.T) {
 
 	dbSecret := mocks.SecretMock(reconcilerNs, "db-credentials")
 
-	require.Nil(t, extv1beta1.AddToScheme(s))
+	require.Nil(t, appsv1.AddToScheme(s))
 	d := mocks.DeploymentMock(reconcilerNs, reconcilerName, matchLabels)
-	s.AddKnownTypes(extv1beta1.SchemeGroupVersion, &d)
+	s.AddKnownTypes(appsv1.SchemeGroupVersion, &d)
 
 	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
 	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
@@ -65,6 +65,8 @@ func TestReconcilerNew(t *testing.T) {
 }
 
 func TestReconcilerReconcile(t *testing.T) {
+	TestReconcilerNew(t)
+
 	req := reconcile.Request{
 		NamespacedName: types.NamespacedName{
 			Namespace: reconcilerNs,
@@ -73,16 +75,17 @@ func TestReconcilerReconcile(t *testing.T) {
 	}
 
 	res, err := reconciler.Reconcile(req)
-	assert.Nil(t, err)
-	assert.False(t, res.Requeue)
+	t.Logf("Reconcile error: '%#v'", err)
+	require.Nil(t, err)
+	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	d := extv1beta1.Deployment{}
+	d := appsv1.Deployment{}
 	require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &d))
 
 	containers := d.Spec.Template.Spec.Containers
-	assert.Equal(t, 1, len(containers))
-	assert.Equal(t, 1, len(containers[0].EnvFrom))
+	require.Equal(t, 1, len(containers))
+	require.Equal(t, 1, len(containers[0].EnvFrom))
 	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
 	assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
 }
