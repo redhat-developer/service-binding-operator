@@ -126,6 +126,7 @@ func (p *Planner) Plan() (*Plan, error) {
 
 // NewPlanner instantiate Planner type.
 func NewPlanner(
+	// FIXME: should we have only service-binding-request informing the namespace?
 	ctx context.Context, client client.Client, ns string, sbr *v1alpha1.ServiceBindingRequest,
 ) *Planner {
 	return &Planner{
