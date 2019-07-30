@@ -6,7 +6,10 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	osappsv1 "github.com/openshift/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,20 +35,19 @@ func (b *Binder) getResourceKind() string {
 
 // getListGVK returns GroupVersionKind instance based on ResourceKind.
 func (b *Binder) getListGVK() (schema.GroupVersionKind, error) {
+	// FIXME: Hardcoded GVK. Information about the type of deployment should be informed on
+	// service-binding-request. Therefore, here we can just add "List" suffix in order to find
+	// objects using unstructured-list.
 	kind := b.getResourceKind()
 	switch kind {
 	case "deploymentconfig":
-		return schema.GroupVersionKind{
-			Group:   "apps.openshift.io",
-			Version: "v1",
-			Kind:    "DeploymentConfigList",
-		}, nil
+		return osappsv1.SchemeGroupVersion.WithKind("DeploymentConfigList"), nil
 	case "deployment":
-		return schema.GroupVersionKind{
-			Group:   "apps",
-			Version: "v1",
-			Kind:    "DeploymentList",
-		}, nil
+		return appsv1.SchemeGroupVersion.WithKind("DeploymentList"), nil
+	case "statefulset":
+		return appsv1.SchemeGroupVersion.WithKind("StatefulSetList"), nil
+	case "daemonset":
+		return extv1beta1.SchemeGroupVersion.WithKind("DaemonSetList"), nil
 	default:
 		return schema.GroupVersionKind{},
 			fmt.Errorf("resource kind '%s' is not supported by this operator", kind)
