@@ -39,7 +39,7 @@ func TestRetriever(t *testing.T) {
 	objs := []runtime.Object{&dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
@@ -128,7 +128,7 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	objs := []runtime.Object{&dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestConfigMapRetriever(t *testing.T) {
 	objs := []runtime.Object{&dbConfigMap}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
