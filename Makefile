@@ -90,6 +90,14 @@ CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
 
+# This variable is for artifacts to be archived by Prow jobs at OpenShift CI
+# The actual value will be set by the OpenShift CI accordingly
+ARTIFACT_DIR ?= "$(shell echo ${PWD})/out"
+
+GOCOV_DIR ?= $(ARTIFACT_DIR)/test-coverage
+GOCOV_FILE_TEMPL ?= $(GOCOV_DIR)/REPLACE_TEST.txt
+GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
+
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.0.10
@@ -104,6 +112,16 @@ MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
 
 GOLANGCI_LINT_BIN=./out/golangci-lint
+
+# -- Variables for uploading code coverage reports to Codecov.io --
+# This default path is set by the OpenShift CI
+CODECOV_TOKEN_PATH ?= "/usr/local/redhat-developer-service-binding-operator-codecov-token/token"
+CODECOV_TOKEN ?= @$(CODECOV_TOKEN_PATH)
+REPO_OWNER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].org')
+REPO_NAME := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].repo')
+BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
+PR_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].sha')
+PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 
 ## -- Static code analysis (lint) targets --
 
@@ -174,11 +192,23 @@ test-e2e: e2e-setup
 			--go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
-## Runs the unit tests
+## Runs the unit tests without code coverage
 test-unit:
 	$(info Running unit test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+
+.PHONY: test-unit-with-coverage
+## Runs the unit tests with code coverage
+test-unit-with-coverage:
+	$(info Running unit test: $@)
+	$(eval GOCOV_FILE := $(shell echo $(GOCOV_FILE_TEMPL) | sed -e 's,REPLACE_TEST,$(@),'))
+	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
+	$(Q)mkdir -p $(GOCOV_DIR)
+	$(Q)rm -vf '$(GOCOV_DIR)/*.txt'
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -295,3 +325,29 @@ deploy: deploy-rbac deploy-crds
 ## Removes temp directories
 clean:
 	$(Q)-rm -rf ${V_FLAG} ./out
+
+
+## -- Targets for uploading code coverage reports to Codecov.io--
+
+.PHONY: upload-codecov-report
+# Uploads the test coverage reports to codecov.io.
+# DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
+upload-codecov-report:
+ifneq ($(PR_COMMIT), null)
+	@echo "uploading test coverage report for pull-request #$(PULL_NUMBER)..."
+	@/bin/bash <(curl -s https://codecov.io/bash) \
+		-t $(CODECOV_TOKEN) \
+		-f $(GOCOV_DIR)/*.txt \
+		-C $(PR_COMMIT) \
+		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-P $(PULL_NUMBER) \
+		-Z > codecov-upload.log
+else
+	@echo "uploading test coverage report after PR was merged..."
+	@/bin/bash <(curl -s https://codecov.io/bash) \
+		-t $(CODECOV_TOKEN) \
+		-f $(GOCOV_DIR)/*.txt \
+		-C $(BASE_COMMIT) \
+		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-Z > codecov-upload.log
+endif
