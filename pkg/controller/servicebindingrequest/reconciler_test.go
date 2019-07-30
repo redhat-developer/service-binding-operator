@@ -27,13 +27,12 @@ const (
 	reconcilerName = "binding-request"
 )
 
-var reconciler *Reconciler
-var reconcilerFakeClient client.Client
-
 // TestReconcilerNew this method acts as a "new" call would, but in this scenario bootstraping the
 // types and requirements to test Reconcile.
 func TestReconcilerNew(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
+	var reconciler *Reconciler
+	var reconcilerFakeClient client.Client
 
 	s := scheme.Scheme
 	resourceRef := "db-testing"
@@ -62,27 +61,99 @@ func TestReconcilerNew(t *testing.T) {
 	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
 	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
 	reconciler = &Reconciler{client: reconcilerFakeClient, scheme: s}
+
+	t.Run("reconcile", func(t *testing.T) {
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: reconcilerNs,
+				Name:      reconcilerName,
+			},
+		}
+
+		res, err := reconciler.Reconcile(req)
+		assert.Nil(t, err)
+		assert.False(t, res.Requeue)
+
+		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+		d := extv1beta1.Deployment{}
+		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &d))
+
+		containers := d.Spec.Template.Spec.Containers
+		assert.Equal(t, 1, len(containers))
+		assert.Equal(t, 1, len(containers[0].EnvFrom))
+		assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
+		assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
+
+	})
+
 }
 
-func TestReconcilerReconcile(t *testing.T) {
-	req := reconcile.Request{
-		NamespacedName: types.NamespacedName{
-			Namespace: reconcilerNs,
-			Name:      reconcilerName,
-		},
+// TestReconcilerVolumeMount method acts as a "new" call would, but in this scenario bootstraping the
+// types and requirements to test Reconcile.
+func TestReconcilerVolumeMount(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var reconciler *Reconciler
+	var reconcilerFakeClient client.Client
+
+	s := scheme.Scheme
+	resourceRef := "db-testing"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "planner",
 	}
 
-	res, err := reconciler.Reconcile(req)
-	assert.Nil(t, err)
-	assert.False(t, res.Requeue)
+	sbr := mocks.ServiceBindingRequestMock(reconcilerNs, reconcilerName, resourceRef, matchLabels)
+	s.AddKnownTypes(v1alpha1.SchemeGroupVersion, &sbr)
 
-	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	d := extv1beta1.Deployment{}
-	require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &d))
+	require.Nil(t, olmv1alpha1.AddToScheme(s))
+	csvList := mocks.ClusterServiceVersionListVolumeMountMock(reconcilerNs, "cluster-service-version-list")
+	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
 
-	containers := d.Spec.Template.Spec.Containers
-	assert.Equal(t, 1, len(containers))
-	assert.Equal(t, 1, len(containers[0].EnvFrom))
-	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
-	assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
+	require.Nil(t, pgapis.AddToScheme(s))
+	crList := mocks.DatabaseCRListMock(reconcilerNs, resourceRef)
+	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crList)
+
+	dbSecret := mocks.SecretMock(reconcilerNs, "db-credentials")
+
+	require.Nil(t, extv1beta1.AddToScheme(s))
+	d := mocks.DeploymentMock(reconcilerNs, reconcilerName, matchLabels)
+	s.AddKnownTypes(extv1beta1.SchemeGroupVersion, &d)
+
+	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
+	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
+	reconciler = &Reconciler{client: reconcilerFakeClient, scheme: s}
+
+	t.Run("reconcile", func(t *testing.T) {
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: reconcilerNs,
+				Name:      reconcilerName,
+			},
+		}
+
+		res, err := reconciler.Reconcile(req)
+		assert.Nil(t, err)
+		assert.False(t, res.Requeue)
+
+		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+		d := extv1beta1.Deployment{}
+		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &d))
+
+		containers := d.Spec.Template.Spec.Containers
+		assert.Equal(t, 1, len(containers))
+		assert.Equal(t, 1, len(containers[0].EnvFrom))
+		assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
+		assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
+
+		assert.Equal(t, 1, len(containers[0].VolumeMounts))
+		assert.Equal(t, "/var/redhat", containers[0].VolumeMounts[0].MountPath)
+		assert.Equal(t, reconcilerName, containers[0].VolumeMounts[0].Name)
+
+		volumes := d.Spec.Template.Spec.Volumes
+		assert.Equal(t, 1, len(volumes))
+		assert.Equal(t, reconcilerName, volumes[0].Name)
+		assert.Equal(t, reconcilerName, volumes[0].VolumeSource.Secret.SecretName)
+
+	})
+
 }

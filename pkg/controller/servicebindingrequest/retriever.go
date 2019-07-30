@@ -17,18 +17,21 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	ctx    context.Context   // request context
-	client client.Client     // Kubernetes API client
-	plan   *planner.Plan     // plan instance
-	logger logr.Logger       // logger instance
-	data   map[string][]byte // data retrieved
+	ctx        context.Context   // request context
+	client     client.Client     // Kubernetes API client
+	plan       *planner.Plan     // plan instance
+	logger     logr.Logger       // logger instance
+	data       map[string][]byte // data retrieved
+	volumeKeys []string
 }
 
 const (
-	bindingPrefix   = "SERVICE_BINDING"
-	basePrefix      = "urn:alm:descriptor:servicebindingrequest:env:object"
-	secretPrefix    = basePrefix + ":secret"
-	configMapPrefix = basePrefix + ":configmap"
+	bindingPrefix           = "SERVICE_BINDING"
+	basePrefix              = "urn:alm:descriptor:servicebindingrequest:env:object"
+	secretPrefix            = basePrefix + ":secret"
+	configMapPrefix         = basePrefix + ":configmap"
+	attributePrefix         = "urn:alm:descriptor:servicebindingrequest:env:attribute"
+	volumeMountSecretPrefix = "urn:alm:descriptor:servicebindingrequest:volumemount:secret"
 )
 
 // getNestedValue retrieve value from dotted key path
@@ -76,6 +79,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	// holds the secret name and items
 	secrets := make(map[string][]string)
+
 	// holds the configMap name and items
 	configMaps := make(map[string][]string)
 	for _, xDescriptor := range xDescriptors {
@@ -90,7 +94,10 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 		} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
 			configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
-		} else {
+		} else if strings.HasPrefix(xDescriptor, volumeMountSecretPrefix) {
+			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+			r.volumeKeys = append(r.volumeKeys, pathValue)
+		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(path, []byte(pathValue))
 		}
 	}
@@ -221,10 +228,11 @@ func (r *Retriever) Retrieve() error {
 // NewRetriever instantiate a new retriever instance.
 func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan) *Retriever {
 	return &Retriever{
-		ctx:    ctx,
-		client: client,
-		logger: logf.Log.WithName("retriever"),
-		plan:   plan,
-		data:   make(map[string][]byte),
+		ctx:        ctx,
+		client:     client,
+		logger:     logf.Log.WithName("retriever"),
+		plan:       plan,
+		data:       make(map[string][]byte),
+		volumeKeys: []string{},
 	}
 }
