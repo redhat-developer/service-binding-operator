@@ -162,7 +162,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"mountPathPrefix", "envVarPrefix", "backingServiceSelector", "applicationSelector"},
+				Required: []string{"mountPathPrefix", "backingServiceSelector", "applicationSelector"},
 			},
 		},
 		Dependencies: []string{

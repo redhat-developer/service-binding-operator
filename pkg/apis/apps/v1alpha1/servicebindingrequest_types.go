@@ -17,6 +17,7 @@ type ServiceBindingRequestSpec struct {
 	MountPathPrefix string `json:"mountPathPrefix"`
 
 	// EnvVarPrefix is the prefix for environment variables
+	// +optional
 	EnvVarPrefix string `json:"envVarPrefix"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
