@@ -71,9 +71,20 @@ type ApplicationSelector struct {
 	ResourceKind string            `json:"resourceKind"`
 }
 
+type BindingStatus string
+
+const (
+	BindingSuccess BindingStatus = "success"
+	BindingInProgress BindingStatus = "inProgress"
+	BindingFail BindingStatus = "fail"
+)
+
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
-type ServiceBindingRequestStatus struct{}
+type ServiceBindingRequestStatus struct{
+	// BindingStatus is the status of the service binding request. Possible values are Success, Failure, InProgress.
+	BindingStatus BindingStatus `json:"BindingStatus"`
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -85,7 +96,7 @@ type ServiceBindingRequest struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   ServiceBindingRequestSpec   `json:"spec,omitempty"`
-	Status ServiceBindingRequestStatus `json:"status,omitempty"`
+	Status *ServiceBindingRequestStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -100,3 +111,4 @@ type ServiceBindingRequestList struct {
 func init() {
 	SchemeBuilder.Register(&ServiceBindingRequest{}, &ServiceBindingRequestList{})
 }
+
