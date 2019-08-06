@@ -187,7 +187,7 @@ and click on the `[Create]` button.
 
 Notice, that during the import no DB config was mentioned or requestd.
 
-When the application is running navigate to its route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That meens that the application is not connected to a DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
+When the application is running navigate to its route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That means that the application is not connected to a DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
 
 #### Create a DB instance for the application
 
