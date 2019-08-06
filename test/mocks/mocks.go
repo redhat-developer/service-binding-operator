@@ -109,6 +109,69 @@ func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
 	}
 }
 
+// ClusterServiceVersionVolumeMountMock based on PostgreSQL operator.
+func ClusterServiceVersionVolumeMountMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
+	strategy := olminstall.StrategyDetailsDeployment{
+		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
+			Name: "deployment",
+			Spec: appsv1.DeploymentSpec{},
+		}},
+	}
+
+	strategyJSON, _ := json.Marshal(strategy)
+
+	return olmv1alpha1.ClusterServiceVersion{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: olmv1alpha1.ClusterServiceVersionSpec{
+			DisplayName: "mock-database-csv",
+			InstallStrategy: olmv1alpha1.NamedInstallStrategy{
+				StrategyName:    "deployment",
+				StrategySpecRaw: strategyJSON,
+			},
+			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
+				Owned: []olmv1alpha1.CRDDescription{CRDDescriptionVolumeMountMock()},
+			},
+		},
+	}
+}
+
+// ClusterServiceVersionListVolumeMountMock returns a list with a single CSV object inside, reusing mock.
+func ClusterServiceVersionListVolumeMountMock(ns, name string) olmv1alpha1.ClusterServiceVersionList {
+	return olmv1alpha1.ClusterServiceVersionList{
+		Items: []olmv1alpha1.ClusterServiceVersion{ClusterServiceVersionVolumeMountMock(ns, name)},
+	}
+}
+
+// CRDDescriptionVolumeMountMock ...
+func CRDDescriptionVolumeMountMock() olmv1alpha1.CRDDescription {
+	return olmv1alpha1.CRDDescription{
+		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		DisplayName: CRDKind,
+		Description: "mock-crd-description",
+		Kind:        CRDKind,
+		Version:     CRDVersion,
+		SpecDescriptors: []olmv1alpha1.SpecDescriptor{{
+			DisplayName:  "Database Name",
+			Description:  "Database Name",
+			Path:         "dbName",
+			XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:env:attribute"},
+		}},
+		StatusDescriptors: []olmv1alpha1.StatusDescriptor{{
+			DisplayName: "DB Password Credentials",
+			Description: "Database credentials secret",
+			Path:        "dbCredentials",
+			XDescriptors: []string{
+				"urn:alm:descriptor:io.kubernetes:Secret",
+				"urn:alm:descriptor:servicebindingrequest:volumemount:secret:user",
+				"urn:alm:descriptor:servicebindingrequest:volumemount:secret:password",
+			},
+		}},
+	}
+}
+
 // DatabaseCRMock based on PostgreSQL operator, returning a instantiated object.
 func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 	return pgv1alpha1.Database{
@@ -177,6 +240,7 @@ func ServiceBindingRequestMock(
 			Name:      name,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
+			MountPathPrefix: "/var/redhat",
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				ResourceKind:    CRDName,
 				ResourceVersion: CRDVersion,

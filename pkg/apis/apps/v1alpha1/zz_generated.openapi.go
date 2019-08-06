@@ -135,9 +135,23 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			SchemaProps: spec.SchemaProps{
 				Description: "ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest",
 				Properties: map[string]spec.Schema{
+					"mountPathPrefix": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountPathPrefix is the prefix for volume mount",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"envVarPrefix": {
+						SchemaProps: spec.SchemaProps{
+							Description: "EnvVarPrefix is the prefix for environment variables",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingServiceSelector:\n\t\tresourceKind: database.example.org\n     resourceRef: mysql-database\nExample 2:\n\tbackingServiceSelector:\n\t\tresourceKind: database.example.org\n\t\tresourceVersion: v1alpha1\n     resourceRef: mysql-database",
+							Description: "BackingServiceSelector is used to identify the backing service operator.\n\nRefer: https://12factor.net/backing-services A backing service is any service the app consumes over the network as part of its normal operation. Examples include datastores (such as MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or Beanstalkd), SMTP services for outbound email (such as Postfix), and caching systems (such as Memcached).\n\nExample 1:\n\tbackingServiceSelector:\n\t\tresourceKind: databases.example.org\n     resourceRef: mysql-database\nExample 2:\n\tbackingServiceSelector:\n\t\tresourceKind: databases.example.org\n\t\tresourceVersion: v1alpha1\n     resourceRef: mysql-database",
 							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
 						},
 					},
@@ -148,7 +162,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"backingServiceSelector", "applicationSelector"},
+				Required: []string{"mountPathPrefix", "backingServiceSelector", "applicationSelector"},
 			},
 		},
 		Dependencies: []string{

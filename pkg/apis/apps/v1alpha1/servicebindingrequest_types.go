@@ -13,6 +13,13 @@ type ServiceBindingRequestSpec struct {
 	// Add custom validation using kubebuilder tags:
 	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
+	// MountPathPrefix is the prefix for volume mount
+	MountPathPrefix string `json:"mountPathPrefix"`
+
+	// EnvVarPrefix is the prefix for environment variables
+	// +optional
+	EnvVarPrefix string `json:"envVarPrefix"`
+
 	// BackingServiceSelector is used to identify the backing service operator.
 	//
 	// Refer: https://12factor.net/backing-services
@@ -24,11 +31,11 @@ type ServiceBindingRequestSpec struct {
 	//
 	// Example 1:
 	//	backingServiceSelector:
-	//		resourceKind: database.example.org
+	//		resourceKind: databases.example.org
 	//      resourceRef: mysql-database
 	// Example 2:
 	//	backingServiceSelector:
-	//		resourceKind: database.example.org
+	//		resourceKind: databases.example.org
 	//		resourceVersion: v1alpha1
 	//      resourceRef: mysql-database
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
