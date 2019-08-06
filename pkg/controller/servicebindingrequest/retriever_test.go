@@ -102,6 +102,17 @@ func TestRetriever(t *testing.T) {
 		err := retriever.saveDataOnSecret()
 		assert.Nil(t, err)
 	})
+	t.Run("empty prefix", func(t *testing.T) {
+		retriever = NewRetriever(context.TODO(), fakeClient, plan, "")
+		require.NotNil(t, retriever)
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		assert.Nil(t, err)
+
+		assert.Contains(t, retriever.data, "DATABASE_SECRET_USER")
+		assert.Contains(t, retriever.data, "DATABASE_SECRET_PASSWORD")
+	})
 }
 
 func TestRetrieverNestedCRDKey(t *testing.T) {
