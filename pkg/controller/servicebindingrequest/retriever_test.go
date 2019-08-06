@@ -39,7 +39,7 @@ func TestRetriever(t *testing.T) {
 	objs := []runtime.Object{&dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
@@ -102,6 +102,17 @@ func TestRetriever(t *testing.T) {
 		err := retriever.saveDataOnSecret()
 		assert.Nil(t, err)
 	})
+	t.Run("empty prefix", func(t *testing.T) {
+		retriever = NewRetriever(context.TODO(), fakeClient, plan, "")
+		require.NotNil(t, retriever)
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		assert.Nil(t, err)
+
+		assert.Contains(t, retriever.data, "DATABASE_SECRET_USER")
+		assert.Contains(t, retriever.data, "DATABASE_SECRET_PASSWORD")
+	})
 }
 
 func TestRetrieverNestedCRDKey(t *testing.T) {
@@ -128,7 +139,7 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	objs := []runtime.Object{&dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
@@ -175,7 +186,7 @@ func TestConfigMapRetriever(t *testing.T) {
 	objs := []runtime.Object{&dbConfigMap}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
