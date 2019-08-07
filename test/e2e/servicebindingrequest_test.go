@@ -172,10 +172,10 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Logf("Checking intermediary secret '%s'...", name)
 	sbrSecret := corev1.Secret{}
 	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
-	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_USER")
-	assert.Equal(t, []byte("user"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_USER"])
-	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
-	assert.Equal(t, []byte("password"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_PASSWORD"])
+	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_USER")
+	assert.Equal(t, []byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"])
+	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_PASSWORD")
+	assert.Equal(t, []byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"])
 
 	// cleaning up
 	t.Log("Cleaning all up!")
