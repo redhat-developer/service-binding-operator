@@ -84,6 +84,9 @@ func TestReconcilerNew(t *testing.T) {
 		assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
 		assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
 
+		sbrOutput := v1alpha1.ServiceBindingRequest{}
+		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &sbrOutput))
+		require.Equal(t, v1alpha1.BindingSuccess, sbrOutput.Status.BindingStatus)
 	})
 
 }
@@ -153,7 +156,5 @@ func TestReconcilerVolumeMount(t *testing.T) {
 		assert.Equal(t, 1, len(volumes))
 		assert.Equal(t, reconcilerName, volumes[0].Name)
 		assert.Equal(t, reconcilerName, volumes[0].VolumeSource.Secret.SecretName)
-
 	})
-
 }
