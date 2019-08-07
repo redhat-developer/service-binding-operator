@@ -137,7 +137,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// FIXME: find a way to DRY this block, and then add statefulsets and other kinds back again;
-		switch resourceKind {
+	switch resourceKind {
 	case "deploymentconfig":
 		logger.Info("Searching DeploymentConfig objects matching labels")
 
