@@ -3,6 +3,7 @@ package planner
 import (
 	"context"
 	"fmt"
+	"github.com/redhat-developer/service-binding-operator/pkg/utils"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -100,6 +101,10 @@ func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	}}
 	namespacedName := types.NamespacedName{Namespace: p.ns, Name: resourceRef}
 
+	err = utils.WaitUntilResourceFound(p.client, namespacedName, &cr)
+	if err != nil {
+		return nil, err
+	}
 	if err = p.client.Get(p.ctx, namespacedName, &cr); err != nil {
 		return nil, err
 	}

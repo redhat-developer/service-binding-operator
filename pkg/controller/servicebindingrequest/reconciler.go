@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"github.com/redhat-developer/service-binding-operator/pkg/utils"
 	"strings"
 
 	osappsv1 "github.com/openshift/api/apps/v1"
@@ -161,11 +162,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// FIXME: find a way to DRY this block, and then add statefulsets and other kinds back again;
-	switch resourceKind {
+		switch resourceKind {
 	case "deploymentconfig":
 		logger.Info("Searching DeploymentConfig objects matching labels")
 
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
+		err = utils.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
+		if err != nil {
+			return RequeueOnNotFound(err)
+		}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
 		if err != nil {
 			// Update Status
