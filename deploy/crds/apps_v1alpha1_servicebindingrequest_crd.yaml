@@ -69,6 +69,20 @@ spec:
               - resourceVersion
               - resourceRef
               type: object
+            envVar:
+              description: EnvVar defines a list of overrides for the environment
+                variables
+              items:
+                properties:
+                  name:
+                    type: string
+                  value:
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
