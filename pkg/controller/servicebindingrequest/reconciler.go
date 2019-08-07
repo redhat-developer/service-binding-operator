@@ -117,7 +117,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueOnNotFound(err)
 	}
 
-	retriever := NewRetriever(ctx, r.client, plan)
+	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
 	if err = retriever.Retrieve(); err != nil {
 		return RequeueOnNotFound(err)
 	}
