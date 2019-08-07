@@ -104,7 +104,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	instance := &v1alpha1.ServiceBindingRequest{}
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
+		// Update Status
 		r.setBindingInProgressStatus(instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return RequeueOnNotFound(err)
 	}
 
@@ -114,13 +119,23 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
 	plan, err := plnr.Plan()
 	if err != nil {
+		// Update Status
 		r.setBindingInProgressStatus(instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return RequeueOnNotFound(err)
 	}
 
 	retriever := NewRetriever(ctx, r.client, plan)
 	if err = retriever.Retrieve(); err != nil {
+		// Update Status
 		r.setBindingInProgressStatus(instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return RequeueOnNotFound(err)
 	}
 
@@ -146,13 +161,23 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
 		if err != nil {
+			// Update Status
 			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return RequeueOnNotFound(err)
 		}
 
 		if len(deploymentConfigListObj.Items) == 0 {
 			logger.Info("No DeploymentConfig objects found, requeueing request!")
+			// Update Status
 			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return Requeue()
 		}
 
@@ -183,7 +208,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			err = r.client.Update(ctx, &deploymentConfigObj)
 			if err != nil {
 				logger.Error(err, "Error on updating object!")
+				// Update Status
 				r.setBindingFailStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
 				return reconcile.Result{}, err
 			}
 		}
@@ -193,13 +223,23 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		deploymentListObj := &extv1beta1.DeploymentList{}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
 		if err != nil {
+			// Update Status
 			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return RequeueOnNotFound(err)
 		}
 
 		if len(deploymentListObj.Items) == 0 {
 			logger.Info("No Deployment objects found, requeueing request!")
+			// Update Status
 			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return Requeue()
 		}
 
@@ -231,14 +271,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger.Info("Updating Deployment object")
 			err = r.client.Update(ctx, &deploymentObj)
 			if err != nil {
+				// Update Status
 				r.setBindingFailStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
 				logger.Error(err, "Error on updating object!")
 				return reconcile.Result{}, err
 			}
 		}
 	}
 
+	// Update Status
 	r.setBindingSuccessStatus(instance)
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	logger.Info("All done!")
 	return Done()
 }
