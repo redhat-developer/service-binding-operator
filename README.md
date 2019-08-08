@@ -276,6 +276,7 @@ spec:
 
 | Field | Description |
 |-------|-------------|
-| Status | the binding status of Service Binding Request |
+| BindingStatus | The binding status of Service Binding Request |
+| Secret | The name of the intermediate secret |
 
 That's it, folks!
