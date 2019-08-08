@@ -272,7 +272,7 @@ spec:
 
 #### ServiceBindingRequestStatus
 
-ServiceBindingRequestStatus depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status
+`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status
 
 | Field | Description |
 |-------|-------------|
