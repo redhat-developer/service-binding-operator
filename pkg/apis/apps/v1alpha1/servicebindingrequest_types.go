@@ -84,6 +84,8 @@ const (
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request. Possible values are Success, Failure, InProgress.
 	BindingStatus BindingStatus `json:"BindingStatus"`
+	// LabelObjects contains all the objects with the label
+	LabelObjects []string `json:LabelObjects`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

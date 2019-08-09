@@ -87,6 +87,7 @@ func TestReconcilerNew(t *testing.T) {
 		sbrOutput := v1alpha1.ServiceBindingRequest{}
 		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &sbrOutput))
 		require.Equal(t, v1alpha1.BindingSuccess, sbrOutput.Status.BindingStatus)
+		require.Equal(t, reconcilerName, sbrOutput.Status.LabelObjects[0])
 	})
 
 }
