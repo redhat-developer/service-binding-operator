@@ -88,7 +88,7 @@ func TestReconcilerNew(t *testing.T) {
 		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &sbrOutput))
 		require.Equal(t, v1alpha1.BindingSuccess, sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
-		require.Equal(t, reconcilerName, sbrOutput.Status.LabelObjects[0])
+		require.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
 	})
 
 }

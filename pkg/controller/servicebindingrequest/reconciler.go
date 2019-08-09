@@ -192,8 +192,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
 				Info("Inspecting DeploymentConfig object...")
 
-			// Update LabelObjects Status
-			r.setLabelObjectsStatus(instance, deploymentConfigObj.GetName())
+			// Update ApplicationObjects Status
+			r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
 			err = r.client.Status().Update(context.TODO(), instance)
 			if err != nil {
 				return reconcile.Result{}, err
@@ -261,8 +261,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
 			logger.Info("Inspecting Deploymen object...")
 
-			// Update LabelObjects Status
-			r.setLabelObjectsStatus(instance, deploymentObj.GetName())
+			// Update ApplicationObjects Status
+			r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
 			err = r.client.Status().Update(context.TODO(), instance)
 			if err != nil {
 				return reconcile.Result{}, err

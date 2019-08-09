@@ -86,8 +86,8 @@ type ServiceBindingRequestStatus struct {
 	BindingStatus BindingStatus `json:"BindingStatus"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"Secret"`
-	// LabelObjects contains all the objects with the label
-	LabelObjects []string `json:"LabelObjects"`
+	// ApplicationObjects contains all the application objects filtered by label
+	ApplicationObjects []string `json:"ApplicationObjects"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

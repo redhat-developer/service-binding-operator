@@ -20,6 +20,6 @@ func (r *Reconciler) setSecretStatus(sbr *v1alpha1.ServiceBindingRequest) {
 	sbr.Status.Secret = sbr.GetName()
 }
 
-func (r *Reconciler) setLabelObjectsStatus(sbr *v1alpha1.ServiceBindingRequest, object string) {
-	sbr.Status.LabelObjects = append(sbr.Status.LabelObjects, object)
+func (r *Reconciler) setApplicationObjectsStatus(sbr *v1alpha1.ServiceBindingRequest, object string) {
+	sbr.Status.ApplicationObjects = append(sbr.Status.ApplicationObjects, object)
 }
