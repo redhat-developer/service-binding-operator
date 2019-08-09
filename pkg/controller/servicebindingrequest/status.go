@@ -15,3 +15,7 @@ func (r *Reconciler) setBindingInProgressStatus(sbr *v1alpha1.ServiceBindingRequ
 func (r *Reconciler) setBindingFailStatus(sbr *v1alpha1.ServiceBindingRequest) {
 	sbr.Status.BindingStatus = v1alpha1.BindingFail
 }
+
+func (r *Reconciler) setSecretStatus(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.Status.Secret = sbr.GetName()
+}
