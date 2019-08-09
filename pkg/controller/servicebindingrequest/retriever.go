@@ -175,6 +175,15 @@ func (r *Retriever) store(key string, value []byte) {
 	r.data[key] = value
 }
 
+func (r *Retriever) envVarStore(key string, value []byte){
+	key = strings.ReplaceAll(key, ":", "_")
+	key = strings.ReplaceAll(key, ".", "_")
+//	key = fmt.Sprintf("%s_%s_%s", bindingPrefix, r.plan.CR.GetKind(), key)
+// pass name of envVar
+	key = strings.ToUpper(key)
+	r.data[key] = value
+}
+
 // saveDataOnSecret create or update secret that will store the data collected.
 func (r *Retriever) saveDataOnSecret() error {
 	secretObj := &corev1.Secret{
@@ -217,6 +226,91 @@ func (r *Retriever) Retrieve() error {
 
 	return r.saveDataOnSecret()
 }
+
+func (r *Retriever) readEnvVar() error {
+
+	for i, envVars := range EnvVars {
+		envVarName := envVars.Name
+		envVarValue := envVars.value
+		err := r.parse(envVarValue)
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func (r *Retriever) parse(value string) parsed string{
+    //regex function
+	//https://github.com/Avni-Sharma/regex
+
+}
+func (r *Retriever) fetchEnvVarValue (parsedValue string) finalValue string{
+	var err error
+if strings.HasPrefix(parsedValue, ".") == 1{
+	//attribute
+}else{
+//status.dbCredentials.user
+//status.dbCredentials.password
+//status.dbConnectionIP
+	if strings.HasPrefix(parsedValue, "status"){
+		elements := strings.Split(parsedValue,".")
+		ele1 := elements[0]
+		ele2 := elements[1]
+		ele3 := elements[2]
+		r.logger.Info("Looking for status-descriptors in 'status'")
+		//Path should be ele[1]
+		statusDescriptor := r.plan.CRDDescription.StatusDescriptors.Path.XDescriptors {
+			//user and password
+			//one is secretPrefix
+			//other one is configMapPrefix
+
+			// holds the secret name and items
+			secrets := make(map[string][]string)
+			// holds the configMap name and items
+			configMaps := make(map[string][]string)
+			for _, xDescriptor := range xDescriptors {
+				logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
+				logger.Info("Inspecting xDescriptor...")
+				pathValue, err := r.getCRKey(place, path)
+				if err != nil {
+					return err
+				}	
+				if strings.HasPrefix(xDescriptor, secretPrefix {
+					// how to get to user??
+					// get the exact secretPrefix:user i.e ele[2] value
+					secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+				} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
+					configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
+				} else {
+					r.envVarStore(path, []byte(pathValue))
+				}
+			}
+
+			for name, items := range secrets {
+				// loading secret items all-at-once
+				err := r.readSecret(name, items)
+				if err != nil {
+					return err
+				}
+			}
+			for name, items := range configMaps {
+				// add the function readConfigMap
+				err := r.readConfigMap(name, items)
+				if err != nil {
+					return err
+				}
+			}			
+		}
+		return r.saveDataOnSecret()
+	}
+}	
+else if strings.HasPrefix(parsedValue, "spec"){
+	// repeat for the status
+
+	
+	}
+}
+
 
 // NewRetriever instantiate a new retriever instance.
 func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan) *Retriever {

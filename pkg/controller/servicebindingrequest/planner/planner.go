@@ -29,10 +29,11 @@ type Planner struct {
 
 // Plan outcome, after executing planner.
 type Plan struct {
-	Ns             string                      // namespace name
-	Name           string                      // plan name, same than ServiceBindingRequest
-	CRDDescription *olmv1alpha1.CRDDescription // custom resource definition description
-	CR             *ustrv1.Unstructured        // custom resource object
+	Ns             string                          // namespace name
+	Name           string                          // plan name, same than ServiceBindingRequest
+	CRDDescription *olmv1alpha1.CRDDescription     // custom resource definition description
+	CR             *ustrv1.Unstructured            // custom resource object
+	Sbr            *v1alpha1.ServiceBindingRequest // instantiated service binding request
 }
 
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
@@ -122,6 +123,22 @@ func (p *Planner) Plan() (*Plan, error) {
 	}
 
 	return &Plan{Ns: p.ns, Name: p.sbr.GetName(), CRDDescription: crdDescription, CR: cr}, nil
+}
+
+type envVarData struct {
+	Name  string
+	Value string
+}
+
+var EnvVars []envVarData //sth
+
+func (p *Plan) searchEnvVar(EnvVars []envVarData) {
+
+	crEnvVar := p.Sbr.Spec.EnvVar
+	for i, envMap := range crEnvVar {
+		EnvVars[i].Name = envMap.Name
+		EnvVars[i].Value = envMap.Value
+	}
 }
 
 // NewPlanner instantiate Planner type.
