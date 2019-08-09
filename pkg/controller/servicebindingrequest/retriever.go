@@ -241,8 +241,17 @@ func (r *Retriever) readEnvVar() error {
 
 func (r *Retriever) parse(value string) parsed string{
     //regex function
-	//https://github.com/Avni-Sharma/regex
+	re := regexp.MustCompile(`\$\{.*?\}`)
 
+	tempStr := re.FindAllString(value, -1)
+	fmt.Println(submatchall)
+
+	for i, element := range tempStr {
+		element = strings.Trim(element, "${")
+		element = strings.Trim(element, "}")
+		value = strings.Replace(value, element, r.fetchEnvVarValue(element), i+1)
+	}
+	return value
 }
 func (r *Retriever) fetchEnvVarValue (parsedValue string) finalValue string{
 	var err error
