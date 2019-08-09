@@ -1,4 +1,4 @@
-# `service-binding-operator`: Connect Applications with Operator-backed Services
+# Connecting Applications with Operator-backed Services
 
 <p align="center">
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/redhat-developer/service-binding-operator">
