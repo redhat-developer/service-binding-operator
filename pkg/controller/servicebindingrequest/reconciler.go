@@ -192,6 +192,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
 				Info("Inspecting DeploymentConfig object...")
 
+			// Update ApplicationObjects Status
+			r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
+
 			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
 				if len(retriever.data) > 0 {
 					logger.Info("Adding EnvFrom to container")
@@ -253,6 +260,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		for _, deploymentObj := range deploymentListObj.Items {
 			logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
 			logger.Info("Inspecting Deploymen object...")
+
+			// Update ApplicationObjects Status
+			r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 
 			for i, c := range deploymentObj.Spec.Template.Spec.Containers {
 				if len(retriever.data) > 0 {
