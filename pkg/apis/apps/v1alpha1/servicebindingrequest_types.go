@@ -84,6 +84,8 @@ const (
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request. Possible values are Success, Failure, InProgress.
 	BindingStatus BindingStatus `json:"BindingStatus"`
+	// Secret is the name of the intermediate secret
+	Secret string `json:"Secret"`
 	// LabelObjects contains all the objects with the label
 	LabelObjects []string `json:LabelObjects`
 }

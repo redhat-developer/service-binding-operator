@@ -116,6 +116,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.WithValues("ServiceBindingRequest.Name", instance.Name).
 		Info("Found service binding request to inspect")
 
+	// Set secret name
+	r.setSecretStatus(instance)
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
 	plan, err := plnr.Plan()
 	if err != nil {

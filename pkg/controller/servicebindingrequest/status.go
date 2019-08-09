@@ -16,6 +16,10 @@ func (r *Reconciler) setBindingFailStatus(sbr *v1alpha1.ServiceBindingRequest) {
 	sbr.Status.BindingStatus = v1alpha1.BindingFail
 }
 
+func (r *Reconciler) setSecretStatus(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.Status.Secret = sbr.GetName()
+}
+
 func (r *Reconciler) setLabelObjectsStatus(sbr *v1alpha1.ServiceBindingRequest, object string) {
 	sbr.Status.LabelObjects = append(sbr.Status.LabelObjects, object)
 }

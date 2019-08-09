@@ -270,4 +270,13 @@ spec:
               name: binding-request
 ```
 
+#### ServiceBindingRequestStatus
+
+`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status
+
+| Field | Description |
+|-------|-------------|
+| BindingStatus | The binding status of Service Binding Request |
+| Secret | The name of the intermediate secret |
+
 That's it, folks!
