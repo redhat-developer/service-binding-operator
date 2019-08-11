@@ -126,8 +126,8 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 ## -- Static code analysis (lint) targets --
 
 .PHONY: lint
-## Runs linters on Go code files and YAML files
-lint: setup-venv lint-go-code lint-yaml courier
+## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
+lint: #setup-venv lint-go-code lint-yaml courier
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
