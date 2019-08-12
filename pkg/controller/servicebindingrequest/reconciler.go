@@ -2,7 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
-	"github.com/redhat-developer/service-binding-operator/pkg/utils"
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 	"strings"
 
 	osappsv1 "github.com/openshift/api/apps/v1"
@@ -167,7 +167,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching DeploymentConfig objects matching labels")
 
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
-		err = utils.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
+		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
 		if err != nil {
 			return RequeueOnNotFound(err)
 		}
@@ -240,7 +240,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching Deployment objects matching labels")
 
 		deploymentListObj := &extv1beta1.DeploymentList{}
-		err = utils.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
+		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
 		if err != nil {
 			return RequeueOnNotFound(err)
 		}
