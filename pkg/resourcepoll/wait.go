@@ -23,10 +23,10 @@ func WaitUntilResourceFound(client client.Client, nsd types.NamespacedName, typ 
 	return err
 }
 
-func WaitUntilResourcesFound(client client.Client, nsd *client.ListOptions, typ runtime.Object) error {
+func WaitUntilResourcesFound(client client.Client, options *client.ListOptions, typ runtime.Object) error {
 	var err error
 	err = wait.Poll(time.Second*5, time.Minute*2, func() (bool, error) {
-		err = client.List(context.TODO(), nsd, typ)
+		err = client.List(context.TODO(), options, typ)
 		fmt.Printf("\nType is %+v and error is %+v", typ, err)
 		if err != nil {
 			return false, err
