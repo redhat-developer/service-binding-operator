@@ -240,6 +240,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching Deployment objects matching labels")
 
 		deploymentListObj := &extv1beta1.DeploymentList{}
+		err = utils.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
+		if err != nil {
+			return RequeueOnNotFound(err)
+		}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
 		if err != nil {
 			// Update Status
