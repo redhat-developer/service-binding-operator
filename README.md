@@ -246,7 +246,6 @@ spec:
     resourceVersion: v1alpha1
     resourceRef: db-demo
   mountPathPrefix: “”
-
 EOS
 ```
 
