@@ -245,6 +245,8 @@ spec:
     resourceKind: postgresql.baiju.dev
     resourceVersion: v1alpha1
     resourceRef: db-demo
+  mountPathPrefix: “”
+
 EOS
 ```
 
