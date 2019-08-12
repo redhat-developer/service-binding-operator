@@ -224,6 +224,8 @@ func (r *Retriever) Retrieve() error {
 		}
 	}
 
+	// call readEnvr from Retrieve
+
 	return r.saveDataOnSecret()
 }
 
@@ -290,7 +292,7 @@ if strings.Count(parsedValue, ".") == 1{
 			secrets := make(map[string][]string)
 			// holds the configMap name and items
 			configMaps := make(map[string][]string)
-			for _, xDescriptor := range xDescriptors {
+			for _, xDescriptor := range statusDescriptors {
 				logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
 				logger.Info("Inspecting xDescriptor...")
 				pathValue, err := r.getCRKey(place, path)
