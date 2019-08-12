@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
+	planner "github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -229,18 +229,32 @@ func (r *Retriever) Retrieve() error {
 
 func (r *Retriever) readEnvVar() error {
 
-	for i, envVars := range EnvVars {
+	for i, envVars := range planner.EnvVars {
 		envVarName := envVars.Name
-		envVarValue := envVars.value
-		err := r.parse(envVarValue)
-		if err != nil {
-			return err
+		envVarValue := envVars.Value
+		secretObjValue := r.parse(envVarValue)
+		secretFound := &corev1.Secret{}
+			err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
+			if err != nil {
+				return err
+			}
+			logger.Info("Inspecting secret data...")
+			for key, value := range secretFound.Data {
+				logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
+					Info("Inspecting secret key...")
+				// instance.Status.DBCredentials = secretFound.Name
+				secretFound.Data[envVarName] = secretObjValue
+				// // Update status
+				 err = r.client.Status().Update(context.TODO(), secretFound)
+				 if err != nil {
+				 	log.Error(err, "Failed to update status with DBCredentials")
+				 	return reconcile.Result{}, err
+				 }
+			}
 		}
 	}
-}
 
-func (r *Retriever) parse(value string) parsed string{
-    //regex function
+func (r *Retriever) parse(value string) string{
 	re := regexp.MustCompile(`\$\{.*?\}`)
 
 	tempStr := re.FindAllString(value, -1)
@@ -253,9 +267,9 @@ func (r *Retriever) parse(value string) parsed string{
 	}
 	return value
 }
-func (r *Retriever) fetchEnvVarValue (parsedValue string) finalValue string{
+func (r *Retriever) fetchEnvVarValue (parsedValue string) string{
 	var err error
-if strings.HasPrefix(parsedValue, ".") == 1{
+if strings.Count(parsedValue, ".") == 1{
 	//attribute
 }else{
 //status.dbCredentials.user
@@ -268,11 +282,10 @@ if strings.HasPrefix(parsedValue, ".") == 1{
 		ele3 := elements[2]
 		r.logger.Info("Looking for status-descriptors in 'status'")
 		//Path should be ele[1]
-		statusDescriptor := r.plan.CRDDescription.StatusDescriptors.Path.XDescriptors {
+		statusDescriptor := r.plan.CRDDescription.StatusDescriptors.Path.xDescriptors {
 			//user and password
 			//one is secretPrefix
 			//other one is configMapPrefix
-
 			// holds the secret name and items
 			secrets := make(map[string][]string)
 			// holds the configMap name and items
@@ -284,9 +297,29 @@ if strings.HasPrefix(parsedValue, ".") == 1{
 				if err != nil {
 					return err
 				}	
-				if strings.HasPrefix(xDescriptor, secretPrefix {
+				if strings.HasPrefix(xDescriptor, secretPrefix+ele3 {
 					// how to get to user??
 					// get the exact secretPrefix:user i.e ele[2] value
+						// Check if this Secret already exists
+
+					//logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
+					//logger.Info("Reading secret items...")
+					secretFound := &corev1.Secret{}
+					err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
+					if err != nil {
+						return err
+					}
+					logger.Info("Inspecting secret data...")
+					for key, value := range secretFound.Data {
+						logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
+							Info("Inspecting secret key...")
+						// making sure key name has a secret reference
+					crEnvVar := p.Sbr.Spec.EnvVar
+					for i, envMap := range crEnvVar {
+						EnvVars[i].Name = envMap.Name
+						key := EnvVars[i].Name
+						fetchedValue := secretFound.Data[key] 
+					}
 					secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 				} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
 					configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
@@ -311,13 +344,11 @@ if strings.HasPrefix(parsedValue, ".") == 1{
 			}			
 		}
 		return r.saveDataOnSecret()
-	}
-}	
-else if strings.HasPrefix(parsedValue, "spec"){
-	// repeat for the status
+	}else if strings.HasPrefix(parsedValue, "spec"){
+	// repeat as it is there for the status
 
-	
 	}
+}
 }
 
 
