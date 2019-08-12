@@ -56,6 +56,7 @@ type ServiceBindingRequestSpec struct {
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 
 	// EnvVar defines a list of overrides for the environment variables
+	// +optional
 	EnvVar []EnvMap `json:"envVar"`
 }
 
