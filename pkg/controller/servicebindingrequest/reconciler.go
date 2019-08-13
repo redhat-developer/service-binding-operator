@@ -25,7 +25,6 @@ import (
 type Reconciler struct {
 	client            client.Client   // kubernetes api client
 	scheme            *runtime.Scheme // api scheme
-	config            *rest.Config
 	resourceInterface dynamic.Interface
 }
 
