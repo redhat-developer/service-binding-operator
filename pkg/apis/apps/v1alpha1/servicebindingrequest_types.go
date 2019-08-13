@@ -77,6 +77,7 @@ const (
 	BindingSuccess    BindingStatus = "success"
 	BindingInProgress BindingStatus = "inProgress"
 	BindingFail       BindingStatus = "fail"
+	BindingWaitForResources BindingStatus = "waitingForResources"
 )
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

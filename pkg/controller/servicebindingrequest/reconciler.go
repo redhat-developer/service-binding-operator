@@ -22,6 +22,8 @@ import (
 type Reconciler struct {
 	client client.Client   // kubernetes api client
 	scheme *runtime.Scheme // api scheme
+
+	resourcepoll.WaitCallbacks
 }
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
@@ -86,6 +88,7 @@ func (r *Reconciler) appendVolumes(volumeList []corev1.Volume, data map[string][
 	})
 }
 
+
 // Reconcile a ServiceBindingRequest by the following steps:
 // 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
@@ -125,7 +128,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
-	plan, err := plnr.Plan()
+	plan, err := plnr.Plan(r)
 	if err != nil {
 		// Update Status
 		r.setBindingInProgressStatus(instance)
@@ -167,7 +170,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching DeploymentConfig objects matching labels")
 
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
-		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
+		err = resourcepoll.WaitUntilResourcesFound(
+			r.client,
+			&searchByLabelsOpts,
+			deploymentConfigListObj,
+			func() error { return r.OnWait(instance) },
+			func() error { return r.OnFind(instance) },
+			)
 		if err != nil {
 			return RequeueOnNotFound(err)
 		}
@@ -240,7 +249,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching Deployment objects matching labels")
 
 		deploymentListObj := &extv1beta1.DeploymentList{}
-		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
+		err = resourcepoll.WaitUntilResourcesFound(
+			r.client,
+			&searchByLabelsOpts,
+			deploymentListObj,
+			func() error { return r.OnWait(instance) },
+			func() error { return r.OnFind(instance) },
+			)
 		if err != nil {
 			return RequeueOnNotFound(err)
 		}

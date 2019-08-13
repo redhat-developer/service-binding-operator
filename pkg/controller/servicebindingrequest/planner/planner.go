@@ -85,7 +85,7 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
+func (p *Planner) searchCR(kind string, callbacks resourcepoll.WaitCallbacks) (*ustrv1.Unstructured, error) {
 	var resourceRef = p.sbr.Spec.BackingServiceSelector.ResourceRef
 	var apiVersion = fmt.Sprintf("%s/%s",
 		p.sbr.Spec.BackingServiceSelector.ResourceKind,
@@ -101,7 +101,13 @@ func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	}}
 	namespacedName := types.NamespacedName{Namespace: p.ns, Name: resourceRef}
 
-	err = resourcepoll.WaitUntilResourceFound(p.client, namespacedName, &cr)
+	err = resourcepoll.WaitUntilResourceFound(
+		p.client,
+		namespacedName,
+		&cr,
+		func() error { return callbacks.OnWait(p.sbr) },
+		func() error { return callbacks.OnFind(p.sbr) },
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +119,7 @@ func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 }
 
 // Plan by retrieving the necessary resources related to binding a service backend.
-func (p *Planner) Plan() (*Plan, error) {
+func (p *Planner) Plan(callbacks resourcepoll.WaitCallbacks) (*Plan, error) {
 	// find the CRD description object
 	crdDescription, err := p.searchCRDDescription()
 	if err != nil {
@@ -121,7 +127,7 @@ func (p *Planner) Plan() (*Plan, error) {
 	}
 
 	// retrieve the CR based on kind, api-version and name
-	cr, err := p.searchCR(crdDescription.Kind)
+	cr, err := p.searchCR(crdDescription.Kind, callbacks)
 	if err != nil {
 		return nil, err
 	}

@@ -23,3 +23,7 @@ func (r *Reconciler) setSecretStatus(sbr *v1alpha1.ServiceBindingRequest) {
 func (r *Reconciler) setApplicationObjectsStatus(sbr *v1alpha1.ServiceBindingRequest, object string) {
 	sbr.Status.ApplicationObjects = append(sbr.Status.ApplicationObjects, object)
 }
+
+func (r *Reconciler) setWaitingStatus(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.Status.BindingStatus = v1alpha1.BindingWaitForResources
+}

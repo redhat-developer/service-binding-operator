@@ -2,7 +2,6 @@ package resourcepoll
 
 import (
 	"context"
-	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -10,33 +9,56 @@ import (
 	"time"
 )
 
+type onWait func() error
+type onFind func() error
 
-func WaitUntilResourceFound(client client.Client, nsd types.NamespacedName, typ runtime.Object) error {
-	var err error
+func WaitUntilResourceFound(
+	client client.Client,
+	nsd types.NamespacedName,
+	typ runtime.Object,
+	onWait onWait,
+	onFind onFind) (err error) {
 	count := 0
+	err = onWait()
+	if err != nil {
+		return
+	}
 	err = wait.Poll(time.Second * 5, time.Minute*5, func() (bool, error) {
 		count++
-		fmt.Printf("\nRetry count: %+d", count)
 		err = client.Get(context.TODO(), nsd, typ)
 		if err != nil {
 			return false, err
 		}
+		err = onFind()
+		if err != nil {
+			return true, err
+		}
 		return true, nil
 	})
-	return err
+	return
 }
 
-func WaitUntilResourcesFound(client client.Client, options *client.ListOptions, typ runtime.Object) error {
-	var err error
+func WaitUntilResourcesFound(client client.Client,
+	options *client.ListOptions,
+	typ runtime.Object,
+	onWait onWait,
+	onFind onFind) (err error) {
 	count := 0
+	err = onWait()
+	if err != nil {
+		return
+	}
 	err = wait.Poll(time.Second*5, time.Minute*5, func() (bool, error) {
 		count++
-		fmt.Printf("\nRetry count: %+d", count)
 		err = client.List(context.TODO(), options, typ)
 		if err != nil {
 			return false, err
 		}
+		err = onFind()
+		if err != nil {
+			return true, err
+		}
 		return true, nil
 	})
-	return err
+	return
 }

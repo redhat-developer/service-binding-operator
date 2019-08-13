@@ -57,14 +57,14 @@ func TestPlannerSearchCRDDescription(t *testing.T) {
 }
 
 func TestPlannerSearchCR(t *testing.T) {
-	cr, err := planner.searchCR("Database")
+	cr, err := planner.searchCR("Database", mocks.WaitCallbackMock{})
 
 	assert.Nil(t, err)
 	assert.NotNil(t, cr)
 }
 
 func TestPlannerPlan(t *testing.T) {
-	plan, err := planner.Plan()
+	plan, err := planner.Plan(mocks.WaitCallbackMock{})
 
 	assert.Nil(t, err)
 	assert.NotNil(t, plan)
