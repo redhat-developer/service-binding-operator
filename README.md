@@ -273,7 +273,7 @@ spec:
 
 #### ServiceBindingRequestStatus
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+`ServiceBindingRequestStatus` depicts the status of the Service Binding request. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
 ```
 status:
