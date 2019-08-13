@@ -1,7 +1,9 @@
 package servicebindingrequest
 
 import (
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -9,8 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // Add creates a new ServiceBindingRequest Controller and adds it to the Manager. The Manager will
@@ -21,7 +21,8 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &Reconciler{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	dynamicClientInterface, _ := dynamic.NewForConfig(mgr.GetConfig())
+	return &Reconciler{client: mgr.GetClient(), scheme: mgr.GetScheme(), resourceInterface: dynamicClientInterface}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler

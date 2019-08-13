@@ -7,8 +7,12 @@ import (
 	osappsv1 "github.com/openshift/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -19,8 +23,10 @@ import (
 
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	client client.Client   // kubernetes api client
-	scheme *runtime.Scheme // api scheme
+	client            client.Client   // kubernetes api client
+	scheme            *runtime.Scheme // api scheme
+	config            *rest.Config
+	resourceInterface dynamic.Interface
 }
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
@@ -134,6 +140,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 		return RequeueOnNotFound(err)
 	}
+
+	crGVK := schema.GroupVersionResource{Group: plan.CR.GroupVersionKind().Group, Version: plan.CR.GroupVersionKind().Version, Resource: plan.CR.GetKind()}
+	r.resourceInterface.Resource(crGVK).Namespace(request.Namespace).Watch(metav1.ListOptions{}) // use the right metadata
 
 	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
 	if err = retriever.Retrieve(); err != nil {
