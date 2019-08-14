@@ -3,8 +3,9 @@ package planner
 import (
 	"context"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 	"strings"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -40,8 +41,8 @@ type Plan struct {
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 	var resourceKind = strings.ToLower(
-		fmt.Sprintf(".%s", p.sbr.Spec.BackingServiceSelector.ResourceKind))
-	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingServiceSelector.ResourceVersion)
+		fmt.Sprintf(".%s", p.sbr.Spec.BackingServiceSelector.Kind))
+	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingServiceSelector.Version)
 	var err error
 
 	logger := p.logger.WithValues(
@@ -88,8 +89,8 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	var resourceRef = p.sbr.Spec.BackingServiceSelector.ResourceRef
 	var apiVersion = fmt.Sprintf("%s/%s",
-		p.sbr.Spec.BackingServiceSelector.ResourceKind,
-		p.sbr.Spec.BackingServiceSelector.ResourceVersion)
+		p.sbr.Spec.BackingServiceSelector.Kind,
+		p.sbr.Spec.BackingServiceSelector.Version)
 	var err error
 
 	p.logger.WithValues("CR.Name", resourceRef, "CR.Kind", kind, "CR.APIVersion", apiVersion).

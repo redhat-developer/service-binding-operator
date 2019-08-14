@@ -2,8 +2,9 @@ package servicebindingrequest
 
 import (
 	"context"
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 	"strings"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 
 	osappsv1 "github.com/openshift/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -155,7 +156,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
 	logger.Info("Searching applications to receive intermediary secret bind...")
 
-	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind)
+	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.Kind)
 	searchByLabelsOpts := client.ListOptions{
 		Namespace:     request.Namespace,
 		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
