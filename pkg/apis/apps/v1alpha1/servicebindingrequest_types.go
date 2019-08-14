@@ -83,11 +83,11 @@ const (
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request. Possible values are Success, Failure, InProgress.
-	BindingStatus BindingStatus `json:"BindingStatus"`
+	BindingStatus BindingStatus `json:"bindingStatus"`
 	// Secret is the name of the intermediate secret
-	Secret string `json:"Secret"`
+	Secret string `json:"secret"`
 	// ApplicationObjects contains all the application objects filtered by label
-	ApplicationObjects []string `json:"ApplicationObjects"`
+	ApplicationObjects []string `json:"applicationObjects"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

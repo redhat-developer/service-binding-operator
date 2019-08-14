@@ -76,10 +76,30 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
+          - mountPathPrefix
+          - envVarPrefix
           - backingServiceSelector
           - applicationSelector
           type: object
         status:
+          properties:
+            applicationObjects:
+              description: ApplicationObjects contains all the application objects
+                filtered by label
+              items:
+                type: string
+              type: array
+            bindingStatus:
+              description: BindingStatus is the status of the service binding request.
+                Possible values are Success, Failure, InProgress.
+              type: string
+            secret:
+              description: Secret is the name of the intermediate secret
+              type: string
+          required:
+          - bindingStatus
+          - secret
+          - applicationObjects
           type: object
   version: v1alpha1
   versions:
