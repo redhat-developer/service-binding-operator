@@ -14,11 +14,11 @@ type ServiceBindingRequestSpec struct {
 	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// MountPathPrefix is the prefix for volume mount
-	MountPathPrefix string `json:"mountPathPrefix"`
+	MountPathPrefix string `json:"mountPathPrefix,omitempty"`
 
 	// EnvVarPrefix is the prefix for environment variables
 	// +optional
-	EnvVarPrefix string `json:"envVarPrefix"`
+	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	//
@@ -59,7 +59,7 @@ type ServiceBindingRequestSpec struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	Group       *string `json:"group"`
+	Group       *string `json:"group,omitempty"`
 	Version     string  `json:"version"`
 	Kind        string  `json:"kind"`
 	ResourceRef string  `json:"resourceRef"`
@@ -69,7 +69,7 @@ type BackingServiceSelector struct {
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	MatchLabels map[string]string `json:"matchLabels"`
-	Group       *string           `json:"group"`
+	Group       *string           `json:"group,omitempty"`
 	Version     string            `json:"version"`
 	Kind        string            `json:"kind"`
 }
@@ -86,11 +86,11 @@ const (
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request. Possible values are Success, Failure, InProgress.
-	BindingStatus BindingStatus `json:"bindingStatus"`
+	BindingStatus BindingStatus `json:"bindingStatus,omitempty"`
 	// Secret is the name of the intermediate secret
-	Secret string `json:"secret"`
+	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
-	ApplicationObjects []string `json:"applicationObjects"`
+	ApplicationObjects []string `json:"applicationObjects,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

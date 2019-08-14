@@ -284,7 +284,7 @@ push-image: build-image
 
 .PHONY: local
 ## Local: Run operator locally
-local: deploy-clean deploy-rbac deploy-crds deploy-cr
+local: deploy-clean deploy-rbac deploy-crds #deploy-cr
 	$(Q)operator-sdk up local
 
 .PHONY: deploy-rbac

@@ -48,7 +48,6 @@ spec:
                   type: string
               required:
               - matchLabels
-              - group
               - version
               - kind
               type: object
@@ -73,7 +72,6 @@ spec:
                 version:
                   type: string
               required:
-              - group
               - version
               - kind
               - resourceRef
@@ -85,8 +83,6 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
-          - mountPathPrefix
-          - envVarPrefix
           - backingServiceSelector
           - applicationSelector
           type: object
@@ -105,10 +101,6 @@ spec:
             secret:
               description: Secret is the name of the intermediate secret
               type: string
-          required:
-          - bindingStatus
-          - secret
-          - applicationObjects
           type: object
   version: v1alpha1
   versions:
