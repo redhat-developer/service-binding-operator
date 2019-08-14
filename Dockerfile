@@ -7,7 +7,7 @@ ENV GIT_COMMITTER_NAME devtools
 ENV GIT_COMMITTER_EMAIL devtools@redhat.com
 
 RUN yum install epel-release -y \
-    && yum install --skip-broken --enablerepo=centosplus install -y --quiet \
+    && yum install --enablerepo=centosplus install -y --quiet \
     findutils \
     git \
     make \
