@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"context"
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 	"strings"
 
 	osappsv1 "github.com/openshift/api/apps/v1"
@@ -10,18 +9,21 @@ import (
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	client client.Client   // kubernetes api client
-	scheme *runtime.Scheme // api scheme
+	client    client.Client     // kubernetes api client
+	dynClient dynamic.Interface // kubernetes dynamic api client
+	scheme    *runtime.Scheme   // api scheme
 }
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
@@ -124,6 +126,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, err
 	}
 
+	// FIXME: add a more descriptive name;
 	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
 	plan, err := plnr.Plan()
 	if err != nil {

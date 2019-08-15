@@ -12,6 +12,7 @@ import (
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -126,7 +127,12 @@ func TestReconcilerVolumeMount(t *testing.T) {
 
 	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
 	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
-	reconciler = &Reconciler{client: reconcilerFakeClient, scheme: s}
+
+	reconciler = &Reconciler{
+		client:    reconcilerFakeClient,
+		dynClient: fakedynamic.NewSimpleDynamicClient(s),
+		scheme:    s,
+	}
 
 	t.Run("reconcile", func(t *testing.T) {
 		req := reconcile.Request{
