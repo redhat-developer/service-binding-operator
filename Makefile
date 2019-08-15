@@ -284,7 +284,7 @@ push-image: build-image
 
 .PHONY: local
 ## Local: Run operator locally
-local: deploy-clean deploy-rbac deploy-crds #deploy-cr
+local: deploy-clean deploy-rbac deploy-crds
 	$(Q)operator-sdk up local
 
 .PHONY: deploy-rbac
@@ -298,11 +298,6 @@ deploy-rbac:
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
 	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
-
-.PHONY: deploy-cr
-## Deploy-CR: Deploy CRs
-deploy-cr:
-	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
