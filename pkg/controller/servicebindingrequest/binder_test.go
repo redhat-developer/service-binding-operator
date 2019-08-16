@@ -38,7 +38,8 @@ func TestBinder(t *testing.T) {
 	s.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
 
 	require.Nil(t, appsv1.AddToScheme(s))
-	d := mocks.DeploymentMock(ns, name, matchLabels)
+	d, err := mocks.UnstructuredDeploymentMock(ns, name, matchLabels)
+	require.Nil(t, err)
 
 	objs := []runtime.Object{&sbr, &d}
 	binderFakeClient = fake.NewFakeClientWithScheme(s, objs...)

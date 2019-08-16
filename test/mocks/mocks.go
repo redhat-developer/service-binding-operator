@@ -10,6 +10,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
@@ -261,6 +263,13 @@ func DeploymentListMock(ns, name string, matchLabels map[string]string) appsv1.D
 		},
 		Items: []appsv1.Deployment{DeploymentMock(ns, name, matchLabels)},
 	}
+}
+
+func UnstructuredDeploymentMock(ns, name string, matchLabels map[string]string) (ustrv1.Unstructured, error) {
+	d := DeploymentMock(ns, name, matchLabels)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
+	u := ustrv1.Unstructured{Object: data}
+	return u, err
 }
 
 // DeploymentMock creates a mocked Deployment object of busybox.
