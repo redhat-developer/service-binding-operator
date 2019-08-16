@@ -1,0 +1,19 @@
+---
+apiVersion: apps.openshift.io/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: mydb.to.nodejs-app
+  namespace: service-binding-demo
+spec:
+  mountPathPrefix: "/var/credentials"
+  envVarPrefix: "MYDB"
+  backingServiceSelector:
+    resourceRef: mydb
+    resourceKind: aws.pmacik.dev
+    resourceVersion: v1alpha1
+  applicationSelector:
+    matchLabels:
+      connects-to: postgres
+      environment: nodejs
+    resourceKind: DeploymentConfig
+
