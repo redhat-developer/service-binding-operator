@@ -1,11 +1,9 @@
-package planner
+package servicebindingrequest
 
 import (
 	"context"
 	"fmt"
 	"strings"
-
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -17,6 +15,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
