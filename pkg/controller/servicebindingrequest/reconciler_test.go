@@ -9,7 +9,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
@@ -55,13 +55,15 @@ func TestReconcilerNew(t *testing.T) {
 
 	dbSecret := mocks.SecretMock(reconcilerNs, "db-credentials")
 
-	require.Nil(t, extv1beta1.AddToScheme(s))
-	d := mocks.DeploymentMock(reconcilerNs, reconcilerName, matchLabels)
-	s.AddKnownTypes(extv1beta1.SchemeGroupVersion, &d)
+	require.Nil(t, appsv1.AddToScheme(s))
+	d, err := mocks.UnstructuredDeploymentMock(reconcilerNs, reconcilerName, matchLabels)
+	require.Nil(t, err)
+	s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
 
 	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
 	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
-	reconciler = &Reconciler{client: reconcilerFakeClient, scheme: s}
+	binderFakeDynClient = fakedynamic.NewSimpleDynamicClient(s, objs...)
+	reconciler = &Reconciler{client: reconcilerFakeClient, dynClient: binderFakeDynClient, scheme: s}
 
 	t.Run("reconcile", func(t *testing.T) {
 		req := reconcile.Request{
@@ -76,7 +78,7 @@ func TestReconcilerNew(t *testing.T) {
 		assert.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		d := extv1beta1.Deployment{}
+		d := appsv1.Deployment{}
 		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &d))
 
 		containers := d.Spec.Template.Spec.Containers
@@ -89,7 +91,8 @@ func TestReconcilerNew(t *testing.T) {
 		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &sbrOutput))
 		require.Equal(t, v1alpha1.BindingSuccess, sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
-		require.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
+		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+		assert.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
 	})
 
 }
@@ -121,18 +124,15 @@ func TestReconcilerVolumeMount(t *testing.T) {
 
 	dbSecret := mocks.SecretMock(reconcilerNs, "db-credentials")
 
-	require.Nil(t, extv1beta1.AddToScheme(s))
-	d := mocks.DeploymentMock(reconcilerNs, reconcilerName, matchLabels)
-	s.AddKnownTypes(extv1beta1.SchemeGroupVersion, &d)
+	require.Nil(t, appsv1.AddToScheme(s))
+	d, err := mocks.UnstructuredDeploymentMock(reconcilerNs, reconcilerName, matchLabels)
+	require.Nil(t, err)
+	s.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
 
 	objs := []runtime.Object{&sbr, &csvList, &crList, &dbSecret, &d}
 	reconcilerFakeClient = fake.NewFakeClientWithScheme(s, objs...)
-
-	reconciler = &Reconciler{
-		client:    reconcilerFakeClient,
-		dynClient: fakedynamic.NewSimpleDynamicClient(s),
-		scheme:    s,
-	}
+	binderFakeDynClient = fakedynamic.NewSimpleDynamicClient(s, objs...)
+	reconciler = &Reconciler{client: reconcilerFakeClient, dynClient: binderFakeDynClient, scheme: s}
 
 	t.Run("reconcile", func(t *testing.T) {
 		req := reconcile.Request{
@@ -147,7 +147,7 @@ func TestReconcilerVolumeMount(t *testing.T) {
 		assert.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		d := extv1beta1.Deployment{}
+		d := appsv1.Deployment{}
 		require.Nil(t, reconcilerFakeClient.Get(context.TODO(), namespacedName, &d))
 
 		containers := d.Spec.Template.Spec.Containers

@@ -2,12 +2,8 @@ package servicebindingrequest
 
 import (
 	"context"
-	"strings"
 
-	osappsv1 "github.com/openshift/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,7 +12,6 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -154,191 +149,198 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Updating applications to use intermediary secret
 	//
 
-	// TODO: very long block that needs to be extracted;
-	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
-	logger.Info("Searching applications to receive intermediary secret bind...")
-
-	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind)
-	searchByLabelsOpts := client.ListOptions{
-		Namespace:     request.Namespace,
-		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
+	binder := NewBinder(ctx, r.client, r.dynClient, instance)
+	if err = binder.Bind(); err != nil {
+		return RequeueOnNotFound(err)
 	}
 
-	// FIXME: find a way to DRY this block, and then add statefulsets and other kinds back again;
-	switch resourceKind {
-	case "deploymentconfig":
-		logger.Info("Searching DeploymentConfig objects matching labels")
+	/*
+		// TODO: very long block that needs to be extracted;
+		logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
+		logger.Info("Searching applications to receive intermediary secret bind...")
 
-		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
-		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
-		if err != nil {
-			return RequeueOnNotFound(err)
+		resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind)
+		searchByLabelsOpts := client.ListOptions{
+			Namespace:     request.Namespace,
+			LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
 		}
-		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
-		if err != nil {
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
+
+		// FIXME: find a way to DRY this block, and then add statefulsets and other kinds back again;
+		switch resourceKind {
+		case "deploymentconfig":
+			logger.Info("Searching DeploymentConfig objects matching labels")
+
+			deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
+			err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
 			if err != nil {
-				return reconcile.Result{}, err
+				return RequeueOnNotFound(err)
 			}
-			return RequeueOnNotFound(err)
-		}
-
-		if len(deploymentConfigListObj.Items) == 0 {
-			logger.Info("No DeploymentConfig objects found, requeueing request!")
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
+			err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
 			if err != nil {
-				return reconcile.Result{}, err
+				// Update Status
+				r.setBindingInProgressStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				return RequeueOnNotFound(err)
 			}
-			return Requeue()
-		}
 
-		for _, deploymentConfigObj := range deploymentConfigListObj.Items {
-			logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
-				Info("Inspecting DeploymentConfig object...")
+			if len(deploymentConfigListObj.Items) == 0 {
+				logger.Info("No DeploymentConfig objects found, requeueing request!")
+				// Update Status
+				r.setBindingInProgressStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				return Requeue()
+			}
 
-			// Update ApplicationObjects Status
-			if len(instance.Status.ApplicationObjects) >= 1 {
-				for _, v := range instance.Status.ApplicationObjects {
-					if v == deploymentConfigObj.GetName() {
-						break
+			for _, deploymentConfigObj := range deploymentConfigListObj.Items {
+				logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
+					Info("Inspecting DeploymentConfig object...")
+
+				// Update ApplicationObjects Status
+				if len(instance.Status.ApplicationObjects) >= 1 {
+					for _, v := range instance.Status.ApplicationObjects {
+						if v == deploymentConfigObj.GetName() {
+							break
+						}
+						r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
+						err = r.client.Status().Update(context.TODO(), instance)
+						if err != nil {
+							return reconcile.Result{}, err
+						}
 					}
+				} else {
 					r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
 					err = r.client.Status().Update(context.TODO(), instance)
 					if err != nil {
 						return reconcile.Result{}, err
 					}
 				}
-			} else {
-				r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
-				err = r.client.Status().Update(context.TODO(), instance)
+				for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
+					if len(retriever.data) > 0 {
+						logger.Info("Adding EnvFrom to container")
+						deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
+							c.EnvFrom, instance.GetName())
+					}
+					if len(retriever.volumeKeys) > 0 {
+						logger.Info("Adding VolumeMounts to container")
+						mountPath := "/var/data"
+						if instance.Spec.MountPathPrefix != "" {
+							mountPath = instance.Spec.MountPathPrefix
+						}
+						deploymentConfigObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
+							c.VolumeMounts, instance.GetName(), mountPath)
+						logger.Info("Adding Volumes to pod")
+						deploymentConfigObj.Spec.Template.Spec.Volumes = r.appendVolumes(
+							deploymentConfigObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
+					}
+				}
+				logger.Info("Updating DeploymentConfig object")
+				err = r.client.Update(ctx, &deploymentConfigObj)
 				if err != nil {
+					logger.Error(err, "Error on updating object!")
+					// Update Status
+					r.setBindingFailStatus(instance)
+					err = r.client.Status().Update(context.TODO(), instance)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
 					return reconcile.Result{}, err
 				}
 			}
-			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
-				if len(retriever.data) > 0 {
-					logger.Info("Adding EnvFrom to container")
-					deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
-						c.EnvFrom, instance.GetName())
-				}
-				if len(retriever.volumeKeys) > 0 {
-					logger.Info("Adding VolumeMounts to container")
-					mountPath := "/var/data"
-					if instance.Spec.MountPathPrefix != "" {
-						mountPath = instance.Spec.MountPathPrefix
-					}
-					deploymentConfigObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
-						c.VolumeMounts, instance.GetName(), mountPath)
-					logger.Info("Adding Volumes to pod")
-					deploymentConfigObj.Spec.Template.Spec.Volumes = r.appendVolumes(
-						deploymentConfigObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
-				}
-			}
-			logger.Info("Updating DeploymentConfig object")
-			err = r.client.Update(ctx, &deploymentConfigObj)
+		default:
+			logger.Info("Searching Deployment objects matching labels")
+
+			deploymentListObj := &extv1beta1.DeploymentList{}
+			err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
 			if err != nil {
-				logger.Error(err, "Error on updating object!")
+				return RequeueOnNotFound(err)
+			}
+			err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
+			if err != nil {
 				// Update Status
-				r.setBindingFailStatus(instance)
+				r.setBindingInProgressStatus(instance)
 				err = r.client.Status().Update(context.TODO(), instance)
 				if err != nil {
 					return reconcile.Result{}, err
 				}
-				return reconcile.Result{}, err
+				return RequeueOnNotFound(err)
 			}
-		}
-	default:
-		logger.Info("Searching Deployment objects matching labels")
 
-		deploymentListObj := &extv1beta1.DeploymentList{}
-		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
-		if err != nil {
-			return RequeueOnNotFound(err)
-		}
-		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
-		if err != nil {
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
+			if len(deploymentListObj.Items) == 0 {
+				logger.Info("No Deployment objects found, requeueing request!")
+				// Update Status
+				r.setBindingInProgressStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+				return Requeue()
 			}
-			return RequeueOnNotFound(err)
-		}
 
-		if len(deploymentListObj.Items) == 0 {
-			logger.Info("No Deployment objects found, requeueing request!")
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return Requeue()
-		}
+			for _, deploymentObj := range deploymentListObj.Items {
+				logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
+				logger.Info("Inspecting Deploymen object...")
 
-		for _, deploymentObj := range deploymentListObj.Items {
-			logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
-			logger.Info("Inspecting Deploymen object...")
-
-			// Update ApplicationObjects Status
-			if len(instance.Status.ApplicationObjects) >= 1 {
-				for _, v := range instance.Status.ApplicationObjects {
-					if v == deploymentObj.GetName() {
-						break
+				// Update ApplicationObjects Status
+				if len(instance.Status.ApplicationObjects) >= 1 {
+					for _, v := range instance.Status.ApplicationObjects {
+						if v == deploymentObj.GetName() {
+							break
+						}
+						r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
+						err = r.client.Status().Update(context.TODO(), instance)
+						if err != nil {
+							return reconcile.Result{}, err
+						}
 					}
+				} else {
 					r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
 					err = r.client.Status().Update(context.TODO(), instance)
 					if err != nil {
 						return reconcile.Result{}, err
 					}
 				}
-			} else {
-				r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
-				err = r.client.Status().Update(context.TODO(), instance)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-			}
-			for i, c := range deploymentObj.Spec.Template.Spec.Containers {
-				if len(retriever.data) > 0 {
-					logger.Info("Adding EnvFrom to container")
-					deploymentObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
-						c.EnvFrom, instance.GetName())
-				}
-				if len(retriever.volumeKeys) > 0 {
-					logger.Info("Adding VolumeMounts to container")
-					mountPath := "/var/data"
-					if instance.Spec.MountPathPrefix != "" {
-						mountPath = instance.Spec.MountPathPrefix
+				for i, c := range deploymentObj.Spec.Template.Spec.Containers {
+					if len(retriever.data) > 0 {
+						logger.Info("Adding EnvFrom to container")
+						deploymentObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
+							c.EnvFrom, instance.GetName())
 					}
-					deploymentObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
-						c.VolumeMounts, instance.GetName(), mountPath)
-					logger.Info("Adding Volumes to pod")
-					deploymentObj.Spec.Template.Spec.Volumes = r.appendVolumes(
-						deploymentObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
+					if len(retriever.volumeKeys) > 0 {
+						logger.Info("Adding VolumeMounts to container")
+						mountPath := "/var/data"
+						if instance.Spec.MountPathPrefix != "" {
+							mountPath = instance.Spec.MountPathPrefix
+						}
+						deploymentObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
+							c.VolumeMounts, instance.GetName(), mountPath)
+						logger.Info("Adding Volumes to pod")
+						deploymentObj.Spec.Template.Spec.Volumes = r.appendVolumes(
+							deploymentObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
+					}
+
 				}
 
-			}
-
-			logger.Info("Updating Deployment object")
-			err = r.client.Update(ctx, &deploymentObj)
-			if err != nil {
-				// Update Status
-				r.setBindingFailStatus(instance)
-				err = r.client.Status().Update(context.TODO(), instance)
+				logger.Info("Updating Deployment object")
+				err = r.client.Update(ctx, &deploymentObj)
 				if err != nil {
+					// Update Status
+					r.setBindingFailStatus(instance)
+					err = r.client.Status().Update(context.TODO(), instance)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+					logger.Error(err, "Error on updating object!")
 					return reconcile.Result{}, err
 				}
-				logger.Error(err, "Error on updating object!")
-				return reconcile.Result{}, err
 			}
 		}
-	}
+	*/
 
 	// Update Status
 	r.setBindingSuccessStatus(instance)
@@ -346,6 +348,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		return reconcile.Result{}, err
 	}
+
 	logger.Info("All done!")
 	return Done()
 }

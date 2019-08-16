@@ -3,12 +3,13 @@ package planner
 import (
 	"context"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 	"strings"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
@@ -81,7 +82,7 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 	}
 
 	p.logger.Info("Warning: not able to find a CRD description!")
-	return nil, errors.NewNotFound(extv1beta1.Resource("CustomResourceDefinition"), "")
+	return nil, errors.NewNotFound(appsv1.Resource("CustomResourceDefinition"), "")
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
