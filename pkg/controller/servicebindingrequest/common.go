@@ -13,6 +13,11 @@ func RequeueOnNotFound(err error) (reconcile.Result, error) {
 	return reconcile.Result{Requeue: true}, err
 }
 
+// RequeueError simply requeue exposing the error.
+func RequeueError(err error) (reconcile.Result, error) {
+	return reconcile.Result{Requeue: true}, err
+}
+
 // Requeue based on empty result and no error informed upstream, request will be requeued.
 func Requeue() (reconcile.Result, error) {
 	return reconcile.Result{Requeue: true}, nil
