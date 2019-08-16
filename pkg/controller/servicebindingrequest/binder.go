@@ -85,6 +85,68 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []
 	})
 }
 
+// appendVolumeMounts append volume mounts pointing to volumes created using secret
+func (b *Binder) appendVolumeMounts(vmList []corev1.VolumeMount, volumeName, mountPath string) []corev1.VolumeMount {
+	for _, vm := range vmList {
+		if vm.Name == volumeName {
+			// volume name already referenced
+			return vmList
+		}
+	}
+
+	return append(vmList, corev1.VolumeMount{
+		Name:      volumeName,
+		MountPath: mountPath,
+	})
+}
+
+// appendVolumes append volumes
+func (b *Binder) appendVolumes(
+	volumeList []corev1.Volume,
+	data map[string][]byte,
+	volumeKeys []string,
+	volumeName string,
+	secretName string,
+) []corev1.Volume {
+	for _, vm := range volumeList {
+		if vm.Name == volumeName {
+			// volume name already referenced
+			return volumeList
+		}
+	}
+
+	items := []corev1.KeyToPath{}
+	for _, k := range volumeKeys {
+		items = append(items, corev1.KeyToPath{
+			Key:  k,
+			Path: k,
+		})
+	}
+
+	return append(volumeList, corev1.Volume{
+		Name: volumeName,
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: secretName,
+				Items:      items,
+			},
+		},
+	})
+}
+
+// updateContainer execute the update of a single container.
+func (b *Binder) updateContainer(container interface{}) (map[string]interface{}, error) {
+	c := corev1.Container{}
+	u := container.(map[string]interface{})
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+	if err != nil {
+		return nil, err
+	}
+	// effectively binding the application with intermediary secret
+	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
+	return runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+}
+
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
@@ -111,21 +173,11 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
 			logger = logger.WithValues("Obj.Container.Number", i)
 			logger.Info("Inspecting container...")
 
-			c := corev1.Container{}
-			u := container.(map[string]interface{})
-			if err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c); err != nil {
-				return err
-			}
-
-			// effectively binding the application with intermediary secret
-			logger.Info("Binding application!")
-			c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
-
-			bindContainer, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+			containers[i], err = b.updateContainer(container)
 			if err != nil {
+				logger.Error(err, "during container update.")
 				return err
 			}
-			containers[i] = bindContainer
 		}
 
 		if err = ustrv1.SetNestedSlice(obj.Object, containers, nestedPath...); err != nil {

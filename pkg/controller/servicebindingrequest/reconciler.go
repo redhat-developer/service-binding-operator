@@ -115,6 +115,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueOnNotFound(err)
 	}
 
+	// FIXME: add back the application related status reporting.
 	if err = r.setStatus(instance, bindingSuccess); err != nil {
 		logger.Error(err, "On binding applications with intermediary secret.")
 		return RequeueError(err)
