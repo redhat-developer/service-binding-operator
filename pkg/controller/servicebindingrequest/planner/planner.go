@@ -86,8 +86,8 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
-	var resourceRef = p.sbr.Spec.BackingServiceSelector.ResourceRef
-	var apiVersion = fmt.Sprintf("%s/%s", *p.sbr.Spec.BackingServiceSelector.Group, p.sbr.Spec.BackingServiceSelector.Version)
+	resourceRef := p.sbr.Spec.BackingServiceSelector.ResourceRef
+	apiVersion := fmt.Sprintf("%s/%s", *p.sbr.Spec.BackingServiceSelector.Group, p.sbr.Spec.BackingServiceSelector.Version)
 	var err error
 
 	p.logger.WithValues("CR.Name", resourceRef, "CR.Kind", kind, "CR.APIVersion", apiVersion).
