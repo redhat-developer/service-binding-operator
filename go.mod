@@ -17,7 +17,6 @@ require (
 	github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible
 	github.com/operator-framework/operator-sdk v0.10.0
 	github.com/prometheus/client_golang v1.0.0 // indirect
-	github.com/prometheus/common v0.4.1
 	github.com/sirupsen/logrus v1.4.2 // indirect
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/prometheus/common/log"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -100,7 +99,6 @@ func (r *Reconciler) NonServiceBindingOwnedCOnfigMapTrigger(o handler.MapObject)
 		return nil
 	}
 	if err != nil {
-		log.Errorf("Error retrieving Configmap %v from store: %v", key, err)
 		return nil
 	}
 
@@ -152,7 +150,6 @@ func (r *Reconciler) NonServiceBindingOwnedSecretTrigger(o handler.MapObject) []
 		return nil
 	}
 	if err != nil {
-		log.Errorf("Error retrieving Secret %v from store: %v", key, err)
 		return nil
 	}
 
