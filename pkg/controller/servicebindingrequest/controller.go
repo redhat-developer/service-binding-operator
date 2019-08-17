@@ -75,6 +75,31 @@ func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedSecr
 	return nil
 }
 
+func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(owner metav1.OwnerReference) []reconcile.Request {
+	var result []reconcile.Request
+
+	sbr := &v1alpha1.ServiceBindingRequestList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceBindingRequest",
+			APIVersion: "apps.openshift.io/v1alpha1",
+		},
+	}
+	// Get all ServiceBindingRequests
+	if err := r.client.List(context.TODO(), nil, sbr); err != nil {
+		return result
+	}
+
+	for _, sbr := range sbr.Items {
+		// if the secret/configmap belongs to a CR which was bound in
+		// a ServiceBindingRequest previously, reconcile is needed.
+		if sbr.Spec.BackingServiceSelector.ResourceRef == owner.Name && sbr.Spec.BackingServiceSelector.Kind == owner.Kind {
+			result = append(result, reconcile.Request{
+				NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
+		}
+	}
+	return result
+}
+
 // NonServiceBindingOwnedCOnfigMapTrigger is a trigger on all secrets in that namespace
 func (r *Reconciler) NonServiceBindingOwnedCOnfigMapTrigger(o handler.MapObject) []reconcile.Request {
 	var ownerReference metav1.OwnerReference
@@ -105,37 +130,16 @@ func (r *Reconciler) NonServiceBindingOwnedCOnfigMapTrigger(o handler.MapObject)
 	return r.reconcileIfAssociatedWithAServiceBinding(ownerReference)
 }
 
-func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(owner metav1.OwnerReference) []reconcile.Request {
-	var result []reconcile.Request
-
-	sbr := &v1alpha1.ServiceBindingRequestList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ServiceBindingRequest",
-			APIVersion: "apps.openshift.io/v1alpha1",
-		},
-	}
-	// Get all ServiceBindingRequests
-	if err := r.client.List(context.TODO(), nil, sbr); err != nil {
-		return result
-	}
-
-	for _, sbr := range sbr.Items {
-		// if the secret/configmap belongs to a CR which was bound in
-		// a ServiceBindingRequest previously, reconcile is needed.
-		if sbr.Spec.BackingServiceSelector.ResourceRef == owner.Name && sbr.Spec.BackingServiceSelector.Kind == owner.Kind {
-			result = append(result, reconcile.Request{
-				NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
-		}
-	}
-	return result
-}
-
 // NonServiceBindingOwnedSecretTrigger is a trigger on all secrets in that namespace
 func (r *Reconciler) NonServiceBindingOwnedSecretTrigger(o handler.MapObject) []reconcile.Request {
-	var result []reconcile.Request
-	var ownerName string
+	var ownerReference metav1.OwnerReference
+
 	for _, owner := range o.Meta.GetOwnerReferences() {
-		ownerName = owner.Name
+		ownerReference = owner
+		if owner.Name == "" {
+			// if the owner is not present, we are not really concerned.
+			return nil
+		}
 		if owner.Kind == "ServiceBindingRequest" {
 			fmt.Println("Secret is managed by ServiceBindingRequest, dropping event")
 			return nil
@@ -153,24 +157,7 @@ func (r *Reconciler) NonServiceBindingOwnedSecretTrigger(o handler.MapObject) []
 		return nil
 	}
 
-	sbr := &v1alpha1.ServiceBindingRequestList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ServiceBindingRequest",
-			APIVersion: "apps.openshift.io/v1alpha1",
-		},
-	}
-	// Get all ServiceBindingRequests
-	if err := r.client.List(context.TODO(), nil, sbr); err != nil {
-		return result
-	}
-
-	for _, sbr := range sbr.Items {
-		if sbr.Spec.BackingServiceSelector.ResourceRef == ownerName {
-			result = append(result, reconcile.Request{
-				NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
-		}
-	}
-	return result
+	return r.reconcileIfAssociatedWithAServiceBinding(ownerReference)
 }
 
 // blank assignment to verify that ReconcileServiceBindingRequest implements reconcile.Reconciler
