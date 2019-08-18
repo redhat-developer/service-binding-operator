@@ -75,6 +75,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedTrig
 	return nil
 }
 
+// ReconcileIfAssociatedWithAServiceBinding triggers a reconcile event
+// if a secret/configmap owned by any of the BackingServices changes.
 func (r *Reconciler) ReconcileIfAssociatedWithAServiceBinding(o handler.MapObject) []reconcile.Request {
 	var result []reconcile.Request
 
