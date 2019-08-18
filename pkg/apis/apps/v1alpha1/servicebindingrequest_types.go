@@ -14,11 +14,11 @@ type ServiceBindingRequestSpec struct {
 	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// MountPathPrefix is the prefix for volume mount
-	MountPathPrefix string `json:"mountPathPrefix"`
+	MountPathPrefix string `json:"mountPathPrefix,omitempty"`
 
 	// EnvVarPrefix is the prefix for environment variables
 	// +optional
-	EnvVarPrefix string `json:"envVarPrefix"`
+	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	//
@@ -59,16 +59,19 @@ type ServiceBindingRequestSpec struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	ResourceKind    string `json:"resourceKind"`
-	ResourceVersion string `json:"resourceVersion"`
-	ResourceRef     string `json:"resourceRef"`
+	Group       *string `json:"group,omitempty"`
+	Version     string  `json:"version"`
+	Kind        string  `json:"kind"`
+	ResourceRef string  `json:"resourceRef"`
 }
 
 // ApplicationSelector defines the selector based on labels and resource kind
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
-	MatchLabels  map[string]string `json:"matchLabels"`
-	ResourceKind string            `json:"resourceKind"`
+	MatchLabels map[string]string `json:"matchLabels"`
+	Group       *string           `json:"group,omitempty"`
+	Version     string            `json:"version"`
+	Kind        string            `json:"kind"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

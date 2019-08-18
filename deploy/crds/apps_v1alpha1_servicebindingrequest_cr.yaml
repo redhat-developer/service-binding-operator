@@ -7,10 +7,13 @@ spec:
   mountPathPrefix: "/var/credentials"
   backingServiceSelector:
     resourceRef: pg-instance
-    resourceKind: databases.postgresql.example.dev
-    resourceVersion: v1alpha1
+    group: postgresql.example.dev
+    kind: Database
+    version: v1alpha1
   applicationSelector:
     matchLabels:
       connects-to: postgres
       environment: production
-    resourceKind: Deployment
+    group: apps
+    kind: Deployment
+    version: v1
