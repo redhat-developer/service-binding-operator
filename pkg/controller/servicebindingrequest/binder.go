@@ -30,7 +30,7 @@ type Binder struct {
 	sbr                *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys         []string                        // list of key names used in volume mounts
 	logger             logr.Logger                     // logger instance
-	UpdatedObjectNames []string                        // list of objets updated by this
+	UpdatedObjectNames []string                        // list of objects updated by this
 }
 
 // getResourceKind simply returns the resource-kind in low case.
