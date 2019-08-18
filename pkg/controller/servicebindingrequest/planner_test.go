@@ -31,20 +31,20 @@ func TestPlannerNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	})
-	s.AddKnownTypes(v1alpha1.SchemeGroupVersion, &sbr)
+	s.AddKnownTypes(v1alpha1.SchemeGroupVersion, sbr)
 
 	require.Nil(t, olmv1alpha1.AddToScheme(s))
 	csvList := mocks.ClusterServiceVersionListMock(ns, "cluster-service-version-list")
-	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &csvList)
+	s.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, csvList)
 
 	require.Nil(t, pgapis.AddToScheme(s))
 	crList := mocks.DatabaseCRListMock(ns, resourceRef)
-	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &crList)
+	s.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, crList)
 
-	objs := []runtime.Object{&sbr, &csvList, &crList}
+	objs := []runtime.Object{sbr, csvList, crList}
 	fakeClient := fake.NewFakeClientWithScheme(s, objs...)
 
-	planner = NewPlanner(context.TODO(), fakeClient, ns, &sbr)
+	planner = NewPlanner(context.TODO(), fakeClient, ns, sbr)
 	require.NotNil(t, planner)
 }
 

@@ -25,93 +25,103 @@ const (
 	OperatorAPIVersion = "apps.openshift.io/v1alpha1"
 )
 
-// ClusterServiceVersionMock based on PostgreSQL operator.
-func ClusterServiceVersionMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
-	strategy := olminstall.StrategyDetailsDeployment{
-		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
-			Name: "deployment",
-			Spec: appsv1.DeploymentSpec{},
-		}},
+var (
+	// DBNameSpecDesc default spec descriptor to inform the database name.
+	DBNameSpecDesc = olmv1alpha1.SpecDescriptor{
+		DisplayName:  "Database Name",
+		Description:  "Database Name",
+		Path:         "dbName",
+		XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:env:attribute"},
 	}
-
-	strategyJSON, _ := json.Marshal(strategy)
-
-	return olmv1alpha1.ClusterServiceVersion{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
+	// DBConfigMapSpecDesc spec descriptor to describe a operator that export username and password
+	// via config-map, instead of a usual secret.
+	DBConfigMapSpecDesc = olmv1alpha1.SpecDescriptor{
+		DisplayName: "DB ConfigMap",
+		Description: "Database ConfigMap",
+		Path:        "dbConfigMap",
+		XDescriptors: []string{
+			"urn:alm:descriptor:io.kubernetes:ConfigMap",
+			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
+			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
 		},
-		Spec: olmv1alpha1.ClusterServiceVersionSpec{
-			DisplayName: "mock-database-csv",
-			InstallStrategy: olmv1alpha1.NamedInstallStrategy{
-				StrategyName:    "deployment",
-				StrategySpecRaw: strategyJSON,
-			},
-			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
-				Owned: []olmv1alpha1.CRDDescription{CRDDescriptionMock()},
-			},
+	}
+	// DBPasswordCredentialsOnEnvStatusDesc status descriptor to describe a database operator that
+	// publishes username and password over a secret. Default approach.
+	DBPasswordCredentialsOnEnvStatusDesc = olmv1alpha1.StatusDescriptor{
+		DisplayName: "DB Password Credentials",
+		Description: "Database credentials secret",
+		Path:        "dbCredentials",
+		XDescriptors: []string{
+			"urn:alm:descriptor:io.kubernetes:Secret",
+			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
+			"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
 		},
+	}
+	// DBPasswordCredentialsOnVolumeMountStatusDesc status descriptor to describe a operator that
+	// informs credentials via a volume.
+	DBPasswordCredentialsOnVolumeMountStatusDesc = olmv1alpha1.StatusDescriptor{
+		DisplayName: "DB Password Credentials",
+		Description: "Database credentials secret",
+		Path:        "dbCredentials",
+		XDescriptors: []string{
+			"urn:alm:descriptor:io.kubernetes:Secret",
+			"urn:alm:descriptor:servicebindingrequest:volumemount:secret:user",
+			"urn:alm:descriptor:servicebindingrequest:volumemount:secret:password",
+		},
+	}
+)
+
+// crdDescriptionMock based for mocked objects.
+func crdDescriptionMock(
+	specDescriptor []olmv1alpha1.SpecDescriptor,
+	statusDescriptors []olmv1alpha1.StatusDescriptor,
+) olmv1alpha1.CRDDescription {
+	return olmv1alpha1.CRDDescription{
+		Name:              fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		DisplayName:       CRDKind,
+		Description:       "mock-crd-description",
+		Kind:              CRDKind,
+		Version:           CRDVersion,
+		SpecDescriptors:   specDescriptor,
+		StatusDescriptors: statusDescriptors,
 	}
 }
 
 // ClusterServiceVersionListMock returns a list with a single CSV object inside, reusing mock.
-func ClusterServiceVersionListMock(ns, name string) olmv1alpha1.ClusterServiceVersionList {
-	return olmv1alpha1.ClusterServiceVersionList{
+func ClusterServiceVersionListMock(ns, name string) *olmv1alpha1.ClusterServiceVersionList {
+	return &olmv1alpha1.ClusterServiceVersionList{
 		Items: []olmv1alpha1.ClusterServiceVersion{ClusterServiceVersionMock(ns, name)},
 	}
 }
 
-// CRDDescriptionMock based on PostgreSQL operator, returning a mock that defines database
-// credentials entry with OLM descriptors.
+// CRDDescriptionMock based on PostgreSQL operator, returning a mock using default third party
+// operator setup.
 func CRDDescriptionMock() olmv1alpha1.CRDDescription {
-	return olmv1alpha1.CRDDescription{
-		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
-		DisplayName: CRDKind,
-		Description: "mock-crd-description",
-		Kind:        CRDKind,
-		Version:     CRDVersion,
-		SpecDescriptors: []olmv1alpha1.SpecDescriptor{{
-			DisplayName:  "Database Name",
-			Description:  "Database Name",
-			Path:         "dbName",
-			XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:env:attribute"},
-		}},
-		StatusDescriptors: []olmv1alpha1.StatusDescriptor{{
-			DisplayName: "DB Password Credentials",
-			Description: "Database credentials secret",
-			Path:        "dbCredentials",
-			XDescriptors: []string{
-				"urn:alm:descriptor:io.kubernetes:Secret",
-				"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
-				"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
-			},
-		}},
-	}
+	return crdDescriptionMock(
+		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc},
+		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
+	)
 }
 
-// CRDDescriptionConfigMapMock ...
+// CRDDescriptionConfigMapMock based on PostgreSQL operator, returns a mock using configmap based
+// spec-descriptor
 func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
-	return olmv1alpha1.CRDDescription{
-		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
-		DisplayName: CRDKind,
-		Description: "mock-crd-description",
-		Kind:        CRDKind,
-		Version:     CRDVersion,
-		SpecDescriptors: []olmv1alpha1.SpecDescriptor{{
-			DisplayName: "DB ConfigMap",
-			Description: "Database ConfigMap",
-			Path:        "dbConfigMap",
-			XDescriptors: []string{
-				"urn:alm:descriptor:io.kubernetes:ConfigMap",
-				"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
-				"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
-			},
-		}},
-	}
+	return crdDescriptionMock(
+		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc},
+		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
+	)
 }
 
-// ClusterServiceVersionVolumeMountMock based on PostgreSQL operator.
-func ClusterServiceVersionVolumeMountMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
+// CRDDescriptionVolumeMountMock based on PostgreSQL operator, returns a mock having credentials
+// in a volume.
+func CRDDescriptionVolumeMountMock() olmv1alpha1.CRDDescription {
+	return crdDescriptionMock(
+		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc},
+		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnVolumeMountStatusDesc},
+	)
+}
+
+func clusterServiceVersionMock(ns, name string, crdDescription olmv1alpha1.CRDDescription) olmv1alpha1.ClusterServiceVersion {
 	strategy := olminstall.StrategyDetailsDeployment{
 		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
 			Name: "deployment",
@@ -133,43 +143,26 @@ func ClusterServiceVersionVolumeMountMock(ns, name string) olmv1alpha1.ClusterSe
 				StrategySpecRaw: strategyJSON,
 			},
 			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
-				Owned: []olmv1alpha1.CRDDescription{CRDDescriptionVolumeMountMock()},
+				Owned: []olmv1alpha1.CRDDescription{crdDescription},
 			},
 		},
 	}
 }
 
-// ClusterServiceVersionListVolumeMountMock returns a list with a single CSV object inside, reusing mock.
-func ClusterServiceVersionListVolumeMountMock(ns, name string) olmv1alpha1.ClusterServiceVersionList {
-	return olmv1alpha1.ClusterServiceVersionList{
-		Items: []olmv1alpha1.ClusterServiceVersion{ClusterServiceVersionVolumeMountMock(ns, name)},
-	}
+// ClusterServiceVersionMock based on PostgreSQL operator having what's expected as defaults.
+func ClusterServiceVersionMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
+	return clusterServiceVersionMock(ns, name, CRDDescriptionMock())
 }
 
-// CRDDescriptionVolumeMountMock ...
-func CRDDescriptionVolumeMountMock() olmv1alpha1.CRDDescription {
-	return olmv1alpha1.CRDDescription{
-		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
-		DisplayName: CRDKind,
-		Description: "mock-crd-description",
-		Kind:        CRDKind,
-		Version:     CRDVersion,
-		SpecDescriptors: []olmv1alpha1.SpecDescriptor{{
-			DisplayName:  "Database Name",
-			Description:  "Database Name",
-			Path:         "dbName",
-			XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:env:attribute"},
-		}},
-		StatusDescriptors: []olmv1alpha1.StatusDescriptor{{
-			DisplayName: "DB Password Credentials",
-			Description: "Database credentials secret",
-			Path:        "dbCredentials",
-			XDescriptors: []string{
-				"urn:alm:descriptor:io.kubernetes:Secret",
-				"urn:alm:descriptor:servicebindingrequest:volumemount:secret:user",
-				"urn:alm:descriptor:servicebindingrequest:volumemount:secret:password",
-			},
-		}},
+// ClusterServiceVersionVolumeMountMock based on PostgreSQL operator.
+func ClusterServiceVersionVolumeMountMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
+	return clusterServiceVersionMock(ns, name, CRDDescriptionVolumeMountMock())
+}
+
+// ClusterServiceVersionListVolumeMountMock returns a list with a single CSV object inside, reusing mock.
+func ClusterServiceVersionListVolumeMountMock(ns, name string) *olmv1alpha1.ClusterServiceVersionList {
+	return &olmv1alpha1.ClusterServiceVersionList{
+		Items: []olmv1alpha1.ClusterServiceVersion{ClusterServiceVersionVolumeMountMock(ns, name)},
 	}
 }
 
@@ -197,15 +190,15 @@ func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 }
 
 // DatabaseCRListMock returns a list with a single database CR inside, reusing existing mock.
-func DatabaseCRListMock(ns, name string) pgv1alpha1.DatabaseList {
-	return pgv1alpha1.DatabaseList{
+func DatabaseCRListMock(ns, name string) *pgv1alpha1.DatabaseList {
+	return &pgv1alpha1.DatabaseList{
 		Items: []pgv1alpha1.Database{DatabaseCRMock(ns, name)},
 	}
 }
 
 // SecretMock returns a Secret based on PostgreSQL operator usage.
-func SecretMock(ns, name string) corev1.Secret {
-	return corev1.Secret{
+func SecretMock(ns, name string) *corev1.Secret {
+	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -217,7 +210,7 @@ func SecretMock(ns, name string) corev1.Secret {
 	}
 }
 
-// ConfigMapMock ...
+// ConfigMapMock returns a dummy config-map object.
 func ConfigMapMock(ns, name string) corev1.ConfigMap {
 	return corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -234,8 +227,8 @@ func ConfigMapMock(ns, name string) corev1.ConfigMap {
 // ServiceBindingRequestMock return a binding-request mock of informed name and match labels.
 func ServiceBindingRequestMock(
 	ns, name, resourceRef string, matchLabels map[string]string,
-) v1alpha1.ServiceBindingRequest {
-	return v1alpha1.ServiceBindingRequest{
+) *v1alpha1.ServiceBindingRequest {
+	return &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -255,6 +248,7 @@ func ServiceBindingRequestMock(
 	}
 }
 
+// DeploymentListMock returns a list of DeploymentMock.
 func DeploymentListMock(ns, name string, matchLabels map[string]string) appsv1.DeploymentList {
 	return appsv1.DeploymentList{
 		TypeMeta: metav1.TypeMeta{
@@ -265,11 +259,16 @@ func DeploymentListMock(ns, name string, matchLabels map[string]string) appsv1.D
 	}
 }
 
-func UnstructuredDeploymentMock(ns, name string, matchLabels map[string]string) (ustrv1.Unstructured, error) {
+// UnstructuredDeploymentMock converts the DeploymentMock to unstructured.
+func UnstructuredDeploymentMock(
+	ns,
+	name string,
+	matchLabels map[string]string,
+) (*ustrv1.Unstructured, error) {
 	d := DeploymentMock(ns, name, matchLabels)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
 	u := ustrv1.Unstructured{Object: data}
-	return u, err
+	return &u, err
 }
 
 // DeploymentMock creates a mocked Deployment object of busybox.
@@ -368,8 +367,8 @@ type ConfigMapDatabase struct {
 }
 
 // DatabaseConfigMapMock ...
-func DatabaseConfigMapMock(ns, name string) ConfigMapDatabase {
-	return ConfigMapDatabase{
+func DatabaseConfigMapMock(ns, name string) *ConfigMapDatabase {
+	return &ConfigMapDatabase{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
 			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),

@@ -35,7 +35,7 @@ func TestRetriever(t *testing.T) {
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
-	objs := []runtime.Object{&dbSecret}
+	objs := []runtime.Object{dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
 	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
@@ -136,7 +136,7 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
-	objs := []runtime.Object{&dbSecret}
+	objs := []runtime.Object{dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
 	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
@@ -172,7 +172,7 @@ func TestConfigMapRetriever(t *testing.T) {
 
 	cr := mocks.DatabaseConfigMapMock(ns, crName)
 
-	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	require.Nil(t, err)
 
 	plan := &Plan{
