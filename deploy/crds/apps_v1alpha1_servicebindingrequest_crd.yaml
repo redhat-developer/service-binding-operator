@@ -89,7 +89,6 @@ spec:
               type: string
           required:
           - mountPathPrefix
-          - envVarPrefix
           - backingServiceSelector
           - applicationSelector
           - envVar

@@ -17,18 +17,21 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	ctx    context.Context   // request context
-	client client.Client     // Kubernetes API client
-	plan   *planner.Plan     // plan instance
-	logger logr.Logger       // logger instance
-	data   map[string][]byte // data retrieved
+	ctx           context.Context   // request context
+	client        client.Client     // Kubernetes API client
+	plan          *planner.Plan     // plan instance
+	logger        logr.Logger       // logger instance
+	data          map[string][]byte // data retrieved
+	volumeKeys    []string
+	bindingPrefix string
 }
 
 const (
-	bindingPrefix   = "SERVICE_BINDING"
-	basePrefix      = "urn:alm:descriptor:servicebindingrequest:env:object"
-	secretPrefix    = basePrefix + ":secret"
-	configMapPrefix = basePrefix + ":configmap"
+	basePrefix              = "urn:alm:descriptor:servicebindingrequest:env:object"
+	secretPrefix            = basePrefix + ":secret"
+	configMapPrefix         = basePrefix + ":configmap"
+	attributePrefix         = "urn:alm:descriptor:servicebindingrequest:env:attribute"
+	volumeMountSecretPrefix = "urn:alm:descriptor:servicebindingrequest:volumemount:secret"
 )
 
 // getNestedValue retrieve value from dotted key path
@@ -76,6 +79,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	// holds the secret name and items
 	secrets := make(map[string][]string)
+
 	// holds the configMap name and items
 	configMaps := make(map[string][]string)
 	for _, xDescriptor := range xDescriptors {
@@ -90,7 +94,10 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 		} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
 			configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
-		} else {
+		} else if strings.HasPrefix(xDescriptor, volumeMountSecretPrefix) {
+			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+			r.volumeKeys = append(r.volumeKeys, pathValue)
+		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(path, []byte(pathValue))
 		}
 	}
@@ -170,7 +177,11 @@ func (r *Retriever) readConfigMap(name string, items []string) error {
 func (r *Retriever) store(key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
 	key = strings.ReplaceAll(key, ".", "_")
-	key = fmt.Sprintf("%s_%s_%s", bindingPrefix, r.plan.CR.GetKind(), key)
+	if r.bindingPrefix == "" {
+		key = fmt.Sprintf("%s_%s", r.plan.CR.GetKind(), key)
+	} else {
+		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, r.plan.CR.GetKind(), key)
+	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
 }
@@ -224,7 +235,10 @@ func (r *Retriever) Retrieve() error {
 		}
 	}
 
-	// call readEnvr from Retrieve
+	r.logger.Info("Looking for environment variables in 'CR'...")
+	if err = r.readEnvVar(); err!=nil{
+		return err
+	}
 
 	return r.saveDataOnSecret()
 }
@@ -272,18 +286,17 @@ func (r *Retriever) parse(value string) string{
 func (r *Retriever) fetchEnvVarValue (parsedValue string) string{
 	var err error
 if strings.Count(parsedValue, ".") == 1{
-	//attribute
+	r.envVarStore(path, []byte(pathValue))//attribute
 }else{
 //status.dbCredentials.user
 //status.dbCredentials.password
 //status.dbConnectionIP
+	elements := strings.Split(parsedValue,".")
+	ele1 := elements[0] // either a status or a spec
+	ele2 := elements[1] // path value
+	ele3 := elements[2] // if a configMap/Secret then the value for that object
 	if strings.HasPrefix(parsedValue, "status"){
-		elements := strings.Split(parsedValue,".")
-		ele1 := elements[0]
-		ele2 := elements[1]
-		ele3 := elements[2]
 		r.logger.Info("Looking for status-descriptors in 'status'")
-		//Path should be ele[1]
 		statusDescriptor := r.plan.CRDDescription.StatusDescriptors.Path.xDescriptors {
 			//user and password
 			//one is secretPrefix
@@ -302,10 +315,9 @@ if strings.Count(parsedValue, ".") == 1{
 				if strings.HasPrefix(xDescriptor, secretPrefix+ele3 {
 					// how to get to user??
 					// get the exact secretPrefix:user i.e ele[2] value
-						// Check if this Secret already exists
-
-					//logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
-					//logger.Info("Reading secret items...")
+					// Check if this Secret already exists
+					logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
+					logger.Info("Reading secret items...")
 					secretFound := &corev1.Secret{}
 					err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
 					if err != nil {
@@ -322,13 +334,33 @@ if strings.Count(parsedValue, ".") == 1{
 						key := EnvVars[i].Name
 						fetchedValue := secretFound.Data[key] 
 					}
+					// path value??
 					secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
-				} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
+				} 
+			}else if strings.HasPrefix(xDescriptor, configMapPrefix+ele3{
+				logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
+					logger.Info("Reading configmap items...")
+					configMapFound := &corev1.ConfigMap{}
+					err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &configMapFound)
+					if err != nil {
+						return err
+					}
+					logger.Info("Inspecting Config Map data...")
+					for key, value := range configMapFound.Data {
+						logger.WithValues("ConfigMap.Key.Name", key, "ConfigMap.Key.Length", len(value)).
+							Info("Inspecting configmap ...")
+						// making sure key name has a secret reference
+					crEnvVar := p.Sbr.Spec.EnvVar
+					for i, envMap := range crEnvVar {
+						EnvVars[i].Name = envMap.Name
+						key := EnvVars[i].Name
+						fetchedValue := configMapFound.Data[key] 
+					}
 					configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
-				} else {
-					r.envVarStore(path, []byte(pathValue))
-				}
+				} 
 			}
+		}
+	}
 
 			for name, items := range secrets {
 				// loading secret items all-at-once
@@ -343,24 +375,111 @@ if strings.Count(parsedValue, ".") == 1{
 				if err != nil {
 					return err
 				}
-			}			
-		}
-		return r.saveDataOnSecret()
-	}else if strings.HasPrefix(parsedValue, "spec"){
+			}	
+			
+			
+			// SPEC PART 
+		}else if strings.HasPrefix(parsedValue, "spec"){
+			
+
+			
 	// repeat as it is there for the status
 
+
+
+	r.logger.Info("Looking for spec-descriptors in 'spec'")
+	specDescriptor := r.plan.CRDDescription.SpecDescriptors.Path.xDescriptors {
+		//user and password
+		//one is secretPrefix
+		//other one is configMapPrefix
+		// holds the secret name and items
+		secrets := make(map[string][]string)
+		// holds the configMap name and items
+		configMaps := make(map[string][]string)
+		for _, xDescriptor := range specDescriptors {
+			logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
+			logger.Info("Inspecting xDescriptor...")
+			pathValue, err := r.getCRKey(place, path)
+			if err != nil {
+				return err
+			}	
+			if strings.HasPrefix(xDescriptor, secretPrefix+ele3 {
+				// how to get to user??
+				// get the exact secretPrefix:user i.e ele[2] value
+				// Check if this Secret already exists
+				logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
+				logger.Info("Reading secret items...")
+				secretFound := &corev1.Secret{}
+				err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
+				if err != nil {
+					return err
+				}
+				logger.Info("Inspecting secret data...")
+				for key, value := range secretFound.Data {
+					logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
+						Info("Inspecting secret key...")
+					// making sure key name has a secret reference
+				crEnvVar := p.Sbr.Spec.EnvVar
+				for i, envMap := range crEnvVar {
+					EnvVars[i].Name = envMap.Name
+					key := EnvVars[i].Name
+					fetchedValue := secretFound.Data[key] 
+				}
+				// path value??
+				secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+			} 
+		}else if strings.HasPrefix(xDescriptor, configMapPrefix+ele3{
+			logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
+				logger.Info("Reading configmap items...")
+				configMapFound := &corev1.ConfigMap{}
+				err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &configMapFound)
+				if err != nil {
+					return err
+				}
+				logger.Info("Inspecting Config Map data...")
+				for key, value := range configMapFound.Data {
+					logger.WithValues("ConfigMap.Key.Name", key, "ConfigMap.Key.Length", len(value)).
+						Info("Inspecting configmap ...")
+					// making sure key name has a secret reference
+				crEnvVar := p.Sbr.Spec.EnvVar
+				for i, envMap := range crEnvVar {
+					EnvVars[i].Name = envMap.Name
+					key := EnvVars[i].Name
+					fetchedValue := configMapFound.Data[key] 
+				}
+				configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
+			} 
+		}
 	}
 }
+
+		for name, items := range secrets {
+			// loading secret items all-at-once
+			err := r.readSecret(name, items)
+			if err != nil {
+				return err
+			}
+		}
+		for name, items := range configMaps {
+			// add the function readConfigMap
+			err := r.readConfigMap(name, items)
+			if err != nil {
+				return err
+			}
+		}	
+		
+		}
+	}
 }
-
-
 // NewRetriever instantiate a new retriever instance.
-func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan) *Retriever {
+func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan, bindingPrefix string) *Retriever {
 	return &Retriever{
-		ctx:    ctx,
-		client: client,
-		logger: logf.Log.WithName("retriever"),
-		plan:   plan,
-		data:   make(map[string][]byte),
+		ctx:           ctx,
+		client:        client,
+		logger:        logf.Log.WithName("retriever"),
+		plan:          plan,
+		data:          make(map[string][]byte),
+		volumeKeys:    []string{},
+		bindingPrefix: bindingPrefix,
 	}
 }
