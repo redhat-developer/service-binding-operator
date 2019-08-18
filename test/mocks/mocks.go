@@ -17,12 +17,14 @@ import (
 
 // resource details employed in mocks
 const (
-	CRDName            = "postgresql.baiju.dev"
 	CRDVersion         = "v1alpha1"
 	CRDKind            = "Database"
 	OperatorKind       = "ServiceBindingRequest"
 	OperatorAPIVersion = "apps.openshift.io/v1alpha1"
 )
+
+// CRDGroup is the group of the sample CRD used in this test.
+var CRDGroup string = "postgresql.baiju.dev"
 
 // ClusterServiceVersionMock based on PostgreSQL operator.
 func ClusterServiceVersionMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
@@ -64,7 +66,7 @@ func ClusterServiceVersionListMock(ns, name string) olmv1alpha1.ClusterServiceVe
 // credentials entry with OLM descriptors.
 func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	return olmv1alpha1.CRDDescription{
-		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDGroup),
 		DisplayName: CRDKind,
 		Description: "mock-crd-description",
 		Kind:        CRDKind,
@@ -91,7 +93,7 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 // CRDDescriptionConfigMapMock ...
 func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
 	return olmv1alpha1.CRDDescription{
-		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDGroup),
 		DisplayName: CRDKind,
 		Description: "mock-crd-description",
 		Kind:        CRDKind,
@@ -148,7 +150,7 @@ func ClusterServiceVersionListVolumeMountMock(ns, name string) olmv1alpha1.Clust
 // CRDDescriptionVolumeMountMock ...
 func CRDDescriptionVolumeMountMock() olmv1alpha1.CRDDescription {
 	return olmv1alpha1.CRDDescription{
-		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		Name:        fmt.Sprintf("%s.%s", CRDKind, CRDGroup),
 		DisplayName: CRDKind,
 		Description: "mock-crd-description",
 		Kind:        CRDKind,
@@ -179,7 +181,7 @@ func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 		// it via *unstructured.Unstructured it could not find this CR without it.
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
-			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+			APIVersion: fmt.Sprintf("%s/%s", CRDGroup, CRDVersion),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -234,6 +236,7 @@ func ConfigMapMock(ns, name string) corev1.ConfigMap {
 func ServiceBindingRequestMock(
 	ns, name, resourceRef string, matchLabels map[string]string,
 ) v1alpha1.ServiceBindingRequest {
+
 	return v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -242,13 +245,14 @@ func ServiceBindingRequestMock(
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				ResourceKind:    CRDName,
-				ResourceVersion: CRDVersion,
-				ResourceRef:     resourceRef,
+				Group:       &CRDGroup,
+				Kind:        CRDKind,
+				Version:     CRDVersion,
+				ResourceRef: resourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				ResourceKind: "Deployment",
-				MatchLabels:  matchLabels,
+				Kind:        "Deployment",
+				MatchLabels: matchLabels,
 			},
 		},
 	}
@@ -315,7 +319,7 @@ func NestedDatabaseCRMock(ns, name string) NestedDatabase {
 		// it via *unstructured.Unstructured it could not find this CR without it.
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
-			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+			APIVersion: fmt.Sprintf("%s/%s", CRDGroup, CRDVersion),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -350,7 +354,7 @@ func DatabaseConfigMapMock(ns, name string) ConfigMapDatabase {
 	return ConfigMapDatabase{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
-			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+			APIVersion: fmt.Sprintf("%s/%s", CRDGroup, CRDVersion),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,

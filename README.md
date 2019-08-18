@@ -119,7 +119,7 @@ spec:
 EOS
 ```
 
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
+Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Binding Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](assets/operator-hub-sbo-screenshot.png)
 

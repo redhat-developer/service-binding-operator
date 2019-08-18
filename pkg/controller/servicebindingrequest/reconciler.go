@@ -156,7 +156,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
 	logger.Info("Searching applications to receive intermediary secret bind...")
 
-	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind)
+	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.Kind)
 	searchByLabelsOpts := client.ListOptions{
 		Namespace:     request.Namespace,
 		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
