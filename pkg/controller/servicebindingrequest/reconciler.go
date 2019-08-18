@@ -2,8 +2,9 @@ package servicebindingrequest
 
 import (
 	"context"
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 	"strings"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
 
 	osappsv1 "github.com/openshift/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -219,8 +220,35 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
 				if len(retriever.data) > 0 {
 					logger.Info("Adding EnvFrom to container")
+
+					// Update spec.template.annotations to have a hash of the binding data.
+					// Whenever newer information is 'bound', this would trigger a redeployment
+					// if redeployment on configchange trigger is set.
+
+					existingAnnotations := deploymentConfigObj.Spec.Template.GetObjectMeta().GetAnnotations()
+
+					// FIXME: In a later PR, Validate if the existing environmnent values
+					// are actually different that what is being written to the DeploymentConfig.
+					// If yes, set lastboundtime to ${CURRENT_TIME}. That would ensure that
+					// the information is meaningful along with playing the role of triggering a deployment.
+					existingAnnotations["lastboundtime"] = retriever.BindableDataHash()
+					deploymentConfigObj.Spec.Template.GetObjectMeta().SetAnnotations(existingAnnotations)
+
+					existingEnvVars := deploymentConfigObj.Spec.Template.Spec.Containers[i].Env
+
+					existingEnvVars = append(existingEnvVars, corev1.EnvVar{
+						Name: "lastboundtime",
+						ValueFrom: &corev1.EnvVarSource{
+							FieldRef: &corev1.ObjectFieldSelector{
+								FieldPath: "spec.template.metadata.annotations.lastboundtime",
+							},
+						},
+					})
+					deploymentConfigObj.Spec.Template.Spec.Containers[i].Env = existingEnvVars
+
 					deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
 						c.EnvFrom, instance.GetName())
+
 				}
 				if len(retriever.volumeKeys) > 0 {
 					logger.Info("Adding VolumeMounts to container")

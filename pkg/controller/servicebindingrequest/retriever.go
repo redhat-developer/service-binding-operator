@@ -2,7 +2,9 @@ package servicebindingrequest
 
 import (
 	"context"
+	"crypto/sha1"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -227,6 +229,38 @@ func (r *Retriever) Retrieve() error {
 	}
 
 	return r.saveDataOnSecret()
+}
+
+// BindableDataHash returns the has of the bindable information.
+// It can be used to understand if something has changed.
+func (r *Retriever) BindableDataHash() string {
+
+	sortedEnvKeys := getSortedKeys(r.data)
+
+	concatString := ""
+	for _, key := range sortedEnvKeys {
+		concatString = concatString + string(r.data[key])
+	}
+
+	return strings.TrimSpace(md5Hash(concatString))
+}
+
+func md5Hash(s string) string {
+	h := sha1.New()
+	h.Write([]byte(s))
+	bs := h.Sum(nil)
+	return fmt.Sprintf("%x\n", bs)
+}
+
+func getSortedKeys(data map[string][]byte) []string {
+	keys := make([]string, len(data))
+	i := 0
+	for k := range data {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+	return keys
 }
 
 // NewRetriever instantiate a new retriever instance.
