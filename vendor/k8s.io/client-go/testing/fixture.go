@@ -20,11 +20,10 @@ import (
 	"fmt"
 	"sync"
 
-	jsonpatch "github.com/evanphx/json-patch"
+	"github.com/evanphx/json-patch"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -217,18 +216,6 @@ func (t *tracker) List(gvr schema.GroupVersionResource, gvk schema.GroupVersionK
 	}
 
 	list, err := t.scheme.New(listGVK)
-	if err != nil {
-		return nil, err
-	}
-
-	uList := unstructured.UnstructuredList{}
-	uList.Object, err = runtime.DefaultUnstructuredConverter.ToUnstructured(list)
-	if err != nil {
-		return nil, err
-	}
-	uList.SetGroupVersionKind(listGVK)
-
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(uList.Object, list)
 	if err != nil {
 		return nil, err
 	}
