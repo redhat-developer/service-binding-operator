@@ -220,34 +220,22 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
 				if len(retriever.data) > 0 {
 					logger.Info("Adding EnvFrom to container")
-
-					// Update spec.template.annotations to have a hash of the binding data.
-					// Whenever newer information is 'bound', this would trigger a redeployment
-					// if redeployment on configchange trigger is set.
-
-					existingAnnotations := deploymentConfigObj.Spec.Template.GetObjectMeta().GetAnnotations()
-
-					// FIXME: In a later PR, Validate if the existing environmnent values
-					// are actually different that what is being written to the DeploymentConfig.
-					// If yes, set lastboundtime to ${CURRENT_TIME}. That would ensure that
-					// the information is meaningful along with playing the role of triggering a deployment.
-					existingAnnotations["lastboundtime"] = retriever.BindableDataHash()
-					deploymentConfigObj.Spec.Template.GetObjectMeta().SetAnnotations(existingAnnotations)
-
-					existingEnvVars := deploymentConfigObj.Spec.Template.Spec.Containers[i].Env
-
-					existingEnvVars = append(existingEnvVars, corev1.EnvVar{
-						Name: "lastboundtime",
-						ValueFrom: &corev1.EnvVarSource{
-							FieldRef: &corev1.ObjectFieldSelector{
-								FieldPath: "spec.template.metadata.annotations.lastboundtime",
-							},
-						},
-					})
-					deploymentConfigObj.Spec.Template.Spec.Containers[i].Env = existingEnvVars
-
 					deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
 						c.EnvFrom, instance.GetName())
+
+					existingEnvVars := deploymentConfigObj.Spec.Template.Spec.Containers[i].Env
+					if len(existingEnvVars) == 0 {
+						existingEnvVars = []corev1.EnvVar{}
+					}
+
+					// 	Whenever this env variable's value is updated
+					// a new deployment is triggered.
+
+					existingEnvVars = append(existingEnvVars, corev1.EnvVar{
+						Name:  "lastboundtime", // TODO: Move out constant.
+						Value: retriever.BindableDataHash(),
+					})
+					deploymentConfigObj.Spec.Template.Spec.Containers[i].Env = existingEnvVars
 
 				}
 				if len(retriever.volumeKeys) > 0 {
