@@ -27,9 +27,11 @@ type Fake struct {
 }
 
 // AddMockedServiceBindingRequest add mocked object from ServiceBindingRequestMock.
-func (f *Fake) AddMockedServiceBindingRequest(name, ref string, matchLabels map[string]string) {
+func (f *Fake) AddMockedServiceBindingRequest(name, ref string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	f.objs = append(f.objs, ServiceBindingRequestMock(f.ns, name, ref, matchLabels))
+	sbr := ServiceBindingRequestMock(f.ns, name, ref, matchLabels)
+	f.objs = append(f.objs, sbr)
+	return sbr
 }
 
 // AddMockedCSVList add mocked object from ClusterServiceVersionListMock.
