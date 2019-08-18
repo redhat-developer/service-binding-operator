@@ -41,10 +41,10 @@ func TestBinder(t *testing.T) {
 	d, err := mocks.UnstructuredDeploymentMock(ns, name, matchLabels)
 	require.Nil(t, err)
 
-	objs := []runtime.Object{&sbr, &d}
+	objs := []runtime.Object{sbr, d}
 	binderFakeClient = fake.NewFakeClientWithScheme(s, objs...)
 	binderFakeDynClient = fakedynamic.NewSimpleDynamicClient(s, objs...)
-	binder = NewBinder(context.TODO(), binderFakeClient, binderFakeDynClient, &sbr)
+	binder = NewBinder(context.TODO(), binderFakeClient, binderFakeDynClient, sbr, []string{})
 
 	require.NotNil(t, binder)
 }
