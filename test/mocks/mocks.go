@@ -236,13 +236,16 @@ func ServiceBindingRequestMock(
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				ResourceKind:    CRDName,
-				ResourceVersion: CRDVersion,
-				ResourceRef:     resourceRef,
+				Group:       CRDName,
+				Version:     CRDVersion,
+				Kind:        CRDKind,
+				ResourceRef: resourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				ResourceKind: "Deployment",
-				MatchLabels:  matchLabels,
+				Group:       "apps",
+				Version:     "v1",
+				Resource:    "deployments",
+				MatchLabels: matchLabels,
 			},
 		},
 	}

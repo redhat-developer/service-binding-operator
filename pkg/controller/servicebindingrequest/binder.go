@@ -3,11 +3,8 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/go-logr/logr"
-	osappsv1 "github.com/openshift/api/apps/v1"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -33,33 +30,14 @@ type Binder struct {
 	UpdatedObjectNames []string                        // list of objects updated by this
 }
 
-// getResourceKind simply returns the resource-kind in low case.
-func (b *Binder) getResourceKind() string {
-	return strings.ToLower(b.sbr.Spec.ApplicationSelector.ResourceKind)
-}
-
-// getListGVR returns a GVR for a list of resources.
-func (b *Binder) getListGVR() (schema.GroupVersionResource, error) {
-	kind := b.getResourceKind()
-	switch kind {
-	case "deploymentconfig":
-		return osappsv1.Resource("deploymentconfigs").WithVersion("v1"), nil
-	case "deployment":
-		return appsv1.Resource("deployments").WithVersion("v1"), nil
-	default:
-		return schema.GroupVersionResource{},
-			fmt.Errorf("resource kind '%s' is not supported by this operator", kind)
-	}
-}
-
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*ustrv1.UnstructuredList, error) {
-	gvr, err := b.getListGVR()
-	if err != nil {
-		return nil, err
-	}
-
 	ns := b.sbr.GetNamespace()
+	gvr := schema.GroupVersionResource{
+		Group:    b.sbr.Spec.ApplicationSelector.Group,
+		Version:  b.sbr.Spec.ApplicationSelector.Version,
+		Resource: b.sbr.Spec.ApplicationSelector.Resource,
+	}
 	matchLabels := b.sbr.Spec.ApplicationSelector.MatchLabels
 	opts := metav1.ListOptions{
 		LabelSelector: labels.Set(matchLabels).String(),
