@@ -74,10 +74,8 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, "success", sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
-		/*
-			require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
-			assert.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
-		*/
+		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+		assert.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
 	})
 }
 

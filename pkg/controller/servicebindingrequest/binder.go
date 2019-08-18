@@ -24,12 +24,13 @@ import (
 // Binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
 type Binder struct {
-	ctx        context.Context                 // request context
-	client     client.Client                   // kubernetes API client
-	dynClient  dynamic.Interface               // kubernetes dynamic api client
-	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	volumeKeys []string                        // list of key names used in volume mounts
-	logger     logr.Logger                     // logger instance
+	ctx                context.Context                 // request context
+	client             client.Client                   // kubernetes API client
+	dynClient          dynamic.Interface               // kubernetes dynamic api client
+	sbr                *v1alpha1.ServiceBindingRequest // instantiated service binding request
+	volumeKeys         []string                        // list of key names used in volume mounts
+	logger             logr.Logger                     // logger instance
+	UpdatedObjectNames []string                        // list of objets updated by this
 }
 
 // getResourceKind simply returns the resource-kind in low case.
@@ -218,6 +219,7 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
 }
 
+// appendVolumeMounts append the binding volume in the template level.
 func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
 	name := b.sbr.GetName()
 	mountPath := b.sbr.Spec.MountPathPrefix
@@ -242,7 +244,8 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 // name than original ServiceBindingRequest.
 func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
 	for _, obj := range objList.Items {
-		logger := b.logger.WithValues("Obj.Name", obj.GetName(), "Obj.Kind", obj.GetKind())
+		name := obj.GetName()
+		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Info("Inspecting object...")
 
 		updatedObj, err := b.updateSpecContainers(logger, &obj)
@@ -261,6 +264,9 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return err
 		}
+
+		// recording object as updated
+		b.UpdatedObjectNames = append(b.UpdatedObjectNames, name)
 	}
 
 	return nil

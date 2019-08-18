@@ -26,17 +26,37 @@ const (
 )
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
-func (r *Reconciler) setSecretName(instance *v1alpha1.ServiceBindingRequest, name string) error {
+func (r *Reconciler) setSecretName(
+	ctx context.Context,
+	instance *v1alpha1.ServiceBindingRequest,
+	name string,
+) error {
 	instance.Status.BindingStatus = bindingInProgress
 	instance.Status.Secret = name
-	return r.client.Status().Update(context.TODO(), instance)
+	return r.client.Status().Update(ctx, instance)
 
 }
 
 // setStatus update the CR status field.
-func (r *Reconciler) setStatus(instance *v1alpha1.ServiceBindingRequest, status string) error {
+func (r *Reconciler) setStatus(
+	ctx context.Context,
+	instance *v1alpha1.ServiceBindingRequest,
+	status string,
+) error {
 	instance.Status.BindingStatus = status
-	return r.client.Status().Update(context.TODO(), instance)
+	return r.client.Status().Update(ctx, instance)
+}
+
+// setApplicationObjects set the ApplicationObject status field, and also set the overall status as
+// success, since it was able to bind applications.
+func (r *Reconciler) setApplicationObjects(
+	ctx context.Context,
+	instance *v1alpha1.ServiceBindingRequest,
+	objs []string,
+) error {
+	instance.Status.BindingStatus = bindingSuccess
+	instance.Status.ApplicationObjects = objs
+	return r.client.Status().Update(ctx, instance)
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:
@@ -68,7 +88,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
 	logger.Info("Found service binding request to inspect")
 
-	if err = r.setStatus(instance, bindingInProgress); err != nil {
+	if err = r.setStatus(ctx, instance, bindingInProgress); err != nil {
 		logger.Error(err, "On updating service-binding-request status.")
 		return RequeueError(err)
 	}
@@ -81,7 +101,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	planner := NewPlanner(ctx, r.client, request.Namespace, instance)
 	plan, err := planner.Plan()
 	if err != nil {
-		_ = r.setStatus(instance, bindingFail)
+		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On creating a plan to bind applications.")
 		return RequeueOnNotFound(err)
 	}
@@ -93,12 +113,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.Info("Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
 	if err = retriever.Retrieve(); err != nil {
-		_ = r.setStatus(instance, bindingFail)
+		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On retrieving binding data.")
 		return RequeueOnNotFound(err)
 	}
 
-	if err = r.setSecretName(instance, plan.Name); err != nil {
+	if err = r.setSecretName(ctx, instance, plan.Name); err != nil {
 		logger.Error(err, "On updating service-binding-request status.")
 		return RequeueError(err)
 	}
@@ -110,14 +130,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.Info("Binding applications with intermediary secret.")
 	binder := NewBinder(ctx, r.client, r.dynClient, instance, retriever.volumeKeys)
 	if err = binder.Bind(); err != nil {
-		_ = r.setStatus(instance, bindingFail)
+		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On binding application.")
 		return RequeueOnNotFound(err)
 	}
 
-	// FIXME: add back the application related status reporting.
-	if err = r.setStatus(instance, bindingSuccess); err != nil {
-		logger.Error(err, "On binding applications with intermediary secret.")
+	if err = r.setApplicationObjects(ctx, instance, binder.UpdatedObjectNames); err != nil {
+		logger.Error(err, "On updating application objects status field.")
 		return RequeueError(err)
 	}
 
