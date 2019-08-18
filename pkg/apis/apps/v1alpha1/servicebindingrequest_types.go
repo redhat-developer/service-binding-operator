@@ -74,12 +74,12 @@ type ApplicationSelector struct {
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
-	// BindingStatus is the status of the service binding request. Possible values are Success, Failure, InProgress.
-	BindingStatus string `json:"BindingStatus"`
+	// BindingStatus is the status of the service binding request.
+	BindingStatus string `json:"bindingStatus,omitempty"`
 	// Secret is the name of the intermediate secret
-	Secret string `json:"Secret"`
+	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
-	ApplicationObjects []string `json:"ApplicationObjects"`
+	ApplicationObjects []string `json:"applicationObjects,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

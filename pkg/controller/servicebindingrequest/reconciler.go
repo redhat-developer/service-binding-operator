@@ -108,7 +108,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	logger.Info("Binding applications with intermediary secret.")
-	binder := NewBinder(ctx, r.client, r.dynClient, instance)
+	binder := NewBinder(ctx, r.client, r.dynClient, instance, retriever.volumeKeys)
 	if err = binder.Bind(); err != nil {
 		_ = r.setStatus(instance, bindingFail)
 		logger.Error(err, "On binding application.")
