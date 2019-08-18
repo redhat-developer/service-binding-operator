@@ -24,6 +24,7 @@ func init() {
 	logf.SetLogger(logf.ZapLogger(true))
 }
 
+// reconcileRequest creates a reconcile.Request object using global variables.
 func reconcileRequest() reconcile.Request {
 	return reconcile.Request{
 		NamespacedName: types.NamespacedName{
@@ -76,7 +77,6 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		/*
 			require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
 			assert.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
-
 		*/
 	})
 }
