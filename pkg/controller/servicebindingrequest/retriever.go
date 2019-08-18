@@ -24,6 +24,8 @@ type Retriever struct {
 	data          map[string][]byte // data retrieved
 	volumeKeys    []string
 	bindingPrefix string
+	secrets       []corev1.Secret    //  associated with backing service CR
+	configmaps    []corev1.ConfigMap //  associated with backing service CR
 }
 
 const (
@@ -141,6 +143,7 @@ func (r *Retriever) readSecret(name string, items []string) error {
 	if err != nil {
 		return err
 	}
+	r.secrets = append(r.secrets, secretObj)
 	logger.Info("Inspecting secret data...")
 	for key, value := range secretObj.Data {
 		logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
@@ -161,6 +164,7 @@ func (r *Retriever) readConfigMap(name string, items []string) error {
 	if err != nil {
 		return err
 	}
+	r.configmaps = append(r.configmaps, configMapObj)
 	logger.Info("Inspecting configMap data...")
 	for key, value := range configMapObj.Data {
 		logger.WithValues("configMap.Key.Name", key, "configMap.Key.Length", len(value)).

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -22,7 +22,7 @@ import (
 // set fields on the Controller and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	r := newReconciler(mgr)
-	return add(mgr, newReconciler(mgr), r.NonServiceBindingOwnedSecretTrigger, r.NonServiceBindingOwnedCOnfigMapTrigger)
+	return add(mgr, newReconciler(mgr), r.ReconcileIfAssociatedWithAServiceBinding)
 }
 
 // newReconciler returns a new reconcile.Reconciler
@@ -31,7 +31,7 @@ func newReconciler(mgr manager.Manager) *Reconciler {
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedSecretTrigger handler.ToRequestsFunc, nonServiceBindingOwnedCOnfigMapTrigger handler.ToRequestsFunc) error {
+func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedTrigger handler.ToRequestsFunc) error {
 	// Create a new controller
 	c, err := controller.New("servicebindingrequest-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -56,7 +56,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedSecr
 	}
 
 	handlerSecret := &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: nonServiceBindingOwnedSecretTrigger,
+		ToRequests: nonServiceBindingOwnedTrigger,
 	}
 	err = c.Watch(&source.Kind{Type: &corev1.Secret{}}, handlerSecret)
 	if err != nil {
@@ -64,7 +64,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedSecr
 	}
 
 	handlerConfigMap := &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: nonServiceBindingOwnedCOnfigMapTrigger,
+		ToRequests: nonServiceBindingOwnedTrigger,
 	}
 
 	err = c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, handlerConfigMap)
@@ -75,8 +75,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedSecr
 	return nil
 }
 
-func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(owner metav1.OwnerReference) []reconcile.Request {
+func (r *Reconciler) ReconcileIfAssociatedWithAServiceBinding(o handler.MapObject) []reconcile.Request {
 	var result []reconcile.Request
+
+	var objOwner *metav1.OwnerReference
+	for _, owner := range o.Meta.GetOwnerReferences() {
+		objOwner = &owner
+		if owner.Kind == "ServiceBindingRequest" {
+			fmt.Println("ConfigMap/Secret is managed by ServiceBindingRequest, dropping event")
+			return nil
+		}
+	}
 
 	sbr := &v1alpha1.ServiceBindingRequestList{
 		TypeMeta: metav1.TypeMeta{
@@ -90,22 +99,56 @@ func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(owner metav1.Owner
 	}
 
 	for _, sbr := range sbr.Items {
-		// if the secret/configmap belongs to a CR which was bound in
+		// if the secret/configmap is owned to a CR which was bound in
 		// a ServiceBindingRequest previously, reconcile is needed.
-		if sbr.Spec.BackingServiceSelector.ResourceRef == owner.Name && sbr.Spec.BackingServiceSelector.Kind == owner.Kind {
-			result = append(result, reconcile.Request{
-				NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
+
+		if objOwner != nil {
+			if sbr.Spec.BackingServiceSelector.ResourceRef == objOwner.Name &&
+				sbr.Spec.BackingServiceSelector.Kind == objOwner.Kind {
+
+				result = append(result, reconcile.Request{
+					NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
+			}
+
+		} else {
+			plannerRef := planner.NewPlanner(context.TODO(), r.client, o.Meta.GetNamespace(), &sbr)
+			plan, err := plannerRef.Plan()
+			if err != nil {
+				continue
+			}
+			retrieverObj := NewRetriever(context.TODO(), r.client, plan, "")
+			if o.Object.GetObjectKind().GroupVersionKind().Kind == "Secret" {
+				for _, s := range retrieverObj.secrets {
+					// if it happens to be one of the secrets consumed
+					// by the CR in the spec but not necessarily owned
+					// by the CR.
+					if s.Name == o.Meta.GetName() {
+						result = append(result, reconcile.Request{
+							NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
+						break
+					}
+				}
+			} else if o.Object.GetObjectKind().GroupVersionKind().Kind == "ConfigMap" {
+				for _, s := range retrieverObj.configmaps {
+					// if it happens to be one of the configmaps
+					// consumed by the CR in the spec
+					// but not necessarily owned by the CR.
+					if s.Name == o.Meta.GetName() {
+						result = append(result, reconcile.Request{
+							NamespacedName: client.ObjectKey{Namespace: sbr.Namespace, Name: sbr.Name}})
+						break
+					}
+				}
+			}
 		}
 	}
 	return result
 }
 
+/*
 // NonServiceBindingOwnedCOnfigMapTrigger is a trigger on all secrets in that namespace
 func (r *Reconciler) NonServiceBindingOwnedCOnfigMapTrigger(o handler.MapObject) []reconcile.Request {
-	var ownerReference metav1.OwnerReference
-
 	for _, owner := range o.Meta.GetOwnerReferences() {
-		ownerReference = owner
 		if owner.Name == "" {
 			// if the owner is not present, we are not really concerned.
 			return nil
@@ -127,15 +170,13 @@ func (r *Reconciler) NonServiceBindingOwnedCOnfigMapTrigger(o handler.MapObject)
 		return nil
 	}
 
-	return r.reconcileIfAssociatedWithAServiceBinding(ownerReference)
+	return r.reconcileIfAssociatedWithAServiceBinding(o)
 }
 
 // NonServiceBindingOwnedSecretTrigger is a trigger on all secrets in that namespace
 func (r *Reconciler) NonServiceBindingOwnedSecretTrigger(o handler.MapObject) []reconcile.Request {
-	var ownerReference metav1.OwnerReference
 
 	for _, owner := range o.Meta.GetOwnerReferences() {
-		ownerReference = owner
 		if owner.Name == "" {
 			// if the owner is not present, we are not really concerned.
 			return nil
@@ -157,8 +198,9 @@ func (r *Reconciler) NonServiceBindingOwnedSecretTrigger(o handler.MapObject) []
 		return nil
 	}
 
-	return r.reconcileIfAssociatedWithAServiceBinding(ownerReference)
+	return r.reconcileIfAssociatedWithAServiceBinding(o)
 }
+*/
 
 // blank assignment to verify that ReconcileServiceBindingRequest implements reconcile.Reconciler
 var _ reconcile.Reconciler = &Reconciler{}
