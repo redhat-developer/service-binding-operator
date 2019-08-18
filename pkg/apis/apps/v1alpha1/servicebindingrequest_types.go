@@ -21,57 +21,11 @@ type ServiceBindingRequestSpec struct {
 	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
-	//
-	// Refer: https://12factor.net/backing-services
-	// A backing service is any service the app consumes over the network as
-	// part of its normal operation. Examples include datastores (such as
-	// MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
-	// Beanstalkd), SMTP services for outbound email (such as Postfix), and
-	// caching systems (such as Memcached).
-	//
-	// Example 1:
-	//	backingServiceSelector:
-	//		resourceKind: databases.example.org
-	//      resourceRef: mysql-database
-	// Example 2:
-	//	backingServiceSelector:
-	//		resourceKind: databases.example.org
-	//		resourceVersion: v1alpha1
-	//      resourceRef: mysql-database
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
-	// Example 1:
-	//	applicationSelector:
-	//		matchLabels:
-	//			connects-to: postgres
-	//			environment: stage
-	//		resourceKind: Deployment
-	// Example 2:
-	//	applicationSelector:
-	//		matchLabels:
-	//			connects-to: postgres
-	//			environment: stage
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
-}
-
-// BackingServiceSelector defines the selector based on resource name, version, and resource kind
-// +k8s:openapi-gen=true
-type BackingServiceSelector struct {
-	Group       *string `json:"group,omitempty"`
-	Version     string  `json:"version"`
-	Kind        string  `json:"kind"`
-	ResourceRef string  `json:"resourceRef"`
-}
-
-// ApplicationSelector defines the selector based on labels and resource kind
-// +k8s:openapi-gen=true
-type ApplicationSelector struct {
-	MatchLabels map[string]string `json:"matchLabels"`
-	Group       *string           `json:"group,omitempty"`
-	Version     string            `json:"version"`
-	Kind        string            `json:"kind"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
@@ -83,6 +37,24 @@ type ServiceBindingRequestStatus struct {
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
 	ApplicationObjects []string `json:"applicationObjects,omitempty"`
+}
+
+// BackingServiceSelector defines the selector based on resource name, version, and resource kind
+// +k8s:openapi-gen=true
+type BackingServiceSelector struct {
+	Group       string `json:"group,omitempty"`
+	Version     string `json:"version"`
+	Kind        string `json:"kind"`
+	ResourceRef string `json:"resourceRef"`
+}
+
+// ApplicationSelector defines the selector based on labels and GVR
+// +k8s:openapi-gen=true
+type ApplicationSelector struct {
+	MatchLabels map[string]string `json:"matchLabels"`
+	Group       string            `json:"group,omitempty"`
+	Version     string            `json:"version"`
+	Resource    string            `json:"resource"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -104,7 +76,8 @@ type ServiceBindingRequest struct {
 type ServiceBindingRequestList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ServiceBindingRequest `json:"items"`
+
+	Items []ServiceBindingRequest `json:"items"`
 }
 
 func init() {
