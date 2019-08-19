@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +20,7 @@ import (
 type Retriever struct {
 	ctx           context.Context   // request context
 	client        client.Client     // Kubernetes API client
-	plan          *planner.Plan     // plan instance
+	plan          *Plan             // plan instance
 	logger        logr.Logger       // logger instance
 	data          map[string][]byte // data retrieved
 	volumeKeys    []string
@@ -264,7 +263,7 @@ func getSortedKeys(data map[string][]byte) []string {
 }
 
 // NewRetriever instantiate a new retriever instance.
-func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan, bindingPrefix string) *Retriever {
+func NewRetriever(ctx context.Context, client client.Client, plan *Plan, bindingPrefix string) *Retriever {
 	return &Retriever{
 		ctx:           ctx,
 		client:        client,
