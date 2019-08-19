@@ -34,6 +34,15 @@ func (f *Fake) AddMockedServiceBindingRequest(name, ref string, matchLabels map[
 	return sbr
 }
 
+// AddMockedUnstructuredCSV add mocked unstructured CSV.
+func (f *Fake) AddMockedUnstructuredCSV(name string) {
+	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))
+	csv, err := UnstructuredClusterServiceVersionMock(f.ns, name)
+	require.Nil(f.t, err)
+	f.S.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &olmv1alpha1.ClusterServiceVersion{})
+	f.objs = append(f.objs, csv)
+}
+
 // AddMockedCSVList add mocked object from ClusterServiceVersionListMock.
 func (f *Fake) AddMockedCSVList(name string) {
 	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))

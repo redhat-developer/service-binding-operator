@@ -28,10 +28,10 @@ func TestPlannerNew(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, matchLabels)
-	f.AddMockedCSVList("cluster-service-version-list")
+	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCRList(resourceRef)
 
-	planner = NewPlanner(context.TODO(), f.FakeClient(), ns, sbr)
+	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
 	require.NotNil(t, planner)
 
 	t.Run("searchCRDDescription", func(t *testing.T) {

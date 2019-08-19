@@ -121,7 +121,12 @@ func CRDDescriptionVolumeMountMock() olmv1alpha1.CRDDescription {
 	)
 }
 
-func clusterServiceVersionMock(ns, name string, crdDescription olmv1alpha1.CRDDescription) olmv1alpha1.ClusterServiceVersion {
+// clusterServiceVersionMock base object to create a CSV.
+func clusterServiceVersionMock(
+	ns,
+	name string,
+	crdDescription olmv1alpha1.CRDDescription,
+) olmv1alpha1.ClusterServiceVersion {
 	strategy := olminstall.StrategyDetailsDeployment{
 		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
 			Name: "deployment",
@@ -132,6 +137,10 @@ func clusterServiceVersionMock(ns, name string, crdDescription olmv1alpha1.CRDDe
 	strategyJSON, _ := json.Marshal(strategy)
 
 	return olmv1alpha1.ClusterServiceVersion{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ClusterServiceVersion",
+			APIVersion: "operators.coreos.com/v1alpha1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -152,6 +161,14 @@ func clusterServiceVersionMock(ns, name string, crdDescription olmv1alpha1.CRDDe
 // ClusterServiceVersionMock based on PostgreSQL operator having what's expected as defaults.
 func ClusterServiceVersionMock(ns, name string) olmv1alpha1.ClusterServiceVersion {
 	return clusterServiceVersionMock(ns, name, CRDDescriptionMock())
+}
+
+// UnstructuredClusterServiceVersionMock unstructured object based on ClusterServiceVersionMock.
+func UnstructuredClusterServiceVersionMock(ns, name string) (*ustrv1.Unstructured, error) {
+	csv := ClusterServiceVersionMock(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&csv)
+	u := ustrv1.Unstructured{Object: data}
+	return &u, err
 }
 
 // ClusterServiceVersionVolumeMountMock based on PostgreSQL operator.

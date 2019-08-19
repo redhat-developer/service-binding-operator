@@ -65,10 +65,9 @@ func (r *Reconciler) setApplicationObjects(
 // 2. Using OperatorLifecycleManager standards, identifying which items are intersting for binding
 //    by parsing CustomResourceDefinitionDescripton object;
 // 3. Search and read contents identified in previous step, creating an intermediary secret to hold
-//    data formatted as environment variables key/value.
+//    data formatted as environment variables key/value;
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
-//    Deployment (and other kinds) will be updated in PodTeamplate level updating `envFrom` entry
-// 	  to load intermediary secret;
+//    Deployment (and other kinds) will be updated in "spec" level.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx := context.TODO()
 	logger := logf.Log.WithValues(
@@ -98,7 +97,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	logger.Info("Creating a plan based on OLM and CRD.")
-	planner := NewPlanner(ctx, r.client, request.Namespace, instance)
+	planner := NewPlanner(ctx, r.dynClient, instance)
 	plan, err := planner.Plan()
 	if err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
