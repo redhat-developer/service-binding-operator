@@ -128,13 +128,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger.Info("Binding applications with intermediary secret.")
 	binder := NewBinder(ctx, r.client, r.dynClient, instance, retriever.volumeKeys)
-	if err = binder.Bind(); err != nil {
+	if updatedObjectNames, err := binder.Bind(); err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On binding application.")
 		return RequeueOnNotFound(err)
-	}
-
-	if err = r.setApplicationObjects(ctx, instance, binder.UpdatedObjectNames); err != nil {
+	} else if err = r.setApplicationObjects(ctx, instance, updatedObjectNames); err != nil {
 		logger.Error(err, "On updating application objects status field.")
 		return RequeueError(err)
 	}

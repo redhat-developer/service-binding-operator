@@ -10,11 +10,10 @@ import (
 	"time"
 )
 
-
 func WaitUntilResourceFound(client client.Client, nsd types.NamespacedName, typ runtime.Object) error {
 	var err error
 	count := 0
-	err = wait.Poll(time.Second * 5, time.Minute*5, func() (bool, error) {
+	conditionFunc := func() (bool, error) {
 		count++
 		fmt.Printf("\nRetry count: %+d", count)
 		err = client.Get(context.TODO(), nsd, typ)
@@ -22,7 +21,13 @@ func WaitUntilResourceFound(client client.Client, nsd types.NamespacedName, typ 
 			return false, err
 		}
 		return true, nil
-	})
+	}
+
+	if ok, err := conditionFunc(); !ok {
+		return err
+	}
+
+	err = wait.Poll(time.Second*5, time.Minute*5, conditionFunc)
 	return err
 }
 
