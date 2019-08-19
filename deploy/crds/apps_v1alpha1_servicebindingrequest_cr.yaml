@@ -15,5 +15,5 @@ spec:
       connects-to: postgres
       environment: production
     group: apps
-    kind: Deployment
     version: v1
+    resource: deployments

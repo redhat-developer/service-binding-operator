@@ -312,9 +312,6 @@ github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible h1
 github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible/go.mod h1:Ma5ZXd4S1vmMyewWlF7aO8CZiokR7Sd8dhSfkGkNU4U=
 github.com/operator-framework/operator-registry v1.0.1/go.mod h1:1xEdZjjUg2hPEd52LG3YQ0jtwiwEGdm98S1TH5P4RAA=
 github.com/operator-framework/operator-registry v1.0.4/go.mod h1:hve6YwcjM2nGVlscLtNsp9sIIBkNZo6jlJgzWw7vP9s=
-github.com/operator-framework/operator-sdk v0.8.1 h1:TDnWWkYpYuuo53ftRVEsAj0xy7IutkpiUlTsHqNeyiU=
-github.com/operator-framework/operator-sdk v0.8.1/go.mod h1:iVyukRkam5JZa8AnjYf+/G3rk7JI1+M6GsU0sq0B9NA=
-github.com/operator-framework/operator-sdk v0.8.2-0.20190522220659-031d71ef8154/go.mod h1:iVyukRkam5JZa8AnjYf+/G3rk7JI1+M6GsU0sq0B9NA=
 github.com/operator-framework/operator-sdk v0.10.0 h1:k2yovBNxaya06yIkJ1e6lNsqiWjhS32G+d2LUdjuu/E=
 github.com/operator-framework/operator-sdk v0.10.0/go.mod h1:7eW7ldXmvenehIMVdO2zCdERf/828Mrftq4u7GS0I68=
 github.com/pborman/uuid v0.0.0-20180906182336-adf5a7427709 h1:zNBQb37RGLmJybyMcs983HfUfpkw9OTFD9tbBfAViHE=

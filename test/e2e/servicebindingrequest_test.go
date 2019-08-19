@@ -122,7 +122,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	t.Log("Creating Database credentials secret mock object...")
 	dbSecret := mocks.SecretMock(ns, secretName)
-	require.Nil(t, f.Client.Create(todoCtx, &dbSecret, cleanUpOptions(ctx)))
+	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
 
 	t.Log("Creating Deployment mock object...")
 	d := mocks.DeploymentMock(ns, appName, matchLabels)
@@ -140,8 +140,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Log("Creating ServiceBindingRequest mock object...")
 	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
 	// making sure object does not exist before testing
-	_ = f.Client.Delete(todoCtx, &sbr)
-	require.Nil(t, f.Client.Create(todoCtx, &sbr, cleanUpOptions(ctx)))
+	_ = f.Client.Delete(todoCtx, sbr)
+	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
 
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
@@ -179,7 +179,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	// cleaning up
 	t.Log("Cleaning all up!")
-	_ = f.Client.Delete(todoCtx, &sbr)
+	_ = f.Client.Delete(todoCtx, sbr)
 	_ = f.Client.Delete(todoCtx, &sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
 }
