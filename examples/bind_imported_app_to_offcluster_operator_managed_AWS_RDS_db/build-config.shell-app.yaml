@@ -3,7 +3,7 @@ apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
   name: shell-app
-  namespace:  service-binding-demo
+  namespace: service-binding-demo
   labels:
     name: shell-app
 spec:

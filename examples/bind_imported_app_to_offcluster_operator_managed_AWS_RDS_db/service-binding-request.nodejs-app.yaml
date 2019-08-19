@@ -16,4 +16,3 @@ spec:
       connects-to: postgres
       environment: nodejs
     resourceKind: DeploymentConfig
-
