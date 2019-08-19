@@ -97,8 +97,6 @@ func TestRetriever(t *testing.T) {
 		// everything goes into `data` : secrets/cms/volumemounts
 		err := retriever.readSecret("db-credentials", []string{"user", "password"})
 		assert.Nil(t, err)
-
-		assert.Equal(t, "b89ff48d4ef440e46303b530da1647579ba2643e", retriever.BindableDataHash())
 	})
 
 	t.Run("store", func(t *testing.T) {
