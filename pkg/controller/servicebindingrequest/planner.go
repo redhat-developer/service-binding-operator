@@ -91,7 +91,7 @@ func (p *Planner) extractCRDDescription(
 	csv *olmv1alpha1.ClusterServiceVersion,
 ) *olmv1alpha1.CRDDescription {
 	bss := p.sbr.Spec.BackingServiceSelector
-	logger = p.logger.WithValues(
+	logger = logger.WithValues(
 		"BackingServiceSelector.Group", bss.Group,
 		"BackingServiceSelector.Version", bss.Version,
 		"BackingServiceSelector.Kind", bss.Kind,
