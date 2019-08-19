@@ -10,12 +10,9 @@ import (
 // RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {
-		return Requeue(requeueAfter)
+		return Requeue(nil, requeueAfter)
 	}
-	return reconcile.Result{
-		RequeueAfter: time.Duration(requeueAfter) * time.Second,
-		Requeue:      true,
-	}, err
+	return Requeue(err, requeueAfter)
 }
 
 // RequeueError simply requeue exposing the error.
@@ -24,11 +21,11 @@ func RequeueError(err error) (reconcile.Result, error) {
 }
 
 // Requeue based on empty result and no error informed upstream, request will be requeued.
-func Requeue(requeueAfter int64) (reconcile.Result, error) {
+func Requeue(err error, requeueAfter int64) (reconcile.Result, error) {
 	return reconcile.Result{
 		RequeueAfter: time.Duration(requeueAfter) * time.Second,
 		Requeue:      true,
-	}, nil
+	}, err
 }
 
 // Done when no error is informed and request is not set for requeue.
