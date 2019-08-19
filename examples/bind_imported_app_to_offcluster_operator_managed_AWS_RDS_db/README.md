@@ -189,13 +189,16 @@ spec:
   envVarPrefix: "MYDB"
   backingServiceSelector:
     resourceRef: mydb
-    resourceKind: aws.pmacik.dev
-    resourceVersion: v1alpha1
+    group: aws.pmacik.dev
+    version: v1alpha1
+    kind: RDSDatabase
   applicationSelector:
     matchLabels:
       connects-to: postgres
       environment: shell
-    resourceKind: DeploymentConfig
+    group: apps.openshift.io
+    version: v1
+    kind: DeploymentConfig
 ```
 
 There are 3 interresting parts in the request:
@@ -277,13 +280,16 @@ spec:
   envVarPrefix: "MYDB"
   backingServiceSelector:
     resourceRef: mydb
-    resourceKind: aws.pmacik.dev
-    resourceVersion: v1alpha1
+    group: aws.pmacik.dev
+    version: v1alpha1
+    kind: RDSDatabase
   applicationSelector:
     matchLabels:
       connects-to: postgres
       environment: nodejs
-    resourceKind: DeploymentConfig
+    group: apps.openshift.io
+    version: v1
+    kind: DeploymentConfig
 ```
 
 The request is basically the same as the one we used for the Shell application. The only difference (appart from name) is the label `environment: nodejs` used in the `appicationSelector`.
