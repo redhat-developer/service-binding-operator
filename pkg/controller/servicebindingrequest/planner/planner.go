@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
+
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -38,9 +40,8 @@ type Plan struct {
 // searchCRDDescription based on BackingServiceSelector instance, find a CustomResourceDefinitionDescription
 // to return, otherwise creating a not-found error.
 func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
-	var resourceKind = strings.ToLower(
-		fmt.Sprintf(".%s", p.sbr.Spec.BackingServiceSelector.ResourceKind))
-	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingServiceSelector.ResourceVersion)
+	var resourceKind = strings.ToLower(p.sbr.Spec.BackingServiceSelector.Kind)
+	var resourceVersion = strings.ToLower(p.sbr.Spec.BackingServiceSelector.Version)
 	var err error
 
 	logger := p.logger.WithValues(
@@ -67,7 +68,7 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 			logger.Info("Inspecting CustomResourceDefinitionDescription object...")
 
 			// checking for suffix since is expected to have object type as prefix
-			if !strings.HasSuffix(strings.ToLower(crd.Name), resourceKind) {
+			if !strings.EqualFold(strings.ToLower(crd.Kind), resourceKind) {
 				continue
 			}
 			if crd.Version != "" && resourceVersion != strings.ToLower(crd.Version) {
@@ -86,9 +87,7 @@ func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	var resourceRef = p.sbr.Spec.BackingServiceSelector.ResourceRef
-	var apiVersion = fmt.Sprintf("%s/%s",
-		p.sbr.Spec.BackingServiceSelector.ResourceKind,
-		p.sbr.Spec.BackingServiceSelector.ResourceVersion)
+	var apiVersion = fmt.Sprintf("%s/%s", *p.sbr.Spec.BackingServiceSelector.Group, p.sbr.Spec.BackingServiceSelector.Version)
 	var err error
 
 	p.logger.WithValues("CR.Name", resourceRef, "CR.Kind", kind, "CR.APIVersion", apiVersion).
@@ -100,6 +99,10 @@ func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 	}}
 	namespacedName := types.NamespacedName{Namespace: p.ns, Name: resourceRef}
 
+	err = resourcepoll.WaitUntilResourceFound(p.client, namespacedName, &cr)
+	if err != nil {
+		return nil, err
+	}
 	if err = p.client.Get(p.ctx, namespacedName, &cr); err != nil {
 		return nil, err
 	}

@@ -17,16 +17,16 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	ctx        context.Context   // request context
-	client     client.Client     // Kubernetes API client
-	plan       *planner.Plan     // plan instance
-	logger     logr.Logger       // logger instance
-	data       map[string][]byte // data retrieved
-	volumeKeys []string
+	ctx           context.Context   // request context
+	client        client.Client     // Kubernetes API client
+	plan          *planner.Plan     // plan instance
+	logger        logr.Logger       // logger instance
+	data          map[string][]byte // data retrieved
+	volumeKeys    []string
+	bindingPrefix string
 }
 
 const (
-	bindingPrefix           = "SERVICE_BINDING"
 	basePrefix              = "urn:alm:descriptor:servicebindingrequest:env:object"
 	secretPrefix            = basePrefix + ":secret"
 	configMapPrefix         = basePrefix + ":configmap"
@@ -177,7 +177,11 @@ func (r *Retriever) readConfigMap(name string, items []string) error {
 func (r *Retriever) store(key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
 	key = strings.ReplaceAll(key, ".", "_")
-	key = fmt.Sprintf("%s_%s_%s", bindingPrefix, r.plan.CR.GetKind(), key)
+	if r.bindingPrefix == "" {
+		key = fmt.Sprintf("%s_%s", r.plan.CR.GetKind(), key)
+	} else {
+		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, r.plan.CR.GetKind(), key)
+	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
 }
@@ -226,13 +230,14 @@ func (r *Retriever) Retrieve() error {
 }
 
 // NewRetriever instantiate a new retriever instance.
-func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan) *Retriever {
+func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan, bindingPrefix string) *Retriever {
 	return &Retriever{
-		ctx:        ctx,
-		client:     client,
-		logger:     logf.Log.WithName("retriever"),
-		plan:       plan,
-		data:       make(map[string][]byte),
-		volumeKeys: []string{},
+		ctx:           ctx,
+		client:        client,
+		logger:        logf.Log.WithName("retriever"),
+		plan:          plan,
+		data:          make(map[string][]byte),
+		volumeKeys:    []string{},
+		bindingPrefix: bindingPrefix,
 	}
 }

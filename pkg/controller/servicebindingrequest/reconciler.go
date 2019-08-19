@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
+
 	osappsv1 "github.com/openshift/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -104,20 +106,45 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	instance := &v1alpha1.ServiceBindingRequest{}
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
+		// Update Status
+		r.setBindingInProgressStatus(instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return RequeueOnNotFound(err)
 	}
 
 	logger.WithValues("ServiceBindingRequest.Name", instance.Name).
 		Info("Found service binding request to inspect")
 
+	// Set secret name
+	r.setSecretStatus(instance)
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
 	plan, err := plnr.Plan()
 	if err != nil {
+		// Update Status
+		r.setBindingInProgressStatus(instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return RequeueOnNotFound(err)
 	}
 
-	retriever := NewRetriever(ctx, r.client, plan)
+	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
 	if err = retriever.Retrieve(); err != nil {
+		// Update Status
+		r.setBindingInProgressStatus(instance)
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			return reconcile.Result{}, err
+		}
 		return RequeueOnNotFound(err)
 	}
 
@@ -129,7 +156,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
 	logger.Info("Searching applications to receive intermediary secret bind...")
 
-	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.ResourceKind)
+	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.Kind)
 	searchByLabelsOpts := client.ListOptions{
 		Namespace:     request.Namespace,
 		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
@@ -141,13 +168,29 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching DeploymentConfig objects matching labels")
 
 		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
+		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
+		if err != nil {
+			return RequeueOnNotFound(err)
+		}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
 		if err != nil {
+			// Update Status
+			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return RequeueOnNotFound(err)
 		}
 
 		if len(deploymentConfigListObj.Items) == 0 {
 			logger.Info("No DeploymentConfig objects found, requeueing request!")
+			// Update Status
+			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return Requeue()
 		}
 
@@ -155,6 +198,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
 				Info("Inspecting DeploymentConfig object...")
 
+			// Update ApplicationObjects Status
+			if len(instance.Status.ApplicationObjects) >= 1 {
+				for _, v := range instance.Status.ApplicationObjects {
+					if v == deploymentConfigObj.GetName() {
+						break
+					}
+					r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
+					err = r.client.Status().Update(context.TODO(), instance)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+				}
+			} else {
+				r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
 			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
 				if len(retriever.data) > 0 {
 					logger.Info("Adding EnvFrom to container")
@@ -178,6 +240,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			err = r.client.Update(ctx, &deploymentConfigObj)
 			if err != nil {
 				logger.Error(err, "Error on updating object!")
+				// Update Status
+				r.setBindingFailStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
 				return reconcile.Result{}, err
 			}
 		}
@@ -185,13 +253,29 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Info("Searching Deployment objects matching labels")
 
 		deploymentListObj := &extv1beta1.DeploymentList{}
+		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
+		if err != nil {
+			return RequeueOnNotFound(err)
+		}
 		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
 		if err != nil {
+			// Update Status
+			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return RequeueOnNotFound(err)
 		}
 
 		if len(deploymentListObj.Items) == 0 {
 			logger.Info("No Deployment objects found, requeueing request!")
+			// Update Status
+			r.setBindingInProgressStatus(instance)
+			err = r.client.Status().Update(context.TODO(), instance)
+			if err != nil {
+				return reconcile.Result{}, err
+			}
 			return Requeue()
 		}
 
@@ -199,6 +283,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
 			logger.Info("Inspecting Deploymen object...")
 
+			// Update ApplicationObjects Status
+			if len(instance.Status.ApplicationObjects) >= 1 {
+				for _, v := range instance.Status.ApplicationObjects {
+					if v == deploymentObj.GetName() {
+						break
+					}
+					r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
+					err = r.client.Status().Update(context.TODO(), instance)
+					if err != nil {
+						return reconcile.Result{}, err
+					}
+				}
+			} else {
+				r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
+			}
 			for i, c := range deploymentObj.Spec.Template.Spec.Containers {
 				if len(retriever.data) > 0 {
 					logger.Info("Adding EnvFrom to container")
@@ -223,12 +326,24 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			logger.Info("Updating Deployment object")
 			err = r.client.Update(ctx, &deploymentObj)
 			if err != nil {
+				// Update Status
+				r.setBindingFailStatus(instance)
+				err = r.client.Status().Update(context.TODO(), instance)
+				if err != nil {
+					return reconcile.Result{}, err
+				}
 				logger.Error(err, "Error on updating object!")
 				return reconcile.Result{}, err
 			}
 		}
 	}
 
+	// Update Status
+	r.setBindingSuccessStatus(instance)
+	err = r.client.Status().Update(context.TODO(), instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	logger.Info("All done!")
 	return Done()
 }

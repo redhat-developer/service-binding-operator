@@ -36,15 +36,20 @@ spec:
                 \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tmatchLabels:
                 \t\t\tconnects-to: postgres \t\t\tenvironment: stage"
               properties:
+                group:
+                  type: string
+                kind:
+                  type: string
                 matchLabels:
                   additionalProperties:
                     type: string
                   type: object
-                resourceKind:
+                version:
                   type: string
               required:
               - matchLabels
-              - resourceKind
+              - version
+              - kind
               type: object
             backingServiceSelector:
               description: "BackingServiceSelector is used to identify the backing
@@ -58,15 +63,17 @@ spec:
                 Example 2: \tbackingServiceSelector: \t\tresourceKind: databases.example.org
                 \t\tresourceVersion: v1alpha1      resourceRef: mysql-database"
               properties:
-                resourceKind:
+                group:
+                  type: string
+                kind:
                   type: string
                 resourceRef:
                   type: string
-                resourceVersion:
+                version:
                   type: string
               required:
-              - resourceKind
-              - resourceVersion
+              - version
+              - kind
               - resourceRef
               type: object
             envVarPrefix:
@@ -76,12 +83,24 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
-          - mountPathPrefix
-          - envVarPrefix
           - backingServiceSelector
           - applicationSelector
           type: object
         status:
+          properties:
+            applicationObjects:
+              description: ApplicationObjects contains all the application objects
+                filtered by label
+              items:
+                type: string
+              type: array
+            bindingStatus:
+              description: BindingStatus is the status of the service binding request.
+                Possible values are Success, Failure, InProgress.
+              type: string
+            secret:
+              description: Secret is the name of the intermediate secret
+              type: string
           type: object
   version: v1alpha1
   versions:
