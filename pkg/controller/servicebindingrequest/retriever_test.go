@@ -91,14 +91,6 @@ func TestRetriever(t *testing.T) {
 		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
 	})
 
-	t.Run("validateHash", func(t *testing.T) {
-		retriever.data = make(map[string][]byte)
-
-		// everything goes into `data` : secrets/cms/volumemounts
-		err := retriever.readSecret("db-credentials", []string{"user", "password"})
-		assert.Nil(t, err)
-	})
-
 	t.Run("store", func(t *testing.T) {
 		retriever.store("test", []byte("test"))
 		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_TEST")
