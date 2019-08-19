@@ -1,6 +1,6 @@
 # Kubernetes API Mocks
 
-This folder container all mocks and machinery to interact with a fake Kubernetes API.
+This folder contains all mocks and machinery to interact with a fake Kubernetes API.
 
 ## Usage
 
@@ -9,6 +9,8 @@ This folder container all mocks and machinery to interact with a fake Kubernetes
 Inside a testing function, instantiate `Fake` by sharing the test context `t` and namespace name:
 
 ``` go
+import "github.com/redhat-developer/service-binding-operator/test/mocks"
+
 f := mocks.NewFake(t, "namespace")
 ```
 
