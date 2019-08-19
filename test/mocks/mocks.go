@@ -176,6 +176,18 @@ func ClusterServiceVersionVolumeMountMock(ns, name string) olmv1alpha1.ClusterSe
 	return clusterServiceVersionMock(ns, name, CRDDescriptionVolumeMountMock())
 }
 
+// UnstructuredClusterServiceVersionVolumeMountMock returns ClusterServiceVersionVolumeMountMock as
+// unstructured object
+func UnstructuredClusterServiceVersionVolumeMountMock(
+	ns string,
+	name string,
+) (*ustrv1.Unstructured, error) {
+	csv := ClusterServiceVersionVolumeMountMock(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&csv)
+	u := ustrv1.Unstructured{Object: data}
+	return &u, err
+}
+
 // ClusterServiceVersionListVolumeMountMock returns a list with a single CSV object inside, reusing mock.
 func ClusterServiceVersionListVolumeMountMock(ns, name string) *olmv1alpha1.ClusterServiceVersionList {
 	return &olmv1alpha1.ClusterServiceVersionList{

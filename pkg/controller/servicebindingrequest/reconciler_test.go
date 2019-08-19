@@ -46,7 +46,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
-	f.AddMockedCSVList("cluster-service-version-list")
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedDatabaseCRList(resourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
@@ -89,7 +89,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
-	f.AddMockedCSVWithVolumeMountList("cluster-service-version-list")
+	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
 	f.AddMockedDatabaseCRList(resourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")

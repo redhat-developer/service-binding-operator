@@ -57,6 +57,16 @@ func (f *Fake) AddMockedCSVWithVolumeMountList(name string) {
 	f.objs = append(f.objs, ClusterServiceVersionListVolumeMountMock(f.ns, name))
 }
 
+// AddMockedUnstructuredCSVWithVolumeMount same than AddMockedCSVWithVolumeMountList but using
+// unstructured object.
+func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
+	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))
+	csv, err := UnstructuredClusterServiceVersionVolumeMountMock(f.ns, name)
+	require.Nil(f.t, err)
+	f.S.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &olmv1alpha1.ClusterServiceVersion{})
+	f.objs = append(f.objs, csv)
+}
+
 // AddMockedDatabaseCRList add mocked object from DatabaseCRListMock.
 func (f *Fake) AddMockedDatabaseCRList(ref string) {
 	require.Nil(f.t, pgapis.AddToScheme(f.S))
