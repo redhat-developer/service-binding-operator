@@ -330,6 +330,8 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 						Name:    "busybox",
 						Image:   "busybox:latest",
 						Command: []string{"sleep", "3600"},
+						Env:     []corev1.EnvVar{},
+						EnvFrom: []corev1.EnvFromSource{},
 					}},
 				},
 			},
