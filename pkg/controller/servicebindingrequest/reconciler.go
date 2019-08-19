@@ -20,9 +20,14 @@ type Reconciler struct {
 }
 
 const (
+	// binding is in progress
 	bindingInProgress = "inProgress"
-	bindingSuccess    = "success"
-	bindingFail       = "fail"
+	// binding has succeeded
+	bindingSuccess = "success"
+	// binding has failed
+	bindingFail = "fail"
+	// time in seconds to wait before requeuing requests
+	requeueAfter int64 = 45
 )
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
@@ -81,7 +86,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueOnNotFound(err)
+		return RequeueOnNotFound(err, 0)
 	}
 
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
@@ -102,7 +107,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On creating a plan to bind applications.")
-		return RequeueOnNotFound(err)
+		return RequeueOnNotFound(err, requeueAfter)
 	}
 
 	//
@@ -114,7 +119,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err = retriever.Retrieve(); err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On retrieving binding data.")
-		return RequeueOnNotFound(err)
+		return RequeueOnNotFound(err, requeueAfter)
 	}
 
 	if err = r.setSecretName(ctx, instance, plan.Name); err != nil {
@@ -131,7 +136,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if updatedObjectNames, err := binder.Bind(); err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On binding application.")
-		return RequeueOnNotFound(err)
+		return RequeueOnNotFound(err, requeueAfter)
 	} else if err = r.setApplicationObjects(ctx, instance, updatedObjectNames); err != nil {
 		logger.Error(err, "On updating application objects status field.")
 		return RequeueError(err)
