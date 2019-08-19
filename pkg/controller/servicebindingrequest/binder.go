@@ -21,13 +21,12 @@ import (
 // Binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
 type Binder struct {
-	ctx                context.Context                 // request context
-	client             client.Client                   // kubernetes API client
-	dynClient          dynamic.Interface               // kubernetes dynamic api client
-	sbr                *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	volumeKeys         []string                        // list of key names used in volume mounts
-	logger             logr.Logger                     // logger instance
-	UpdatedObjectNames []string                        // list of objects updated by this
+	ctx        context.Context                 // request context
+	client     client.Client                   // kubernetes API client
+	dynClient  dynamic.Interface               // kubernetes dynamic api client
+	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
+	volumeKeys []string                        // list of key names used in volume mounts
+	logger     logr.Logger                     // logger instance
 }
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
@@ -220,7 +219,9 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
-func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
+func (b *Binder) update(objList *ustrv1.UnstructuredList) ([]string, error) {
+	var updatedObjectNames []string
+
 	for _, obj := range objList.Items {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
@@ -228,34 +229,34 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) error {
 
 		updatedObj, err := b.updateSpecContainers(logger, &obj)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if len(b.volumeKeys) > 0 {
 			updatedObj, err = b.updateSpecVolumes(logger, &obj)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		}
 
 		logger.Info("Updating object...")
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
-			return err
+			return nil, err
 		}
 
 		// recording object as updated
-		b.UpdatedObjectNames = append(b.UpdatedObjectNames, name)
+		updatedObjectNames = append(updatedObjectNames, name)
 	}
 
-	return nil
+	return updatedObjectNames, nil
 }
 
 // Bind resources to intermediary secret, by searching informed ResourceKind containing the labels
 // in ApplicationSelector, and then updating spec.
-func (b *Binder) Bind() error {
+func (b *Binder) Bind() ([]string, error) {
 	objList, err := b.search()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	return b.update(objList)
 }
