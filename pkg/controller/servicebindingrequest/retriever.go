@@ -32,6 +32,7 @@ const (
 	configMapPrefix         = basePrefix + ":configmap"
 	attributePrefix         = "urn:alm:descriptor:servicebindingrequest:env:attribute"
 	volumeMountSecretPrefix = "urn:alm:descriptor:servicebindingrequest:volumemount:secret"
+	boolEnvVar 				= false
 )
 
 // getNestedValue retrieve value from dotted key path
@@ -98,7 +99,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 			r.volumeKeys = append(r.volumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
-			r.store(path, []byte(pathValue))
+			r.store(path, []byte(pathValue), boolEnvVar)
 		}
 	}
 
@@ -146,14 +147,14 @@ func (r *Retriever) readSecret(name string, items []string) error {
 		logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
 			Info("Inspecting secret key...")
 		// making sure key name has a secret reference
-		r.store(fmt.Sprintf("secret_%s", key), value)
+		r.store(fmt.Sprintf("secret_%s", key), value, boolEnvVar)
 	}
 	return nil
 }
 
 // readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
 // in plan instance.
-func (r *Retriever) readConfigMap(name string, items []string) error {
+func (r *Retriever) readConfigMap(name string, items []string, boolEnvVar bool) error {
 	logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
 	logger.Info("Reading ConfigMap items...")
 	configMapObj := corev1.ConfigMap{}
@@ -167,7 +168,7 @@ func (r *Retriever) readConfigMap(name string, items []string) error {
 			Info("Inspecting configMap key...")
 		// making sure key name has a configMap reference
 		// string to byte
-		r.store(fmt.Sprintf("configMap_%s", key), []byte(value))
+		r.store(fmt.Sprintf("configMap_%s", key), []byte(value), boolEnvVar)
 	}
 
 	return nil
@@ -182,18 +183,14 @@ func (r *Retriever) store(key string, value []byte) {
 	} else {
 		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, r.plan.CR.GetKind(), key)
 	}
+	if boolEnvVar == true{
+	//wanting to store custom env var names
+     // store the actual name
+	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
 }
 
-func (r *Retriever) envVarStore(key string, value []byte){
-	key = strings.ReplaceAll(key, ":", "_")
-	key = strings.ReplaceAll(key, ".", "_")
-//	key = fmt.Sprintf("%s_%s_%s", bindingPrefix, r.plan.CR.GetKind(), key)
-// pass name of envVar
-	key = strings.ToUpper(key)
-	r.data[key] = value
-}
 
 // saveDataOnSecret create or update secret that will store the data collected.
 func (r *Retriever) saveDataOnSecret() error {
@@ -245,52 +242,33 @@ func (r *Retriever) Retrieve() error {
 
 func (r *Retriever) readEnvVar() error {
 
+	//retrieving each r.plan.Sbr.envVar.Name
 	for i, envVars := range planner.EnvVars {
-		envVarName := envVars.Name
-		envVarValue := envVars.Value
-		secretObjValue := r.parse(envVarValue)
-		secretFound := &corev1.Secret{}
-			err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
-			if err != nil {
-				return err
-			}
-			logger.Info("Inspecting secret data...")
-			for key, value := range secretFound.Data {
-				logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
-					Info("Inspecting secret key...")
-				// instance.Status.DBCredentials = secretFound.Name
-				secretFound.Data[envVarName] = secretObjValue
-				// // Update status
-				 err = r.client.Status().Update(context.TODO(), secretFound)
-				 if err != nil {
-				 	log.Error(err, "Failed to update status with DBCredentials")
-				 	return reconcile.Result{}, err
-				 }
-			}
+        envVarName := envVars.Name
+		if err = r.parse(envVarName); err!=nil{
+			return err
+		}
 		}
 	}
 
-func (r *Retriever) parse(value string) string{
+func (r *Retriever) parse(value string) {
 	re := regexp.MustCompile(`\$\{.*?\}`)
-
 	tempStr := re.FindAllString(value, -1)
-	fmt.Println(submatchall)
-
 	for i, element := range tempStr {
 		element = strings.Trim(element, "${")
 		element = strings.Trim(element, "}")
 		value = strings.Replace(value, element, r.fetchEnvVarValue(element), i+1)
 	}
-	return value
 }
-func (r *Retriever) fetchEnvVarValue (parsedValue string) string{
+func (r *Retriever) fetchEnvVarValue(parsedValue string) string{
 	var err error
-if strings.Count(parsedValue, ".") == 1{
-	r.envVarStore(path, []byte(pathValue))//attribute
-}else{
-//status.dbCredentials.user
-//status.dbCredentials.password
-//status.dbConnectionIP
+	boolEnvVar = true
+	if strings.Count(parsedValue, ".") == 1{
+		r.store(path, []byte(pathValue), boolEnvVar) //attribute
+	}else{
+	//status.dbCredentials.user
+	//status.dbCredentials.password
+	//status.dbConnectionIP
 	elements := strings.Split(parsedValue,".")
 	ele1 := elements[0] // either a status or a spec
 	ele2 := elements[1] // path value
@@ -298,6 +276,78 @@ if strings.Count(parsedValue, ".") == 1{
 	if strings.HasPrefix(parsedValue, "status"){
 		r.logger.Info("Looking for status-descriptors in 'status'")
 		statusDescriptor := r.plan.CRDDescription.StatusDescriptors.Path.xDescriptors {
+			secrets := make(map[string][]string)
+			// holds the configMap name and items
+			configMaps := make(map[string][]string)
+			for _, xDescriptor := range statusDescriptors {
+				logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
+				logger.Info("Inspecting xDescriptor...")
+				pathValue, err := r.getCRKey(place, path)
+				if err != nil {
+					return err
+				}	
+				if strings.HasPrefix(xDescriptor, secretPrefix+ele3 {
+					logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
+					logger.Info("Reading secret items...")
+					secretFound := &corev1.Secret{}
+					err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
+					if err != nil {
+						return err
+					}
+					logger.Info("Inspecting secret data...")
+					for key, value := range secretFound.Data {
+						logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
+							Info("Inspecting secret key...")
+					crEnvVar := p.Sbr.Spec.EnvVar
+					for i, envMap := range crEnvVar {
+						EnvVars[i].Name = envMap.Name
+						key := EnvVars[i].Name
+						fetchedValue := secretFound.Data[key] 
+						// want to use this in store
+					}
+					secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+				} 
+			}else if strings.HasPrefix(xDescriptor, configMapPrefix+ele3{
+				logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
+					logger.Info("Reading configmap items...")
+					configMapFound := &corev1.ConfigMap{}
+					err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &configMapFound)
+					if err != nil {
+						return err
+					}
+					logger.Info("Inspecting Config Map data...")
+					for key, value := range configMapFound.Data {
+						logger.WithValues("ConfigMap.Key.Name", key, "ConfigMap.Key.Length", len(value)).
+							Info("Inspecting configmap ...")
+					crEnvVar := p.Sbr.Spec.EnvVar
+					for i, envMap := range crEnvVar {
+						EnvVars[i].Name = envMap.Name
+						key := EnvVars[i].Name
+						fetchedValue := configMapFound.Data[key] 
+					}
+					configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
+				} 
+			}
+		}
+	}
+
+			for name, items := range secrets {
+				// loading secret items all-at-once
+				err := r.readSecret(name, items, boolEnvVar)
+				if err != nil {
+					return err
+				}
+			}
+			for name, items := range configMaps {
+				// add the function readConfigMap
+				err := r.readConfigMap(name, items, boolEnvVar)
+				if err != nil {
+					return err
+				}
+			}	
+		}else if strings.HasPrefix(parsedValue, "spec"){
+			r.logger.Info("Looking for spec-descriptors in 'spec'")
+			specDescriptor := r.plan.CRDDescription.SpecDescriptors.Path.xDescriptors {
 			//user and password
 			//one is secretPrefix
 			//other one is configMapPrefix
@@ -305,7 +355,7 @@ if strings.Count(parsedValue, ".") == 1{
 			secrets := make(map[string][]string)
 			// holds the configMap name and items
 			configMaps := make(map[string][]string)
-			for _, xDescriptor := range statusDescriptors {
+			for _, xDescriptor := range specDescriptors {
 				logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
 				logger.Info("Inspecting xDescriptor...")
 				pathValue, err := r.getCRKey(place, path)
@@ -364,109 +414,18 @@ if strings.Count(parsedValue, ".") == 1{
 
 			for name, items := range secrets {
 				// loading secret items all-at-once
-				err := r.readSecret(name, items)
+				err := r.readSecret(name, items, boolEnvVar)
 				if err != nil {
 					return err
 				}
 			}
 			for name, items := range configMaps {
 				// add the function readConfigMap
-				err := r.readConfigMap(name, items)
+				err := r.readConfigMap(name, items, boolEnvVar)
 				if err != nil {
 					return err
 				}
 			}	
-			
-			
-			// SPEC PART 
-		}else if strings.HasPrefix(parsedValue, "spec"){
-			
-
-			
-	// repeat as it is there for the status
-
-
-
-	r.logger.Info("Looking for spec-descriptors in 'spec'")
-	specDescriptor := r.plan.CRDDescription.SpecDescriptors.Path.xDescriptors {
-		//user and password
-		//one is secretPrefix
-		//other one is configMapPrefix
-		// holds the secret name and items
-		secrets := make(map[string][]string)
-		// holds the configMap name and items
-		configMaps := make(map[string][]string)
-		for _, xDescriptor := range specDescriptors {
-			logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
-			logger.Info("Inspecting xDescriptor...")
-			pathValue, err := r.getCRKey(place, path)
-			if err != nil {
-				return err
-			}	
-			if strings.HasPrefix(xDescriptor, secretPrefix+ele3 {
-				// how to get to user??
-				// get the exact secretPrefix:user i.e ele[2] value
-				// Check if this Secret already exists
-				logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
-				logger.Info("Reading secret items...")
-				secretFound := &corev1.Secret{}
-				err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &secretFound)
-				if err != nil {
-					return err
-				}
-				logger.Info("Inspecting secret data...")
-				for key, value := range secretFound.Data {
-					logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
-						Info("Inspecting secret key...")
-					// making sure key name has a secret reference
-				crEnvVar := p.Sbr.Spec.EnvVar
-				for i, envMap := range crEnvVar {
-					EnvVars[i].Name = envMap.Name
-					key := EnvVars[i].Name
-					fetchedValue := secretFound.Data[key] 
-				}
-				// path value??
-				secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
-			} 
-		}else if strings.HasPrefix(xDescriptor, configMapPrefix+ele3{
-			logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
-				logger.Info("Reading configmap items...")
-				configMapFound := &corev1.ConfigMap{}
-				err := r.client.Get(r.ctx, types.NamespacedName{Namespace: r.plan.Ns, Name: name}, &configMapFound)
-				if err != nil {
-					return err
-				}
-				logger.Info("Inspecting Config Map data...")
-				for key, value := range configMapFound.Data {
-					logger.WithValues("ConfigMap.Key.Name", key, "ConfigMap.Key.Length", len(value)).
-						Info("Inspecting configmap ...")
-					// making sure key name has a secret reference
-				crEnvVar := p.Sbr.Spec.EnvVar
-				for i, envMap := range crEnvVar {
-					EnvVars[i].Name = envMap.Name
-					key := EnvVars[i].Name
-					fetchedValue := configMapFound.Data[key] 
-				}
-				configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
-			} 
-		}
-	}
-}
-
-		for name, items := range secrets {
-			// loading secret items all-at-once
-			err := r.readSecret(name, items)
-			if err != nil {
-				return err
-			}
-		}
-		for name, items := range configMaps {
-			// add the function readConfigMap
-			err := r.readConfigMap(name, items)
-			if err != nil {
-				return err
-			}
-		}	
 		
 		}
 	}

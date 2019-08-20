@@ -121,6 +121,10 @@ func (p *Planner) Plan() (*Plan, error) {
 	if err != nil {
 		return nil, err
 	}
+	env, err := p.searchEnvVar(EnvVars)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Plan{Ns: p.ns, Name: p.sbr.GetName(), CRDDescription: crdDescription, CR: cr}, nil
 }
