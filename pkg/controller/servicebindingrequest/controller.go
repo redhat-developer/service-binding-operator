@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"context"
-	"fmt"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
@@ -91,8 +90,9 @@ func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(o handler.MapObjec
 	for _, owner := range o.Meta.GetOwnerReferences() {
 		objOwner = &owner
 		if owner.Kind == "ServiceBindingRequest" {
-			fmt.Println("ConfigMap/Secret is managed by ServiceBindingRequest, dropping event")
-			return nil
+			// Typical reqeue for Owner. Nothing fancy here.
+			return append(result, reconcile.Request{
+				NamespacedName: client.ObjectKey{Namespace: o.Meta.GetNamespace(), Name: owner.Name}})
 		}
 	}
 
@@ -103,12 +103,13 @@ func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(o handler.MapObjec
 		},
 	}
 	// Get all ServiceBindingRequests
-	if err := r.client.List(context.TODO(), nil, sbr); err != nil {
+	currentNamespace := &client.ListOptions{Namespace: o.Meta.GetNamespace()}
+	if err := r.client.List(context.TODO(), currentNamespace, sbr); err != nil {
 		return result
 	}
 
 	for _, sbr := range sbr.Items {
-		// if the secret/configmap is owned to a CR which was bound in
+		// if the secret/configmap is owned  a CR which was bound in
 		// a ServiceBindingRequest previously, reconcile is needed.
 
 		if objOwner != nil {
