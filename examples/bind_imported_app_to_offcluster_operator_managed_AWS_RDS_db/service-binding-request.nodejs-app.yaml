@@ -8,14 +8,14 @@ spec:
   mountPathPrefix: "/var/credentials"
   envVarPrefix: "MYDB"
   backingServiceSelector:
-    resourceRef: mydb
     group: aws.pmacik.dev
     version: v1alpha1
     kind: RDSDatabase
+    resourceRef: mydb
   applicationSelector:
     matchLabels:
       connects-to: postgres
       environment: nodejs
     group: apps.openshift.io
     version: v1
-    kind: DeploymentConfig
+    resource: deploymentconfigs

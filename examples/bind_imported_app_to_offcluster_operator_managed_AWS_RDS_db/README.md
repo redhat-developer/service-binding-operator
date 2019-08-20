@@ -26,7 +26,7 @@ manage off-cluster RDS database instances on AWS.
 
 Apply the [Service Binding Operator Source](./operator-source.service-binding-operator.yaml):
 
-``` shell
+```shell
 make install-service-binding-operator-source
 ```
 
@@ -146,6 +146,7 @@ To check the status of that we can take a look at the `RDSDatabase` custom resou
 ```shell
 oc get rdsdb mydb -n service-binding-demo -o yaml
 ```
+
 ```yaml
 apiVersion: aws.pmacik.dev/v1alpha1
 kind: RDSDatabase
@@ -161,6 +162,7 @@ status:
 ```
 
 When the DB is successfully created, the status changes to :
+
 ```yaml
 status:
   dbConnectionConfig: mydb
@@ -188,17 +190,17 @@ spec:
   mountPathPrefix: "/var/credentials"
   envVarPrefix: "MYDB"
   backingServiceSelector:
-    resourceRef: mydb
     group: aws.pmacik.dev
     version: v1alpha1
     kind: RDSDatabase
+    resourceRef: mydb
   applicationSelector:
     matchLabels:
       connects-to: postgres
       environment: shell
     group: apps.openshift.io
     version: v1
-    kind: DeploymentConfig
+    resource: deploymentconfigs
 ```
 
 There are 3 interesting parts in the request:
@@ -268,7 +270,7 @@ Now the only thing that remains is to connect the DB and the application. We let
 
 Create the following [`ServiceBindingRequest`](./service-binding-request.nodejs-app.yaml):
 
-``` yaml
+```yaml
 ---
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
@@ -279,17 +281,17 @@ spec:
   mountPathPrefix: "/var/credentials"
   envVarPrefix: "MYDB"
   backingServiceSelector:
-    resourceRef: mydb
     group: aws.pmacik.dev
     version: v1alpha1
     kind: RDSDatabase
+    resourceRef: mydb
   applicationSelector:
     matchLabels:
       connects-to: postgres
       environment: nodejs
     group: apps.openshift.io
     version: v1
-    kind: DeploymentConfig
+    resource: deploymentconfigs
 ```
 
 The request is basically the same as the one we used for the Shell application. The only difference (appart from name) is the label `environment: nodejs` used in the `appicationSelector`.
