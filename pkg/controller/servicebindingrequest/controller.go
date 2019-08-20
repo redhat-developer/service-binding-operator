@@ -47,9 +47,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 				oldSBR := e.ObjectOld.(*v1alpha1.ServiceBindingRequest)
 				newSBR := e.ObjectNew.(*v1alpha1.ServiceBindingRequest)
 
-				// if event was triggered as part of
-				// resetting TriggerRebinding True to False,
-				// we shall ignore it.
+				// if event was triggered as part of resetting TriggerRebinding True to False,
+				// we shall ignore it to avoid an infinite loop.
 				if newSBR.Spec.TriggerRebinding != nil &&
 					oldSBR.Spec.TriggerRebinding != nil &&
 					*newSBR.Spec.TriggerRebinding == false &&

@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -52,6 +53,21 @@ func (r *Reconciler) setStatus(
 	return r.client.Status().Update(ctx, instance)
 }
 
+// setStatus update the CR status field.
+func (r *Reconciler) setTriggerRebindingFlag(
+	ctx context.Context,
+	instance *v1alpha1.ServiceBindingRequest,
+	currentValue *bool,
+) error {
+	if currentValue != nil && *currentValue == true {
+		fmt.Println("TRUEEEEEE")
+		newValue := false
+		instance.Spec.TriggerRebinding = &newValue
+		return r.client.Update(ctx, instance)
+	}
+	return nil
+}
+
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
 // success, since it was able to bind applications.
 func (r *Reconciler) setApplicationObjects(
@@ -88,6 +104,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Error(err, "On retrieving service-binding-request instance.")
 		return RequeueOnNotFound(err, 0)
 	}
+
+	// As long the request was handled, we update the TriggerRebind
+	r.setTriggerRebindingFlag(ctx, instance, instance.Spec.TriggerRebinding)
 
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
 	logger.Info("Found service binding request to inspect")
