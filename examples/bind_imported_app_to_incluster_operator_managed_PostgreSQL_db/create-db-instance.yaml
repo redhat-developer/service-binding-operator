@@ -7,4 +7,3 @@ spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
-

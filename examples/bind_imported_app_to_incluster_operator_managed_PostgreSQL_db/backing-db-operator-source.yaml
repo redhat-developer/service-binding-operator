@@ -7,4 +7,3 @@ spec:
   type: appregistry
   endpoint: https://quay.io/cnr
   registryNamespace: pmacik
-

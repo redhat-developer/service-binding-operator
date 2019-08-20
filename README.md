@@ -80,8 +80,21 @@ spec:
 EOS
 ```
 
+## Getting Started
+
+The best way to get started with the Service Binding Operator is to see it in action. 
+
+We've included a number of examples scenarios for using the operator in this repo. The examples are found in the "/examples" directory. Each of these examples illustrates a usage scenario for the operator. Each example also includes a README file with step-by-step instructions for how to run the example. 
+
+We'll add more examples in the future. The following section in this README file includes links to the current set of examples. 
+
 ## Example Scenarios
 
 The following example scenarios are available:
 
 [Binding an Imported app to an In-cluster Operator Managed PostgreSQL Database](examples/bind_imported_app_to_incluster_operator_managed_PostgreSQL_db/README.md)
+
+[Binding an Imported app to an Off-cluster Operator Managed AWS RDS Database](examples/bind_imported_app_to_offcluster_operator_managed_AWS_RDS_db/README.md)
+
+
+

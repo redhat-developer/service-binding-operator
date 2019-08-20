@@ -2,7 +2,7 @@
 
 # Introduction
 
-This scenario illustrates binding an imported application to an in-cluster operated managed PostgreSQL Database. 
+This scenario illustrates binding an imported application to an in-cluster operated managed PostgreSQL Database.
 
 # Actions to Perform by Users in 2 Roles
 
@@ -164,10 +164,13 @@ spec:
     matchLabels:
       connects-to: postgres
       environment: demo
-    resourceKind: DeploymentConfig
+    group: apps.openshift.io
+    version: v1
+    resource: deploymentconfigs
   backingServiceSelector:
-    resourceKind: postgresql.baiju.dev
-    resourceVersion: v1alpha1
+    group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
     resourceRef: db-demo
   mountPathPrefix: “”
 EOS
@@ -175,7 +178,7 @@ EOS
 
 There are 2 parts in the request:
 
-* `applicationSelector` - used to search for the application based on the labels that we set earlier and the `resourceKind` of the application to be a `DeploymentConfig`.
+* `applicationSelector` - used to search for the application based on the labels that we set earlier and the `group`, `version` and `resource` of the application to be a `DeploymentConfig`.
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
