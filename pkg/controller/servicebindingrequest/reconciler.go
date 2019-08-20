@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"context"
-	"fmt"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -60,7 +59,6 @@ func (r *Reconciler) setTriggerRebindingFlag(
 	currentValue *bool,
 ) error {
 	if currentValue != nil && *currentValue == true {
-		fmt.Println("TRUEEEEEE")
 		newValue := false
 		instance.Spec.TriggerRebinding = &newValue
 		return r.client.Update(ctx, instance)
