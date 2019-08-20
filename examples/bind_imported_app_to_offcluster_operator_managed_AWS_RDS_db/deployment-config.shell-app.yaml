@@ -19,5 +19,5 @@ spec:
       restartPolicy: Always
       containers:
         - name: shell-app
-          image: image-registry.openshift-image-registry.svc:5000/service-binding-demo/shell-app
+          image: image-registry.openshift-image-registry.svc:5000/service-binding-demo/shell-app  # yamllint disable-line rule:line-length
           imagePullPolicy: Always
