@@ -260,7 +260,6 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) ([]string, error) {
 
 		// recording object as updated
 		updatedObjectNames = append(updatedObjectNames, name)
-		logger.Info(updatedObjectNames[0])
 	}
 	return updatedObjectNames, nil
 }
