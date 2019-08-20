@@ -30,43 +30,39 @@ spec:
         spec:
           properties:
             applicationSelector:
-              description: "ApplicationSelector is used to identify the application
-                connecting to the backing service operator. Example 1: \tapplicationSelector:
-                \t\tmatchLabels: \t\t\tconnects-to: postgres \t\t\tenvironment: stage
-                \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tmatchLabels:
-                \t\t\tconnects-to: postgres \t\t\tenvironment: stage"
+              description: ApplicationSelector is used to identify the application
+                connecting to the backing service operator.
               properties:
+                group:
+                  type: string
                 matchLabels:
                   additionalProperties:
                     type: string
                   type: object
-                resourceKind:
+                resource:
+                  type: string
+                version:
                   type: string
               required:
               - matchLabels
-              - resourceKind
+              - version
+              - resource
               type: object
             backingServiceSelector:
-              description: "BackingServiceSelector is used to identify the backing
-                service operator.  Refer: https://12factor.net/backing-services A
-                backing service is any service the app consumes over the network as
-                part of its normal operation. Examples include datastores (such as
-                MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
-                Beanstalkd), SMTP services for outbound email (such as Postfix), and
-                caching systems (such as Memcached).  Example 1: \tbackingServiceSelector:
-                \t\tresourceKind: databases.example.org      resourceRef: mysql-database
-                Example 2: \tbackingServiceSelector: \t\tresourceKind: databases.example.org
-                \t\tresourceVersion: v1alpha1      resourceRef: mysql-database"
+              description: BackingServiceSelector is used to identify the backing
+                service operator.
               properties:
-                resourceKind:
+                group:
+                  type: string
+                kind:
                   type: string
                 resourceRef:
                   type: string
-                resourceVersion:
+                version:
                   type: string
               required:
-              - resourceKind
-              - resourceVersion
+              - version
+              - kind
               - resourceRef
               type: object
             envVarPrefix:
@@ -80,6 +76,19 @@ spec:
           - applicationSelector
           type: object
         status:
+          properties:
+            applicationObjects:
+              description: ApplicationObjects contains all the application objects
+                filtered by label
+              items:
+                type: string
+              type: array
+            bindingStatus:
+              description: BindingStatus is the status of the service binding request.
+              type: string
+            secret:
+              description: Secret is the name of the intermediate secret
+              type: string
           type: object
   version: v1alpha1
   versions:
