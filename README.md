@@ -51,13 +51,13 @@ statusDescriptors:
     path: dbCredentials
     x-descriptors:
       - urn:alm:descriptor:io.kubernetes:Secret
-      - urn:alm:descriptor:servicebindingrequest:env:object:secret:user
-      - urn:alm:descriptor:servicebindingrequest:env:object:secret:password
+      - binding:env:object:secret:user
+      - binding:env:object:secret:password
   description: Database connection IP address
     displayName: DB IP address
     path: dbConnectionIP
     x-descriptors:
-      - urn:alm:descriptor:servicebindingrequest:env:attribute
+      - binding:env:attribute
 ```
 
 ## Quick Start
