@@ -51,8 +51,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 				// we shall ignore it to avoid an infinite loop.
 				if newSBR.Spec.TriggerRebinding != nil &&
 					oldSBR.Spec.TriggerRebinding != nil &&
-					*newSBR.Spec.TriggerRebinding == false &&
-					*oldSBR.Spec.TriggerRebinding == true {
+					!*newSBR.Spec.TriggerRebinding &&
+					*oldSBR.Spec.TriggerRebinding {
 					return false
 				}
 			}
