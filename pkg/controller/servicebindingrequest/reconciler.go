@@ -52,13 +52,12 @@ func (r *Reconciler) setStatus(
 	return r.client.Status().Update(ctx, instance)
 }
 
-// setStatus update the CR status field.
+// setStatus always updates the TriggerRebindingFlag field to False, if present
 func (r *Reconciler) setTriggerRebindingFlag(
 	ctx context.Context,
 	instance *v1alpha1.ServiceBindingRequest,
-	currentValue *bool,
 ) error {
-	if currentValue != nil && *currentValue == true {
+	if instance.Spec.TriggerRebinding != nil && *instance.Spec.TriggerRebinding == true {
 		newValue := false
 		instance.Spec.TriggerRebinding = &newValue
 		return r.client.Update(ctx, instance)
@@ -104,7 +103,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// As long the request was handled, we update the TriggerRebind
-	r.setTriggerRebindingFlag(ctx, instance, instance.Spec.TriggerRebinding)
+	r.setTriggerRebindingFlag(ctx, instance)
 
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
 	logger.Info("Found service binding request to inspect")
