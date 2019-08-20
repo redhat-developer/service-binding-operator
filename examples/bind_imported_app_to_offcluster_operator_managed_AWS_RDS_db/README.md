@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This scenario illustrates binding an imported application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and a use of the `envVarPrefix` feature of the Service Binding Operator to specify prefix for the names of the injected environment variables.
+This scenario illustrates binding an imported application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and a use of the `envVarPrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -30,7 +30,7 @@ Apply the [Service Binding Operator Source](./operator-source.service-binding-op
 make install-service-binding-operator-source
 ```
 
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under `openshift-marketplace` project and in the `Other` category select the `Service Bidning Operator` operator
+Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Other` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
@@ -56,7 +56,7 @@ Apply the [AWS RDS Operator Source](./operator-source.aws-rds-operator.yaml):
 make install-aws-rds-operator-source
 ```
 
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under `openshift-marketplace` project and in the `Database` category select the `AWS RDS Database` operator
+Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Database` category select the `AWS RDS Database` operator
 
 ![AWS RDS Operator as shown in OperatorHub](../../assets/operator-hub-awsrdso-screenshot.png)
 
@@ -86,7 +86,7 @@ oc new-project service-binding-demo
 
 #### Deploy Shell application
 
-To illustrate and verify that the binding works we will use a simple shell application that lists all environment variables that starts with `MYDB_` prefix and then goes to sleep for an hour.
+To illustrate and verify that the binding works we will use a simple shell application that lists all environment variables that start with the `MYDB_` prefix and then goes to sleep for an hour.
 
 To deploy the application use the `deploy-shell-app` make target:
 
@@ -173,7 +173,7 @@ status:
 
 Now, when the DB is up and running, we need to tell the Shell application where to find it and how to connect to it. We let the Service Binding Operator to 'do the magic' for us.
 
-As mentioned above the Shell application lists all environment variables that starts with `MYDB_` prefix. So we need to make sure, the variables injected by the binding has this prefix. Conveniently, the Service Binding Operator can help us there, too.
+As mentioned above the Shell application lists all environment variables that start with the `MYDB_` prefix. So we need to make sure that the variables injected by the binding have this prefix. Conveniently, the Service Binding Operator can help us there, too.
 
 All we need to do is to create the following [`ServiceBindingRequest`](./service-binding-request.shell-app.yaml):
 
@@ -201,7 +201,7 @@ spec:
     kind: DeploymentConfig
 ```
 
-There are 3 interresting parts in the request:
+There are 3 interesting parts in the request:
 
 * `envVarPrefix` - specifies the prefix for all the environment variables injected to the bound application
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `mydb`
