@@ -57,7 +57,7 @@ func (r *Reconciler) setTriggerRebindingFlag(
 	ctx context.Context,
 	instance *v1alpha1.ServiceBindingRequest,
 ) error {
-	if instance.Spec.TriggerRebinding != nil && *instance.Spec.TriggerRebinding == true {
+	if instance.Spec.TriggerRebinding != nil && *instance.Spec.TriggerRebinding {
 		newValue := false
 		instance.Spec.TriggerRebinding = &newValue
 		return r.client.Update(ctx, instance)
@@ -103,7 +103,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// As long the request was handled, we update the TriggerRebind
-	r.setTriggerRebindingFlag(ctx, instance)
+	err = r.setTriggerRebindingFlag(ctx, instance)
+	if err != nil {
+		return RequeueError(err)
+	}
 
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
 	logger.Info("Found service binding request to inspect")

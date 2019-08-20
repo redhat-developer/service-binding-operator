@@ -35,7 +35,8 @@ func TestSetRetriggerBinding(t *testing.T) {
 		require.NoError(t, fakeClient.Get(ctx, namespacedName, &sbr))
 
 		reconciler := &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
-		reconciler.setTriggerRebindingFlag(ctx, &sbr)
+		err := reconciler.setTriggerRebindingFlag(ctx, &sbr)
+		require.NoError(t, err)
 
 		require.NoError(t, fakeClient.Get(ctx, namespacedName, &sbr))
 
@@ -47,7 +48,8 @@ func TestSetRetriggerBinding(t *testing.T) {
 		sbr.Spec.TriggerRebinding = &triggerTrue
 		require.NoError(t, fakeClient.Update(ctx, &sbr))
 
-		reconciler.setTriggerRebindingFlag(ctx, &sbr)
+		err = reconciler.setTriggerRebindingFlag(ctx, &sbr)
+		require.NoError(t, err)
 		require.NoError(t, fakeClient.Get(ctx, namespacedName, &sbr))
 		require.False(t, *sbr.Spec.TriggerRebinding)
 
@@ -56,7 +58,8 @@ func TestSetRetriggerBinding(t *testing.T) {
 		sbr.Spec.TriggerRebinding = &triggerFalse
 		require.NoError(t, fakeClient.Update(ctx, &sbr))
 
-		reconciler.setTriggerRebindingFlag(ctx, &sbr)
+		err = reconciler.setTriggerRebindingFlag(ctx, &sbr)
+		require.NoError(t, err)
 		require.NoError(t, fakeClient.Get(ctx, namespacedName, &sbr))
 
 		// remains false
