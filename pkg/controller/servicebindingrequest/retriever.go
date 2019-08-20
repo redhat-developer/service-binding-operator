@@ -19,7 +19,7 @@ import (
 type Retriever struct {
 	ctx           context.Context   // request context
 	client        client.Client     // Kubernetes API client
-	plan          *planner.Plan     // plan instance
+	plan          *Plan             // plan instance
 	logger        logr.Logger       // logger instance
 	data          map[string][]byte // data retrieved
 	volumeKeys    []string
@@ -431,7 +431,7 @@ func (r *Retriever) fetchEnvVarValue(parsedValue string) string{
 	}
 }
 // NewRetriever instantiate a new retriever instance.
-func NewRetriever(ctx context.Context, client client.Client, plan *planner.Plan, bindingPrefix string) *Retriever {
+func NewRetriever(ctx context.Context, client client.Client, plan *Plan, bindingPrefix string) *Retriever {
 	return &Retriever{
 		ctx:           ctx,
 		client:        client,
