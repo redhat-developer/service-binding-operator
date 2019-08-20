@@ -7,6 +7,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+// ServiceBindingRequestKind defines the name of the CRD Kind.
+const ServiceBindingRequestKind = "ServiceBindingRequest"
+
 // RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {

@@ -42,6 +42,22 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+
+			if e.ObjectOld.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind == "ServiceBindingRequest" {
+				oldSBR := e.ObjectOld.(*v1alpha1.ServiceBindingRequest)
+				newSBR := e.ObjectNew.(*v1alpha1.ServiceBindingRequest)
+
+				// if event was triggered as part of
+				// resetting TriggerRebinding True to False,
+				// we shall ignore it.
+				if newSBR.Spec.TriggerRebinding != nil &&
+					oldSBR.Spec.TriggerRebinding != nil &&
+					*newSBR.Spec.TriggerRebinding == false &&
+					*oldSBR.Spec.TriggerRebinding == true {
+					return false
+				}
+			}
+
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
 		},
