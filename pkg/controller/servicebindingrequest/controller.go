@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
@@ -26,11 +25,11 @@ func Add(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
-	return add(mgr, r, r.ReconcileIfAssociatedWithAServiceBinding, r.ReconcileIfAssociatedWithAServiceBinding)
+	return add(mgr, r, r.reconcileIfAssociatedWithAServiceBinding)
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) (reconcile.Reconciler, error) {
+func newReconciler(mgr manager.Manager) (*Reconciler, error) {
 	dynClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return nil, err
@@ -83,9 +82,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler, nonServiceBindingOwnedTrig
 	return nil
 }
 
-// ReconcileIfAssociatedWithAServiceBinding triggers a reconcile event
+// reconcileIfAssociatedWithAServiceBinding triggers a reconcile event
 // if a secret/configmap owned by any of the BackingServices changes.
-func (r *Reconciler) ReconcileIfAssociatedWithAServiceBinding(o handler.MapObject) []reconcile.Request {
+func (r *Reconciler) reconcileIfAssociatedWithAServiceBinding(o handler.MapObject) []reconcile.Request {
 	var result []reconcile.Request
 
 	var objOwner *metav1.OwnerReference
@@ -121,7 +120,7 @@ func (r *Reconciler) ReconcileIfAssociatedWithAServiceBinding(o handler.MapObjec
 			}
 
 		} else {
-			plannerRef := planner.NewPlanner(context.TODO(), r.client, o.Meta.GetNamespace(), &sbr)
+			plannerRef := NewPlanner(context.TODO(), r.dynClient, &sbr)
 			plan, err := plannerRef.Plan()
 			if err != nil {
 				continue
