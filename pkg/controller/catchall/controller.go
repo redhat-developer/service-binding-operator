@@ -1,6 +1,7 @@
 package catchall
 
 import (
+	"errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -20,44 +21,54 @@ func Add(mgr manager.Manager) error {
 	return add(mgr, r)
 }
 
+func getDynClient(r reconcile.Reconciler) (dynamic.Interface, error) {
+	if v, ok := r.(*CatchAllReconciler); ok {
+		return v.DynClient, nil
+	}
+	return nil, errors.New("given argument is not a CatchAllReconciler instance")
+}
+
+func getGVRs() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{}
+}
+
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	c, err := controller.New("catchall-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	var listFunc cache.ListFunc
-	var watchFunc cache.WatchFunc
-
-	switch v := r.(type) {
-	case *CatchAllReconciler:
-		gvr := schema.GroupVersionResource{}
-		listFunc = asUnstructuredLister(v.DynClient.Resource(gvr).Namespace("").List)
-		watchFunc = asUnstructuredWatcher(v.DynClient.Resource(gvr).Namespace("").Watch)
-	default:
-		panic("WIP, r is not a CatchAllReconciler")
-	}
-
-	lw := &cache.ListWatch{
-		ListFunc:  listFunc,
-		WatchFunc: watchFunc,
-	}
-
-	resyncPeriod := 5 * time.Minute
-
-	informer := cache.NewSharedIndexInformer(
-		lw,
-		&unstructured.Unstructured{},
-		resyncPeriod,
-		nil,
-	)
-
-	err = c.Watch(
-		&source.Informer{Informer: informer},
-		nil,
-		nil)
+	dynClient, err := getDynClient(r)
 	if err != nil {
 		return err
+	}
+
+	for _, gvr := range getGVRs() {
+
+		namespacedResource := dynClient.Resource(gvr).Namespace("")
+
+		lw := &cache.ListWatch{
+			ListFunc:  asUnstructuredLister(namespacedResource.List),
+			WatchFunc: asUnstructuredWatcher(namespacedResource.Watch),
+		}
+
+		resyncPeriod := 5 * time.Minute
+
+		informer := cache.NewSharedIndexInformer(
+			lw,
+			&unstructured.Unstructured{},
+			resyncPeriod,
+			nil,
+		)
+
+		err = c.Watch(
+			&source.Informer{Informer: informer},
+			nil,
+			nil)
+		if err != nil {
+			return err
+		}
+
 	}
 
 	return nil
