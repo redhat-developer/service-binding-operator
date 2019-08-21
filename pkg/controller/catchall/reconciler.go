@@ -1,10 +1,12 @@
 package catchall
 
 import (
+	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type CatchAllReconciler struct {
@@ -14,5 +16,12 @@ type CatchAllReconciler struct {
 }
 
 func (r *CatchAllReconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	panic("implement me")
+
+	sbrSelector := getSelectorFromName(request.Name)
+	_ = sbrSelector
+
+	// Do something with sbrSelector
+	logf.Log.Info("Inside CatchAllReconciler.Reconcile. Will panic!")
+
+	panic(">>>>> Can you see me? <<<<<")
 }

@@ -1,6 +1,7 @@
 package catchall
 
 import (
+	"fmt"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -14,15 +15,17 @@ var enqueueLog = logf.KBLog.WithName("eventhandler").WithName("EnqueueRequestFor
 
 type EnqueueRequestForUnstructured struct{}
 
-// TODO: Better name for this request
-type UnstructuredRequest struct {
-	reconcile.Request
-	ServiceBindingRequestSelector int
-}
-
 func getServiceBindingRequestSelector(_ runtime.Object) (int, error) {
 	// TODO: Should figure out data structure to keep for the worker.
 	panic("implement me")
+}
+
+func composeNameWithSelector(name string, sbrSelector int) string {
+	return fmt.Sprintf("%s!%v", name, sbrSelector)
+}
+
+func getSelectorFromName(name string) int {
+	return 1
 }
 
 func (e EnqueueRequestForUnstructured) Create(evt event.CreateEvent, q workqueue.RateLimitingInterface) {
@@ -37,13 +40,10 @@ func (e EnqueueRequestForUnstructured) Create(evt event.CreateEvent, q workqueue
 		return
 	}
 
-	q.Add(UnstructuredRequest{
-		ServiceBindingRequestSelector: sbrSelector,
-		Request: reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      evt.Meta.GetName(),
-				Namespace: evt.Meta.GetNamespace(),
-			},
+	q.Add(reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      composeNameWithSelector(evt.Meta.GetName(), sbrSelector),
+			Namespace: evt.Meta.GetNamespace(),
 		},
 	})
 }
@@ -56,13 +56,10 @@ func (e EnqueueRequestForUnstructured) Update(evt event.UpdateEvent, q workqueue
 	}
 
 	if evt.MetaOld != nil {
-		q.Add(UnstructuredRequest{
-			ServiceBindingRequestSelector: sbrSelector,
-			Request: reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Name:      evt.MetaOld.GetName(),
-					Namespace: evt.MetaOld.GetNamespace(),
-				},
+		q.Add(reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      composeNameWithSelector(evt.MetaOld.GetName(), sbrSelector),
+				Namespace: evt.MetaOld.GetNamespace(),
 			},
 		})
 	} else {
@@ -70,13 +67,10 @@ func (e EnqueueRequestForUnstructured) Update(evt event.UpdateEvent, q workqueue
 	}
 
 	if evt.MetaNew != nil {
-		q.Add(UnstructuredRequest{
-			ServiceBindingRequestSelector: sbrSelector,
-			Request: reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Name:      evt.MetaNew.GetName(),
-					Namespace: evt.MetaNew.GetNamespace(),
-				},
+		q.Add(reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Name:      composeNameWithSelector(evt.MetaNew.GetName(), sbrSelector),
+				Namespace: evt.MetaNew.GetNamespace(),
 			},
 		})
 	} else {
@@ -96,13 +90,10 @@ func (e EnqueueRequestForUnstructured) Delete(evt event.DeleteEvent, q workqueue
 		return
 	}
 
-	q.Add(UnstructuredRequest{
-		ServiceBindingRequestSelector: sbrSelector,
-		Request: reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      evt.Meta.GetName(),
-				Namespace: evt.Meta.GetNamespace(),
-			},
+	q.Add(reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      composeNameWithSelector(evt.Meta.GetName(), sbrSelector),
+			Namespace: evt.Meta.GetNamespace(),
 		},
 	})
 }
@@ -119,13 +110,10 @@ func (e EnqueueRequestForUnstructured) Generic(evt event.GenericEvent, q workque
 		return
 	}
 
-	q.Add(UnstructuredRequest{
-		ServiceBindingRequestSelector: sbrSelector,
-		Request: reconcile.Request{
-			NamespacedName: types.NamespacedName{
-				Name:      evt.Meta.GetName(),
-				Namespace: evt.Meta.GetNamespace(),
-			},
+	q.Add(reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      composeNameWithSelector(evt.Meta.GetName(), sbrSelector),
+			Namespace: evt.Meta.GetNamespace(),
 		},
 	})
 }
