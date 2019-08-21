@@ -45,7 +45,7 @@ type ServiceBindingRequestStatus struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	Group       string `json:"group,omitempty"`
+	Group       string `json:"group"`
 	Version     string `json:"version"`
 	Kind        string `json:"kind"`
 	ResourceRef string `json:"resourceRef"`
