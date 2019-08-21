@@ -10,8 +10,8 @@ spec:
     plural: servicebindingrequests
     singular: servicebindingrequest
     shortNames:
-        - sbr
-        - sbrs
+    - sbr
+    - sbrs
   scope: Namespaced
   subresources:
     status: {}
