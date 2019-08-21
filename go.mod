@@ -1,7 +1,6 @@
 module github.com/redhat-developer/service-binding-operator
 
 require (
-	github.com/baijum/postgresql-operator v0.0.0-20190701114131-f72b43994f54
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
 	github.com/evanphx/json-patch v4.5.0+incompatible // indirect
@@ -14,6 +13,7 @@ require (
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/openshift/api v3.9.0+incompatible
+	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20190821075443-840d192264ec
 	github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible
 	github.com/operator-framework/operator-sdk v0.10.0
 	github.com/prometheus/client_golang v1.0.0 // indirect
