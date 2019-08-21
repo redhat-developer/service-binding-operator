@@ -9,6 +9,9 @@ spec:
     listKind: ServiceBindingRequestList
     plural: servicebindingrequests
     singular: servicebindingrequest
+    shortNames:
+        - sbr
+        - sbrs
   scope: Namespaced
   subresources:
     status: {}
