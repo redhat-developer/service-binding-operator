@@ -19,28 +19,23 @@ func Add(mgr manager.Manager) error {
 	return add(mgr, r)
 }
 
-func getGVRs() []schema.GroupVersionResource {
-	return []schema.GroupVersionResource{}
-}
-
 func add(mgr manager.Manager, r *CatchAllReconciler) error {
 	c, err := controller.New("catchall-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
+	// TODO: This should be configured externally.
+	resyncPeriod := 5 * time.Minute
+
 	for _, gvr := range getGVRs() {
-		namespacedResource := r.DynClient.Resource(gvr).Namespace("")
-
-		lw := &cache.ListWatch{
-			ListFunc:  asUnstructuredLister(namespacedResource.List),
-			WatchFunc: asUnstructuredWatcher(namespacedResource.Watch),
-		}
-
-		resyncPeriod := 5 * time.Minute
+		resourceClient := r.DynClient.Resource(gvr).Namespace("")
 
 		informer := cache.NewSharedIndexInformer(
-			lw,
+			&cache.ListWatch{
+				ListFunc:  asUnstructuredLister(resourceClient.List),
+				WatchFunc: asUnstructuredWatcher(resourceClient.Watch),
+			},
 			&unstructured.Unstructured{},
 			resyncPeriod,
 			nil,
@@ -53,7 +48,6 @@ func add(mgr manager.Manager, r *CatchAllReconciler) error {
 		if err != nil {
 			return err
 		}
-
 	}
 
 	return nil
@@ -70,4 +64,8 @@ func newReconciler(mgr manager.Manager) (*CatchAllReconciler, error) {
 		DynClient: dynClient,
 		Scheme:    mgr.GetScheme(),
 	}, nil
+}
+
+func getGVRs() []schema.GroupVersionResource {
+	return []schema.GroupVersionResource{}
 }
