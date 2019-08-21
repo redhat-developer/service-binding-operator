@@ -71,7 +71,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		sbrOutput := v1alpha1.ServiceBindingRequest{}
 		require.Nil(t, fakeClient.Get(ctx, namespacedName, &sbrOutput))
-		require.Equal(t, "success", sbrOutput.Status.BindingStatus)
+		require.Equal(t, "Success", sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
