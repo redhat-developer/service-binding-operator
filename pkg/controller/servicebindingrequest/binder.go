@@ -3,9 +3,9 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
-
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // Binder executes the "binding" act of updating different application kinds to use intermediary
@@ -258,6 +258,18 @@ func (b *Binder) Bind() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
+	if len(objList.Items) == 0 {
+	return []string{} , errors.NewNotFound(
+			schema.GroupResource{
+				Group:    b.sbr.Spec.ApplicationSelector.Group,
+				Resource: b.sbr.Spec.ApplicationSelector.Resource,
+			},
+			b.sbr.Spec.ApplicationSelector.Resource,
+		)
+	}
+
 	return b.update(objList)
 }
 
