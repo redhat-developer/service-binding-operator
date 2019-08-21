@@ -41,10 +41,7 @@ func add(mgr manager.Manager, r *CatchAllReconciler) error {
 			nil,
 		)
 
-		err = c.Watch(
-			&source.Informer{Informer: informer},
-			nil,
-			nil)
+		err = c.Watch(&source.Informer{Informer: informer}, &EnqueueRequestForUnstructured{})
 		if err != nil {
 			return err
 		}

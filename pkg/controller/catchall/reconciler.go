@@ -13,6 +13,6 @@ type CatchAllReconciler struct {
 	Scheme    *runtime.Scheme
 }
 
-func (r *CatchAllReconciler) Reconcile(reconcile.Request) (reconcile.Result, error) {
+func (r *CatchAllReconciler) Reconcile(request UnstructuredRequest) (reconcile.Result, error) {
 	panic("implement me")
 }
