@@ -13,9 +13,9 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.Database":       schema_pkg_apis_postgresql_v1alpha1_Database(ref),
-		"github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseSpec":   schema_pkg_apis_postgresql_v1alpha1_DatabaseSpec(ref),
-		"github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseStatus": schema_pkg_apis_postgresql_v1alpha1_DatabaseStatus(ref),
+		"github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.Database":       schema_pkg_apis_postgresql_v1alpha1_Database(ref),
+		"github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseSpec":   schema_pkg_apis_postgresql_v1alpha1_DatabaseSpec(ref),
+		"github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseStatus": schema_pkg_apis_postgresql_v1alpha1_DatabaseStatus(ref),
 	}
 }
 
@@ -46,19 +46,19 @@ func schema_pkg_apis_postgresql_v1alpha1_Database(ref common.ReferenceCallback) 
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseSpec"),
+							Ref: ref("github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseStatus"),
+							Ref: ref("github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseSpec", "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseSpec", "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1.DatabaseStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 

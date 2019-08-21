@@ -3,8 +3,8 @@ package mocks
 import (
 	"testing"
 
-	pgapis "github.com/baijum/postgresql-operator/pkg/apis"
-	pgv1alpha1 "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
+	pgapis "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis"
+	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
