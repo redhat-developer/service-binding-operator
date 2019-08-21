@@ -244,8 +244,9 @@ func (r *Retriever) readEnvVar() error {
 
 	//retrieving each r.plan.Sbr.envVar.Name
 	for i, envVars := range planner.EnvVars {
-        envVarName := envVars.Name
-		if err = r.parse(envVarName); err!=nil{
+		envVarName := envVars.Name
+		envVarValue := envVars.Value
+		if err = r.parse(envVarValue); err!=nil{
 			return err
 		}
 		}
