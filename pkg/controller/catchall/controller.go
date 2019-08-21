@@ -30,8 +30,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	var watchFunc cache.WatchFunc
 
 	switch v := r.(type) {
-	// TODO: Check why CatchAllReconciler doesn't implement the right interface.
-	case CatchAllReconciler:
+	case *CatchAllReconciler:
 		gvr := schema.GroupVersionResource{}
 		listFunc = asUnstructuredLister(v.DynClient.Resource(gvr).Namespace("").List)
 		watchFunc = asUnstructuredWatcher(v.DynClient.Resource(gvr).Namespace("").Watch)
