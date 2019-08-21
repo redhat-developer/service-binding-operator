@@ -1,14 +1,12 @@
 package catchall
 
 import (
-	"errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"time"
 )
@@ -21,31 +19,18 @@ func Add(mgr manager.Manager) error {
 	return add(mgr, r)
 }
 
-func getDynClient(r reconcile.Reconciler) (dynamic.Interface, error) {
-	if v, ok := r.(*CatchAllReconciler); ok {
-		return v.DynClient, nil
-	}
-	return nil, errors.New("given argument is not a CatchAllReconciler instance")
-}
-
 func getGVRs() []schema.GroupVersionResource {
 	return []schema.GroupVersionResource{}
 }
 
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+func add(mgr manager.Manager, r *CatchAllReconciler) error {
 	c, err := controller.New("catchall-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	dynClient, err := getDynClient(r)
-	if err != nil {
-		return err
-	}
-
 	for _, gvr := range getGVRs() {
-
-		namespacedResource := dynClient.Resource(gvr).Namespace("")
+		namespacedResource := r.DynClient.Resource(gvr).Namespace("")
 
 		lw := &cache.ListWatch{
 			ListFunc:  asUnstructuredLister(namespacedResource.List),
@@ -74,7 +59,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-func newReconciler(mgr manager.Manager) (reconcile.Reconciler, error) {
+func newReconciler(mgr manager.Manager) (*CatchAllReconciler, error) {
 	dynClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return nil, err
