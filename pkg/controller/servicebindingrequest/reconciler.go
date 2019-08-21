@@ -21,11 +21,11 @@ type Reconciler struct {
 
 const (
 	// binding is in progress
-	bindingInProgress = "inProgress"
+	bindingInProgress = "InProgress"
 	// binding has succeeded
-	bindingSuccess = "success"
+	bindingSuccess = "Success"
 	// binding has failed
-	bindingFail = "fail"
+	bindingFail = "Fail"
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
 )

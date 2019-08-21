@@ -17,9 +17,6 @@ github.com/PuerkitoBio/purell
 github.com/PuerkitoBio/urlesc
 # github.com/appscode/jsonpatch v0.0.0-20190108182946-7c0e3b262f30
 github.com/appscode/jsonpatch
-# github.com/baijum/postgresql-operator v0.0.0-20190701114131-f72b43994f54
-github.com/baijum/postgresql-operator/pkg/apis
-github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1
 # github.com/beorn7/perks v1.0.0
 github.com/beorn7/perks/quantile
 # github.com/census-instrumentation/opencensus-proto v0.2.0
@@ -137,6 +134,9 @@ github.com/modern-go/concurrent
 github.com/modern-go/reflect2
 # github.com/openshift/api v3.9.0+incompatible
 github.com/openshift/api/apps/v1
+# github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20190821075443-840d192264ec
+github.com/operator-backing-service-samples/postgresql-operator/pkg/apis
+github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1
 # github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible
 github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1
 github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install
@@ -368,13 +368,13 @@ k8s.io/apimachinery/pkg/runtime
 k8s.io/apimachinery/pkg/apis/meta/v1
 k8s.io/apimachinery/pkg/runtime/schema
 k8s.io/apimachinery/pkg/api/errors
+k8s.io/apimachinery/pkg/api/meta
 k8s.io/apimachinery/pkg/apis/meta/v1/unstructured
 k8s.io/apimachinery/pkg/labels
 k8s.io/apimachinery/pkg/types
-k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/runtime/serializer
 k8s.io/apimachinery/pkg/watch
-k8s.io/apimachinery/pkg/api/meta
+k8s.io/apimachinery/pkg/util/wait
 k8s.io/apimachinery/pkg/util/runtime
 k8s.io/apimachinery/pkg/api/resource
 k8s.io/apimachinery/pkg/runtime/serializer/streaming
@@ -389,6 +389,7 @@ k8s.io/apimachinery/pkg/util/naming
 k8s.io/apimachinery/pkg/fields
 k8s.io/apimachinery/pkg/selection
 k8s.io/apimachinery/pkg/util/validation/field
+k8s.io/apimachinery/pkg/apis/meta/v1beta1
 k8s.io/apimachinery/pkg/util/validation
 k8s.io/apimachinery/pkg/runtime/serializer/versioning
 k8s.io/apimachinery/pkg/version
@@ -397,7 +398,6 @@ k8s.io/apimachinery/pkg/runtime/serializer/recognizer
 k8s.io/apimachinery/pkg/util/cache
 k8s.io/apimachinery/pkg/util/clock
 k8s.io/apimachinery/pkg/util/diff
-k8s.io/apimachinery/pkg/apis/meta/v1beta1
 k8s.io/apimachinery/pkg/util/yaml
 k8s.io/apimachinery/pkg/util/strategicpatch
 k8s.io/apimachinery/pkg/util/uuid

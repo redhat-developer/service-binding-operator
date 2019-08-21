@@ -1,6 +1,6 @@
 FROM quay.io/openshift/origin-operator-registry:latest
 
-ARG version=0.0.16
+ARG version=0.0.18
 RUN mkdir -p manifests/service-binding-operator/${version}
 COPY manifests/service-binding-operator.package.yaml manifests/service-binding-operator/
 COPY manifests/service-binding-operator*.crd.yaml manifests/service-binding-operator/${version}/
