@@ -43,7 +43,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 
-			if e.ObjectOld.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind == "ServiceBindingRequest" {
+			if e.ObjectOld.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind == ServiceBindingRequestKind {
 				oldSBR := e.ObjectOld.(*v1alpha1.ServiceBindingRequest)
 				newSBR := e.ObjectNew.(*v1alpha1.ServiceBindingRequest)
 
