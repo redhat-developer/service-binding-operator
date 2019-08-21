@@ -179,7 +179,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"triggerRebinding": {
 						SchemaProps: spec.SchemaProps{
-							Description: "TriggerRebinding forcefully triggers a binding operation if it the event for the same was missed for some reason",
+							Description: "TriggerRebinding forcefully triggers a binding operation if the event for the same was missed for some reason",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},
