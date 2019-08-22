@@ -1,6 +1,8 @@
 package servicebindingrequest
 
 import (
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -10,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // Add creates a new ServiceBindingRequest Controller and adds it to the Manager. The Manager will
@@ -42,6 +44,26 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+			data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(e.ObjectNew)
+			if err != nil {
+				// TODO: add logging to show this error;
+				return false
+			}
+
+			u := &unstructured.Unstructured{Object: data}
+			sbr := &v1alpha1.ServiceBindingRequest{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+			if err != nil {
+				// TODO: add logging to show this error;
+				return false
+			}
+
+			// allowing pending SBR to be reconciled anyways
+			// FIXME: use the constant defined in catchall reconciler;
+			if sbr.Status.BindingStatus == "pending" {
+				return true
+			}
+
 			// Ignore updates to CR status in which case metadata.Generation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
 		},

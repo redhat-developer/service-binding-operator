@@ -10,6 +10,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/common"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -86,7 +87,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueOnNotFound(err, 0)
+		return common.RequeueOnNotFound(err, 0)
 	}
 
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
@@ -94,7 +95,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if err = r.setStatus(ctx, instance, bindingInProgress); err != nil {
 		logger.Error(err, "On updating service-binding-request status.")
-		return RequeueError(err)
+		return common.RequeueError(err)
 	}
 
 	//
@@ -107,7 +108,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On creating a plan to bind applications.")
-		return RequeueOnNotFound(err, requeueAfter)
+		return common.RequeueOnNotFound(err, requeueAfter)
 	}
 
 	//
@@ -119,12 +120,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if err = retriever.Retrieve(); err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On retrieving binding data.")
-		return RequeueOnNotFound(err, requeueAfter)
+		return common.RequeueOnNotFound(err, requeueAfter)
 	}
 
 	if err = r.setSecretName(ctx, instance, plan.Name); err != nil {
 		logger.Error(err, "On updating service-binding-request status.")
-		return RequeueError(err)
+		return common.RequeueError(err)
 	}
 
 	//
@@ -136,12 +137,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if updatedObjectNames, err := binder.Bind(); err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On binding application.")
-		return RequeueOnNotFound(err, requeueAfter)
+		return common.RequeueOnNotFound(err, requeueAfter)
 	} else if err = r.setApplicationObjects(ctx, instance, updatedObjectNames); err != nil {
 		logger.Error(err, "On updating application objects status field.")
-		return RequeueError(err)
+		return common.RequeueError(err)
 	}
 
 	logger.Info("All done!")
-	return Done()
+	return common.Done()
 }

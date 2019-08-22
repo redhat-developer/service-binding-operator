@@ -25,6 +25,8 @@ func add(mgr manager.Manager, r *CatchAllReconciler) error {
 		return err
 	}
 
+	// FIXME: create a predicate to make sure we only allow reconciliation of objects that are having
+	// service-binding-operator annotations.
 	for _, gvk := range getGVKs() {
 		u := &unstructured.Unstructured{}
 		u.SetGroupVersionKind(gvk)
@@ -54,6 +56,7 @@ func newReconciler(mgr manager.Manager) (*CatchAllReconciler, error) {
 // TODO: this list should be fetched from K8S API-Server, and later apply a blacklist;
 func getGVKs() []schema.GroupVersionKind {
 	return []schema.GroupVersionKind{
-		{Group: "apps.openshift.io", Version: "v1alpha1", Kind: "ServiceBindingRequest"},
+		// {Group: "apps.openshift.io", Version: "v1alpha1", Kind: "ServiceBindingRequest"},
+		{Group: "", Version: "v1", Kind: "Secret"},
 	}
 }
