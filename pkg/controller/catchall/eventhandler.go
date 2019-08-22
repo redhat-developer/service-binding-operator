@@ -2,6 +2,7 @@ package catchall
 
 import (
 	"fmt"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
@@ -17,7 +18,8 @@ type EnqueueRequestForUnstructured struct{}
 
 func getServiceBindingRequestSelector(_ runtime.Object) (int, error) {
 	// TODO: Should figure out data structure to keep for the worker.
-	panic("implement me")
+	// panic("implement me")
+	return 1, nil
 }
 
 func composeNameWithSelector(name string, sbrSelector int) string {
