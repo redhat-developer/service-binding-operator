@@ -4,11 +4,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/tools/cache"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 func Add(mgr manager.Manager) error {
@@ -25,23 +23,10 @@ func add(mgr manager.Manager, r *CatchAllReconciler) error {
 		return err
 	}
 
-	// TODO: This should be configured externally.
-	resyncPeriod := 5 * time.Minute
-
-	for _, gvr := range getGVRs() {
-		resourceClient := r.DynClient.Resource(gvr).Namespace("")
-
-		informer := cache.NewSharedIndexInformer(
-			&cache.ListWatch{
-				ListFunc:  asUnstructuredLister(resourceClient.List),
-				WatchFunc: asUnstructuredWatcher(resourceClient.Watch),
-			},
-			&unstructured.Unstructured{},
-			resyncPeriod,
-			nil,
-		)
-
-		err = c.Watch(&source.Informer{Informer: informer}, &EnqueueRequestForUnstructured{})
+	for _, gvk := range getGVKs() {
+		u := &unstructured.Unstructured{}
+		u.SetGroupVersionKind(gvk)
+		err = c.Watch(&source.Kind{Type: u}, &EnqueueRequestForUnstructured{})
 		if err != nil {
 			return err
 		}
@@ -63,6 +48,8 @@ func newReconciler(mgr manager.Manager) (*CatchAllReconciler, error) {
 	}, nil
 }
 
-func getGVRs() []schema.GroupVersionResource {
-	return []schema.GroupVersionResource{}
+func getGVKs() []schema.GroupVersionKind {
+	return []schema.GroupVersionKind{
+		{Group: "apps.openshift.io", Version: "v1alpha1", Kind: "ServiceBindingRequest"},
+	}
 }
