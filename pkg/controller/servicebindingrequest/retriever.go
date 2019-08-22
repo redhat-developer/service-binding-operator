@@ -27,12 +27,12 @@ type Retriever struct {
 }
 
 const (
-	basePrefix              = "urn:alm:descriptor:servicebindingrequest:env:object"
+	basePrefix              = "binding:env:object"
 	secretPrefix            = basePrefix + ":secret"
 	configMapPrefix         = basePrefix + ":configmap"
-	attributePrefix         = "urn:alm:descriptor:servicebindingrequest:env:attribute"
-	volumeMountSecretPrefix = "urn:alm:descriptor:servicebindingrequest:volumemount:secret"
 	boolEnvVar 				= false
+	attributePrefix         = "binding:env:attribute"
+	volumeMountSecretPrefix = "binding:volumemount:secret"
 )
 
 // getNestedValue retrieve value from dotted key path

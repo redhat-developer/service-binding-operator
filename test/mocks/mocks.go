@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	pgv1alpha1 "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
+	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	appsv1 "k8s.io/api/apps/v1"
@@ -31,7 +31,7 @@ var (
 		DisplayName:  "Database Name",
 		Description:  "Database Name",
 		Path:         "dbName",
-		XDescriptors: []string{"urn:alm:descriptor:servicebindingrequest:env:attribute"},
+		XDescriptors: []string{"binding:env:attribute"},
 	}
 	// DBConfigMapSpecDesc spec descriptor to describe a operator that export username and password
 	// via config-map, instead of a usual secret.
@@ -41,8 +41,8 @@ var (
 		Path:        "dbConfigMap",
 		XDescriptors: []string{
 			"urn:alm:descriptor:io.kubernetes:ConfigMap",
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
+			"binding:env:object:configmap:user",
+			"binding:env:object:configmap:password",
 		},
 	}
 	// DBPasswordCredentialsOnEnvStatusDesc status descriptor to describe a database operator that
@@ -53,8 +53,8 @@ var (
 		Path:        "dbCredentials",
 		XDescriptors: []string{
 			"urn:alm:descriptor:io.kubernetes:Secret",
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
+			"binding:env:object:secret:user",
+			"binding:env:object:secret:password",
 		},
 	}
 	// DBPasswordCredentialsOnVolumeMountStatusDesc status descriptor to describe a operator that
@@ -65,8 +65,8 @@ var (
 		Path:        "dbCredentials",
 		XDescriptors: []string{
 			"urn:alm:descriptor:io.kubernetes:Secret",
-			"urn:alm:descriptor:servicebindingrequest:volumemount:secret:user",
-			"urn:alm:descriptor:servicebindingrequest:volumemount:secret:password",
+			"binding:volumemount:secret:user",
+			"binding:volumemount:secret:password",
 		},
 	}
 )

@@ -1,7 +1,7 @@
 package apis
 
 import (
-	"github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
+	"github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 )
 
 func init() {
