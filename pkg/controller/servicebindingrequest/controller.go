@@ -164,7 +164,6 @@ func watchCRD(crd olmv1alpha1.CRDDescription, crdHandler handler.ToRequestsFunc,
 	rsrc := strings.Split(crd.Name, ".")[0]
 
 	grp := strings.Split(crd.Name, rsrc+".")
-	fmt.Println(grp[1])
 
 	gvk := schema.GroupVersionKind{
 		Group:   grp[1],
