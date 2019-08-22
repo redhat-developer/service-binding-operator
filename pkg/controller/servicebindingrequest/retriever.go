@@ -174,6 +174,22 @@ func (r *Retriever) readConfigMap(name string, items []string, boolEnvVar bool) 
 	return nil
 }
 
+type envVariables map[string]string
+var fetchedEnvVars []envVariables
+
+func(r *Retriever) storeEnvVar(){
+	for i, val := range fetchedEnvVars{
+		for k, v := range val[i]{
+			key := k
+			value := v
+		}
+	key = strings.ReplaceAll(key, ":", "_")
+	key = strings.ReplaceAll(key, ".", "_")
+	key = strings.ToUpper(key)
+	r.data[key] = value
+	}
+}
+
 // store key and value, formatting key to look like an environment variable.
 func (r *Retriever) store(key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
@@ -184,8 +200,8 @@ func (r *Retriever) store(key string, value []byte) {
 		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, r.plan.CR.GetKind(), key)
 	}
 	if boolEnvVar == true{
-	//wanting to store custom env var names
-     // store the actual name
+			r.storeEnvVar()
+		}
 	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
@@ -304,7 +320,7 @@ func (r *Retriever) fetchEnvVarValue(parsedValue string) string{
 						EnvVars[i].Name = envMap.Name
 						key := EnvVars[i].Name
 						fetchedValue := secretFound.Data[key] 
-						// want to use this in store
+						fetchedEnvVars[i] = append(fetchedEnvVars, map[key]fetchedValue)
 					}
 					secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 				} 
@@ -325,6 +341,7 @@ func (r *Retriever) fetchEnvVarValue(parsedValue string) string{
 						EnvVars[i].Name = envMap.Name
 						key := EnvVars[i].Name
 						fetchedValue := configMapFound.Data[key] 
+						fetchedEnvVars[i] = append(fetchedEnvVars, map[key]fetchedValue)
 					}
 					configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
 				} 
@@ -384,6 +401,7 @@ func (r *Retriever) fetchEnvVarValue(parsedValue string) string{
 						EnvVars[i].Name = envMap.Name
 						key := EnvVars[i].Name
 						fetchedValue := secretFound.Data[key] 
+						fetchedEnvVars[i] = append(fetchedEnvVars, map[key]fetchedValue)
 					}
 					// path value??
 					secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
@@ -406,6 +424,7 @@ func (r *Retriever) fetchEnvVarValue(parsedValue string) string{
 						EnvVars[i].Name = envMap.Name
 						key := EnvVars[i].Name
 						fetchedValue := configMapFound.Data[key] 
+						fetchedEnvVars[i] = append(fetchedEnvVars, map[key]fetchedValue)
 					}
 					configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
 				} 
