@@ -72,6 +72,10 @@ spec:
             mountPathPrefix:
               description: MountPathPrefix is the prefix for volume mount
               type: string
+            triggerRebinding:
+              description: TriggerRebinding forcefully triggers a binding operation
+                if the event for the same was missed for some reason
+              type: boolean
           required:
           - backingServiceSelector
           - applicationSelector
