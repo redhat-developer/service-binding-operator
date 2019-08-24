@@ -113,12 +113,12 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	t.Log("Creating Database mock object...")
 	db := mocks.DatabaseCRMock(ns, resourceRef)
-	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
+	require.Nil(t, f.Client.Create(todoCtx, db, cleanUpOptions(ctx)))
 
 	t.Log("Updating Database status, adding 'DBCredentials'")
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, &db))
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, db))
 	db.Status.DBCredentials = secretName
-	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
+	require.Nil(t, f.Client.Status().Update(todoCtx, db))
 
 	t.Log("Creating Database credentials secret mock object...")
 	dbSecret := mocks.SecretMock(ns, secretName)
@@ -168,18 +168,81 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
 	assert.Equal(t, name, containers[0].EnvFrom[0].SecretRef.Name)
 
-	// checking intermediary secret
-	t.Logf("Checking intermediary secret '%s'...", name)
-	sbrSecret := corev1.Secret{}
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
+	// checking intermediary secret contents
+	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
+	_ = inspectSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName)
+
+	// editing intermediary secret in order to trigger update event
+	intermediarySecretGeneration := updateSecret(t, todoCtx, f, intermediarySecretNamespacedName)
+
+	// waiting for reconciliation, when generation changes
+	sbrSecret := &corev1.Secret{}
+	for attempts := 0; attempts < 10; attempts++ {
+		require.Nil(t, f.Client.Get(todoCtx, intermediarySecretNamespacedName, sbrSecret))
+		generation := sbrSecret.GetGeneration()
+
+		t.Logf("Waiting for reconciliation, secret generation '%d' '%d/10'...",
+			generation, attempts)
+		if intermediarySecretGeneration < generation {
+			t.Logf("Secret generation: '%d'", generation)
+			break
+		}
+		time.Sleep(time.Second * 8)
+	}
+
+	// inspecting secret contents again, expect to be original
+	_ = inspectSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName)
+
+	// cleaning up
+	t.Log("Cleaning all up!")
+	_ = f.Client.Delete(todoCtx, sbr)
+	_ = f.Client.Delete(todoCtx, sbrSecret)
+	_ = f.Client.Delete(todoCtx, &d)
+}
+
+// inspectSBRSecret execute the inspection in a secret created by the operator.
+func inspectSBRSecret(
+	t *testing.T,
+	ctx context.Context,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) *corev1.Secret {
+	t.Logf("Checking intermediary secret '%s'...", namespacedName.String())
+
+	sbrSecret := &corev1.Secret{}
+	require.Nil(t, f.Client.Get(ctx, namespacedName, sbrSecret))
+
 	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_USER")
 	assert.Equal(t, []byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"])
 	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_PASSWORD")
 	assert.Equal(t, []byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"])
 
-	// cleaning up
-	t.Log("Cleaning all up!")
-	_ = f.Client.Delete(todoCtx, sbr)
-	_ = f.Client.Delete(todoCtx, &sbrSecret)
-	_ = f.Client.Delete(todoCtx, &d)
+	return sbrSecret
+}
+
+// updateSecret by exchanging all of its keys to "bogus" string.
+func updateSecret(
+	t *testing.T,
+	ctx context.Context,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) int64 {
+	sbrSecret := &corev1.Secret{}
+	require.Nil(t, f.Client.Get(ctx, namespacedName, sbrSecret))
+
+	generation := sbrSecret.GetGeneration()
+	t.Logf("Secret generation: '%d'", generation)
+
+	// FIXME: intentionally bumping the object generation, so the operator will reconcile;
+	generation++
+	sbrSecret.SetGeneration(generation)
+
+	for k, v := range sbrSecret.Data {
+		t.Logf("Replacing secret '%s=%s' with '%s=bogus'", k, string(v), k)
+		sbrSecret.Data[k] = []byte("bogus")
+	}
+
+	require.Nil(t, f.Client.Update(ctx, sbrSecret))
+
+	return generation
 }

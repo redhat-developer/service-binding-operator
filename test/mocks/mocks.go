@@ -10,6 +10,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -70,6 +71,13 @@ var (
 		},
 	}
 )
+
+//
+// Usage of TypeMeta in Mocks
+//
+// 	Usually TypeMeta should not be explicitly defined in mocked objects, however, on using
+//  it via *unstructured.Unstructured it could not find this CR without it.
+//
 
 // crdDescriptionMock based for mocked objects.
 func crdDescriptionMock(
@@ -167,8 +175,7 @@ func ClusterServiceVersionMock(ns, name string) olmv1alpha1.ClusterServiceVersio
 func UnstructuredClusterServiceVersionMock(ns, name string) (*ustrv1.Unstructured, error) {
 	csv := ClusterServiceVersionMock(ns, name)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&csv)
-	u := ustrv1.Unstructured{Object: data}
-	return &u, err
+	return &ustrv1.Unstructured{Object: data}, err
 }
 
 // ClusterServiceVersionVolumeMountMock based on PostgreSQL operator.
@@ -184,8 +191,7 @@ func UnstructuredClusterServiceVersionVolumeMountMock(
 ) (*ustrv1.Unstructured, error) {
 	csv := ClusterServiceVersionVolumeMountMock(ns, name)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&csv)
-	u := ustrv1.Unstructured{Object: data}
-	return &u, err
+	return &ustrv1.Unstructured{Object: data}, err
 }
 
 // ClusterServiceVersionListVolumeMountMock returns a list with a single CSV object inside, reusing mock.
@@ -196,10 +202,8 @@ func ClusterServiceVersionListVolumeMountMock(ns, name string) *olmv1alpha1.Clus
 }
 
 // DatabaseCRMock based on PostgreSQL operator, returning a instantiated object.
-func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
-	return pgv1alpha1.Database{
-		// usually TypeMeta should not be explicitly defined in mocked objects, however, on using
-		// it via *unstructured.Unstructured it could not find this CR without it.
+func DatabaseCRMock(ns, name string) *pgv1alpha1.Database {
+	return &pgv1alpha1.Database{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
 			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
@@ -218,16 +222,20 @@ func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 	}
 }
 
-// DatabaseCRListMock returns a list with a single database CR inside, reusing existing mock.
-func DatabaseCRListMock(ns, name string) *pgv1alpha1.DatabaseList {
-	return &pgv1alpha1.DatabaseList{
-		Items: []pgv1alpha1.Database{DatabaseCRMock(ns, name)},
-	}
+// UnstructuredDatabaseCRMock returns a unstructured version of DatabaseCRMock.
+func UnstructuredDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
+	db := DatabaseCRMock(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(db)
+	return &unstructured.Unstructured{Object: data}, err
 }
 
 // SecretMock returns a Secret based on PostgreSQL operator usage.
 func SecretMock(ns, name string) *corev1.Secret {
 	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -240,8 +248,12 @@ func SecretMock(ns, name string) *corev1.Secret {
 }
 
 // ConfigMapMock returns a dummy config-map object.
-func ConfigMapMock(ns, name string) corev1.ConfigMap {
-	return corev1.ConfigMap{
+func ConfigMapMock(ns, name string) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ConfigMap",
+			APIVersion: "v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -299,8 +311,7 @@ func UnstructuredDeploymentMock(
 ) (*ustrv1.Unstructured, error) {
 	d := DeploymentMock(ns, name, matchLabels)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
-	u := ustrv1.Unstructured{Object: data}
-	return &u, err
+	return &ustrv1.Unstructured{Object: data}, err
 }
 
 // DeploymentMock creates a mocked Deployment object of busybox.
@@ -385,6 +396,13 @@ func NestedDatabaseCRMock(ns, name string) NestedDatabase {
 	}
 }
 
+// UnstructuredNestedDatabaseCRMock returns a unstructured object from NestedDatabaseCRMock.
+func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
+	db := NestedDatabaseCRMock(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
@@ -398,7 +416,7 @@ type ConfigMapDatabase struct {
 	Spec ConfigMapDatabaseSpec `json:"spec,omitempty"`
 }
 
-// DatabaseConfigMapMock ...
+// DatabaseConfigMapMock returns a local ConfigMapDatabase object.
 func DatabaseConfigMapMock(ns, name string) *ConfigMapDatabase {
 	return &ConfigMapDatabase{
 		TypeMeta: metav1.TypeMeta{
@@ -413,4 +431,11 @@ func DatabaseConfigMapMock(ns, name string) *ConfigMapDatabase {
 			DBConfigMap: "db-configmap",
 		},
 	}
+}
+
+// UnstructuredDatabaseConfigMapMock returns a unstructured version of DatabaseConfigMapMock.
+func UnstructuredDatabaseConfigMapMock(ns, name string) (*unstructured.Unstructured, error) {
+	db := DatabaseConfigMapMock(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
+	return &ustrv1.Unstructured{Object: data}, err
 }
