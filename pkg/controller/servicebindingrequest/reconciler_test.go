@@ -95,7 +95,7 @@ func TestReconcilerForForcedTriggeringOfBinding(t *testing.T) {
 	f.AddMockedServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
 
 	f.AddMockedUnstructuredCSV("cluster-service-version-list-forced-trigger")
-	f.AddMockedDatabaseCRList(resourceRef)
+	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
 

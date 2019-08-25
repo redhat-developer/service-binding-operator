@@ -108,7 +108,7 @@ func TestRetriever(t *testing.T) {
 	})
 }
 
-func TestRetrieverNestedCRDKey(t *testing.T) {
+func TestRetrieverWithNestedCRKey(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 	var retriever *Retriever
 
@@ -149,7 +149,7 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 
 }
 
-func TestConfigMapRetriever(t *testing.T) {
+func TestRetrieverWithConfigMap(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 	var retriever *Retriever
 
@@ -162,7 +162,7 @@ func TestConfigMapRetriever(t *testing.T) {
 
 	crdDescription := mocks.CRDDescriptionConfigMapMock()
 
-	cr, err := mocks.UnstructuredDatabaseConfigMapMock(ns, crName)
+	cr, err := mocks.UnstructuredDatabaseConfigMapMock(ns, crName, crName)
 	require.Nil(t, err)
 
 	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
@@ -193,7 +193,7 @@ func TestConfigMapRetriever(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap("db-configmap", []string{"user", "password"})
+		err := retriever.readConfigMap(crName, []string{"user", "password"})
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))

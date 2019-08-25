@@ -417,7 +417,7 @@ type ConfigMapDatabase struct {
 }
 
 // DatabaseConfigMapMock returns a local ConfigMapDatabase object.
-func DatabaseConfigMapMock(ns, name string) *ConfigMapDatabase {
+func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 	return &ConfigMapDatabase{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       CRDKind,
@@ -428,14 +428,14 @@ func DatabaseConfigMapMock(ns, name string) *ConfigMapDatabase {
 			Name:      name,
 		},
 		Spec: ConfigMapDatabaseSpec{
-			DBConfigMap: "db-configmap",
+			DBConfigMap: configMapName,
 		},
 	}
 }
 
 // UnstructuredDatabaseConfigMapMock returns a unstructured version of DatabaseConfigMapMock.
-func UnstructuredDatabaseConfigMapMock(ns, name string) (*unstructured.Unstructured, error) {
-	db := DatabaseConfigMapMock(ns, name)
+func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstructured.Unstructured, error) {
+	db := DatabaseConfigMapMock(ns, name, configMapName)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
 	return &ustrv1.Unstructured{Object: data}, err
 }
