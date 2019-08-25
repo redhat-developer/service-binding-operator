@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	log = logf.Log.WithName("servicebindingrequest")
+	log = logf.ZapLogger(true).WithName("servicebindingrequest")
 )
 
 // ServiceBindingRequestKind defines the name of the CRD Kind.

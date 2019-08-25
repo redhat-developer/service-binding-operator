@@ -12,15 +12,19 @@ type SBRRequestMapper struct{}
 // Map execute the mapping of a resource with the requests it would produce. Here we inspect the
 // given object trying to identify if this object is part of a SBR, or a actual SBR resource.
 func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
+	logger := log.WithValues(
+		"Object.Namespace", obj.Meta.GetNamespace(),
+		"Object.Name", obj.Meta.GetName(),
+	)
 	toReconcile := []reconcile.Request{}
 
 	sbrNamespacedName, err := GetSBRNamespacedNameFromObject(obj.Object)
 	if err != nil {
-		log.Error(err, "on inspecting object for annotations for SBR object")
+		logger.Error(err, "on inspecting object for annotations for SBR object")
 		return toReconcile
 	}
 	if IsSBRNamespacedNameEmpty(sbrNamespacedName) {
-		log.Error(nil, "not able to extract SBR namespaced-name")
+		log.Info("not able to extract SBR namespaced-name")
 		return toReconcile
 	}
 
