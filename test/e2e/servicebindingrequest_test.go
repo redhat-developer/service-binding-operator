@@ -170,10 +170,10 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	// checking intermediary secret contents
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
-	_ = inspectSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName)
+	_ = inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
 
 	// editing intermediary secret in order to trigger update event
-	intermediarySecretGeneration := updateSecret(t, todoCtx, f, intermediarySecretNamespacedName)
+	intermediarySecretGeneration := updateSecret(todoCtx, t, f, intermediarySecretNamespacedName)
 
 	// waiting for reconciliation, when generation changes
 	sbrSecret := &corev1.Secret{}
@@ -192,7 +192,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Logf("Intermediary secret geranetion: '%d'", sbrSecret.GetGeneration())
 
 	// inspecting secret contents again, expect to be original
-	_ = inspectSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName)
+	_ = inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
 
 	// cleaning up
 	t.Log("Cleaning all up!")
@@ -203,8 +203,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 // inspectSBRSecret execute the inspection in a secret created by the operator.
 func inspectSBRSecret(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
 ) *corev1.Secret {
@@ -223,8 +223,8 @@ func inspectSBRSecret(
 
 // updateSecret by exchanging all of its keys to "bogus" string.
 func updateSecret(
-	t *testing.T,
 	ctx context.Context,
+	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
 ) int64 {
