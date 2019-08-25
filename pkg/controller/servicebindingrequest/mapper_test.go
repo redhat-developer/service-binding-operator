@@ -17,10 +17,13 @@ import (
 func TestSBRRequestMapperMap(t *testing.T) {
 	mapper := &SBRRequestMapper{}
 
-	// not containing annotations, should return empty
 	u := &unstructured.Unstructured{}
+	u.SetNamespace("mapper-unit")
+	u.SetName("mapper-unit")
 	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
-	mapObj := handler.MapObject{Object: u.DeepCopyObject()}
+
+	// not containing annotations, should return empty
+	mapObj := handler.MapObject{Meta: u, Object: u.DeepCopyObject()}
 	mappedRequests := mapper.Map(mapObj)
 	require.Equal(t, 0, len(mappedRequests))
 
@@ -28,7 +31,7 @@ func TestSBRRequestMapperMap(t *testing.T) {
 
 	// with annotations in place it should return the actual values
 	u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"})
-	mapObj = handler.MapObject{Object: u.DeepCopyObject()}
+	mapObj = handler.MapObject{Meta: u, Object: u.DeepCopyObject()}
 	mappedRequests = mapper.Map(mapObj)
 	require.Equal(t, 1, len(mappedRequests))
 	assert.Equal(t, request, mappedRequests[0])
@@ -38,7 +41,7 @@ func TestSBRRequestMapperMap(t *testing.T) {
 	sbr.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind("ServiceBindingRequest"))
 	sbr.SetNamespace("ns")
 	sbr.SetName("name")
-	mapObj = handler.MapObject{Object: sbr.DeepCopyObject()}
+	mapObj = handler.MapObject{Meta: u, Object: sbr.DeepCopyObject()}
 	mappedRequests = mapper.Map(mapObj)
 	require.Equal(t, 1, len(mappedRequests))
 	assert.Equal(t, request, mappedRequests[0])
