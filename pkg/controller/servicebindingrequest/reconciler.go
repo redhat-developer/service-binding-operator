@@ -118,6 +118,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueError(err)
 	}
 
+	// As long the request was handled, we update the TriggerRebind
+	err = r.setTriggerRebindingFlag(ctx, instance)
+	if err != nil {
+		return RequeueError(err)
+	}
+
 	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
 	logger.Info("Found service binding request to inspect")
 
