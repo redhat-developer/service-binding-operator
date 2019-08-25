@@ -108,7 +108,7 @@ func createUnstructuredWithGVK(gvk schema.GroupVersionKind) *unstructured.Unstru
 
 func getWatchingGVKs() []schema.GroupVersionKind {
 	return []schema.GroupVersionKind{
-		v1alpha1.SchemeGroupVersion.WithKind("ServiceBindingRequest"),
+		v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind),
 		{Group: "", Version: "v1", Kind: "Secret"},
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
 	}

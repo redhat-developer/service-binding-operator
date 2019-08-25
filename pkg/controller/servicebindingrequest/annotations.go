@@ -60,7 +60,7 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 		return namespacedName, nil
 	}
 
-	if u.GroupVersionKind() != v1alpha1.SchemeGroupVersion.WithKind("ServiceBindingRequest") {
+	if u.GroupVersionKind() != v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind) {
 		logger.Info("Object is also not a SBR resource type.")
 		return namespacedName, nil
 	}
