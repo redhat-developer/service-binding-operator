@@ -109,7 +109,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueOnNotFound(err, 5)
+		return RequeueError(err)
 	}
 
 	// As long the request was handled, we update the TriggerRebind
