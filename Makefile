@@ -186,9 +186,7 @@ test-e2e: e2e-setup
 	# Operator Logs
 	#   To run the end-to-end tests and actually see the opertor logs, try to run it with:
 	#
-	#   make test-e2e  \
-	#		|grep 'msg="Local operator stderr' \
-	#		|sed 's/^time.*err: //g' |eval 'in=$(cat); echo "$in"'
+	#   make test-e2e |grep 'msg="Local operator stderr' |sed 's/^time.*err: //g' |eval 'in=$(cat); echo "$in"'
 	#
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
