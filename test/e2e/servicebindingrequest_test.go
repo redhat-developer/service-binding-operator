@@ -157,7 +157,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 		if generation > 1 {
 			break
 		}
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second * 6)
 	}
 
 	// making sure envFrom is added to the container
@@ -189,6 +189,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 		}
 		time.Sleep(time.Second * 8)
 	}
+	t.Logf("Intermediary secret geranetion: '%d'", sbrSecret.GetGeneration())
 
 	// inspecting secret contents again, expect to be original
 	_ = inspectSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName)
@@ -233,7 +234,7 @@ func updateSecret(
 	generation := sbrSecret.GetGeneration()
 	t.Logf("Secret generation: '%d'", generation)
 
-	// FIXME: intentionally bumping the object generation, so the operator will reconcile;
+	// intentionally bumping the object generation, so the operator will reconcile;
 	generation++
 	sbrSecret.SetGeneration(generation)
 
