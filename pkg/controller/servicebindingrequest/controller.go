@@ -48,20 +48,24 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			oldKind := e.ObjectOld.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind
-			if oldKind == ServiceBindingRequestKind {
-				oldSBR := e.ObjectOld.(*v1alpha1.ServiceBindingRequest)
-				newSBR := e.ObjectNew.(*v1alpha1.ServiceBindingRequest)
+			// FIXME: support unstructured.Unstructured types. This block is currently causing a
+			// panic with the assertion error.
+			/*
+				oldKind := e.ObjectOld.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind
+				if oldKind == ServiceBindingRequestKind {
+					oldSBR := e.ObjectOld.(*v1alpha1.ServiceBindingRequest)
+					newSBR := e.ObjectNew.(*v1alpha1.ServiceBindingRequest)
 
-				// if event was triggered as part of resetting TriggerRebinding True to False,
-				// we shall ignore it to avoid an infinite loop.
-				if newSBR.Spec.TriggerRebinding != nil &&
-					oldSBR.Spec.TriggerRebinding != nil &&
-					!*newSBR.Spec.TriggerRebinding &&
-					*oldSBR.Spec.TriggerRebinding {
-					return false
+					// if event was triggered as part of resetting TriggerRebinding True to False,
+					// we shall ignore it to avoid an infinite loop.
+					if newSBR.Spec.TriggerRebinding != nil &&
+						oldSBR.Spec.TriggerRebinding != nil &&
+						!*newSBR.Spec.TriggerRebinding &&
+						*oldSBR.Spec.TriggerRebinding {
+						return false
+					}
 				}
-			}
+			*/
 
 			// ignore updates to CR status in which case metadata.Generation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
