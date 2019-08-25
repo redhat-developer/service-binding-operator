@@ -183,19 +183,13 @@ e2e-cleanup: get-test-namespace
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
-	# Operator Logs
-	#   To run the end-to-end tests and actually see the opertor logs, try to run it with:
-	#
-	#   make test-e2e |grep 'msg="Local operator stderr' |sed 's/^time.*err: //g' |eval 'in=$(cat); echo "$in"'
-	#
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m" \
-			--local-operator-flags="--zap-level=debug --zap-encoder=console"
+			--go-test-flags "-timeout=15m"
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -291,7 +285,7 @@ push-image: build-image
 .PHONY: local
 ## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds
-	$(Q)operator-sdk --verbose up local --operator-flags="--zap-level=debug --zap-encoder=console"
+	$(Q)operator-sdk --verbose up local
 
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
