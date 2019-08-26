@@ -5,7 +5,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// SBRRequestMapper is the handler.SBRRequestMapper interface implementation. It should influence the
+// SBRRequestMapper is the handler.Mapper interface implementation. It should influence the
 // enqueue process considering the resources informed.
 type SBRRequestMapper struct{}
 
