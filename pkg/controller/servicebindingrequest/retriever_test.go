@@ -11,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -28,7 +27,7 @@ func TestRetriever(t *testing.T) {
 	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
-	plan := &planner.Plan{
+	plan := &Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
@@ -36,10 +35,10 @@ func TestRetriever(t *testing.T) {
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
-	objs := []runtime.Object{&dbSecret}
+	objs := []runtime.Object{dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
@@ -57,8 +56,8 @@ func TestRetriever(t *testing.T) {
 	t.Run("read", func(t *testing.T) {
 		// reading from secret, from status attribute
 		err := retriever.read("status", "dbCredentials", []string{
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
+			"binding:env:object:secret:user",
+			"binding:env:object:secret:password",
 		})
 		assert.Nil(t, err)
 
@@ -68,7 +67,7 @@ func TestRetriever(t *testing.T) {
 
 		// reading from spec attribute
 		err = retriever.read("spec", "image", []string{
-			"urn:alm:descriptor:servicebindingrequest:env:attribute",
+			"binding:env:attribute",
 		})
 		assert.Nil(t, err)
 
@@ -79,7 +78,7 @@ func TestRetriever(t *testing.T) {
 
 	t.Run("extractSecretItemName", func(t *testing.T) {
 		assert.Equal(t, "user", retriever.extractSecretItemName(
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user"))
+			"binding:env:object:secret:user"))
 	})
 
 	t.Run("readSecret", func(t *testing.T) {
@@ -102,6 +101,18 @@ func TestRetriever(t *testing.T) {
 		err := retriever.saveDataOnSecret()
 		assert.Nil(t, err)
 	})
+
+	t.Run("empty prefix", func(t *testing.T) {
+		retriever = NewRetriever(context.TODO(), fakeClient, plan, "")
+		require.NotNil(t, retriever)
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		assert.Nil(t, err)
+
+		assert.Contains(t, retriever.data, "DATABASE_SECRET_USER")
+		assert.Contains(t, retriever.data, "DATABASE_SECRET_PASSWORD")
+	})
 }
 
 func TestRetrieverNestedCRDKey(t *testing.T) {
@@ -117,7 +128,7 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
 	require.Nil(t, err)
 
-	plan := &planner.Plan{
+	plan := &Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
@@ -125,10 +136,10 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	}
 
 	dbSecret := mocks.SecretMock(ns, "db-credentials")
-	objs := []runtime.Object{&dbSecret}
+	objs := []runtime.Object{dbSecret}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
@@ -161,10 +172,10 @@ func TestConfigMapRetriever(t *testing.T) {
 
 	cr := mocks.DatabaseConfigMapMock(ns, crName)
 
-	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	require.Nil(t, err)
 
-	plan := &planner.Plan{
+	plan := &Plan{
 		Ns:             ns,
 		Name:           "retriever",
 		CRDDescription: &crdDescription,
@@ -175,15 +186,15 @@ func TestConfigMapRetriever(t *testing.T) {
 	objs := []runtime.Object{&dbConfigMap}
 	fakeClient := fake.NewFakeClient(objs...)
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan)
+	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
 
 		// reading from configMap, from status attribute
 		err = retriever.read("spec", "dbConfigMap", []string{
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
+			"binding:env:object:configmap:user",
+			"binding:env:object:configmap:password",
 		})
 		assert.Nil(t, err)
 
@@ -194,7 +205,7 @@ func TestConfigMapRetriever(t *testing.T) {
 
 	t.Run("extractConfigMapItemName", func(t *testing.T) {
 		assert.Equal(t, "user", retriever.extractConfigMapItemName(
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user"))
+			"binding:env:object:configmap:user"))
 	})
 
 	t.Run("readConfigMap", func(t *testing.T) {

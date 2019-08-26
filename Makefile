@@ -100,7 +100,7 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.0.10
+OPERATOR_VERSION ?= 0.0.18
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
@@ -126,7 +126,7 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 ## -- Static code analysis (lint) targets --
 
 .PHONY: lint
-## Runs linters on Go code files and YAML files
+## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
 lint: setup-venv lint-go-code lint-yaml courier
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
@@ -284,7 +284,7 @@ push-image: build-image
 
 .PHONY: local
 ## Local: Run operator locally
-local: deploy-clean deploy-rbac deploy-crds deploy-cr
+local: deploy-clean deploy-rbac deploy-crds
 	$(Q)operator-sdk up local
 
 .PHONY: deploy-rbac
@@ -298,11 +298,6 @@ deploy-rbac:
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
 	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
-
-.PHONY: deploy-cr
-## Deploy-CR: Deploy CRs
-deploy-cr:
-	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs

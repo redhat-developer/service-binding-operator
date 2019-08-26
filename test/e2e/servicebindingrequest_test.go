@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	pgsqlapis "github.com/baijum/postgresql-operator/pkg/apis"
-	pgv1alpha1 "github.com/baijum/postgresql-operator/pkg/apis/postgresql/v1alpha1"
+	pgsqlapis "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis"
+	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
@@ -122,7 +122,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	t.Log("Creating Database credentials secret mock object...")
 	dbSecret := mocks.SecretMock(ns, secretName)
-	require.Nil(t, f.Client.Create(todoCtx, &dbSecret, cleanUpOptions(ctx)))
+	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
 
 	t.Log("Creating Deployment mock object...")
 	d := mocks.DeploymentMock(ns, appName, matchLabels)
@@ -140,8 +140,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Log("Creating ServiceBindingRequest mock object...")
 	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
 	// making sure object does not exist before testing
-	_ = f.Client.Delete(todoCtx, &sbr)
-	require.Nil(t, f.Client.Create(todoCtx, &sbr, cleanUpOptions(ctx)))
+	_ = f.Client.Delete(todoCtx, sbr)
+	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
 
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
@@ -172,14 +172,14 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	t.Logf("Checking intermediary secret '%s'...", name)
 	sbrSecret := corev1.Secret{}
 	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
-	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_USER")
-	assert.Equal(t, []byte("user"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_USER"])
-	assert.Contains(t, sbrSecret.Data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
-	assert.Equal(t, []byte("password"), sbrSecret.Data["SERVICE_BINDING_DATABASE_SECRET_PASSWORD"])
+	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_USER")
+	assert.Equal(t, []byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"])
+	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_PASSWORD")
+	assert.Equal(t, []byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"])
 
 	// cleaning up
 	t.Log("Cleaning all up!")
-	_ = f.Client.Delete(todoCtx, &sbr)
+	_ = f.Client.Delete(todoCtx, sbr)
 	_ = f.Client.Delete(todoCtx, &sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
 }
