@@ -1,6 +1,9 @@
 package servicebindingrequest
 
 import (
+	"os"
+
+	osappsv1 "github.com/openshift/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -22,24 +25,24 @@ var (
 // Add creates a new ServiceBindingRequest Controller and adds it to the Manager. The Manager will
 // set fields on the Controller and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
-	r, err := newReconciler(mgr)
+	client, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return err
 	}
-	return add(mgr, r)
+	r, err := newReconciler(mgr, client)
+	if err != nil {
+		return err
+	}
+	return add(mgr, r, client)
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager) (reconcile.Reconciler, error) {
-	dynClient, err := dynamic.NewForConfig(mgr.GetConfig())
-	if err != nil {
-		return nil, err
-	}
-	return &Reconciler{client: mgr.GetClient(), dynClient: dynClient, scheme: mgr.GetScheme()}, nil
+func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Reconciler, error) {
+	return &Reconciler{client: mgr.GetClient(), dynClient: client, scheme: mgr.GetScheme()}, nil
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
-func add(mgr manager.Manager, r reconcile.Reconciler) error {
+func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) error {
 	opts := controller.Options{Reconciler: r}
 	c, err := controller.New(controllerName, mgr, opts)
 	if err != nil {
@@ -76,7 +79,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		},
 	}
 
-	for _, gvk := range getWatchingGVKs() {
+	gvks, err := getWatchingGVKs(client)
+	if err != nil {
+		return err
+	}
+
+	for _, gvk := range gvks {
 		logger := log.WithValues("GroupVersionKind", gvk)
 		err = c.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
 		if err != nil {
@@ -106,12 +114,25 @@ func createUnstructuredWithGVK(gvk schema.GroupVersionKind) *unstructured.Unstru
 	return u
 }
 
-func getWatchingGVKs() []schema.GroupVersionKind {
-	return []schema.GroupVersionKind{
+// getWatchingGVKs return a list of GVKs that this controller is interested in watching.
+func getWatchingGVKs(client dynamic.Interface) ([]schema.GroupVersionKind, error) {
+	// standard resources types
+	gvks := []schema.GroupVersionKind{
 		v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind),
+		osappsv1.SchemeGroupVersion.WithKind(DeploymentConfigKind),
 		{Group: "", Version: "v1", Kind: "Secret"},
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
 	}
+
+	olm := NewOLM(client, os.Getenv("WATCH_NAMESPACE"))
+	olmGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
+	if err != nil {
+		log.Error(err, "On listing owned CSV as GVKs")
+		return nil, err
+	}
+	log.WithValues("CSVOwnedGVK.Amount", len(olmGVKs)).
+		Info("Amount of GVK founds in CSV objects.")
+	return append(gvks, olmGVKs...), nil
 }
 
 // blank assignment to verify that ReconcileServiceBindingRequest implements reconcile.Reconciler
