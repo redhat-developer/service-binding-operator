@@ -22,8 +22,7 @@ type OLM struct {
 }
 
 const (
-	csvResource        = "clusterserviceversions"
-	crdDescriptionKind = "CRDDescription"
+	csvResource = "clusterserviceversions"
 )
 
 // listCSVs simple list to all CSV objects in the cluster.
