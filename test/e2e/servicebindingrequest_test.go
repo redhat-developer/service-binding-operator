@@ -47,7 +47,9 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-1", ServiceBindingRequest)
+		t.Run("scenario-2-pre-create-sbr", PreCreateServiceBindingRequest)
 	})
+
 }
 
 // cleanUpOptions using global variables to create the object.
@@ -89,6 +91,19 @@ func ServiceBindingRequest(t *testing.T) {
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns)
+}
+
+// ServiceBindingRequest bootstrap method to initialize cluster resources and setup a testing
+// namespace, after bootstrap operator related tests method is called out.
+func PreCreateServiceBindingRequest(t *testing.T) {
+	t.Log("Creating a new test context...")
+	ctx := framework.NewTestCtx(t)
+	defer ctx.Cleanup()
+
+	ns, f := bootstrapNamespace(t, ctx)
+
+	// executing testing steps on operator
+	preCreateServiceBindingRequestTest(t, ctx, f, ns)
 }
 
 // serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
