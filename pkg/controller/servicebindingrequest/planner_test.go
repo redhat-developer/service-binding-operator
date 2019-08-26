@@ -34,13 +34,6 @@ func TestPlannerNew(t *testing.T) {
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
 	require.NotNil(t, planner)
 
-	t.Run("searchCRDDescription", func(t *testing.T) {
-		crdDescription, err := planner.searchCRDDescription()
-
-		assert.Nil(t, err)
-		assert.NotNil(t, crdDescription)
-	})
-
 	t.Run("searchCR", func(t *testing.T) {
 		cr, err := planner.searchCR("Database")
 

@@ -2,15 +2,12 @@ package servicebindingrequest
 
 import (
 	"context"
-	"strings"
 
 	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -32,96 +29,11 @@ type Plan struct {
 	Ns             string                      // namespace name
 	Name           string                      // plan name, same than ServiceBindingRequest
 	CRDDescription *olmv1alpha1.CRDDescription // custom resource definition description
-	CR             *ustrv1.Unstructured        // custom resource object
-}
-
-// searchCRDDescription based on BackingServiceSelector instance, find a
-// CustomResourceDefinitionDescription to return, otherwise creating a not-found error.
-func (p *Planner) searchCRDDescription() (*olmv1alpha1.CRDDescription, error) {
-	csvResourceName := "clusterserviceversions"
-	ns := p.sbr.GetNamespace()
-	gvr := schema.GroupVersionResource{
-		Group:    olmv1alpha1.GroupName,
-		Version:  olmv1alpha1.GroupVersion,
-		Resource: csvResourceName,
-	}
-
-	logger := p.logger.WithValues(
-		"CSV.Group", gvr.Group,
-		"CSV.Version", gvr.Version,
-		"CSV.Resource", gvr.Resource,
-		"CSV.Namespace", ns,
-	)
-	logger.Info("Searching for ClusterServiceVersion...")
-
-	// FIXME: usually the CSV resources are in the "openshift-operator-lifecycle-manager" namespace;
-	uList, err := p.client.Resource(gvr).Namespace(ns).List(metav1.ListOptions{})
-	if err != nil {
-		logger.Error(err, "during search for CSV")
-		return nil, err
-	}
-	logger.WithValues("CSV.List", len(uList.Items)).Info("CSV resources found...")
-
-	for _, u := range uList.Items {
-		logger = logger.WithValues("CSV.Name", u.GetName(), "CSV.APIVersion", u.GetAPIVersion())
-
-		logger.Info("Converting unstructured back to original resource type...")
-		csv := olmv1alpha1.ClusterServiceVersion{}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &csv)
-		if err != nil {
-			logger.Error(err, "during unstructured conversion to CSV list object")
-			return nil, err
-		}
-
-		logger.Info("Searching for CRDDescription matching BackingServiceSelector...")
-		crdDescription := p.extractCRDDescription(logger, &csv)
-		if crdDescription != nil {
-			return crdDescription, nil
-		}
-	}
-
-	p.logger.Info("Warning: not able to find a CRD description!")
-	return nil, errors.NewNotFound(olmv1alpha1.Resource(csvResourceName), "")
-}
-
-// extractCRDDescription auxiliary method to identify the CRD-Description object the
-// BackingServiceSelector is looking for, otherwise returns nil.
-func (p *Planner) extractCRDDescription(
-	logger logr.Logger,
-	csv *olmv1alpha1.ClusterServiceVersion,
-) *olmv1alpha1.CRDDescription {
-	bss := p.sbr.Spec.BackingServiceSelector
-	logger = logger.WithValues(
-		"BackingServiceSelector.Group", bss.Group,
-		"BackingServiceSelector.Version", bss.Version,
-		"BackingServiceSelector.Kind", bss.Kind,
-	)
-
-	for _, crd := range csv.Spec.CustomResourceDefinitions.Owned {
-		logger = logger.WithValues(
-			"CRDDescription.Name", crd.Name,
-			"CRDDescription.Version", crd.Version,
-			"CRDDescription.Kind", crd.Kind,
-		)
-		logger.Info("Inspecting CustomResourceDefinitionDescription object...")
-
-		// checking for suffix since is expected to have object type as prefix
-		if !strings.EqualFold(strings.ToLower(crd.Kind), strings.ToLower(bss.Kind)) {
-			continue
-		}
-		if crd.Version != "" && strings.ToLower(bss.Version) != strings.ToLower(crd.Version) {
-			continue
-		}
-
-		logger.Info("CRD matches BackingServiceSelector!")
-		return &crd
-	}
-
-	return nil
+	CR             *unstructured.Unstructured  // custom resource object
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
+func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
@@ -142,8 +54,10 @@ func (p *Planner) searchCR(kind string) (*ustrv1.Unstructured, error) {
 
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
-	// find the CRD description object
-	crdDescription, err := p.searchCRDDescription()
+	bss := p.sbr.Spec.BackingServiceSelector
+	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
+	olm := NewOLM(p.client, p.sbr.GetNamespace())
+	crdDescription, err := olm.SelectCRDByGVK(gvk)
 	if err != nil {
 		return nil, err
 	}
