@@ -177,6 +177,13 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
+					"triggerRebinding": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TriggerRebinding forcefully triggers a binding operation if the event for the same was missed for some reason",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"backingServiceSelector", "applicationSelector"},
 			},

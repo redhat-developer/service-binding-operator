@@ -3,6 +3,8 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -16,6 +18,10 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+)
+
+const (
+	lastboundparam = "lastbound"
 )
 
 // Binder executes the "binding" act of updating different application kinds to use intermediary
@@ -158,6 +164,13 @@ func (b *Binder) updateContainers(
 	return containers, nil
 }
 
+func (b *Binder) appendEnvVar(envList []corev1.EnvVar, envParam string, envValue string) []corev1.EnvVar {
+	return append(envList, corev1.EnvVar{
+		Name:  envParam,
+		Value: envValue,
+	})
+}
+
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
 func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
@@ -189,10 +202,12 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 	}
 	// effectively binding the application with intermediary secret
 	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
+	c.Env = b.appendEnvVar(c.Env, lastboundparam, time.Now().Format(time.RFC3339))
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries
 		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts)
 	}
+
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
 }
 
@@ -239,7 +254,7 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) ([]string, error) {
 			}
 		}
 
-		logger.Info("Updating object...")
+		logger.Info("Updating object in Kube...")
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return nil, err
 		}
@@ -247,7 +262,6 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) ([]string, error) {
 		// recording object as updated
 		updatedObjectNames = append(updatedObjectNames, name)
 	}
-
 	return updatedObjectNames, nil
 }
 

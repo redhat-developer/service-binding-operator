@@ -21,7 +21,7 @@ The cluster admin needs to install 2 operators into the cluster:
 A Backing Service Operator that is "bind-able," in other
 words a Backing Service Operator that exposes binding information in secrets, config maps, status, and/or spec
 attributes. The Backing Service Operator may represent a database or other services required by
-applications. We'll use [postgresql-operator](https://github.com/baijum/postgresql-operator) to
+applications. We'll use [postgresql-operator](https://github.com/operator-backing-service-samples/postgresql-operator) to
 demonstrate a sample use case.
 
 ### Install the Service Binding Operator using an `OperatorSource`
