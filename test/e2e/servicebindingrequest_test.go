@@ -175,14 +175,14 @@ func updateSecret(
 
 // retry the informed method a few times, with sleep between attempts.
 func retry(attempts int, sleep time.Duration, fn func() error) error {
-	if err := fn(); err != nil {
-		if attempts--; attempts > 0 {
-			time.Sleep(sleep)
-			return retry(attempts, sleep, fn)
+	var err error
+	for i := attempts; i > 0; i-- {
+		err = fn()
+		if err == nil {
+			break
 		}
-		return err
 	}
-	return nil
+	return err
 }
 
 // serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
