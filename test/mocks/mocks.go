@@ -3,6 +3,7 @@ package mocks
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -85,7 +86,7 @@ func crdDescriptionMock(
 	statusDescriptors []olmv1alpha1.StatusDescriptor,
 ) olmv1alpha1.CRDDescription {
 	return olmv1alpha1.CRDDescription{
-		Name:              fmt.Sprintf("%s.%s", CRDKind, CRDName),
+		Name:              strings.ToLower(fmt.Sprintf("%s.%s", CRDKind, CRDName)),
 		DisplayName:       CRDKind,
 		Description:       "mock-crd-description",
 		Kind:              CRDKind,
