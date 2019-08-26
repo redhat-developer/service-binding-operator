@@ -183,3 +183,99 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	_ = f.Client.Delete(todoCtx, &sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
 }
+
+// This test runs with following steps (scenario-2)
+// 1. Create SBR.
+// 2. Create operator-backed database CR.
+// 3. Create deployment where SBR would inject environment variables.
+// 4. Run assertion
+func preCreateServiceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) {
+	todoCtx := context.TODO()
+
+	name := "e2e-service-binding-request"
+	resourceRef := "e2e-db-testing"
+	secretName := "e2e-db-credentials"
+	appName := "e2e-application"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "e2e",
+	}
+
+	t.Log("Starting end-to-end tests for operator!")
+
+	t.Log("Creating ClusterServiceVersion mock object...")
+	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
+	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
+
+	// creating service-binding-request, which will trigger actions in the controller
+	t.Log("Creating ServiceBindingRequest mock object...")
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	// making sure object does not exist before testing
+	_ = f.Client.Delete(todoCtx, sbr)
+	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+
+	t.Log("Creating Database mock object...")
+	db := mocks.DatabaseCRMock(ns, resourceRef)
+	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
+
+	t.Log("Updating Database status, adding 'DBCredentials'")
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, &db))
+	db.Status.DBCredentials = secretName
+	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
+
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName)
+	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
+
+	t.Log("Creating Deployment mock object...")
+	d := mocks.DeploymentMock(ns, appName, matchLabels)
+	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
+
+	// waiting for application deployment to reach one replica
+	t.Log("Waiting for application deployment reach one replica...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+
+	// retrieveing deployment, to inspect it's generation
+	t.Logf("Reading application deployment, extrating generation from '%s'", appName)
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+
+	// waiting again for deployment
+	t.Log("Waiting for application deployment reach one replica, again...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+
+	// retrieveing deployment again until new generation or timeout
+	for attempts := 0; attempts < 10; attempts++ {
+		t.Logf("Reading application deployment '%s' ('%d')", appName, attempts)
+		require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+
+		generation := d.GetGeneration()
+		t.Logf("Deployment generation: '%d'", generation)
+		if generation > 1 {
+			break
+		}
+		time.Sleep(time.Second * 3)
+	}
+
+	// making sure envFrom is added to the container
+	t.Logf("Inspecting '%s' searching for 'envFrom'...", appName)
+	containers := d.Spec.Template.Spec.Containers
+	require.Equal(t, 1, len(containers))
+	require.Equal(t, 1, len(containers[0].EnvFrom))
+	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
+	assert.Equal(t, name, containers[0].EnvFrom[0].SecretRef.Name)
+
+	// checking intermediary secret
+	t.Logf("Checking intermediary secret '%s'...", name)
+	sbrSecret := corev1.Secret{}
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
+	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_USER")
+	assert.Equal(t, []byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"])
+	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_PASSWORD")
+	assert.Equal(t, []byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"])
+
+	// cleaning up
+	t.Log("Cleaning all up!")
+	_ = f.Client.Delete(todoCtx, sbr)
+	_ = f.Client.Delete(todoCtx, &sbrSecret)
+	_ = f.Client.Delete(todoCtx, &d)
+}
