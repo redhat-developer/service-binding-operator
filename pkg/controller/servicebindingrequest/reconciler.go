@@ -10,6 +10,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/collectors"
+
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -135,6 +137,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger.Info("Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
+	retriever.RegisterCollector(collectors.NewCSVCollector(ctx, r.client, plan, instance.Spec.EnvVarPrefix))
 	if err = retriever.Retrieve(); err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On retrieving binding data.")

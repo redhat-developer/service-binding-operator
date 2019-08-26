@@ -1,4 +1,4 @@
-package servicebindingrequest
+package plan_test
 
 import (
 	"context"
