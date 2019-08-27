@@ -72,7 +72,7 @@ EOS
 
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
-![PostgreSQL Database Operator as shown in OperatorHub](assets/operator-hub-pgo-screenshot.png)
+![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
 
 and install a `stable` version.
 
