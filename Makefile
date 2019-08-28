@@ -105,6 +105,7 @@ OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+OPERATOR_IMAGE_BUILDER ?= buildah
 
 QUAY_TOKEN ?= ""
 
@@ -234,7 +235,9 @@ out/operator:
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)operator-sdk build --image-builder=buildah "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	$(Q)operator-sdk build \
+		--image-builder=$(OPERATOR_IMAGE_BUILDER) \
+		"$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
