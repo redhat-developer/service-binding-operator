@@ -47,7 +47,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-1", ServiceBindingRequest)
-		t.Run("scenario-2-pre-create-sbr", PreCreateServiceBindingRequest)
+		t.Run("scenario-2 (pre create sbr then binding resources)", PreServiceBindingRequest)
 	})
 
 }
@@ -93,9 +93,9 @@ func ServiceBindingRequest(t *testing.T) {
 	serviceBindingRequestTest(t, ctx, f, ns)
 }
 
-// ServiceBindingRequest bootstrap method to initialize cluster resources and setup a testing
-// namespace, after bootstrap operator related tests method is called out.
-func PreCreateServiceBindingRequest(t *testing.T) {
+// This would setup testing resources then starts a test,
+// SBR gets created in this test before creation of bindable resource objects
+func PreServiceBindingRequest(t *testing.T) {
 	t.Log("Creating a new test context...")
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
