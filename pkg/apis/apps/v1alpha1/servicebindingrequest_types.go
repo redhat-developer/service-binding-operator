@@ -26,6 +26,10 @@ type ServiceBindingRequestSpec struct {
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
+
+	// TriggerRebinding forcefully triggers a binding operation if the event
+	// for the same was missed for some reason
+	TriggerRebinding *bool `json:"triggerRebinding,omitempty"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
@@ -62,6 +66,7 @@ type ApplicationSelector struct {
 // ServiceBindingRequest is the Schema for the servicebindings API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:path=servicebindingrequests,shortName=sbr;sbrs
 type ServiceBindingRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

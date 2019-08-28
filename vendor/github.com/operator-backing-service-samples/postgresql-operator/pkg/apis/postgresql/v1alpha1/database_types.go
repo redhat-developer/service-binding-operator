@@ -28,8 +28,9 @@ type DatabaseStatus struct {
 	// Add custom validation using kubebuilder tags: https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	DBCredentials    string `json:"dbCredentials"`
 	DBConnectionIP   string `json:"dbConnectionIP"`
-	DBConnectionPort int32  `json:"dbConnectionPort"`
+	DBConnectionPort int64  `json:"dbConnectionPort"`
 	DBName           string `json:"dbName"`
+	DBConfigMap      string `json:"dbConfigMap"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

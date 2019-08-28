@@ -113,6 +113,11 @@ func (in *ServiceBindingRequestSpec) DeepCopyInto(out *ServiceBindingRequestSpec
 	*out = *in
 	out.BackingServiceSelector = in.BackingServiceSelector
 	in.ApplicationSelector.DeepCopyInto(&out.ApplicationSelector)
+	if in.TriggerRebinding != nil {
+		in, out := &in.TriggerRebinding, &out.TriggerRebinding
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

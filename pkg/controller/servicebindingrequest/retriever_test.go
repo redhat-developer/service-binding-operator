@@ -56,8 +56,8 @@ func TestRetriever(t *testing.T) {
 	t.Run("read", func(t *testing.T) {
 		// reading from secret, from status attribute
 		err := retriever.read("status", "dbCredentials", []string{
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user",
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:password",
+			"binding:env:object:secret:user",
+			"binding:env:object:secret:password",
 		})
 		assert.Nil(t, err)
 
@@ -67,7 +67,7 @@ func TestRetriever(t *testing.T) {
 
 		// reading from spec attribute
 		err = retriever.read("spec", "image", []string{
-			"urn:alm:descriptor:servicebindingrequest:env:attribute",
+			"binding:env:attribute",
 		})
 		assert.Nil(t, err)
 
@@ -78,7 +78,7 @@ func TestRetriever(t *testing.T) {
 
 	t.Run("extractSecretItemName", func(t *testing.T) {
 		assert.Equal(t, "user", retriever.extractSecretItemName(
-			"urn:alm:descriptor:servicebindingrequest:env:object:secret:user"))
+			"binding:env:object:secret:user"))
 	})
 
 	t.Run("readSecret", func(t *testing.T) {
@@ -193,8 +193,8 @@ func TestConfigMapRetriever(t *testing.T) {
 
 		// reading from configMap, from status attribute
 		err = retriever.read("spec", "dbConfigMap", []string{
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user",
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:password",
+			"binding:env:object:configmap:user",
+			"binding:env:object:configmap:password",
 		})
 		assert.Nil(t, err)
 
@@ -205,7 +205,7 @@ func TestConfigMapRetriever(t *testing.T) {
 
 	t.Run("extractConfigMapItemName", func(t *testing.T) {
 		assert.Equal(t, "user", retriever.extractConfigMapItemName(
-			"urn:alm:descriptor:servicebindingrequest:env:object:configmap:user"))
+			"binding:env:object:configmap:user"))
 	})
 
 	t.Run("readConfigMap", func(t *testing.T) {
