@@ -66,6 +66,7 @@ type ApplicationSelector struct {
 // ServiceBindingRequest is the Schema for the servicebindings API
 // +k8s:openapi-gen=true
 // +kubebuilder:subresource:status
+// +kubebuilder:resource:path=servicebindingrequests,shortName=sbr;sbrs
 type ServiceBindingRequest struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
