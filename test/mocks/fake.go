@@ -67,11 +67,11 @@ func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
 	f.objs = append(f.objs, csv)
 }
 
-// AddMockedDatabaseCRList add mocked object from DatabaseCRListMock.
-func (f *Fake) AddMockedDatabaseCRList(ref string) {
+// AddMockedDatabaseCR add mocked object from DatabaseCRMock.
+func (f *Fake) AddMockedDatabaseCR(ref string) {
 	require.Nil(f.t, pgapis.AddToScheme(f.S))
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	f.objs = append(f.objs, DatabaseCRListMock(f.ns, ref))
+	f.objs = append(f.objs, DatabaseCRMock(f.ns, ref))
 }
 
 // AddMockedUnstructuredDeployment add mocked object from UnstructuredDeploymentMock.
@@ -86,6 +86,11 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 // AddMockedSecret add mocked object from SecretMock.
 func (f *Fake) AddMockedSecret(name string) {
 	f.objs = append(f.objs, SecretMock(f.ns, name))
+}
+
+// AddMockedConfigMap add mocked object from ConfigMapMock.
+func (f *Fake) AddMockedConfigMap(name string) {
+	f.objs = append(f.objs, ConfigMapMock(f.ns, name))
 }
 
 // FakeClient returns fake structured api client.

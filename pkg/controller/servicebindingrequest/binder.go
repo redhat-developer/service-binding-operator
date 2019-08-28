@@ -9,7 +9,7 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -36,7 +36,7 @@ type Binder struct {
 }
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
-func (b *Binder) search() (*ustrv1.UnstructuredList, error) {
+func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.Group,
@@ -65,13 +65,13 @@ func (b *Binder) search() (*ustrv1.UnstructuredList, error) {
 // updateSpecVolumes execute the inspection and update "volumes" entries in informed spec.
 func (b *Binder) updateSpecVolumes(
 	logger logr.Logger,
-	obj *ustrv1.Unstructured,
-) (*ustrv1.Unstructured, error) {
+	obj *unstructured.Unstructured,
+) (*unstructured.Unstructured, error) {
 	volumesPath := []string{"spec", "template", "spec", "volumes"}
 	logger = logger.WithValues("Volumes.NestedPath", volumesPath)
 
 	logger.Info("Reading volumes definitions...")
-	volumes, _, err := ustrv1.NestedSlice(obj.Object, volumesPath...)
+	volumes, _, err := unstructured.NestedSlice(obj.Object, volumesPath...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (b *Binder) updateSpecVolumes(
 	if err != nil {
 		return nil, err
 	}
-	if err = ustrv1.SetNestedSlice(obj.Object, volumes, volumesPath...); err != nil {
+	if err = unstructured.SetNestedSlice(obj.Object, volumes, volumesPath...); err != nil {
 		return nil, err
 	}
 
@@ -129,12 +129,12 @@ func (b *Binder) updateVolumes(logger logr.Logger, volumes []interface{}) ([]int
 // updateSpecContainers extract containers from object, and trigger update.
 func (b *Binder) updateSpecContainers(
 	logger logr.Logger,
-	obj *ustrv1.Unstructured,
-) (*ustrv1.Unstructured, error) {
+	obj *unstructured.Unstructured,
+) (*unstructured.Unstructured, error) {
 	containersPath := []string{"spec", "template", "spec", "containers"}
 	logger = logger.WithValues("Containers.NestedPath", containersPath)
 
-	containers, found, err := ustrv1.NestedSlice(obj.Object, containersPath...)
+	containers, found, err := unstructured.NestedSlice(obj.Object, containersPath...)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (b *Binder) updateSpecContainers(
 	if containers, err = b.updateContainers(logger, containers); err != nil {
 		return nil, err
 	}
-	if err = ustrv1.SetNestedSlice(obj.Object, containers, containersPath...); err != nil {
+	if err = unstructured.SetNestedSlice(obj.Object, containers, containersPath...); err != nil {
 		return nil, err
 	}
 	return obj, nil
@@ -245,10 +245,10 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
-func (b *Binder) update(objList *ustrv1.UnstructuredList) ([]string, error) {
-	var updatedObjectNames []string
+func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
+	updatedObjs := []*unstructured.Unstructured{}
 
-	for _, obj := range objList.Items {
+	for _, obj := range objs.Items {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Info("Inspecting object...")
@@ -270,21 +270,20 @@ func (b *Binder) update(objList *ustrv1.UnstructuredList) ([]string, error) {
 			return nil, err
 		}
 
-		// recording object as updated
-		updatedObjectNames = append(updatedObjectNames, name)
+		updatedObjs = append(updatedObjs, updatedObj)
 	}
-	return updatedObjectNames, nil
+
+	return updatedObjs, nil
 }
 
 // Bind resources to intermediary secret, by searching informed ResourceKind containing the labels
 // in ApplicationSelector, and then updating spec.
-func (b *Binder) Bind() ([]string, error) {
-	objList, err := b.search()
+func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
+	objs, err := b.search()
 	if err != nil {
 		return nil, err
 	}
-
-	return b.update(objList)
+	return b.update(objs)
 }
 
 // NewBinder returns a new Binder instance.
