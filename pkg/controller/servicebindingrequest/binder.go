@@ -49,6 +49,9 @@ func (b *Binder) search() (*ustrv1.UnstructuredList, error) {
 	}
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	if err != nil {
+		return nil, err
+	}
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
 		return nil , errors.NewNotFound(
