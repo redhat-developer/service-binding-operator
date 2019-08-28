@@ -9,7 +9,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -221,48 +220,25 @@ func (r *Retriever) store(key string, value []byte) {
 // saveDataOnSecret create or update secret that will store the data collected.
 func (r *Retriever) saveDataOnSecret() error {
 	gvk := schema.GroupVersion{Group: "", Version: "v1"}.WithKind("Secret")
-	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	resourceClient := r.client.Resource(gvr).Namespace(r.plan.Ns)
 	logger := r.logger.WithValues(
 		"Secret.GVK", gvk.String(),
 		"Secret.Namespace", r.plan.Ns,
 		"Secret.Name", r.plan.Name,
 	)
-
 	logger.Info("Retrieving intermediary secret...")
-	u, err := resourceClient.Get(r.plan.Name, metav1.GetOptions{})
-	if err != nil && !errors.IsNotFound(err) {
-		logger.Error(err, "on retrieving intermediary secret")
-		return err
-	}
 
-	secretObj := &corev1.Secret{}
-	if u != nil {
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secretObj)
-		if err != nil {
-			return err
-		}
-
-		generation := secretObj.GetGeneration()
-		logger.WithValues("Generation", generation).
-			Info("Updating intermediary secret object.")
-
-		generation++
-		secretObj.SetGeneration(generation)
-		secretObj.Data = r.data
-	} else {
-		logger.Info("Creating intermediary secret.")
-		secretObj = &corev1.Secret{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "Secret",
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      r.plan.Name,
-				Namespace: r.plan.Ns,
-			},
-			Data: r.data,
-		}
+	secretObj := &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.plan.Name,
+			Namespace: r.plan.Ns,
+		},
+		Data: r.data,
 	}
 
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(secretObj)
@@ -270,22 +246,23 @@ func (r *Retriever) saveDataOnSecret() error {
 		r.logger.Error(err, "Converting secret to unstructured")
 		return err
 	}
+	u := &unstructured.Unstructured{Object: data}
+	u.SetGroupVersionKind(gvk)
 
-	logger.Info("Commiting object to the cluster...")
-	if u == nil {
-		u = &unstructured.Unstructured{Object: data}
-		u.SetGroupVersionKind(gvk)
-		_, err = resourceClient.Create(u, metav1.CreateOptions{})
-		if err != nil {
-			return err
-		}
-	} else {
-		u.Object = data
-		if _, err = resourceClient.Update(u, metav1.UpdateOptions{}); err != nil {
-			return err
-		}
+	logger.Info("Creating intermediary secret...")
+	_, err = resourceClient.Create(u, metav1.CreateOptions{})
+	if err != nil && !errors.IsAlreadyExists(err) {
+		logger.Error(err, "on creating intermediary secret")
+		return err
+	}
+	logger.Info("Secret is already found, updating...")
+	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
+	if err != nil {
+		logger.Error(err, "on updating intermediary secret")
+		return err
 	}
 
+	logger.Info("Intermediary secret created/updated!")
 	r.objects = append(r.objects, u)
 	return nil
 }
