@@ -126,7 +126,6 @@ func createUnstructuredWithGVK(gvk schema.GroupVersionKind) *unstructured.Unstru
 func getWatchingGVKs(client dynamic.Interface) ([]schema.GroupVersionKind, error) {
 	// standard resources types
 	gvks := []schema.GroupVersionKind{
-		v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind),
 		osappsv1.SchemeGroupVersion.WithKind(DeploymentConfigKind),
 		{Group: "", Version: "v1", Kind: "Secret"},
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
