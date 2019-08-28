@@ -33,6 +33,13 @@ var (
 		Path:         "dbName",
 		XDescriptors: []string{"binding:env:attribute"},
 	}
+	// DBNameSpecDesc default spec descriptor to inform the database name.
+	DBNameSpecIp = olmv1alpha1.SpecDescriptor{
+		DisplayName:  "Database IP",
+		Description:  "Database IP",
+		Path:         "dbConnectionIp",
+		XDescriptors: []string{"binding:env:attribute"},
+	}
 	// DBConfigMapSpecDesc spec descriptor to describe a operator that export username and password
 	// via config-map, instead of a usual secret.
 	DBConfigMapSpecDesc = olmv1alpha1.SpecDescriptor{
@@ -211,6 +218,7 @@ func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 		Spec: pgv1alpha1.DatabaseSpec{
 			Image:     "docker.io/postgres:latest",
 			ImageName: "postgres",
+			DBName: "test-db",
 		},
 		Status: pgv1alpha1.DatabaseStatus{
 			DBCredentials: "db-credentials",
@@ -275,6 +283,12 @@ func ServiceBindingRequestMock(
 				Version:     "v1",
 				Resource:    "deployments",
 				MatchLabels: matchLabels,
+			},
+			EnvVar: []v1alpha1.EnvMap{
+				{
+					Name:  "IMAGE_PATH",
+					Value: "spec.imagePath",
+				},
 			},
 		},
 	}

@@ -30,6 +30,16 @@ type ServiceBindingRequestSpec struct {
 	// TriggerRebinding forcefully triggers a binding operation if the event
 	// for the same was missed for some reason
 	TriggerRebinding *bool `json:"triggerRebinding,omitempty"`
+
+	EnvVar []EnvMap `json:"envVar"`
+
+}
+
+// EnvMap is a set of Name and Value of an environment variable
+// +k8s:openapi-gen=true
+type EnvMap struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

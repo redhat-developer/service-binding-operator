@@ -23,6 +23,7 @@ type Retriever struct {
 	data          map[string][]byte // data retrieved
 	volumeKeys    []string
 	bindingPrefix string
+	VisitedPaths  map[string]string
 }
 
 const (
@@ -73,6 +74,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 		"CR.Section", place,
 		"CRDDescription.Path", path,
 		"CRDDescription.XDescriptors", xDescriptors,
+		"VisitedPaths", r.VisitedPaths,
 	)
 	logger.Info("Reading CRDDescription attributes...")
 
@@ -97,6 +99,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 			r.volumeKeys = append(r.volumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
+			r.VisitedPaths[place + "." + path] = pathValue
 			r.store(path, []byte(pathValue))
 		}
 	}
@@ -238,5 +241,6 @@ func NewRetriever(ctx context.Context, client client.Client, plan *Plan, binding
 		data:          make(map[string][]byte),
 		volumeKeys:    []string{},
 		bindingPrefix: bindingPrefix,
+		VisitedPaths: make(map[string]string),
 	}
 }
