@@ -79,18 +79,26 @@ func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) 
 		},
 	}
 
+	// watching operator's main CRD -- ServiceBindingRequest
+	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
+	err = c.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
+	if err != nil {
+		return err
+	}
+	log.WithValues("GroupVersionKind", sbrGVK).Info("Watch added for ServiceBindingRequest")
+
+	// list of interesting GVKs to watch
 	gvks, err := getWatchingGVKs(client)
 	if err != nil {
 		return err
 	}
 
 	for _, gvk := range gvks {
-		logger := log.WithValues("GroupVersionKind", gvk)
 		err = c.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
 		if err != nil {
 			return err
 		}
-		logger.Info("Watch added")
+		log.WithValues("GroupVersionKind", gvk).Info("Watch added")
 	}
 
 	return nil
