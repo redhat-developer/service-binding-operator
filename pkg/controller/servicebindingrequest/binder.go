@@ -3,11 +3,11 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -48,7 +48,15 @@ func (b *Binder) search() (*ustrv1.UnstructuredList, error) {
 		LabelSelector: labels.Set(matchLabels).String(),
 	}
 
-	return b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
+	if len(objList.Items) == 0 {
+		return nil , errors.NewNotFound(
+			gvr.GroupResource(),
+			b.sbr.Spec.ApplicationSelector.Resource,
+		)
+	}
+	return objList, err
 }
 
 // updateSpecVolumes execute the inspection and update "volumes" entries in informed spec.
@@ -271,17 +279,6 @@ func (b *Binder) Bind() ([]string, error) {
 	objList, err := b.search()
 	if err != nil {
 		return nil, err
-	}
-
-	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
-	if len(objList.Items) == 0 {
-	return []string{} , errors.NewNotFound(
-			schema.GroupResource{
-				Group:    b.sbr.Spec.ApplicationSelector.Group,
-				Resource: b.sbr.Spec.ApplicationSelector.Resource,
-			},
-			b.sbr.Spec.ApplicationSelector.Resource,
-		)
 	}
 
 	return b.update(objList)
