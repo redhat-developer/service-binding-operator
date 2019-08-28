@@ -12,6 +12,7 @@ import (
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -111,37 +112,12 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
 	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
 
-	t.Log("Creating Database mock object...")
-	db := mocks.DatabaseCRMock(ns, resourceRef)
-	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
+	CreateDBStep(todoCtx, t, ctx, f, ns, resourceRef, secretName)
 
-	t.Log("Updating Database status, adding 'DBCredentials'")
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, &db))
-	db.Status.DBCredentials = secretName
-	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
-
-	t.Log("Creating Database credentials secret mock object...")
-	dbSecret := mocks.SecretMock(ns, secretName)
-	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
-
-	t.Log("Creating Deployment mock object...")
-	d := mocks.DeploymentMock(ns, appName, matchLabels)
-	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
-
-	// waiting for application deployment to reach one replica
-	t.Log("Waiting for application deployment reach one replica...")
-	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
-
-	// retrieveing deployment, to inspect it's generation
-	t.Logf("Reading application deployment, extrating generation from '%s'", appName)
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+	d := CreateAppStep(todoCtx, t, ctx, f, ns, appName, matchLabels)
 
 	// creating service-binding-request, which will trigger actions in the controller
-	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
-	// making sure object does not exist before testing
-	_ = f.Client.Delete(todoCtx, sbr)
-	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+	sbr := CreateServiceBindingRequestStep(todoCtx, t, ctx, f, ns, name, resourceRef, matchLabels)
 
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
@@ -182,4 +158,46 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	_ = f.Client.Delete(todoCtx, sbr)
 	_ = f.Client.Delete(todoCtx, &sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
+}
+
+func CreateDBStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, resourceRef string, secretName string) pgv1alpha1.Database {
+	t.Log("Creating Database mock object...")
+	db := mocks.DatabaseCRMock(ns, resourceRef)
+	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
+
+	t.Log("Updating Database status, adding 'DBCredentials'")
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, &db))
+	db.Status.DBCredentials = secretName
+	require.Nil(t, f.Client.Status().Update(todoCtx, &db))
+
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName)
+	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
+
+	return db
+}
+
+func CreateAppStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, appName string, matchLabels map[string]string) appsv1.Deployment {
+
+	t.Log("Creating Deployment mock object...")
+	d := mocks.DeploymentMock(ns, appName, matchLabels)
+	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
+
+	// waiting for application deployment to reach one replica
+	t.Log("Waiting for application deployment reach one replica...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+
+	// retrieveing deployment, to inspect it's generation
+	t.Logf("Reading application deployment, extrating generation from '%s'", appName)
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+	return d
+}
+
+func CreateServiceBindingRequestStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, name string, resourceRef string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
+	t.Log("Creating ServiceBindingRequest mock object...")
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	// making sure object does not exist before testing
+	_ = f.Client.Delete(todoCtx, sbr)
+	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+	return sbr
 }
