@@ -23,6 +23,14 @@ import (
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
+type Step string
+
+const (
+	DBStep  Step = "create-db"
+	AppStep Step = "create-app"
+	SBRStep Step = "create-sbr"
+)
+
 var (
 	retryInterval  = time.Second * 5
 	timeout        = time.Second * 120
@@ -47,7 +55,12 @@ func TestAddSchemesToFramework(t *testing.T) {
 	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
 	t.Run("end-to-end", func(t *testing.T) {
-		t.Run("scenario-1", ServiceBindingRequest)
+		t.Run("scenario-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		})
+		t.Run("scenario-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+		})
 	})
 }
 
@@ -81,7 +94,7 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framewor
 
 // ServiceBindingRequest bootstrap method to initialize cluster resources and setup a testing
 // namespace, after bootstrap operator related tests method is called out.
-func ServiceBindingRequest(t *testing.T) {
+func ServiceBindingRequest(t *testing.T, steps []Step) {
 	t.Log("Creating a new test context...")
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
@@ -89,12 +102,12 @@ func ServiceBindingRequest(t *testing.T) {
 	ns, f := bootstrapNamespace(t, ctx)
 
 	// executing testing steps on operator
-	serviceBindingRequestTest(t, ctx, f, ns)
+	serviceBindingRequestTest(t, ctx, f, ns, steps)
 }
 
 // serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
 // expecting for changes caused by the operator.
-func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) {
+func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, steps []Step) {
 	todoCtx := context.TODO()
 
 	name := "e2e-service-binding-request"
@@ -112,13 +125,20 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
 	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
 
-	CreateDBStep(todoCtx, t, ctx, f, ns, resourceRef, secretName)
+	var d appsv1.Deployment
+	var sbr *v1alpha1.ServiceBindingRequest
 
-	d := CreateAppStep(todoCtx, t, ctx, f, ns, appName, matchLabels)
-
-	// creating service-binding-request, which will trigger actions in the controller
-	sbr := CreateServiceBindingRequestStep(todoCtx, t, ctx, f, ns, name, resourceRef, matchLabels)
-
+	for _, step := range steps {
+		switch step {
+		case DBStep:
+			CreateDB(todoCtx, t, ctx, f, ns, resourceRef, secretName)
+		case AppStep:
+			d = CreateApp(todoCtx, t, ctx, f, ns, appName, matchLabels)
+		case SBRStep:
+			// creating service-binding-request, which will trigger actions in the controller
+			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, ns, name, resourceRef, matchLabels)
+		}
+	}
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
@@ -160,7 +180,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	_ = f.Client.Delete(todoCtx, &d)
 }
 
-func CreateDBStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, resourceRef string, secretName string) pgv1alpha1.Database {
+func CreateDB(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, resourceRef string, secretName string) pgv1alpha1.Database {
 	t.Log("Creating Database mock object...")
 	db := mocks.DatabaseCRMock(ns, resourceRef)
 	require.Nil(t, f.Client.Create(todoCtx, &db, cleanUpOptions(ctx)))
@@ -177,7 +197,7 @@ func CreateDBStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx,
 	return db
 }
 
-func CreateAppStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, appName string, matchLabels map[string]string) appsv1.Deployment {
+func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, appName string, matchLabels map[string]string) appsv1.Deployment {
 
 	t.Log("Creating Deployment mock object...")
 	d := mocks.DeploymentMock(ns, appName, matchLabels)
@@ -193,7 +213,7 @@ func CreateAppStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx
 	return d
 }
 
-func CreateServiceBindingRequestStep(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, name string, resourceRef string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
+func CreateServiceBindingRequest(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, name string, resourceRef string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
 	t.Log("Creating ServiceBindingRequest mock object...")
 	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
 	// making sure object does not exist before testing
