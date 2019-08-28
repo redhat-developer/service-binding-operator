@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"os"
 
-	osappsv1 "github.com/openshift/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -126,7 +125,6 @@ func createUnstructuredWithGVK(gvk schema.GroupVersionKind) *unstructured.Unstru
 func getWatchingGVKs(client dynamic.Interface) ([]schema.GroupVersionKind, error) {
 	// standard resources types
 	gvks := []schema.GroupVersionKind{
-		osappsv1.SchemeGroupVersion.WithKind(DeploymentConfigKind),
 		{Group: "", Version: "v1", Kind: "Secret"},
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
 	}
