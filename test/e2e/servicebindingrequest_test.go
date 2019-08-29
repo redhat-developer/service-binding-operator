@@ -306,6 +306,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 // 2. Create operator-backed database CR.
 // 3. Create deployment where SBR would inject environment variables.
 // 4. Run assertion
+
 func preCreateServiceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) {
 	todoCtx := context.TODO()
 
@@ -352,47 +353,55 @@ func preCreateServiceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f 
 	t.Log("Waiting for application deployment reach one replica...")
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
-	// retrieveing deployment, to inspect it's generation
-	t.Logf("Reading application deployment, extrating generation from '%s'", appName)
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
+	// retrieveing deployment, to inspect its contents
+	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
+	t.Logf("Reading application deployment '%s'", appName)
+	require.Nil(t, f.Client.Get(todoCtx, deploymentNamespacedName, &d))
 
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
 	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
-	// retrieveing deployment again until new generation or timeout
-	for attempts := 0; attempts < 10; attempts++ {
-		t.Logf("Reading application deployment '%s' ('%d')", appName, attempts)
-		require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: appName}, &d))
-
-		generation := d.GetGeneration()
-		t.Logf("Deployment generation: '%d'", generation)
-		if generation > 1 {
-			break
+	// retrying a few times to identify SBO changes in deployment, this loop is waiting for the
+	// operator reconciliation.
+	t.Log("Inspecting deployment structure...")
+	err := retry(10, 5*time.Second, func() error {
+		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
+		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, name)
+		if err != nil {
+			t.Logf("Error on inspecting deployment: '%#v'", err)
 		}
-		time.Sleep(time.Second * 3)
-	}
+		return err
+	})
+	t.Logf("Deployment: Result after attempts, error: '%#v'", err)
+	assert.NoError(t, err)
 
-	// making sure envFrom is added to the container
-	t.Logf("Inspecting '%s' searching for 'envFrom'...", appName)
-	containers := d.Spec.Template.Spec.Containers
-	require.Equal(t, 1, len(containers))
-	require.Equal(t, 1, len(containers[0].EnvFrom))
-	assert.NotNil(t, containers[0].EnvFrom[0].SecretRef)
-	assert.Equal(t, name, containers[0].EnvFrom[0].SecretRef.Name)
+	// checking intermediary secret contents, right after deployment the secrets must be in place
+	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
+	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+	assert.NoError(t, err)
 
-	// checking intermediary secret
-	t.Logf("Checking intermediary secret '%s'...", name)
-	sbrSecret := corev1.Secret{}
-	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: name}, &sbrSecret))
-	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_USER")
-	assert.Equal(t, []byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"])
-	assert.Contains(t, sbrSecret.Data, "DATABASE_SECRET_PASSWORD")
-	assert.Equal(t, []byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"])
+	// editing intermediary secret in order to trigger update event
+	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
+	updateSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+
+	// retrying a few times to see if secret is back on original state, waiting for operator to
+	// reconcile again when detecting the change
+	t.Log("Inspecting intermediary secret...")
+	err = retry(10, 5*time.Second, func() error {
+		t.Log("Inspecting SBR generated secret...")
+		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+		if err != nil {
+			t.Logf("SBR generated secret inspection error: '%#v'", err)
+		}
+		return err
+	})
+	t.Logf("Intermediary-Secret: Result after attempts, error: '%#v'", err)
+	assert.NoError(t, err)
 
 	// cleaning up
 	t.Log("Cleaning all up!")
 	_ = f.Client.Delete(todoCtx, sbr)
-	_ = f.Client.Delete(todoCtx, &sbrSecret)
+	_ = f.Client.Delete(todoCtx, sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
 }
