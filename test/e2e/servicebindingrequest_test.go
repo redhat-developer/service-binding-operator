@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
@@ -102,17 +104,93 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx, clean bool) (strin
 	require.Nil(t, err)
 	t.Logf("Using namespace '%s' for testing...", ns)
 
+	f := framework.Global
+
 	if clean {
-		err := cleanNamespace(t, ctx)
+		err := cleanNamespace(t, ctx, f, ns)
 		require.Nil(t, err)
 	}
-
-	f := framework.Global
 	return ns, f
 }
 
-func cleanNamespace(t *testing.T, ctx *framework.TestCtx) error {
+func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) error {
 	//TODO implement cleaning namespace of all resources.
+	todoCtx := context.TODO()
+	databseList := &pgv1alpha1.DatabaseList{}
+	deploymentList := &appsv1.DeploymentList{}
+	secretList := &corev1.SecretList{}
+	serviceBindingRequestList := &v1alpha1.ServiceBindingRequestList{}
+	csvList := &olmv1alpha1.ClusterServiceVersionList{}
+
+	listOptions := &client.ListOptions{
+		Namespace: ns,
+	}
+
+	t.Logf("Cleaning namespace:")
+
+	t.Logf("\tDatabase CRs:")
+	if err := f.Client.List(todoCtx, listOptions, databseList); err != nil {
+		return err
+	}
+	for _, resource := range databseList.Items {
+		t.Logf("\t\t%s...", resource.GetName())
+		err := f.Client.Delete(todoCtx, &resource)
+		if !errors.IsNotFound(err) {
+			require.Nil(t, err)
+		}
+	}
+
+	t.Logf("\tServiceBindingRequests:")
+	if err := f.Client.List(todoCtx, listOptions, serviceBindingRequestList); err != nil {
+		return err
+	}
+	for _, resource := range serviceBindingRequestList.Items {
+		t.Logf("\t\t%s...", resource.GetName())
+		err := f.Client.Delete(todoCtx, &resource)
+		if !errors.IsNotFound(err) {
+			require.Nil(t, err)
+		}
+	}
+
+	t.Logf("\tDeployments:")
+	if err := f.Client.List(todoCtx, listOptions, deploymentList); err != nil {
+		return err
+	}
+	for _, resource := range deploymentList.Items {
+		t.Logf("\t\t%s...", resource.GetName())
+		err := f.Client.Delete(todoCtx, &resource)
+		if !errors.IsNotFound(err) {
+			require.Nil(t, err)
+		}
+	}
+
+	t.Logf("\tClusterServiceVersions:")
+	if err := f.Client.List(todoCtx, listOptions, csvList); err != nil {
+		return err
+	}
+	for _, resource := range csvList.Items {
+		t.Logf("\t\t%s...", resource.GetName())
+		err := f.Client.Delete(todoCtx, &resource)
+		if !errors.IsNotFound(err) {
+			require.Nil(t, err)
+		}
+	}
+
+	t.Logf("\tSecrets:")
+	if err := f.Client.List(todoCtx, listOptions, secretList); err != nil {
+		return err
+	}
+	for _, resource := range secretList.Items {
+		if strings.HasPrefix(string(resource.Type), "kubernetes.io/") {
+			continue // skip
+		}
+		t.Logf("\t\t%s...", resource.GetName())
+		err := f.Client.Delete(todoCtx, &resource)
+		if !errors.IsNotFound(err) {
+			require.Nil(t, err)
+		}
+	}
+
 	return nil
 }
 
@@ -123,10 +201,14 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 
-	ns, f := bootstrapNamespace(t, ctx, false)
+	//*/
+	ns, f := bootstrapNamespace(t, ctx, true)
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
+	/*/
+	bootstrapNamespace(t, ctx, true)
+	//*/
 }
 
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
@@ -168,18 +250,22 @@ func assertSBRSecret(
 		return nil, err
 	}
 
+	expected := "user"
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_USER"]; !contains {
 		return nil, fmt.Errorf("can't find DATABASE_SECRET_USER in data")
 	}
-	if !bytes.Equal([]byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"]) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_USER is different than expected")
+	actual := sbrSecret.Data["DATABASE_SECRET_USER"]
+	if !bytes.Equal([]byte(expected), actual) {
+		return nil, fmt.Errorf("key DATABASE_SECRET_USER is different (%s) than expected (%s)", actual, expected)
 	}
 
+	expected = "password"
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]; !contains {
 		return nil, fmt.Errorf("can't find DATABASE_SECRET_PASSWORD in data")
 	}
-	if !bytes.Equal([]byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"]) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD is different than expected")
+	actual = sbrSecret.Data["DATABASE_SECRET_PASSWORD"]
+	if !bytes.Equal([]byte(expected), actual) {
+		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD is different (%s) than expected (%s)", actual, expected)
 	}
 
 	return sbrSecret, nil
