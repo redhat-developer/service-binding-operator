@@ -300,6 +300,9 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	_ = f.Client.Delete(todoCtx, sbrSecret)
 	_ = f.Client.Delete(todoCtx, &d)
 }
+
+// CreateDB implements end-to-end step for the creation of a Database CR along with the dependend Secret serving as a Backing Service
+// to be bound to the application.
 func CreateDB(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, secretName string) *pgv1alpha1.Database {
 	ns := namespacedName.Namespace
 	resourceRef := namespacedName.Name
@@ -319,6 +322,7 @@ func CreateDB(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *
 	return db
 }
 
+// CreateApp implements end-to-end step for the creation of a Deployment serving as the Application to which the Backing Service is bound.
 func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, matchLabels map[string]string) appsv1.Deployment {
 	ns := namespacedName.Namespace
 	appName := namespacedName.Name
@@ -337,6 +341,7 @@ func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f 
 	return d
 }
 
+// CreateServiceBindingRequest implements end-to-end step for creating a Service Binding Request to bind the Backing Service and the Application
 func CreateServiceBindingRequest(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, resourceRef string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
 	ns := namespacedName.Namespace
 	name := namespacedName.Name
