@@ -6,9 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -21,30 +18,26 @@ func TestRetriever(t *testing.T) {
 	ns := "testing"
 	crName := "db-testing"
 
-	crdDescription := mocks.CRDDescriptionMock()
-	cr := mocks.DatabaseCRMock(ns, crName)
+	f := mocks.NewFake(t, ns)
+	f.AddMockedUnstructuredCSV("csv")
+	f.AddMockedSecret("db-credentials")
 
-	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	crdDescription := mocks.CRDDescriptionMock()
+	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
 	require.Nil(t, err)
 
-	plan := &Plan{
-		Ns:             ns,
-		Name:           "retriever",
-		CRDDescription: &crdDescription,
-		CR:             &ustrv1.Unstructured{Object: genericCR},
-	}
+	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
 
-	dbSecret := mocks.SecretMock(ns, "db-credentials")
-	objs := []runtime.Object{dbSecret}
-	fakeClient := fake.NewFakeClient(objs...)
+	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
-		err := retriever.Retrieve()
+		objs, err := retriever.Retrieve()
 		assert.Nil(t, err)
 		assert.NotEmpty(t, retriever.data)
+		assert.True(t, len(objs) > 0)
 	})
 
 	t.Run("getCRKey", func(t *testing.T) {
@@ -103,7 +96,7 @@ func TestRetriever(t *testing.T) {
 	})
 
 	t.Run("empty prefix", func(t *testing.T) {
-		retriever = NewRetriever(context.TODO(), fakeClient, plan, "")
+		retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "")
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
@@ -115,31 +108,26 @@ func TestRetriever(t *testing.T) {
 	})
 }
 
-func TestRetrieverNestedCRDKey(t *testing.T) {
+func TestRetrieverWithNestedCRKey(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 	var retriever *Retriever
 
 	ns := "testing"
 	crName := "db-testing"
 
-	crdDescription := mocks.CRDDescriptionMock()
-	cr := mocks.NestedDatabaseCRMock(ns, crName)
+	f := mocks.NewFake(t, ns)
+	f.AddMockedUnstructuredCSV("csv")
+	f.AddMockedSecret("db-credentials")
 
-	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&cr)
+	crdDescription := mocks.CRDDescriptionMock()
+	cr, err := mocks.UnstructuredNestedDatabaseCRMock(ns, crName)
 	require.Nil(t, err)
 
-	plan := &Plan{
-		Ns:             ns,
-		Name:           "retriever",
-		CRDDescription: &crdDescription,
-		CR:             &ustrv1.Unstructured{Object: genericCR},
-	}
+	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
 
-	dbSecret := mocks.SecretMock(ns, "db-credentials")
-	objs := []runtime.Object{dbSecret}
-	fakeClient := fake.NewFakeClient(objs...)
+	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
@@ -161,36 +149,30 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 
 }
 
-func TestConfigMapRetriever(t *testing.T) {
+func TestRetrieverWithConfigMap(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 	var retriever *Retriever
 
 	ns := "testing"
 	crName := "db-testing"
 
+	f := mocks.NewFake(t, ns)
+	f.AddMockedUnstructuredCSV("csv")
+	f.AddMockedConfigMap(crName)
+
 	crdDescription := mocks.CRDDescriptionConfigMapMock()
 
-	cr := mocks.DatabaseConfigMapMock(ns, crName)
-
-	genericCR, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
+	cr, err := mocks.UnstructuredDatabaseConfigMapMock(ns, crName, crName)
 	require.Nil(t, err)
 
-	plan := &Plan{
-		Ns:             ns,
-		Name:           "retriever",
-		CRDDescription: &crdDescription,
-		CR:             &ustrv1.Unstructured{Object: genericCR},
-	}
+	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
 
-	dbConfigMap := mocks.ConfigMapMock(ns, "db-configmap")
-	objs := []runtime.Object{&dbConfigMap}
-	fakeClient := fake.NewFakeClient(objs...)
+	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
-
 		// reading from configMap, from status attribute
 		err = retriever.read("spec", "dbConfigMap", []string{
 			"binding:env:object:configmap:user",
@@ -211,7 +193,7 @@ func TestConfigMapRetriever(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap("db-configmap", []string{"user", "password"})
+		err := retriever.readConfigMap(crName, []string{"user", "password"})
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))

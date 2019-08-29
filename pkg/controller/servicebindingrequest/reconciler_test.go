@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
-	f.AddMockedDatabaseCRList(resourceRef)
+	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
 
@@ -75,7 +76,8 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
-		assert.Equal(t, reconcilerName, sbrOutput.Status.ApplicationObjects[0])
+		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
+		assert.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
 	})
 }
 
@@ -93,7 +95,7 @@ func TestReconcilerForForcedTriggeringOfBinding(t *testing.T) {
 	f.AddMockedServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
 
 	f.AddMockedUnstructuredCSV("cluster-service-version-list-forced-trigger")
-	f.AddMockedDatabaseCRList(resourceRef)
+	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
 
@@ -172,7 +174,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
 	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
-	f.AddMockedDatabaseCRList(resourceRef)
+	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
 
