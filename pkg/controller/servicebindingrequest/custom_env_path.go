@@ -1,26 +1,41 @@
 package servicebindingrequest
 
+import (
+	"bytes"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"text/template"
+)
+
 type CustomEnvPath struct {
-	Json string
-	Variables []string
-	Paths map[string]string
+	EnvMap []v1alpha1.EnvMap
+	Cache map[string]interface{}
 }
 
-func (c *CustomEnvPath) Parse()  {
-	values := make(map[string]string)
-	for _, v := range c.Variables {
-		if c.IsPresentInPaths(v) {
-
-		}
+func NewCustomEnvPath(envMap []v1alpha1.EnvMap, cache map[string]interface{}) *CustomEnvPath {
+	return &CustomEnvPath{
+		EnvMap: envMap,
+		Cache:  cache,
 	}
 }
 
-func (c CustomEnvPath) IsPresentInPaths(v string) bool {
-	for customEnv := range c.Paths {
-		if customEnv == v {
-			return true
+func (c *CustomEnvPath) Parse() (map[string][]byte,error) {
+	data := make(map[string][]byte)
+	for _  , v := range c.EnvMap {
+		tmpl, err := template.New("set").Parse(v.Value)
+		if err != nil {
+			return data, err
 		}
-		continue
+
+		// evaluating template and storing value in a buffer
+		buf := new(bytes.Buffer)
+		err = tmpl.Execute(buf, c.Cache)
+		if err != nil {
+			return data, err
+		}
+
+		// saving buffer in cache
+		data[v.Name] = buf.Bytes()
 	}
-	return false
+	return data, nil
 }
+
