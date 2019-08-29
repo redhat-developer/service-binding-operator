@@ -114,7 +114,6 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx, clean bool) (strin
 }
 
 func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) error {
-	//TODO implement cleaning namespace of all resources.
 	todoCtx := context.TODO()
 	databseList := &pgv1alpha1.DatabaseList{}
 	deploymentList := &appsv1.DeploymentList{}
@@ -128,7 +127,7 @@ func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework
 
 	t.Logf("Cleaning namespace:")
 
-	t.Logf("\tDatabase CRs:")
+	t.Logf("\tDatabases:")
 	if err := f.Client.List(todoCtx, listOptions, databseList); err != nil {
 		return err
 	}
@@ -201,14 +200,10 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 
-	//*/
 	ns, f := bootstrapNamespace(t, ctx, true)
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
-	/*/
-	bootstrapNamespace(t, ctx, true)
-	//*/
 }
 
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
