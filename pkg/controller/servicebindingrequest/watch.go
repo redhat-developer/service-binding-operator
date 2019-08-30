@@ -10,9 +10,10 @@ type WatcherMapper struct {
 }
 
 func (w *WatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
-	err := w.c.AddWatchForGVK(obj.Object.GetObjectKind().GroupVersionKind())
+	gvk := obj.Object.GetObjectKind().GroupVersionKind()
+	err := w.c.AddWatchForGVK(gvk)
 	if err != nil {
-		// ???
+		log.WithValues("GroupVersionKind", gvk).Error(err, "Failed to create a watch")
 	}
 
 	return []reconcile.Request{}
