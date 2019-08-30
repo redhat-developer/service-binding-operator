@@ -78,18 +78,30 @@ func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) 
 		},
 	}
 
-	// watching operator's main CRD -- ServiceBindingRequest
-	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
-	err = c.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
+	err = addServiceBindingRequestWatch(c, pred)
 	if err != nil {
 		return err
 	}
-	log.WithValues("GroupVersionKind", sbrGVK).Info("Watch added for ServiceBindingRequest")
 
 	err = addDynamicGVKsWatches(c, client, pred)
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func addServiceBindingRequestWatch(
+	c controller.Controller,
+	predicates ...predicate.Predicate,
+) error {
+	// watching operator's main CRD -- ServiceBindingRequest
+	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
+	err := c.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), predicates...)
+	if err != nil {
+		return err
+	}
+	log.WithValues("GroupVersionKind", sbrGVK).Info("Watch added for ServiceBindingRequest")
 
 	return nil
 }
@@ -112,6 +124,8 @@ func addDynamicGVKsWatches(
 		}
 		log.WithValues("GroupVersionKind", gvk).Info("Watch added")
 	}
+
+	return nil
 }
 
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
