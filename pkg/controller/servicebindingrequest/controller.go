@@ -82,6 +82,14 @@ func NewSBRController(
 	}, nil
 }
 
+func (sbrc *SBRController) AddWatchForGVK(kind schema.GroupVersionKind) error {
+	err := createWatch(sbrc.Controller, kind)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func addServiceBindingRequestWatch(c controller.Controller) error {
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
@@ -134,6 +142,20 @@ func addDynamicGVKsWatches(
 		return err
 	}
 
+	for _, gvk := range gvks {
+		err = createWatch(controller, gvk)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func createWatch(
+	c controller.Controller,
+	gvk schema.GroupVersionKind,
+) error {
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// ignore updates to CR status in which case metadata.Generation does not change
@@ -145,15 +167,8 @@ func addDynamicGVKsWatches(
 		},
 	}
 
-	for _, gvk := range gvks {
-		err = controller.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
-		if err != nil {
-			return err
-		}
-		log.WithValues("GroupVersionKind", gvk).Info("Watch added")
-	}
-
-	return nil
+	log.WithValues("GroupVersionKind", gvk).Info("Watch added")
+	return c.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
 }
 
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
