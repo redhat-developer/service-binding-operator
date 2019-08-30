@@ -1,13 +1,12 @@
-package eventhandler
+package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/sbrcontroller"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 type CreateWatchEventHandler struct {
-	c *sbrcontroller.SBRController
+	c *SBRController
 }
 
 func (h CreateWatchEventHandler) Create(e event.CreateEvent, q workqueue.RateLimitingInterface) {
@@ -26,7 +25,7 @@ func (h CreateWatchEventHandler) Delete(event.DeleteEvent, workqueue.RateLimitin
 func (h CreateWatchEventHandler) Generic(event.GenericEvent, workqueue.RateLimitingInterface) {
 }
 
-func NewCreateWatchEventHandler(c *sbrcontroller.SBRController) *CreateWatchEventHandler {
+func NewCreateWatchEventHandler(c *SBRController) *CreateWatchEventHandler {
 	return &CreateWatchEventHandler{
 		c: c,
 	}

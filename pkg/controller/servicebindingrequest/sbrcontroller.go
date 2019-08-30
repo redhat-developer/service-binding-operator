@@ -1,10 +1,8 @@
-package sbrcontroller
+package servicebindingrequest
 
 import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/sbrcontroller/eventhandler"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -14,12 +12,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 var (
-	log            = logf.Log.WithName("cmd")
 	controllerName = "servicebindingrequest-controller"
 )
 
@@ -76,7 +72,7 @@ func (sbrc *SBRController) addCSVWatch() error {
 	}
 
 	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind("ClusterServiceVersion")
-	err := sbrc.Controller.Watch(createSourceForGVK(csvGVK), eventhandler.NewCreateWatchEventHandler(sbrc), pred)
+	err := sbrc.Controller.Watch(createSourceForGVK(csvGVK), NewCreateWatchEventHandler(sbrc), pred)
 	if err != nil {
 		return err
 	}
@@ -117,7 +113,7 @@ func (sbrc *SBRController) addServiceBindingRequestWatch() error {
 	}
 
 	// watching operator's main CRD -- ServiceBindingRequest
-	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(servicebindingrequest.ServiceBindingRequestKind)
+	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind("ServiceBindingRequest")
 	err := sbrc.Controller.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
 	if err != nil {
 		return err
@@ -169,7 +165,7 @@ func createWatch(
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
 // ServiceBindingRequest if it contains the required configuration.
 func newEnqueueRequestsForSBR() handler.EventHandler {
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &servicebindingrequest.SBRRequestMapper{}}
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &SBRRequestMapper{}}
 }
 
 // createSourceForGVK creates a *source.Kind for the given gvk.
@@ -192,7 +188,7 @@ func getWatchingGVKs(client dynamic.Interface) ([]schema.GroupVersionKind, error
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
 	}
 
-	olm := servicebindingrequest.NewOLM(client, os.Getenv("WATCH_NAMESPACE"))
+	olm := NewOLM(client, os.Getenv("WATCH_NAMESPACE"))
 	olmGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
 	if err != nil {
 		log.Error(err, "On listing owned CSV as GVKs")

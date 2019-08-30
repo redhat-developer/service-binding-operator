@@ -1,7 +1,6 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/sbrcontroller"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -30,7 +29,7 @@ func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Rec
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
 func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) error {
 	opts := controller.Options{Reconciler: r}
-	_, err := sbrcontroller.NewSBRController(mgr, opts, client)
+	_, err := NewSBRController(mgr, opts, client)
 	if err != nil {
 		return err
 	}
