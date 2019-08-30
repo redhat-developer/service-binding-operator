@@ -10,10 +10,18 @@ type WatcherMapper struct {
 }
 
 func (w *WatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
-	gvk := obj.Object.GetObjectKind().GroupVersionKind()
-	err := w.c.AddWatchForGVK(gvk)
+	olm := NewOLM(w.c.Client, obj.Meta.GetNamespace())
+
+	csvGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
 	if err != nil {
-		log.WithValues("GroupVersionKind", gvk).Error(err, "Failed to create a watch")
+		log.Error(err, "Failed to list CRDs as GVKs")
+	}
+
+	for _, gvk := range csvGVKs {
+		err := w.c.AddWatchForGVK(gvk)
+		if err != nil {
+			log.WithValues("GroupVersionKind", gvk).Error(err, "Failed to create a watch")
+		}
 	}
 
 	return []reconcile.Request{}
