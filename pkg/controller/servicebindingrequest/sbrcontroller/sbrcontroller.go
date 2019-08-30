@@ -1,7 +1,9 @@
 package sbrcontroller
 
 import (
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/sbrcontroller/eventhandler"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -59,6 +61,28 @@ func NewSBRController(
 
 func (sbrc *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	return createWatch(sbrc.Controller, gvk)
+}
+
+func (sbrc *SBRController) addCSVWatch() error {
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// ignore updates to CR status in which case metadata.Generation does not change
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// evaluates to false if the object has been confirmed deleted
+			return !e.DeleteStateUnknown
+		},
+	}
+
+	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind("ClusterServiceVersion")
+	err := sbrc.Controller.Watch(createSourceForGVK(csvGVK), eventhandler.NewCreateWatchEventHandler(sbrc), pred)
+	if err != nil {
+		return err
+	}
+	log.WithValues("GroupVersionKind", csvGVK).Info("Watch added for ClusterServiceVersion")
+
+	return nil
 }
 
 func (sbrc *SBRController) addServiceBindingRequestWatch() error {
