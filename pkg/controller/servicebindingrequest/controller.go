@@ -86,6 +86,19 @@ func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) 
 	}
 	log.WithValues("GroupVersionKind", sbrGVK).Info("Watch added for ServiceBindingRequest")
 
+	err = addDynamicGVKsWatches(c, client, pred)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addDynamicGVKsWatches(
+	controller controller.Controller,
+	client dynamic.Interface,
+	predicates ...predicate.Predicate,
+) error {
 	// list of interesting GVKs to watch
 	gvks, err := getWatchingGVKs(client)
 	if err != nil {
@@ -93,14 +106,12 @@ func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) 
 	}
 
 	for _, gvk := range gvks {
-		err = c.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
+		err = controller.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), predicates...)
 		if err != nil {
 			return err
 		}
 		log.WithValues("GroupVersionKind", gvk).Info("Watch added")
 	}
-
-	return nil
 }
 
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
