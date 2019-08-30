@@ -1,32 +1,23 @@
 package servicebindingrequest
 
 import (
-	"k8s.io/client-go/util/workqueue"
-	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type CreateWatchEventHandler struct {
+type WatcherMapper struct {
 	c *SBRController
 }
 
-func (h CreateWatchEventHandler) Create(e event.CreateEvent, q workqueue.RateLimitingInterface) {
-	err := h.c.AddWatchForGVK(e.Object.GetObjectKind().GroupVersionKind())
+func (w *WatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
+	err := w.c.AddWatchForGVK(obj.Object.GetObjectKind().GroupVersionKind())
 	if err != nil {
 		// ???
 	}
+
+	return []reconcile.Request{}
 }
 
-func (h CreateWatchEventHandler) Update(event.UpdateEvent, workqueue.RateLimitingInterface) {
-}
-
-func (h CreateWatchEventHandler) Delete(event.DeleteEvent, workqueue.RateLimitingInterface) {
-}
-
-func (h CreateWatchEventHandler) Generic(event.GenericEvent, workqueue.RateLimitingInterface) {
-}
-
-func NewCreateWatchEventHandler(c *SBRController) *CreateWatchEventHandler {
-	return &CreateWatchEventHandler{
-		c: c,
-	}
+func NewCreateWatchEventHandler(c *SBRController) handler.EventHandler {
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &WatcherMapper{}}
 }
