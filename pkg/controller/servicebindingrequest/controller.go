@@ -48,6 +48,20 @@ func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) 
 		return err
 	}
 
+	err = addServiceBindingRequestWatch(c)
+	if err != nil {
+		return err
+	}
+
+	err = addDynamicGVKsWatches(c, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func addServiceBindingRequestWatch(c controller.Controller) error {
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// FIXME: support unstructured.Unstructured types. This block is currently causing a
@@ -78,26 +92,9 @@ func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) 
 		},
 	}
 
-	err = addServiceBindingRequestWatch(c, pred)
-	if err != nil {
-		return err
-	}
-
-	err = addDynamicGVKsWatches(c, client, pred)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func addServiceBindingRequestWatch(
-	c controller.Controller,
-	predicates ...predicate.Predicate,
-) error {
 	// watching operator's main CRD -- ServiceBindingRequest
 	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
-	err := c.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), predicates...)
+	err := c.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
 	if err != nil {
 		return err
 	}
@@ -109,7 +106,6 @@ func addServiceBindingRequestWatch(
 func addDynamicGVKsWatches(
 	controller controller.Controller,
 	client dynamic.Interface,
-	predicates ...predicate.Predicate,
 ) error {
 	// list of interesting GVKs to watch
 	gvks, err := getWatchingGVKs(client)
@@ -117,8 +113,19 @@ func addDynamicGVKsWatches(
 		return err
 	}
 
+	pred := predicate.Funcs{
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			// ignore updates to CR status in which case metadata.Generation does not change
+			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// evaluates to false if the object has been confirmed deleted
+			return !e.DeleteStateUnknown
+		},
+	}
+
 	for _, gvk := range gvks {
-		err = controller.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), predicates...)
+		err = controller.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
 		if err != nil {
 			return err
 		}
