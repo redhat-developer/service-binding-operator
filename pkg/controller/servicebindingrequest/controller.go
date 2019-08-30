@@ -43,22 +43,43 @@ func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Rec
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
 func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) error {
 	opts := controller.Options{Reconciler: r}
-	c, err := controller.New(controllerName, mgr, opts)
-	if err != nil {
-		return err
-	}
-
-	err = addServiceBindingRequestWatch(c)
-	if err != nil {
-		return err
-	}
-
-	err = addDynamicGVKsWatches(c, client)
+	_, err := NewSBRController(mgr, opts, client)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+type SBRController struct {
+	Controller controller.Controller
+	Client     dynamic.Interface
+}
+
+func NewSBRController(
+	mgr manager.Manager,
+	options controller.Options,
+	client dynamic.Interface,
+) (*SBRController, error) {
+	c, err := controller.New("service-binding-controller", mgr, options)
+	if err != nil {
+		return nil, err
+	}
+
+	err = addServiceBindingRequestWatch(c)
+	if err != nil {
+		return nil, err
+	}
+
+	err = addDynamicGVKsWatches(c, client)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SBRController{
+		Controller: c,
+		Client:     client,
+	}, nil
 }
 
 func addServiceBindingRequestWatch(c controller.Controller) error {
