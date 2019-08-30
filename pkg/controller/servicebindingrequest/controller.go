@@ -66,31 +66,32 @@ func NewSBRController(
 		return nil, err
 	}
 
-	err = addServiceBindingRequestWatch(c)
-	if err != nil {
-		return nil, err
-	}
-
-	err = addDynamicGVKsWatches(c, client)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SBRController{
+	sbrc := &SBRController{
 		Controller: c,
 		Client:     client,
-	}, nil
-}
-
-func (sbrc *SBRController) AddWatchForGVK(kind schema.GroupVersionKind) error {
-	err := createWatch(sbrc.Controller, kind)
-	if err != nil {
-		return err
 	}
-	return nil
+
+	// NOTE: Perhaps those two methods can compose another method, responsible only for the actual
+	// 		 initialization.
+
+	err = sbrc.addServiceBindingRequestWatch()
+	if err != nil {
+		return nil, err
+	}
+
+	err = sbrc.addWhitelistedGVKWatches()
+	if err != nil {
+		return nil, err
+	}
+
+	return sbrc, nil
 }
 
-func addServiceBindingRequestWatch(c controller.Controller) error {
+func (sbrc *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
+	return createWatch(sbrc.Controller, gvk)
+}
+
+func (sbrc *SBRController) addServiceBindingRequestWatch() error {
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// FIXME: support unstructured.Unstructured types. This block is currently causing a
@@ -123,7 +124,7 @@ func addServiceBindingRequestWatch(c controller.Controller) error {
 
 	// watching operator's main CRD -- ServiceBindingRequest
 	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
-	err := c.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
+	err := sbrc.Controller.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
 	if err != nil {
 		return err
 	}
@@ -132,10 +133,10 @@ func addServiceBindingRequestWatch(c controller.Controller) error {
 	return nil
 }
 
-func addDynamicGVKsWatches(
-	controller controller.Controller,
-	client dynamic.Interface,
-) error {
+func (sbrc *SBRController) addWhitelistedGVKWatches() error {
+	c := sbrc.Controller
+	client := sbrc.Client
+
 	// list of interesting GVKs to watch
 	gvks, err := getWatchingGVKs(client)
 	if err != nil {
@@ -143,7 +144,7 @@ func addDynamicGVKsWatches(
 	}
 
 	for _, gvk := range gvks {
-		err = createWatch(controller, gvk)
+		err = createWatch(c, gvk)
 		if err != nil {
 			return err
 		}
