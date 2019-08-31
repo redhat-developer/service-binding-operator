@@ -92,7 +92,7 @@ func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	// saving GVK in cache
 	s.watchingGVKs[gvk] = true
 
-	logger.Info("Creating watch...")
+	logger.Info("Creating watch on GVK")
 	source := s.createSourceForGVK(gvk)
 	return s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 }
