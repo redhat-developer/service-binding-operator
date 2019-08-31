@@ -55,8 +55,8 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 		"Resource.Name", u.GetName(),
 		"SBR.NamespacedName", sbrNamespacedName.String(),
 	)
-	// FIXME: Rename to IsNamespacedNameEmpty() instead since it doesn't have any logic related to SBR.
-	if IsSBRNamespacedNameEmpty(sbrNamespacedName) {
+
+	if IsNamespacedNameEmpty(sbrNamespacedName) {
 		logger.Info("SBR information not present in annotations, continue inspecting object")
 	} else {
 		// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
@@ -74,11 +74,6 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
 	logger.Info("Object is not a SBR, returning an empty namespaced name")
 	return sbrNamespacedName, nil
-}
-
-// IsSBRNamespacedNameEmpty returns true if any of the fields from the given namespacedName is empty.
-func IsSBRNamespacedNameEmpty(namespacedName types.NamespacedName) bool {
-	return namespacedName.Namespace == "" || namespacedName.Name == ""
 }
 
 // SetSBRAnnotations update existing annotations to include operator's. The annotations added are
