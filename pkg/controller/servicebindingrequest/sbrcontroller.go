@@ -52,6 +52,12 @@ func NewSBRController(
 		return nil, err
 	}
 
+	err = sbrc.addCSVWatch()
+	if err != nil {
+		// FIXME: Expose errors in logs.
+		return nil, err
+	}
+
 	return sbrc, nil
 }
 
@@ -72,7 +78,7 @@ func (sbrc *SBRController) addCSVWatch() error {
 	}
 
 	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind("ClusterServiceVersion")
-	err := sbrc.Controller.Watch(createSourceForGVK(csvGVK), NewCreateWatchEventHandler(sbrc), pred)
+	err := sbrc.Controller.Watch(createSourceForGVK(csvGVK), NewCreateWatchEventHandler(), pred)
 	if err != nil {
 		return err
 	}
@@ -113,7 +119,7 @@ func (sbrc *SBRController) addServiceBindingRequestWatch() error {
 	}
 
 	// watching operator's main CRD -- ServiceBindingRequest
-	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind("ServiceBindingRequest")
+	sbrGVK := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
 	err := sbrc.Controller.Watch(createSourceForGVK(sbrGVK), newEnqueueRequestsForSBR(), pred)
 	if err != nil {
 		return err
@@ -143,10 +149,7 @@ func (sbrc *SBRController) addWhitelistedGVKWatches() error {
 	return nil
 }
 
-func createWatch(
-	c controller.Controller,
-	gvk schema.GroupVersionKind,
-) error {
+func createWatch(c controller.Controller, gvk schema.GroupVersionKind) error {
 	pred := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// ignore updates to CR status in which case metadata.Generation does not change
@@ -158,6 +161,7 @@ func createWatch(
 		},
 	}
 
+	// FIXME: Do not watch the same GVK twice.
 	log.WithValues("GroupVersionKind", gvk).Info("Watch added")
 	return c.Watch(createSourceForGVK(gvk), newEnqueueRequestsForSBR(), pred)
 }
