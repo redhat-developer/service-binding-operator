@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -18,8 +19,10 @@ func init() {
 
 func TestOLMNew(t *testing.T) {
 	ns := "controller"
+	csvName := "unit-csv"
+
 	f := mocks.NewFake(t, ns)
-	f.AddMockedUnstructuredCSV("unit-csv")
+	f.AddMockedUnstructuredCSV(csvName)
 	client := f.FakeDynClient()
 	olm := NewOLM(client, ns)
 
@@ -49,6 +52,13 @@ func TestOLMNew(t *testing.T) {
 
 	t.Run("ListCSVOwnedCRDsAsGVKs", func(t *testing.T) {
 		gvks, err := olm.ListCSVOwnedCRDsAsGVKs()
+		assert.NoError(t, err)
+		assert.Len(t, gvks, 1)
+	})
+
+	t.Run("ListGVKsFromCSVNamespacedName", func(t *testing.T) {
+		namespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
+		gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
 		assert.NoError(t, err)
 		assert.Len(t, gvks, 1)
 	})
