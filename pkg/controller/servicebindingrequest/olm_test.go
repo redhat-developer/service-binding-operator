@@ -17,6 +17,15 @@ func init() {
 	logf.SetLogger(logf.ZapLogger(true))
 }
 
+func assertGVKs(t *testing.T, gvks []schema.GroupVersionKind) {
+	for _, gvk := range gvks {
+		t.Logf("Inspecting GVK: '%s'", gvk)
+		assert.NotEmpty(t, gvk.Group)
+		assert.NotEmpty(t, gvk.Version)
+		assert.NotEmpty(t, gvk.Kind)
+	}
+}
+
 func TestOLMNew(t *testing.T) {
 	ns := "controller"
 	csvName := "unit-csv"
@@ -54,6 +63,7 @@ func TestOLMNew(t *testing.T) {
 		gvks, err := olm.ListCSVOwnedCRDsAsGVKs()
 		assert.NoError(t, err)
 		assert.Len(t, gvks, 1)
+		assertGVKs(t, gvks)
 	})
 
 	t.Run("ListGVKsFromCSVNamespacedName", func(t *testing.T) {
@@ -61,5 +71,6 @@ func TestOLMNew(t *testing.T) {
 		gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
 		assert.NoError(t, err)
 		assert.Len(t, gvks, 1)
+		assertGVKs(t, gvks)
 	})
 }

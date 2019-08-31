@@ -76,7 +76,7 @@ func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
 	return o.extractOwnedCRDs(csvs)
 }
 
-type eachOwnedCRDFn func(crd *olmv1alpha1.CRDDescription)
+type eachOwnedCRDFn func(crdDescription *olmv1alpha1.CRDDescription)
 
 // loopCRDDescritions takes a function as parameter and excute it against given list of owned CRDs.
 func (o *OLM) loopCRDDescritions(ownedCRDs []unstructured.Unstructured, fn eachOwnedCRDFn) error {
@@ -86,6 +86,12 @@ func (o *OLM) loopCRDDescritions(ownedCRDs []unstructured.Unstructured, fn eachO
 		if err != nil {
 			o.logger.Error(err, "on converting from unstructured to CRD")
 			return err
+		}
+		logger := o.logger.WithValues("CRDDescription", crdDescription)
+		logger.Info("Inspecting CRDDescription...")
+		if crdDescription.Name == "" {
+			logger.Info("Skipping empty CRDDescription!")
+			continue
 		}
 		fn(crdDescription)
 	}
@@ -103,22 +109,22 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 	}
 
 	crdDescriptions := []*olmv1alpha1.CRDDescription{}
-	err = o.loopCRDDescritions(ownedCRDs, func(crd *olmv1alpha1.CRDDescription) {
+	err = o.loopCRDDescritions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		logger = logger.WithValues(
-			"CRDDescription.Name", crd.Name,
-			"CRDDescription.Version", crd.Version,
-			"CRDDescription.Kind", crd.Kind,
+			"CRDDescription.Name", crdDescription.Name,
+			"CRDDescription.Version", crdDescription.Version,
+			"CRDDescription.Kind", crdDescription.Kind,
 		)
 		logger.Info("Inspecting CRDDescription object...")
 		// checking for suffix since is expected to have object type as prefix
-		if !strings.EqualFold(strings.ToLower(crd.Kind), strings.ToLower(gvk.Kind)) {
+		if !strings.EqualFold(strings.ToLower(crdDescription.Kind), strings.ToLower(gvk.Kind)) {
 			return
 		}
-		if crd.Version != "" && strings.ToLower(gvk.Version) != strings.ToLower(crd.Version) {
+		if crdDescription.Version != "" && strings.ToLower(gvk.Version) != strings.ToLower(crdDescription.Version) {
 			return
 		}
 		logger.Info("CRDDescription object matches selector!")
-		crdDescriptions = append(crdDescriptions, crd)
+		crdDescriptions = append(crdDescriptions, crdDescription)
 	})
 	if err != nil {
 		return nil, err
@@ -136,12 +142,14 @@ func (o *OLM) extractGVKs(
 	crdDescriptions []unstructured.Unstructured,
 ) ([]schema.GroupVersionKind, error) {
 	gvks := []schema.GroupVersionKind{}
-	err := o.loopCRDDescritions(crdDescriptions, func(crd *olmv1alpha1.CRDDescription) {
-		_, gv := schema.ParseResourceArg(crd.Name)
+	err := o.loopCRDDescritions(crdDescriptions, func(crdDescription *olmv1alpha1.CRDDescription) {
+		o.logger.WithValues("CRDDescription.Name", crdDescription.Name).
+			Info("Extracting GVK from CRDDescription")
+		_, gv := schema.ParseResourceArg(crdDescription.Name)
 		gvks = append(gvks, schema.GroupVersionKind{
 			Group:   gv.Group,
-			Version: crd.Version,
-			Kind:    crd.Kind,
+			Version: crdDescription.Version,
+			Kind:    crdDescription.Kind,
 		})
 	})
 	if err != nil {
@@ -152,12 +160,12 @@ func (o *OLM) extractGVKs(
 
 // ListCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
 func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
-	csvs, err := o.listCSVs()
+	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
 		o.logger.Error(err, "on listting CSVs")
 		return nil, err
 	}
-	return o.extractGVKs(csvs)
+	return o.extractGVKs(ownedCRDs)
 }
 
 // ListGVKsFromCSVNamespacedName return the list of owned GVKs for a given CSV namespaced named.
@@ -165,6 +173,7 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 	namespacedName types.NamespacedName,
 ) ([]schema.GroupVersionKind, error) {
 	logger := o.logger.WithValues("CSV.NamespacedName", namespacedName)
+	logger.Info("Reading CSV to extract GVKs...")
 	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
@@ -172,10 +181,18 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 		logger.Error(err, "on reading CSV object")
 		return []schema.GroupVersionKind{}, err
 	}
+
 	var unstructuredCSV unstructured.Unstructured
 	unstructuredCSV = *u
 	csvs := []unstructured.Unstructured{unstructuredCSV}
-	return o.extractGVKs(csvs)
+
+	ownedCRDs, err := o.extractOwnedCRDs(csvs)
+	if err != nil {
+		logger.Error(err, "on extracting owned CRDs")
+		return []schema.GroupVersionKind{}, err
+	}
+
+	return o.extractGVKs(ownedCRDs)
 }
 
 // NewOLM instantiate a new OLM.
