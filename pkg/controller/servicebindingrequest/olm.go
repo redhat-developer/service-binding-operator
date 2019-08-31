@@ -182,8 +182,7 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 		return []schema.GroupVersionKind{}, err
 	}
 
-	var unstructuredCSV unstructured.Unstructured
-	unstructuredCSV = *u
+	unstructuredCSV := *u
 	csvs := []unstructured.Unstructured{unstructuredCSV}
 
 	ownedCRDs, err := o.extractOwnedCRDs(csvs)
