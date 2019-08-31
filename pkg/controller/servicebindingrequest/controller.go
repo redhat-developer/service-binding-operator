@@ -29,12 +29,11 @@ func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Rec
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
 func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) error {
 	opts := controller.Options{Reconciler: r}
-	_, err := NewSBRController(mgr, opts, client)
+	c, err := NewSBRController(mgr, opts, client)
 	if err != nil {
 		return err
 	}
-
-	return nil
+	return c.Watch()
 }
 
 // blank assignment to verify that ReconcileServiceBindingRequest implements reconcile.Reconciler
