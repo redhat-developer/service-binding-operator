@@ -23,7 +23,7 @@ func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 		logger.Error(err, "on inspecting object for annotations for SBR object")
 		return toReconcile
 	}
-	if IsSBRNamespacedNameEmpty(sbrNamespacedName) {
+	if IsNamespacedNameEmpty(sbrNamespacedName) {
 		log.Info("not able to extract SBR namespaced-name")
 		return toReconcile
 	}
