@@ -18,9 +18,9 @@ const (
 	sbrNameAnnotation      = "service-binding-operator.apps.openshift.io/binding-name"
 )
 
-// extractNamespacedName returns a types.NamespacedName if the required service binding request keys
+// extractSBRNamespacedName returns a types.NamespacedName if the required service binding request keys
 // are present in the given data
-func extractNamespacedName(data map[string]string) types.NamespacedName {
+func extractSBRNamespacedName(data map[string]string) types.NamespacedName {
 	namespacedName := types.NamespacedName{}
 	ns, exists := data[sbrNamespaceAnnotation]
 	if !exists {
@@ -40,35 +40,40 @@ func extractNamespacedName(data map[string]string) types.NamespacedName {
 // not present, it checks if the object is an actual SBR, returning the details when positive. An
 // error can be returned in the case the object can't be decoded.
 func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, error) {
-	namespacedName := types.NamespacedName{}
+	sbrNamespacedName := types.NamespacedName{}
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
-		return namespacedName, err
+		return sbrNamespacedName, err
 	}
 
 	u := &unstructured.Unstructured{Object: data}
 
-	namespacedName = extractNamespacedName(u.GetAnnotations())
+	sbrNamespacedName = extractSBRNamespacedName(u.GetAnnotations())
 	logger := log.WithValues(
 		"Resource.GVK", u.GroupVersionKind(),
 		"Resource.Namespace", u.GetNamespace(),
 		"Resource.Name", u.GetName(),
-		"Extracted.NamespacedName", namespacedName.String(),
+		"SBR.NamespacedName", sbrNamespacedName.String(),
 	)
-	if !IsSBRNamespacedNameEmpty(namespacedName) {
-		logger.Info("Not able to define SBR namespaced-name based on annotations!")
-		return namespacedName, nil
+	// FIXME: Rename to IsNamespacedNameEmpty() instead since it doesn't have any logic related to SBR.
+	if IsSBRNamespacedNameEmpty(sbrNamespacedName) {
+		logger.Info("SBR information not present in annotations, continue inspecting object")
+	} else {
+		// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
+		logger.Info("SBR information found in annotations, returning it")
+		return sbrNamespacedName, nil
 	}
 
-	if u.GroupVersionKind() != v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind) {
-		logger.Info("Object is also not a SBR resource type.")
-		return namespacedName, nil
+	if u.GroupVersionKind() == v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind) {
+		logger.Info("Object is a SBR, returning its namespaced name")
+		sbrNamespacedName.Namespace = u.GetNamespace()
+		sbrNamespacedName.Name = u.GetName()
+		return sbrNamespacedName, nil
 	}
 
-	logger.Info("Creating namespaced-name for a actual SBR object.")
-	namespacedName.Namespace = u.GetNamespace()
-	namespacedName.Name = u.GetName()
-	return namespacedName, nil
+	// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
+	logger.Info("Object is not a SBR, returning an empty namespaced name")
+	return sbrNamespacedName, nil
 }
 
 // IsSBRNamespacedNameEmpty returns true if any of the fields from the given namespacedName is empty.

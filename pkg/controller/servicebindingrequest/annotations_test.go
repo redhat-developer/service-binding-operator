@@ -12,10 +12,10 @@ import (
 )
 
 func TestAnnotationsExtractNamespacedName(t *testing.T) {
-	assert.Equal(t, types.NamespacedName{}, extractNamespacedName(map[string]string{}))
+	assert.Equal(t, types.NamespacedName{}, extractSBRNamespacedName(map[string]string{}))
 
 	data := map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"}
-	assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, extractNamespacedName(data))
+	assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, extractSBRNamespacedName(data))
 }
 
 func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
