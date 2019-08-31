@@ -1,52 +1,45 @@
 package servicebindingrequest
 
 import (
-	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+// CSVToWatcherMapper creates a EventHandler interface to map ClusterServiceVersion objects back to
+// controller and add given GVK to watch list.
 type CSVToWatcherMapper struct {
-	c *SBRController
+	controller *SBRController
 }
 
-func (w *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
-	// FIXME: Use informer lister instead of client here somehow.
-	u, err := w.c.Client.
-		Resource(olmv1alpha1.SchemeGroupVersion.WithResource("clusterserviceversions")).
-		Namespace(obj.Meta.GetNamespace()).
-		Get(obj.Meta.GetName(), metav1.GetOptions{})
-	if err != nil {
-		log.Error(err, "Failed to get ClusterServiceVersion")
+// Map requests directed to CSV objects and exctract related GVK to trigger another watch on
+// controller instance.
+func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
+	olm := NewOLM(c.controller.Client, obj.Meta.GetNamespace())
+	namespacedName := types.NamespacedName{
+		Namespace: obj.Meta.GetNamespace(),
+		Name:      obj.Meta.GetName(),
 	}
 
-	csv := &olmv1alpha1.ClusterServiceVersion{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, csv)
-	if err != nil {
-		log.Error(err, "Failed to convert ClusterServiceVersion object")
-	}
+	logger := log.WithName("CSVToWatcherMapper").WithValues("Obj.NamespacedName", namespacedName)
 
-	for _, crdDescription := range csv.Spec.CustomResourceDefinitions.Owned {
-		_, gv := schema.ParseResourceArg(crdDescription.Name)
-
-		gvk := schema.GroupVersionKind{
-			Group:   gv.Group,
-			Version: crdDescription.Version,
-			Kind:    crdDescription.Kind,
-		}
-
-		err := w.c.AddWatchForGVK(gvk)
+	gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
+	for _, gvk := range gvks {
+		logger = logger.WithValues("GVK", gvk)
+		logger.Info("Adding watch for GVK")
+		err = c.controller.AddWatchForGVK(gvk)
 		if err != nil {
-			log.WithValues("GroupVersionKind", gvk).Error(err, "Failed to create a watch")
+			logger.Error(err, "Failed to create a watch")
 		}
 	}
 
 	return []reconcile.Request{}
 }
 
-func NewCreateWatchEventHandler() handler.EventHandler {
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &CSVToWatcherMapper{}}
+// NewCreateWatchEventHandler creates a new instance of handler.EventHandler interface with
+// CSVToWatcherMapper as map-func.
+func NewCreateWatchEventHandler(controller *SBRController) handler.EventHandler {
+	return &handler.EnqueueRequestsFromMapFunc{
+		ToRequests: &CSVToWatcherMapper{controller: controller},
+	}
 }
