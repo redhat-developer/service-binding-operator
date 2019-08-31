@@ -28,7 +28,9 @@ type SBRController struct {
 }
 
 var (
-	controllerName   = "servicebindingrequest-controller"
+	// controllerName commong name of this controller
+	controllerName = "servicebindingrequest-controller"
+	// defaultPredicate default predicate functions
 	defaultPredicate = predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			// ignore updates to CR status in which case metadata.Generation does not change
