@@ -83,6 +83,7 @@ func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 // AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
 func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	logger := s.logger.WithValues("GVK", gvk)
+	logger.Info("Adding watch for GVK...")
 	if _, exists := s.watchingGVKs[gvk]; exists {
 		logger.Info("Skipping watch on GVK twice, it's already under watch!")
 		return nil
@@ -91,7 +92,7 @@ func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	// saving GVK in cache
 	s.watchingGVKs[gvk] = true
 
-	logger.Info("Creating watch for GVK")
+	logger.Info("Creating watch...")
 	source := s.createSourceForGVK(gvk)
 	return s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 }
@@ -164,9 +165,11 @@ func (s *SBRController) addWhitelistedGVKWatches() error {
 	}
 
 	for _, gvk := range gvks {
+		logger := s.logger.WithValues("GVK", gvk)
+		logger.Info("Adding watch for whitelisted GVK...")
 		err = s.AddWatchForGVK(gvk)
 		if err != nil {
-			s.logger.WithValues("GVK", gvk).Error(err, "on creating watch for GVK")
+			logger.Error(err, "on creating watch for GVK")
 			return err
 		}
 	}
