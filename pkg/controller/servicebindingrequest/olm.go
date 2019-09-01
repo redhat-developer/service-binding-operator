@@ -78,10 +78,10 @@ func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
 // eachCRDDescriptionFn function to be called against each CRDDescription in a slice.
 type eachCRDDescriptionFn func(crdDescription *olmv1alpha1.CRDDescription)
 
-// loopCRDDescritions takes a list of CRDDescriptions (extracted from "owned") and converts to a
+// loopCRDDescriptions takes a list of CRDDescriptions (extracted from "owned") and converts to a
 // actual type instance, before calling out for informed function. This method can return error in
 // case of issues to convert unstructured into CRDDescription.
-func (o *OLM) loopCRDDescritions(
+func (o *OLM) loopCRDDescriptions(
 	crdDescriptions []unstructured.Unstructured,
 	fn eachCRDDescriptionFn,
 ) error {
@@ -113,7 +113,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 	}
 
 	crdDescriptions := []*olmv1alpha1.CRDDescription{}
-	err = o.loopCRDDescritions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
+	err = o.loopCRDDescriptions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		logger = logger.WithValues(
 			"CRDDescription.Name", crdDescription.Name,
 			"CRDDescription.Version", crdDescription.Version,
@@ -148,7 +148,7 @@ func (o *OLM) extractGVKs(
 	crdDescriptions []unstructured.Unstructured,
 ) ([]schema.GroupVersionKind, error) {
 	gvks := []schema.GroupVersionKind{}
-	err := o.loopCRDDescritions(crdDescriptions, func(crdDescription *olmv1alpha1.CRDDescription) {
+	err := o.loopCRDDescriptions(crdDescriptions, func(crdDescription *olmv1alpha1.CRDDescription) {
 		o.logger.WithValues("CRDDescription.Name", crdDescription.Name).
 			Info("Extracting GVK from CRDDescription")
 		_, gv := schema.ParseResourceArg(crdDescription.Name)
