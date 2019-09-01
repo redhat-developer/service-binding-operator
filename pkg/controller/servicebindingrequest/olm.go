@@ -15,7 +15,7 @@ import (
 )
 
 // OLM represents the actions this operator needs to take upon Operator-Lifecycle-Manager resources,
-// Like ClusterServiceVersions (CSV) and CRD-Descriptions.
+// like ClusterServiceVersions (CSV) and CRDDescriptions.
 type OLM struct {
 	client dynamic.Interface // kubernetes dynamic client
 	ns     string            // namespace
@@ -72,15 +72,20 @@ func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
 		o.logger.Error(err, "on listting CSVs")
 		return nil, err
 	}
-
 	return o.extractOwnedCRDs(csvs)
 }
 
-type eachOwnedCRDFn func(crdDescription *olmv1alpha1.CRDDescription)
+// eachCRDDescriptionFn function to be called against each CRDDescription in a slice.
+type eachCRDDescriptionFn func(crdDescription *olmv1alpha1.CRDDescription)
 
-// loopCRDDescritions takes a function as parameter and excute it against given list of owned CRDs.
-func (o *OLM) loopCRDDescritions(ownedCRDs []unstructured.Unstructured, fn eachOwnedCRDFn) error {
-	for _, u := range ownedCRDs {
+// loopCRDDescritions takes a list of CRDDescriptions (extracted from "owned") and converts to a
+// actual type instance, before calling out for informed function. This method can return error in
+// case of issues to convert unstructured into CRDDescription.
+func (o *OLM) loopCRDDescritions(
+	crdDescriptions []unstructured.Unstructured,
+	fn eachCRDDescriptionFn,
+) error {
+	for _, u := range crdDescriptions {
 		crdDescription := &olmv1alpha1.CRDDescription{}
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, crdDescription)
 		if err != nil {
@@ -95,7 +100,6 @@ func (o *OLM) loopCRDDescritions(ownedCRDs []unstructured.Unstructured, fn eachO
 		}
 		fn(crdDescription)
 	}
-
 	return nil
 }
 
@@ -120,7 +124,9 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 		if !strings.EqualFold(strings.ToLower(crdDescription.Kind), strings.ToLower(gvk.Kind)) {
 			return
 		}
-		if crdDescription.Version != "" && strings.ToLower(gvk.Version) != strings.ToLower(crdDescription.Version) {
+		// matching resource version, unless when not informed
+		if crdDescription.Version != "" &&
+			strings.ToLower(gvk.Version) != strings.ToLower(crdDescription.Version) {
 			return
 		}
 		logger.Info("CRDDescription object matches selector!")
