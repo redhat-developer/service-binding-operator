@@ -194,7 +194,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap("db-configmap", []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readConfigMap(crName, []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))
