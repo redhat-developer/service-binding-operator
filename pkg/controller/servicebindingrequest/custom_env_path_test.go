@@ -35,9 +35,8 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 		t.Error(err)
 		t.Fail()
 	}
-	str := string(values["JDBC_CONNECTION_STRING"])
+	str := values["JDBC_CONNECTION_STRING"]
 	assert.Equal(t, "database-name:database-user@database-pass", str, "Connection string is not matching")
-	str2 := string(values["ANOTHER_STRING"])
+	str2 := values["ANOTHER_STRING"]
 	assert.Equal(t, "database-name_database-user", str2, "Connection string is not matching")
 }
-

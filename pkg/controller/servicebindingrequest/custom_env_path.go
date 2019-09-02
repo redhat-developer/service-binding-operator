@@ -8,7 +8,7 @@ import (
 
 type CustomEnvPath struct {
 	EnvMap []v1alpha1.EnvMap
-	Cache map[string]interface{}
+	Cache  map[string]interface{}
 }
 
 func NewCustomEnvPath(envMap []v1alpha1.EnvMap, cache map[string]interface{}) *CustomEnvPath {
@@ -18,9 +18,9 @@ func NewCustomEnvPath(envMap []v1alpha1.EnvMap, cache map[string]interface{}) *C
 	}
 }
 
-func (c *CustomEnvPath) Parse() (map[string][]byte,error) {
-	data := make(map[string][]byte)
-	for _  , v := range c.EnvMap {
+func (c *CustomEnvPath) Parse() (map[string]interface{}, error) {
+	data := make(map[string]interface{})
+	for _, v := range c.EnvMap {
 		tmpl, err := template.New("set").Parse(v.Value)
 		if err != nil {
 			return data, err
@@ -34,8 +34,7 @@ func (c *CustomEnvPath) Parse() (map[string][]byte,error) {
 		}
 
 		// saving buffer in cache
-		data[v.Name] = buf.Bytes()
+		data[v.Name] = buf.String()
 	}
 	return data, nil
 }
-

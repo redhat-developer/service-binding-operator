@@ -218,7 +218,7 @@ func DatabaseCRMock(ns, name string) pgv1alpha1.Database {
 		Spec: pgv1alpha1.DatabaseSpec{
 			Image:     "docker.io/postgres:latest",
 			ImageName: "postgres",
-			DBName: "test-db",
+			DBName:    "test-db",
 		},
 		Status: pgv1alpha1.DatabaseStatus{
 			DBCredentials: "db-credentials",

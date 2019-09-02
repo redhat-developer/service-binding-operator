@@ -32,7 +32,6 @@ type ServiceBindingRequestSpec struct {
 	TriggerRebinding *bool `json:"triggerRebinding,omitempty"`
 
 	EnvVar []EnvMap `json:"envVar"`
-
 }
 
 // EnvMap is a set of Name and Value of an environment variable

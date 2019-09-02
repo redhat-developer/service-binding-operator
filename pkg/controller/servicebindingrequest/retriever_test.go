@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,7 +49,7 @@ func TestRetriever(t *testing.T) {
 	})
 
 	t.Run("getCRKey", func(t *testing.T) {
-		imageName, err := retriever.getCRKey("spec", "imageName")
+		imageName, _, err := retriever.getCRKey("spec", "imageName")
 		assert.Nil(t, err)
 		assert.Equal(t, "postgres", imageName)
 	})
@@ -84,7 +85,7 @@ func TestRetriever(t *testing.T) {
 	t.Run("readSecret", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		err := retriever.readSecret("db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
@@ -107,7 +108,7 @@ func TestRetriever(t *testing.T) {
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		err := retriever.readSecret("db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, "DATABASE_SECRET_USER")
@@ -143,18 +144,18 @@ func TestRetrieverNestedCRDKey(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
-		imageName, err := retriever.getCRKey("spec", "image.name")
+		imageName, _, err := retriever.getCRKey("spec", "image.name")
 		assert.Nil(t, err)
 		assert.Equal(t, "postgres", imageName)
 	})
 
 	t.Run("Second level error", func(t *testing.T) {
-		_, err := retriever.getCRKey("spec", "image..name")
+		_, _, err := retriever.getCRKey("spec", "image..name")
 		assert.NotNil(t, err)
 	})
 
 	t.Run("Third level", func(t *testing.T) {
-		something, err := retriever.getCRKey("spec", "image.third.something")
+		something, _, err := retriever.getCRKey("spec", "image.third.something")
 		assert.Nil(t, err)
 		assert.Equal(t, "somevalue", something)
 	})
@@ -187,6 +188,7 @@ func TestConfigMapRetriever(t *testing.T) {
 	fakeClient := fake.NewFakeClient(objs...)
 
 	retriever = NewRetriever(context.TODO(), fakeClient, plan, "SERVICE_BINDING")
+	retriever.Cache = make(map[string]interface{})
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
@@ -211,11 +213,38 @@ func TestConfigMapRetriever(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap("db-configmap", []string{"user", "password"})
+		err := retriever.readConfigMap("db-configmap", []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
+	})
+
+	t.Run("Should detect custom env values", func(t *testing.T) {
+		// reading from configMap, from status attribute
+		err = retriever.read("spec", "dbConfigMap", []string{
+			"binding:env:object:configmap:user",
+			"binding:env:object:configmap:password",
+		})
+
+		envMap := []v1alpha1.EnvMap{
+			{
+				Name:  "JDBC_CONNECTION_STRING",
+				Value: `{{ .spec.dbConfigMap.user }}@{{ .spec.dbConfigMap.password }}`,
+			},
+			{
+				Name:  "ANOTHER_STRING",
+				Value: `{{ .spec.dbConfigMap.user }}_{{ .spec.dbConfigMap.password }}`,
+			},
+		}
+
+		c := NewCustomEnvPath(envMap, retriever.Cache)
+		values, err := c.Parse()
+		if err != nil {
+			t.Error(err)
+		}
+		assert.Equal(t, "user_password", values["ANOTHER_STRING"], "Custom env values are not matching")
+		assert.Equal(t, "user@password", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
 
 }

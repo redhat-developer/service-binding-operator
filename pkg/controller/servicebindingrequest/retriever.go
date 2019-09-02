@@ -23,8 +23,7 @@ type Retriever struct {
 	data          map[string][]byte // data retrieved
 	volumeKeys    []string
 	bindingPrefix string
-	Cache map[string]interface{}
-
+	Cache         map[string]interface{}
 }
 
 const (
@@ -36,24 +35,26 @@ const (
 )
 
 // getNestedValue retrieve value from dotted key path
-func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, error) {
+func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, error, interface{}) {
+	logger := r.logger.WithValues("Key", key, "SectionMap", sectionMap)
 	if !strings.Contains(key, ".") {
 		value, exists := sectionMap.(map[string]interface{})[key]
 		if !exists {
-			return "", fmt.Errorf("Can't find key '%s'", key)
+			return "", fmt.Errorf("Can't find key '%s'", key), sectionMap
 		}
-		return fmt.Sprintf("%v", value), nil
+		return fmt.Sprintf("%v", value), nil, sectionMap
 	}
 	attrs := strings.SplitN(key, ".", 2)
 	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
+	logger.Info("Section maps :  ")
 	if !exists {
-		return "", fmt.Errorf("Can't find '%v' section in CR", attrs)
+		return "", fmt.Errorf("Can't find '%v' section in CR", attrs), newSectionMap
 	}
 	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
 }
 
 // getCRKey retrieve key in section from CR object, part of the "plan" instance.
-func (r *Retriever) getCRKey(section string, key string) (string, error) {
+func (r *Retriever) getCRKey(section string, key string) (string, interface{}, error) {
 	obj := r.plan.CR.Object
 	objName := r.plan.CR.GetName()
 	logger := r.logger.WithValues("CR.Name", objName, "CR.section", section, "CR.key", key)
@@ -61,10 +62,15 @@ func (r *Retriever) getCRKey(section string, key string) (string, error) {
 
 	sectionMap, exists := obj[section]
 	if !exists {
-		return "", fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
+		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
-	return r.getNestedValue(key, sectionMap)
+	v, err, _ := r.getNestedValue(key, sectionMap)
+	for k, v := range sectionMap.(map[string]interface{}) {
+		r.Cache[k] = v
+	}
+	fmt.Printf("SECTION MAP IS : %+v", r.Cache)
+	return v, sectionMap, err
 }
 
 // read attributes from CR, where place means which top level key name contains the "path" actual
@@ -75,7 +81,6 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 		"CR.Section", place,
 		"CRDDescription.Path", path,
 		"CRDDescription.XDescriptors", xDescriptors,
-		"Cache", r.Cache,
 	)
 	logger.Info("Reading CRDDescription attributes...")
 
@@ -84,20 +89,27 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	// holds the configMap name and items
 	configMaps := make(map[string][]string)
+	pathValue, _, err := r.getCRKey(place, path)
 	for _, xDescriptor := range xDescriptors {
 		logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
 		logger.Info("Inspecting xDescriptor...")
-		pathValue, err := r.getCRKey(place, path)
 		if err != nil {
 			return err
 		}
 
+		r.Cache[place] = make(map[string]interface{})
 		if strings.HasPrefix(xDescriptor, secretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+			if _, ok := r.Cache[place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)]; !ok {
+				r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
+				r.Cache[place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)] = make(map[string]interface{})
+			}
 		} else if strings.HasPrefix(xDescriptor, configMapPrefix) {
 			configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(xDescriptor))
+			r.markVisitedPaths(r.extractConfigMapItemName(xDescriptor), pathValue, place)
 		} else if strings.HasPrefix(xDescriptor, volumeMountSecretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
+			r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
 			r.volumeKeys = append(r.volumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(path, []byte(pathValue))
@@ -106,14 +118,14 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	for name, items := range secrets {
 		// loading secret items all-at-once
-		err := r.readSecret(name, items)
+		err := r.readSecret(name, items, place, path)
 		if err != nil {
 			return err
 		}
 	}
 	for name, items := range configMaps {
 		// add the function readConfigMap
-		err := r.readConfigMap(name, items)
+		err := r.readConfigMap(name, items, place, path)
 		if err != nil {
 			return err
 		}
@@ -133,9 +145,30 @@ func (r *Retriever) extractConfigMapItemName(xDescriptor string) string {
 	return strings.ReplaceAll(xDescriptor, fmt.Sprintf("%s:", configMapPrefix), "")
 }
 
+// markVisitedPaths updates all visited paths in Cache, This initializes the Cache map
+func (r *Retriever) markVisitedPaths(name, keyPath, fromPath string) {
+	if _, ok := r.Cache[fromPath]; !ok {
+		r.Cache[fromPath] = make(map[string]interface{})
+	}
+	if _, ok := r.Cache[fromPath]; ok {
+		if _, ok := r.Cache[fromPath].(map[string]interface{})[name]; !ok {
+			r.Cache[fromPath].(map[string]interface{})[name] = make(map[string]interface{})
+		}
+	}
+	if _, ok := r.Cache[fromPath].(map[string]interface{})[name]; ok {
+		if _, ok := r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath]; !ok {
+			r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath] = make(map[string]interface{})
+		}
+	}
+}
+
 // readSecret based in secret name and list of items, read a secret from the same namespace informed
 // in plan instance.
-func (r *Retriever) readSecret(name string, items []string) error {
+func (r *Retriever) readSecret(
+	name string,
+	items []string,
+	fromPath string,
+	path string) error {
 	logger := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
 	logger.Info("Reading secret items...")
 	secretObj := corev1.Secret{}
@@ -147,7 +180,11 @@ func (r *Retriever) readSecret(name string, items []string) error {
 	for key, value := range secretObj.Data {
 		logger.WithValues("Secret.Key.Name", key, "Secret.Key.Length", len(value)).
 			Info("Inspecting secret key...")
+		r.markVisitedPaths(path, key, fromPath)
+		// update cache after reading configmap/secret in cache
+		r.Cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[key] = string(value)
 		// making sure key name has a secret reference
+		r.store(fmt.Sprintf("configMap_%s", key), []byte(value))
 		r.store(fmt.Sprintf("secret_%s", key), value)
 	}
 	return nil
@@ -155,7 +192,11 @@ func (r *Retriever) readSecret(name string, items []string) error {
 
 // readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
 // in plan instance.
-func (r *Retriever) readConfigMap(name string, items []string) error {
+func (r *Retriever) readConfigMap(
+	name string,
+	items []string,
+	fromPath string,
+	path string) error {
 	logger := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
 	logger.Info("Reading ConfigMap items...")
 	configMapObj := corev1.ConfigMap{}
@@ -167,6 +208,9 @@ func (r *Retriever) readConfigMap(name string, items []string) error {
 	for key, value := range configMapObj.Data {
 		logger.WithValues("configMap.Key.Name", key, "configMap.Key.Length", len(value)).
 			Info("Inspecting configMap key...")
+		r.markVisitedPaths(path, key, fromPath)
+		// update cache after reading configmap/secret in cache
+		r.Cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[key] = value
 		// making sure key name has a configMap reference
 		// string to byte
 		r.store(fmt.Sprintf("configMap_%s", key), []byte(value))
@@ -241,6 +285,6 @@ func NewRetriever(ctx context.Context, client client.Client, plan *Plan, binding
 		data:          make(map[string][]byte),
 		volumeKeys:    []string{},
 		bindingPrefix: bindingPrefix,
-		Cache: make(map[string]interface{}),
+		Cache:         make(map[string]interface{}),
 	}
 }
