@@ -2,8 +2,11 @@ package servicebindingrequest
 
 import (
 	"context"
+	"fmt"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -70,10 +73,16 @@ func (r *Reconciler) setTriggerRebindingFlag(
 func (r *Reconciler) setApplicationObjects(
 	ctx context.Context,
 	instance *v1alpha1.ServiceBindingRequest,
-	objs []string,
+	objs []*unstructured.Unstructured,
 ) error {
+	names := []string{}
+	for _, obj := range objs {
+		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
+	}
+
 	instance.Status.BindingStatus = bindingSuccess
-	instance.Status.ApplicationObjects = objs
+	instance.Status.ApplicationObjects = names
+
 	return r.client.Status().Update(ctx, instance)
 }
 
@@ -88,6 +97,7 @@ func (r *Reconciler) setApplicationObjects(
 //    Deployment (and other kinds) will be updated in "spec" level.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx := context.TODO()
+	objectsToAnnotate := []*unstructured.Unstructured{}
 	logger := logf.Log.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
@@ -99,7 +109,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueOnNotFound(err, 0)
+		return RequeueError(err)
+	}
+
+	// As long the request was handled, we update the TriggerRebind
+	err = r.setTriggerRebindingFlag(ctx, instance)
+	if err != nil {
+		return RequeueError(err)
 	}
 
 	// As long the request was handled, we update the TriggerRebind
@@ -129,13 +145,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueOnNotFound(err, requeueAfter)
 	}
 
+	// storing CR in objects to annotate
+	objectsToAnnotate = append(objectsToAnnotate, plan.CR)
+
 	//
 	// Retrieving data
 	//
 
 	logger.Info("Retrieving data to create intermediate secret.")
-	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
-	if err = retriever.Retrieve(); err != nil {
+	retriever := NewRetriever(ctx, r.dynClient, plan, instance.Spec.EnvVarPrefix)
+	retrievedObjects, err := retriever.Retrieve()
+	if err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On retrieving binding data.")
 		return RequeueOnNotFound(err, requeueAfter)
@@ -146,18 +166,38 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueError(err)
 	}
 
+	// storing objects used in Retriever
+	objectsToAnnotate = append(objectsToAnnotate, retrievedObjects...)
+
 	//
 	// Updating applications to use intermediary secret
 	//
 
 	logger.Info("Binding applications with intermediary secret.")
 	binder := NewBinder(ctx, r.client, r.dynClient, instance, retriever.volumeKeys)
-	if updatedObjectNames, err := binder.Bind(); err != nil {
+	updatedObjects, err := binder.Bind()
+	if err != nil {
 		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On binding application.")
 		return RequeueOnNotFound(err, requeueAfter)
-	} else if err = r.setApplicationObjects(ctx, instance, updatedObjectNames); err != nil {
+	} else if err = r.setApplicationObjects(ctx, instance, updatedObjects); err != nil {
 		logger.Error(err, "On updating application objects status field.")
+		return RequeueError(err)
+	}
+
+	// storing objects used in Binder
+	objectsToAnnotate = append(objectsToAnnotate, updatedObjects...)
+
+	//
+	// Annotating objects related to binding
+	//
+
+	sbrNamespacedName := types.NamespacedName{
+		Namespace: instance.GetNamespace(),
+		Name:      instance.GetName(),
+	}
+	if err = SetSBRAnnotations(ctx, r.dynClient, sbrNamespacedName, objectsToAnnotate); err != nil {
+		logger.Error(err, "On setting annotations in related objects.")
 		return RequeueError(err)
 	}
 

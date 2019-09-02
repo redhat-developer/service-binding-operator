@@ -47,8 +47,10 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - ""
+  - "*"
   resources:
   - "*"
   verbs:
     - "get"
+    - "list"
+    - "watch"
