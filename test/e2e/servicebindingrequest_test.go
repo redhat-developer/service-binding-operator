@@ -181,6 +181,7 @@ func retry(attempts int, sleep time.Duration, fn func() error) error {
 		if err == nil {
 			break
 		}
+		time.Sleep(sleep)
 	}
 	return err
 }
