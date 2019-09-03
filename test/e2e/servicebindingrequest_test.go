@@ -50,7 +50,9 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-1", ServiceBindingRequest)
+		t.Run("scenario-2 (pre create sbr then binding resources)", PreServiceBindingRequest)
 	})
+
 }
 
 // cleanUpOptions using global variables to create the object.
@@ -92,6 +94,19 @@ func ServiceBindingRequest(t *testing.T) {
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns)
+}
+
+// This would setup testing resources then starts a test,
+// SBR gets created in this test before creation of bindable resource objects
+func PreServiceBindingRequest(t *testing.T) {
+	t.Log("Creating a new test context...")
+	ctx := framework.NewTestCtx(t)
+	defer ctx.Cleanup()
+
+	ns, f := bootstrapNamespace(t, ctx)
+
+	// executing testing steps on operator
+	preCreateServiceBindingRequestTest(t, ctx, f, ns)
 }
 
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
@@ -238,6 +253,111 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, sbr)
 	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+
+	// waiting again for deployment
+	t.Log("Waiting for application deployment reach one replica, again...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+
+	// retrying a few times to identify SBO changes in deployment, this loop is waiting for the
+	// operator reconciliation.
+	t.Log("Inspecting deployment structure...")
+	err := retry(10, 5*time.Second, func() error {
+		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
+		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, name)
+		if err != nil {
+			t.Logf("Error on inspecting deployment: '%#v'", err)
+		}
+		return err
+	})
+	t.Logf("Deployment: Result after attempts, error: '%#v'", err)
+	assert.NoError(t, err)
+
+	// checking intermediary secret contents, right after deployment the secrets must be in place
+	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
+	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+	assert.NoError(t, err)
+
+	// editing intermediary secret in order to trigger update event
+	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
+	updateSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+
+	// retrying a few times to see if secret is back on original state, waiting for operator to
+	// reconcile again when detecting the change
+	t.Log("Inspecting intermediary secret...")
+	err = retry(10, 5*time.Second, func() error {
+		t.Log("Inspecting SBR generated secret...")
+		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+		if err != nil {
+			t.Logf("SBR generated secret inspection error: '%#v'", err)
+		}
+		return err
+	})
+	t.Logf("Intermediary-Secret: Result after attempts, error: '%#v'", err)
+	assert.NoError(t, err)
+
+	// cleaning up
+	t.Log("Cleaning all up!")
+	_ = f.Client.Delete(todoCtx, sbr)
+	_ = f.Client.Delete(todoCtx, sbrSecret)
+	_ = f.Client.Delete(todoCtx, &d)
+}
+
+// This test runs with following steps (scenario-2)
+// 1. Create SBR.
+// 2. Create operator-backed database CR.
+// 3. Create deployment where SBR would inject environment variables.
+// 4. Run assertion
+
+func preCreateServiceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) {
+	todoCtx := context.TODO()
+
+	name := "e2e-service-binding-request"
+	resourceRef := "e2e-db-testing"
+	secretName := "e2e-db-credentials"
+	appName := "e2e-application"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "e2e",
+	}
+
+	t.Log("Starting end-to-end tests for operator!")
+
+	t.Log("Creating ClusterServiceVersion mock object...")
+	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
+	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
+
+	// creating service-binding-request, which will trigger actions in the controller
+	t.Log("Creating ServiceBindingRequest mock object...")
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	// making sure object does not exist before testing
+	_ = f.Client.Delete(todoCtx, sbr)
+	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+
+	t.Log("Creating Database mock object...")
+	db := mocks.DatabaseCRMock(ns, resourceRef)
+	require.Nil(t, f.Client.Create(todoCtx, db, cleanUpOptions(ctx)))
+
+	t.Log("Updating Database status, adding 'DBCredentials'")
+	require.Nil(t, f.Client.Get(todoCtx, types.NamespacedName{Namespace: ns, Name: resourceRef}, db))
+	db.Status.DBCredentials = secretName
+	require.Nil(t, f.Client.Status().Update(todoCtx, db))
+
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName)
+	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
+
+	t.Log("Creating Deployment mock object...")
+	d := mocks.DeploymentMock(ns, appName, matchLabels)
+	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
+
+	// waiting for application deployment to reach one replica
+	t.Log("Waiting for application deployment reach one replica...")
+	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+
+	// retrieveing deployment, to inspect its contents
+	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
+	t.Logf("Reading application deployment '%s'", appName)
+	require.Nil(t, f.Client.Get(todoCtx, deploymentNamespacedName, &d))
 
 	// waiting again for deployment
 	t.Log("Waiting for application deployment reach one replica, again...")
