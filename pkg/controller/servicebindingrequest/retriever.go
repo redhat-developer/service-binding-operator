@@ -337,14 +337,14 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 		}
 	}
 
-	//envParser := NewCustomEnvParser(r.plan.SBR.Spec.EnvVar, r.Cache)
-	//values, err := envParser.Parse()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//for k, v := range values {
-	//	r.data[k] = []byte(v.(string))
-	//}
+	envParser := NewCustomEnvParser(r.plan.SBR.Spec.EnvVar, r.Cache)
+	values, err := envParser.Parse()
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range values {
+		r.data[k] = []byte(v.(string))
+	}
 
 	r.logger.Info("Saving data on intermediary secret...")
 	if err = r.saveDataOnSecret(); err != nil {
