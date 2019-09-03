@@ -142,7 +142,7 @@ The labels are:
 * `environment=demo` - indicates the demo environment - it narrows the search
 
 ``` bash
- kubectl patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
+ kubectl patch dc nodejs-rest-http-crud -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
 ```
 
 ### Express an intent to bind the DB and the application
