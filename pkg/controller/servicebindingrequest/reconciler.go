@@ -6,7 +6,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -182,22 +181,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueOnNotFound(err, requeueAfter)
 	} else if err = r.setApplicationObjects(ctx, instance, updatedObjects); err != nil {
 		logger.Error(err, "On updating application objects status field.")
-		return RequeueError(err)
-	}
-
-	// storing objects used in Binder
-	objectsToAnnotate = append(objectsToAnnotate, updatedObjects...)
-
-	//
-	// Annotating objects related to binding
-	//
-
-	sbrNamespacedName := types.NamespacedName{
-		Namespace: instance.GetNamespace(),
-		Name:      instance.GetName(),
-	}
-	if err = SetSBRAnnotations(ctx, r.dynClient, sbrNamespacedName, objectsToAnnotate); err != nil {
-		logger.Error(err, "On setting annotations in related objects.")
 		return RequeueError(err)
 	}
 
