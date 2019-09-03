@@ -6,19 +6,19 @@ import (
 	"text/template"
 )
 
-type CustomEnvPath struct {
+type CustomEnvParser struct {
 	EnvMap []v1alpha1.EnvMap
 	Cache  map[string]interface{}
 }
 
-func NewCustomEnvPath(envMap []v1alpha1.EnvMap, cache map[string]interface{}) *CustomEnvPath {
-	return &CustomEnvPath{
+func NewCustomEnvParser(envMap []v1alpha1.EnvMap, cache map[string]interface{}) *CustomEnvParser {
+	return &CustomEnvParser{
 		EnvMap: envMap,
 		Cache:  cache,
 	}
 }
 
-func (c *CustomEnvPath) Parse() (map[string]interface{}, error) {
+func (c *CustomEnvParser) Parse() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
 		tmpl, err := template.New("set").Parse(v.Value)

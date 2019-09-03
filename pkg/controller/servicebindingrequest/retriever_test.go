@@ -160,6 +160,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
 	f.AddMockedConfigMap(crName)
+	f.AddMockedDatabaseCR(crName)
 
 	crdDescription := mocks.CRDDescriptionConfigMapMock()
 
@@ -219,7 +220,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 			},
 		}
 
-		c := NewCustomEnvPath(envMap, retriever.Cache)
+		c := NewCustomEnvParser(envMap, retriever.Cache)
 		values, err := c.Parse()
 		if err != nil {
 			t.Error(err)

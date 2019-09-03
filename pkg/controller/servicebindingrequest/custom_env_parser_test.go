@@ -29,7 +29,7 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 			Value: `{{ .spec.dbName }}_{{ .status.creds.user }}`,
 		},
 	}
-	customEnvPath := NewCustomEnvPath(envMap, cache)
+	customEnvPath := NewCustomEnvParser(envMap, cache)
 	values, err := customEnvPath.Parse()
 	if err != nil {
 		t.Error(err)

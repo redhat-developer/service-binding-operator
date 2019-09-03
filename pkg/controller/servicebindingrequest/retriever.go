@@ -27,7 +27,7 @@ type Retriever struct {
 	plan          *Plan                        // plan instance
 	volumeKeys    []string                     // list of keys found
 	bindingPrefix string                       // prefix for variable names
-  	Cache map[string]interface{}
+	Cache         map[string]interface{}	// store visited paths
 }
 
 const (
@@ -71,9 +71,11 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 
 	v, err, _ := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
-		r.Cache[k] = v
+		if _, ok := r.Cache[section]; !ok {
+			r.Cache[section] = make(map[string]interface{})
+		}
+		r.Cache[section].(map[string]interface{})[k] = v
 	}
-	fmt.Printf("SECTION MAP IS : %+v", r.Cache)
 	return v, sectionMap, err
 }
 
@@ -95,7 +97,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 	configMaps := make(map[string][]string)
 	pathValue, _, err := r.getCRKey(place, path)
 	for _, xDescriptor := range xDescriptors {
-		logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor)
+		logger = logger.WithValues("CRDDescription.xDescriptor", xDescriptor, "Cache", r.Cache)
 		logger.Info("Inspecting xDescriptor...")
 		if err != nil {
 			return err
@@ -117,6 +119,8 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			r.volumeKeys = append(r.volumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(path, []byte(pathValue))
+		} else {
+			logger.Info("Defaulting....")
 		}
 	}
 
@@ -331,6 +335,15 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 			return nil, err
 		}
 	}
+
+	//envParser := NewCustomEnvParser(r.plan.SBR.Spec.EnvVar, r.Cache)
+	//values, err := envParser.Parse()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//for k, v := range values {
+	//	r.data[k] = []byte(v.(string))
+	//}
 
 	r.logger.Info("Saving data on intermediary secret...")
 	if err = r.saveDataOnSecret(); err != nil {
