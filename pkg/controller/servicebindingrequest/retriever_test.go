@@ -202,17 +202,51 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
 	})
 
+
+}
+
+func TestCustomEnvParser(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
+
+	ns := "testing"
+	crName := "db-testing"
+
+	f := mocks.NewFake(t, ns)
+	f.AddMockedUnstructuredCSV("csv")
+	f.AddMockedConfigMap(crName)
+
+	crdDescription := mocks.CRDDescriptionConfigMapMock()
+
+	cr, err := mocks.UnstructuredDatabaseConfigMapMock(ns, crName, crName)
+	require.Nil(t, err)
+
+	plan := &Plan{
+		Ns: ns,
+		Name: "retriever",
+		CRDDescription: &crdDescription,
+		CR: cr,
+	}
+
+	fakeDynClient := f.FakeDynClient()
+
+	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	require.NotNil(t, retriever)
+
 	t.Run("Should detect custom env values", func(t *testing.T) {
-		// reading from configMap, from status attribute
+		retriever.Retrieve()
 		err = retriever.read("spec", "dbConfigMap", []string{
 			"binding:env:object:configmap:user",
 			"binding:env:object:configmap:password",
 		})
+		assert.Nil(t, err)
+
+		t.Logf("\nCache %+v", retriever.Cache)
 
 		envMap := []v1alpha1.EnvMap{
 			{
 				Name:  "JDBC_CONNECTION_STRING",
-				Value: `{{ .spec.dbConfigMap.user }}@{{ .spec.dbConfigMap.password }}`,
+				Value: `{{ .spec.imageName }}@{{ .spec.dbConfigMap.password }}`,
 			},
 			{
 				Name:  "ANOTHER_STRING",
@@ -226,7 +260,6 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 			t.Error(err)
 		}
 		assert.Equal(t, "user_password", values["ANOTHER_STRING"], "Custom env values are not matching")
-		assert.Equal(t, "user@password", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
+		assert.Equal(t, "postgres@password", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
-
 }

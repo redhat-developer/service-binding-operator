@@ -103,7 +103,9 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			return err
 		}
 
-		r.Cache[place] = make(map[string]interface{})
+		if _, ok := r.Cache[place]; !ok {
+			r.Cache[place] = make(map[string]interface{})
+		}
 		if strings.HasPrefix(xDescriptor, secretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 			if _, ok := r.Cache[place].(map[string]interface{})[r.extractSecretItemName(xDescriptor)]; !ok {
@@ -158,15 +160,14 @@ func (r *Retriever) markVisitedPaths(name, keyPath, fromPath string) {
 	if _, ok := r.Cache[fromPath]; !ok {
 		r.Cache[fromPath] = make(map[string]interface{})
 	}
-	if _, ok := r.Cache[fromPath]; ok {
-		if _, ok := r.Cache[fromPath].(map[string]interface{})[name]; !ok {
-			r.Cache[fromPath].(map[string]interface{})[name] = make(map[string]interface{})
-		}
+	if _, ok := r.Cache[fromPath].(map[string]interface{})[name]; !ok {
+		r.Cache[fromPath].(map[string]interface{})[name] = make(map[string]interface{})
 	}
-	if _, ok := r.Cache[fromPath].(map[string]interface{})[name]; ok {
-		if _, ok := r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath]; !ok {
-			r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath] = make(map[string]interface{})
-		}
+	if _, ok := r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{}); !ok {
+		r.Cache[fromPath].(map[string]interface{})[name] = make(map[string]interface{})
+	}
+	if _, ok := r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath]; !ok {
+		r.Cache[fromPath].(map[string]interface{})[name].(map[string]interface{})[keyPath] = make(map[string]interface{})
 	}
 }
 

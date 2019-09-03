@@ -35,6 +35,12 @@ var (
 		Path:         "dbName",
 		XDescriptors: []string{"binding:env:attribute"},
 	}
+	ImageSpecDesc = olmv1alpha1.SpecDescriptor{
+		Path:         "image",
+		DisplayName:  "Image",
+		Description:  "Image Name",
+		XDescriptors: nil,
+	}
 	// DBNameSpecDesc default spec descriptor to inform the database name.
 	DBNameSpecIp = olmv1alpha1.SpecDescriptor{
 		DisplayName:  "Database IP",
@@ -114,7 +120,7 @@ func ClusterServiceVersionListMock(ns, name string) *olmv1alpha1.ClusterServiceV
 // operator setup.
 func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc},
+		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc, ImageSpecDesc},
 		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
 	)
 }
@@ -123,7 +129,7 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 // spec-descriptor
 func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
 	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc},
+		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc, ImageSpecDesc},
 		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
 	)
 }
@@ -421,6 +427,8 @@ func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructur
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
+	ImageName string
+	Image string
 }
 
 // ConfigMapDatabase ...
@@ -444,6 +452,8 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 		},
 		Spec: ConfigMapDatabaseSpec{
 			DBConfigMap: configMapName,
+			Image: "docker.io/postgres",
+			ImageName: "postgres",
 		},
 	}
 }
@@ -452,5 +462,10 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstructured.Unstructured, error) {
 	db := DatabaseConfigMapMock(ns, name, configMapName)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+func ConvertToUnstructured(cr interface{}) (*unstructured.Unstructured, error) {
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	return &ustrv1.Unstructured{Object: data}, err
 }
