@@ -84,15 +84,8 @@ func SetSBRAnnotations(
 	namespacedName types.NamespacedName,
 	objs []*unstructured.Unstructured,
 ) error {
-	for _, obj := range objs {
-		annotations := obj.GetAnnotations()
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
 
-		annotations[sbrNamespaceAnnotation] = namespacedName.Namespace
-		annotations[sbrNameAnnotation] = namespacedName.Name
-		obj.SetAnnotations(annotations)
+	for _, obj := range objs {
 
 		gvk := obj.GroupVersionKind()
 		gvr, _ := meta.UnsafeGuessKindToResource(gvk)
@@ -105,8 +98,24 @@ func SetSBRAnnotations(
 			"Resource.Namespace", obj.GetNamespace(),
 			"Resource.Name", obj.GetName(),
 		)
+
+		latestObj, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Get(obj.GetName(), metav1.GetOptions{})
+		if err != nil {
+			logger.Error(err, "during reading CR")
+			return err
+		}
+
+		annotations := obj.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		annotations[sbrNamespaceAnnotation] = namespacedName.Namespace
+		annotations[sbrNameAnnotation] = namespacedName.Name
+		latestObj.SetAnnotations(annotations)
+
 		logger.Info("Updating resource annotations...")
-		_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
+		_, err = client.Resource(gvr).Namespace(latestObj.GetNamespace()).Update(latestObj, opts)
 		if err != nil {
 			logger.Error(err, "unable to set/update annotations in object")
 			return err

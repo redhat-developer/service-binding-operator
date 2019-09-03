@@ -3,8 +3,9 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"time"
+
+	"k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -54,7 +55,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	}
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		return nil , errors.NewNotFound(
+		return nil, errors.NewNotFound(
 			gvr.GroupResource(),
 			b.sbr.Spec.ApplicationSelector.Resource,
 		)
@@ -266,6 +267,8 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		}
 
 		logger.Info("Updating object in Kube...")
+
+		// updatedObj holds the returned object after it was updated.
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return nil, err
 		}
