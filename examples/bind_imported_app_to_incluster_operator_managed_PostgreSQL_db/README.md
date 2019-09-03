@@ -134,7 +134,7 @@ EOS
 
 ### Set labels on the application
 
-Now the we need to set arbitrary labels on the application's `DeploymentConfig` in order for the Service Binding Operator to be able to find the application.
+Now we need to set arbitrary labels on the application's `DeploymentConfig` in order for the Service Binding Operator to be able to find the application.
 
 The labels are:
 
@@ -147,7 +147,7 @@ The labels are:
 
 ### Express an intent to bind the DB and the application
 
-Now the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
+Now, the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
 
 Create the following `ServiceBindingRequest`:
 
@@ -183,7 +183,7 @@ There are 2 parts in the request:
 
 That causes the application to be re-deployed.
 
-Once the new version is up, go the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
+Once the new version is up, go to the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
 
 When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information as specified in the OLM descriptor below, into the
 application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
@@ -200,7 +200,7 @@ spec:
 
 ### ServiceBindingRequestStatus
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status
+`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
 | Field | Description |
 |-------|-------------|
