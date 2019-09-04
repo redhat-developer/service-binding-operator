@@ -234,7 +234,8 @@ func TestCustomEnvParser(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("Should detect custom env values", func(t *testing.T) {
-		retriever.Retrieve()
+		_, err = retriever.Retrieve()
+		assert.Nil(t, err)
 		err = retriever.read("spec", "dbConfigMap", []string{
 			"binding:env:object:configmap:user",
 			"binding:env:object:configmap:password",
