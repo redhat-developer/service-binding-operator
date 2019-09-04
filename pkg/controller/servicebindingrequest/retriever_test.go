@@ -214,19 +214,13 @@ func TestCustomEnvParser(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
-	f.AddMockedConfigMap(crName)
+	f.AddMockedSecret("db-credentials")
 
-	crdDescription := mocks.CRDDescriptionConfigMapMock()
-
-	cr, err := mocks.UnstructuredDatabaseConfigMapMock(ns, crName, crName)
+	crdDescription := mocks.CRDDescriptionMock()
+	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
 	require.Nil(t, err)
 
-	plan := &Plan{
-		Ns: ns,
-		Name: "retriever",
-		CRDDescription: &crdDescription,
-		CR: cr,
-	}
+	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
 
 	fakeDynClient := f.FakeDynClient()
 
@@ -236,22 +230,17 @@ func TestCustomEnvParser(t *testing.T) {
 	t.Run("Should detect custom env values", func(t *testing.T) {
 		_, err = retriever.Retrieve()
 		assert.Nil(t, err)
-		err = retriever.read("spec", "dbConfigMap", []string{
-			"binding:env:object:configmap:user",
-			"binding:env:object:configmap:password",
-		})
-		assert.Nil(t, err)
 
 		t.Logf("\nCache %+v", retriever.Cache)
 
 		envMap := []v1alpha1.EnvMap{
 			{
 				Name:  "JDBC_CONNECTION_STRING",
-				Value: `{{ .spec.imageName }}@{{ .spec.dbConfigMap.password }}`,
+				Value: `{{ .spec.imageName }}@{{ .status.dbCredentials.password }}`,
 			},
 			{
 				Name:  "ANOTHER_STRING",
-				Value: `{{ .spec.dbConfigMap.user }}_{{ .spec.dbConfigMap.password }}`,
+				Value: `{{ .status.dbCredentials.user }}_{{ .status.dbCredentials.password }}`,
 			},
 		}
 
@@ -260,7 +249,7 @@ func TestCustomEnvParser(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		assert.Equal(t, "user_password", values["ANOTHER_STRING"], "Custom env values are not matching")
-		assert.Equal(t, "postgres@password", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
+		assert.Equal(t, "dXNlcg==_cGFzc3dvcmQ=", values["ANOTHER_STRING"], "Custom env values are not matching")
+		assert.Equal(t, "postgres@cGFzc3dvcmQ=", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
 }
