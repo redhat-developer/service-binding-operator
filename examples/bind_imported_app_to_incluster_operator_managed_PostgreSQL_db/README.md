@@ -43,6 +43,11 @@ spec:
 EOS
 ```
 
+Alternatively, you can perform the same task with this make command:
+``` bash
+make install-service-binding-operator-source
+```
+
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
@@ -70,6 +75,11 @@ spec:
 EOS
 ```
 
+Alternatively, you can perform the same task with this make command:
+``` bash
+make install-backing-db-operator-source
+```
+
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
 ![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
@@ -92,6 +102,11 @@ apiVersion: v1
 metadata:
   name: service-binding-demo
 EOS
+```
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make create-project
 ```
 
 ### Import an application
@@ -130,7 +145,12 @@ spec:
   imageName: postgres
   dbName: db-demo
 EOS
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make create-backing-db-instance
 ```
+
 
 ### Set labels on the application
 
@@ -143,6 +163,11 @@ The labels are:
 
 ``` bash
  kubectl patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
+```
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make set-labels-on-nodejs-app
 ```
 
 ### Express an intent to bind the DB and the application
@@ -174,6 +199,11 @@ spec:
     resourceRef: db-demo
   mountPathPrefix: “”
 EOS
+```
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make create-service-binding-request
 ```
 
 There are 2 parts in the request:
