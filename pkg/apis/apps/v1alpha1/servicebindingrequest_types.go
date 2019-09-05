@@ -26,10 +26,6 @@ type ServiceBindingRequestSpec struct {
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
-
-	// TriggerRebinding forcefully triggers a binding operation if the event
-	// for the same was missed for some reason
-	TriggerRebinding *bool `json:"triggerRebinding,omitempty"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

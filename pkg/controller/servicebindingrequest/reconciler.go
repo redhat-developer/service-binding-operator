@@ -55,19 +55,6 @@ func (r *Reconciler) setStatus(
 	return r.client.Status().Update(ctx, instance)
 }
 
-// setStatus always updates the TriggerRebindingFlag field to False, if present
-func (r *Reconciler) setTriggerRebindingFlag(
-	ctx context.Context,
-	instance *v1alpha1.ServiceBindingRequest,
-) error {
-	if instance.Spec.TriggerRebinding != nil && *instance.Spec.TriggerRebinding {
-		newValue := false
-		instance.Spec.TriggerRebinding = &newValue
-		return r.client.Update(ctx, instance)
-	}
-	return nil
-}
-
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
 // success, since it was able to bind applications.
 func (r *Reconciler) setApplicationObjects(
@@ -109,18 +96,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	err := r.client.Get(ctx, request.NamespacedName, instance)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueError(err)
-	}
-
-	// As long the request was handled, we update the TriggerRebind
-	err = r.setTriggerRebindingFlag(ctx, instance)
-	if err != nil {
-		return RequeueError(err)
-	}
-
-	// As long the request was handled, we update the TriggerRebind
-	err = r.setTriggerRebindingFlag(ctx, instance)
-	if err != nil {
 		return RequeueError(err)
 	}
 
