@@ -162,7 +162,7 @@ The labels are:
 * `environment=demo` - indicates the demo environment - it narrows the search
 
 ``` bash
- kubectl patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
+ kubectl patch dc nodejs-rest-http-crud -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
 ```
 
 Alternatively, you can perform the same task with this make command:
