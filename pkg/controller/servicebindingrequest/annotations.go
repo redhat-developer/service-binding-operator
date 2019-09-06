@@ -1,8 +1,6 @@
 package servicebindingrequest
 
 import (
-	"context"
-
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -79,7 +77,6 @@ func IsSBRNamespacedNameEmpty(namespacedName types.NamespacedName) bool {
 // SetSBRAnnotations update existing annotations to include operator's. The annotations added are
 // referring to a existing SBR namespaced name.
 func SetSBRAnnotations(
-	ctx context.Context,
 	client dynamic.Interface,
 	namespacedName types.NamespacedName,
 	objs []*unstructured.Unstructured,
