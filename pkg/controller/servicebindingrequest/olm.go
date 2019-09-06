@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -115,7 +116,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 
 	if len(crds) == 0 {
 		logger.Info("No CRD could be found for GVK.")
-		return nil, nil
+		return nil, fmt.Errorf("no crd could be found for gvk")
 	}
 	return crds[0], nil
 }

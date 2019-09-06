@@ -34,6 +34,25 @@ func reconcileRequest() reconcile.Request {
 	}
 }
 
+func TestReconcilerReconcileError(t *testing.T) {
+	resourceRef := "test-using-secret"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
+
+	fakeClient := f.FakeClient()
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+
+	res, err := reconciler.Reconcile(reconcileRequest())
+	assert.Error(t, err)
+	assert.True(t, res.Requeue)
+}
+
 // TestReconcilerReconcileUsingSecret test the reconciliation process using a secret, expected to be
 // the regular approach.
 func TestReconcilerReconcileUsingSecret(t *testing.T) {
