@@ -254,34 +254,34 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Info("Inspecting object...")
 
-		modifiedObj, err := b.updateSpecContainers(logger, &obj)
+		updatedObj, err := b.updateSpecContainers(logger, &obj)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(b.volumeKeys) > 0 {
-			modifiedObj, err = b.updateSpecVolumes(logger, &obj)
+			updatedObj, err = b.updateSpecVolumes(logger, &obj)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		logger.Info("Updating object...")
-		if err := b.client.Update(b.ctx, modifiedObj); err != nil {
+		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return nil, err
 		}
 
 		logger.Info("Reading back updated object...")
 		// reading object back again, to comply with possible modifications
 		namespacedName := types.NamespacedName{
-			Namespace: modifiedObj.GetNamespace(),
-			Name:      modifiedObj.GetName(),
+			Namespace: updatedObj.GetNamespace(),
+			Name:      updatedObj.GetName(),
 		}
-		if err = b.client.Get(b.ctx, namespacedName, modifiedObj); err != nil {
+		if err = b.client.Get(b.ctx, namespacedName, updatedObj); err != nil {
 			return nil, err
 		}
 
-		updatedObjs = append(updatedObjs, modifiedObj)
+		updatedObjs = append(updatedObjs, updatedObj)
 	}
 
 	return updatedObjs, nil
