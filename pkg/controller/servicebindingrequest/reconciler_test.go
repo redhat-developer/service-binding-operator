@@ -8,15 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -85,95 +80,6 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
 		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
 		assert.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
-	})
-}
-
-func updateSBR(t *testing.T, client dynamic.Interface, sbr *v1alpha1.ServiceBindingRequest) {
-	namespacedName := types.NamespacedName{Namespace: sbr.GetNamespace(), Name: sbr.GetName()}
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sbr)
-	require.NoError(t, err)
-	u := &unstructured.Unstructured{Object: data}
-
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := client.Resource(gr).Namespace(namespacedName.Namespace)
-	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
-	require.NoError(t, err)
-}
-
-// TestReconcilerForForcedTriggeringOfBinding test the reconciliation process using a secret,
-// and using TriggerRebind = true, false
-func TestReconcilerForForcedTriggeringOfBinding(t *testing.T) {
-	ctx := context.TODO()
-	resourceRef := "test-for-forced-trigger"
-	matchLabels := map[string]string{
-		"connects-to": "database",
-		"environment": "reconciler",
-	}
-
-	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
-	f.AddMockedUnstructuredCSV("cluster-service-version-list-forced-trigger")
-	f.AddMockedUnstructuredDatabaseCR(resourceRef)
-	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
-	f.AddMockedSecret("db-credentials")
-
-	fakeClient := f.FakeClient()
-	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
-
-	t.Run("reconcile-using-trigger-starting-with-true", func(t *testing.T) {
-		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
-		require.NoError(t, err)
-
-		// set to True and reconcile
-		triggertrue := true
-		sbrOutput.Spec.TriggerRebinding = &triggertrue
-
-		updateSBR(t, fakeDynClient, sbrOutput)
-
-		res, err := reconciler.Reconcile(reconcileRequest())
-		assert.Nil(t, err)
-		assert.False(t, res.Requeue, "should not requeue")
-
-		d := appsv1.Deployment{}
-		require.Nil(t, fakeClient.Get(ctx, namespacedName, &d))
-
-		containers := d.Spec.Template.Spec.Containers
-		assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
-
-		sbrOutput, err = reconciler.getServiceBindingRequest(namespacedName)
-		require.NoError(t, err)
-
-		// If TRUE was set, this will become FALSE
-		require.False(t, *sbrOutput.Spec.TriggerRebinding)
-	})
-
-	t.Run("reconcile-using-trigger-starting-with-false", func(t *testing.T) {
-		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput := &v1alpha1.ServiceBindingRequest{}
-		require.NoError(t, fakeClient.Get(ctx, namespacedName, sbrOutput))
-
-		triggerfalse := false
-		sbrOutput.Spec.TriggerRebinding = &triggerfalse
-
-		updateSBR(t, fakeDynClient, sbrOutput)
-
-		res, err := reconciler.Reconcile(reconcileRequest())
-		assert.Nil(t, err)
-		assert.False(t, res.Requeue)
-
-		d := appsv1.Deployment{}
-		require.Nil(t, fakeClient.Get(ctx, namespacedName, &d))
-
-		containers := d.Spec.Template.Spec.Containers
-		assert.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
-
-		sbrOutput, err = reconciler.getServiceBindingRequest(namespacedName)
-		require.NoError(t, err)
-
-		// If FALSE was set, this will stay FALSE
-		require.False(t, *sbrOutput.Spec.TriggerRebinding)
 	})
 }
 
