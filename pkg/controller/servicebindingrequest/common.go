@@ -12,6 +12,9 @@ var (
 	log = logf.ZapLogger(true).WithName("servicebindingrequest")
 )
 
+// ServiceBindingRequestResource the name of ServiceBindingRequest resource.
+const ServiceBindingRequestResource = "servicebindingrequests"
+
 // ServiceBindingRequestKind defines the name of the CRD kind.
 const ServiceBindingRequestKind = "ServiceBindingRequest"
 
