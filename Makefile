@@ -106,7 +106,7 @@ OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
-OPERATOR_SDK_EXTRA_ARGS ?= ""
+OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
 
 QUAY_TOKEN ?= ""
 
@@ -188,7 +188,6 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
-			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
 			--go-test-flags "-timeout=15m" \
