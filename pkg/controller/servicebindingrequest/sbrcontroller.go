@@ -117,7 +117,7 @@ func (s *SBRController) addSBRWatch() error {
 	source := s.createSourceForGVK(gvk)
 	err := s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 	if err != nil {
-		logger.Error(err, "n creating watch for ServiceBindingRequest")
+		logger.Error(err, "on creating watch for ServiceBindingRequest")
 		return err
 	}
 	logger.Info("Watch added for ServiceBindingRequest")
