@@ -31,13 +31,17 @@ type ServiceBindingRequestSpec struct {
 	// for the same was missed for some reason
 	TriggerRebinding *bool `json:"triggerRebinding,omitempty"`
 
+	// Custom env variables
+	// +optional
 	EnvVar []EnvMap `json:"envVar"`
 }
 
 // EnvMap is a set of Name and Value of an environment variable
 // +k8s:openapi-gen=true
 type EnvMap struct {
+	// key of custom env variable
 	Name  string `json:"name"`
+	// value template, currently supports expected is go template
 	Value string `json:"value"`
 }
 

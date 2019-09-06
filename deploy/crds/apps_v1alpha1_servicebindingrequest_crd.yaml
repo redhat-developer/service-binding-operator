@@ -70,11 +70,15 @@ spec:
               - resourceRef
               type: object
             envVar:
+              description: Custom env variables
               items:
                 properties:
                   name:
+                    description: key of custom env variable
                     type: string
                   value:
+                    description: value template, currently supports expected is go
+                      template
                     type: string
                 required:
                 - name

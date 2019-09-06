@@ -103,7 +103,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			return err
 		}
 
-		if _, ok := r.Cache[place]; !ok {
+		if _, ok := r.Cache[place].(map[string]interface{}); !ok {
 			r.Cache[place] = make(map[string]interface{})
 		}
 		if strings.HasPrefix(xDescriptor, secretPrefix) {
@@ -336,6 +336,8 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 			return nil, err
 		}
 	}
+
+	r.logger.WithValues("Cache", r.Cache).Info("Final cache values...")
 
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.EnvVar, r.Cache)
 	values, err := envParser.Parse()
