@@ -48,10 +48,3 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 		assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
 	})
 }
-
-func TestAnnotationsIsSBRNamespacedNameEmpty(t *testing.T) {
-	assert.True(t, IsNamespacedNameEmpty(types.NamespacedName{}))
-	assert.True(t, IsNamespacedNameEmpty(types.NamespacedName{Namespace: "ns"}))
-	assert.True(t, IsNamespacedNameEmpty(types.NamespacedName{Name: "name"}))
-	assert.False(t, IsNamespacedNameEmpty(types.NamespacedName{Namespace: "ns", Name: "name"}))
-}
