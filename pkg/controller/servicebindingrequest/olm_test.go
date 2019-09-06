@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -16,10 +17,21 @@ func init() {
 	logf.SetLogger(logf.ZapLogger(true))
 }
 
+func assertGVKs(t *testing.T, gvks []schema.GroupVersionKind) {
+	for _, gvk := range gvks {
+		t.Logf("Inspecting GVK: '%s'", gvk)
+		assert.NotEmpty(t, gvk.Group)
+		assert.NotEmpty(t, gvk.Version)
+		assert.NotEmpty(t, gvk.Kind)
+	}
+}
+
 func TestOLMNew(t *testing.T) {
 	ns := "controller"
+	csvName := "unit-csv"
+
 	f := mocks.NewFake(t, ns)
-	f.AddMockedUnstructuredCSV("unit-csv")
+	f.AddMockedUnstructuredCSV(csvName)
 	client := f.FakeDynClient()
 	olm := NewOLM(client, ns)
 
@@ -51,5 +63,14 @@ func TestOLMNew(t *testing.T) {
 		gvks, err := olm.ListCSVOwnedCRDsAsGVKs()
 		assert.NoError(t, err)
 		assert.Len(t, gvks, 1)
+		assertGVKs(t, gvks)
+	})
+
+	t.Run("ListGVKsFromCSVNamespacedName", func(t *testing.T) {
+		namespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
+		gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
+		assert.NoError(t, err)
+		assert.Len(t, gvks, 1)
+		assertGVKs(t, gvks)
 	})
 }

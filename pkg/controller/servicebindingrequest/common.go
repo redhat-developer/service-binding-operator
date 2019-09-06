@@ -12,11 +12,14 @@ var (
 	log = logf.ZapLogger(true).WithName("servicebindingrequest")
 )
 
-// ServiceBindingRequestKind defines the name of the CRD Kind.
+// ServiceBindingRequestKind defines the name of the CRD kind.
 const ServiceBindingRequestKind = "ServiceBindingRequest"
 
 // DeploymentConfigKind defines the name of DeploymentConfig kind.
 const DeploymentConfigKind = "DeploymentConfig"
+
+// ClusterServiceVersionKind the name of ClusterServiceVersion kind.
+const ClusterServiceVersionKind = "ClusterServiceVersion"
 
 // RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {

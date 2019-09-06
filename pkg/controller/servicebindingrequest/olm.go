@@ -9,12 +9,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 // OLM represents the actions this operator needs to take upon Operator-Lifecycle-Manager resources,
-// Like ClusterServiceVersions (CSV) and CRD-Descriptions.
+// like ClusterServiceVersions (CSV) and CRDDescriptions.
 type OLM struct {
 	client dynamic.Interface // kubernetes dynamic client
 	ns     string            // namespace
@@ -37,104 +38,166 @@ func (o *OLM) listCSVs() ([]unstructured.Unstructured, error) {
 	return csvs.Items, nil
 }
 
-// ListCSVOwnedCRDs return a unstructured list of CRD objects from "owned" section in CSVs.
-func (o *OLM) ListCSVOwnedCRDs() ([]*unstructured.Unstructured, error) {
-	crds := []*unstructured.Unstructured{}
-	csvs, err := o.listCSVs()
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: add right logger entries like in Planner;
+// extractOwnedCRDs from a list of CSV objects.
+func (o *OLM) extractOwnedCRDs(
+	csvs []unstructured.Unstructured,
+) ([]unstructured.Unstructured, error) {
+	crds := []unstructured.Unstructured{}
 	for _, csv := range csvs {
 		ownedPath := []string{"spec", "customresourcedefinitions", "owned"}
+		logger := o.logger.WithValues("OwnedPath", ownedPath, "CSV.Name", csv.GetName())
+
 		ownedCRDs, exists, err := unstructured.NestedSlice(csv.Object, ownedPath...)
 		if err != nil {
+			logger.Error(err, "on extracting nested slice")
 			return nil, err
 		}
 		if !exists {
 			continue
 		}
+
 		for _, crd := range ownedCRDs {
 			data := crd.(map[string]interface{})
-			crds = append(crds, &unstructured.Unstructured{Object: data})
+			crds = append(crds, unstructured.Unstructured{Object: data})
 		}
 	}
 
 	return crds, nil
 }
 
-type eachOwnedCRDFn func(crd *olmv1alpha1.CRDDescription)
-
-// loopCSVOwnedCRDs takes a function as parameter and excute this with every CRD object.
-func (o *OLM) loopCSVOwnedCRDs(fn eachOwnedCRDFn) error {
-	crds, err := o.ListCSVOwnedCRDs()
+// ListCSVOwnedCRDs return a unstructured list of CRD objects from "owned" section in CSVs.
+func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
+	csvs, err := o.listCSVs()
 	if err != nil {
-		o.logger.Error(err, "during list CSV owned CRDs")
-		return err
+		o.logger.Error(err, "on listting CSVs")
+		return nil, err
 	}
+	return o.extractOwnedCRDs(csvs)
+}
 
-	for _, u := range crds {
-		crd := &olmv1alpha1.CRDDescription{}
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, crd)
+// eachCRDDescriptionFn function to be called against each CRDDescription in a slice.
+type eachCRDDescriptionFn func(crdDescription *olmv1alpha1.CRDDescription)
+
+// loopCRDDescriptions takes a list of CRDDescriptions (extracted from "owned") and converts to a
+// actual type instance, before calling out for informed function. This method can return error in
+// case of issues to convert unstructured into CRDDescription.
+func (o *OLM) loopCRDDescriptions(
+	crdDescriptions []unstructured.Unstructured,
+	fn eachCRDDescriptionFn,
+) error {
+	for _, u := range crdDescriptions {
+		crdDescription := &olmv1alpha1.CRDDescription{}
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, crdDescription)
 		if err != nil {
 			o.logger.Error(err, "on converting from unstructured to CRD")
 			return err
 		}
-		fn(crd)
+		logger := o.logger.WithValues("CRDDescription", crdDescription)
+		logger.Info("Inspecting CRDDescription...")
+		if crdDescription.Name == "" {
+			logger.Info("Skipping empty CRDDescription!")
+			continue
+		}
+		fn(crdDescription)
 	}
-
 	return nil
 }
 
 // SelectCRDByGVK return a single CRD based on a given GVK.
 func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescription, error) {
 	logger := o.logger.WithValues("Selector.GVK", gvk)
-	crds := []*olmv1alpha1.CRDDescription{}
+	ownedCRDs, err := o.ListCSVOwnedCRDs()
+	if err != nil {
+		logger.Error(err, "on listing owned CRDs")
+		return nil, err
+	}
 
-	err := o.loopCSVOwnedCRDs(func(crd *olmv1alpha1.CRDDescription) {
+	crdDescriptions := []*olmv1alpha1.CRDDescription{}
+	err = o.loopCRDDescriptions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		logger = logger.WithValues(
-			"CRDDescription.Name", crd.Name,
-			"CRDDescription.Version", crd.Version,
-			"CRDDescription.Kind", crd.Kind,
+			"CRDDescription.Name", crdDescription.Name,
+			"CRDDescription.Version", crdDescription.Version,
+			"CRDDescription.Kind", crdDescription.Kind,
 		)
 		logger.Info("Inspecting CRDDescription object...")
 		// checking for suffix since is expected to have object type as prefix
-		if !strings.EqualFold(strings.ToLower(crd.Kind), strings.ToLower(gvk.Kind)) {
+		if !strings.EqualFold(strings.ToLower(crdDescription.Kind), strings.ToLower(gvk.Kind)) {
 			return
 		}
-		if crd.Version != "" && strings.ToLower(gvk.Version) != strings.ToLower(crd.Version) {
+		// matching resource version, unless when not informed
+		if crdDescription.Version != "" &&
+			strings.ToLower(gvk.Version) != strings.ToLower(crdDescription.Version) {
 			return
 		}
 		logger.Info("CRDDescription object matches selector!")
-		crds = append(crds, crd)
+		crdDescriptions = append(crdDescriptions, crdDescription)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(crds) == 0 {
+	if len(crdDescriptions) == 0 {
 		logger.Info("No CRD could be found for GVK.")
 		return nil, nil
 	}
-	return crds[0], nil
+	return crdDescriptions[0], nil
 }
 
-// ListCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
-func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
+// extractGVKs loop owned objects and extract the GVK information from them.
+func (o *OLM) extractGVKs(
+	crdDescriptions []unstructured.Unstructured,
+) ([]schema.GroupVersionKind, error) {
 	gvks := []schema.GroupVersionKind{}
-	err := o.loopCSVOwnedCRDs(func(crd *olmv1alpha1.CRDDescription) {
-		_, gv := schema.ParseResourceArg(crd.Name)
+	err := o.loopCRDDescriptions(crdDescriptions, func(crdDescription *olmv1alpha1.CRDDescription) {
+		o.logger.WithValues("CRDDescription.Name", crdDescription.Name).
+			Info("Extracting GVK from CRDDescription")
+		_, gv := schema.ParseResourceArg(crdDescription.Name)
 		gvks = append(gvks, schema.GroupVersionKind{
 			Group:   gv.Group,
-			Version: crd.Version,
-			Kind:    crd.Kind,
+			Version: crdDescription.Version,
+			Kind:    crdDescription.Kind,
 		})
 	})
 	if err != nil {
 		return []schema.GroupVersionKind{}, err
 	}
 	return gvks, nil
+}
+
+// ListCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
+func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
+	ownedCRDs, err := o.ListCSVOwnedCRDs()
+	if err != nil {
+		o.logger.Error(err, "on listting CSVs")
+		return nil, err
+	}
+	return o.extractGVKs(ownedCRDs)
+}
+
+// ListGVKsFromCSVNamespacedName return the list of owned GVKs for a given CSV namespaced named.
+func (o *OLM) ListGVKsFromCSVNamespacedName(
+	namespacedName types.NamespacedName,
+) ([]schema.GroupVersionKind, error) {
+	logger := o.logger.WithValues("CSV.NamespacedName", namespacedName)
+	logger.Info("Reading CSV to extract GVKs...")
+	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
+	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
+	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
+	if err != nil {
+		logger.Error(err, "on reading CSV object")
+		return []schema.GroupVersionKind{}, err
+	}
+
+	unstructuredCSV := *u
+	csvs := []unstructured.Unstructured{unstructuredCSV}
+
+	ownedCRDs, err := o.extractOwnedCRDs(csvs)
+	if err != nil {
+		logger.Error(err, "on extracting owned CRDs")
+		return []schema.GroupVersionKind{}, err
+	}
+
+	return o.extractGVKs(ownedCRDs)
 }
 
 // NewOLM instantiate a new OLM.
