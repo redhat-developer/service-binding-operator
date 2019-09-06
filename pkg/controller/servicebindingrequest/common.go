@@ -18,6 +18,9 @@ const ServiceBindingRequestKind = "ServiceBindingRequest"
 // DeploymentConfigKind defines the name of DeploymentConfig kind.
 const DeploymentConfigKind = "DeploymentConfig"
 
+// ServiceBindingRequestResource the name of ServiceBindingRequest resource.
+const ServiceBindingRequestResource = "servicebindingrequests"
+
 // RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {
