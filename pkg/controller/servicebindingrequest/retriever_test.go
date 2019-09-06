@@ -231,7 +231,7 @@ func TestCustomEnvParser(t *testing.T) {
 		_, err = retriever.Retrieve()
 		assert.Nil(t, err)
 
-		t.Logf("\nCache %+v", retriever.Cache)
+		t.Logf("\nCache %+v", retriever.cache)
 
 		envMap := []v1alpha1.EnvMap{
 			{
@@ -244,7 +244,7 @@ func TestCustomEnvParser(t *testing.T) {
 			},
 		}
 
-		c := NewCustomEnvParser(envMap, retriever.Cache)
+		c := NewCustomEnvParser(envMap, retriever.cache)
 		values, err := c.Parse()
 		if err != nil {
 			t.Error(err)

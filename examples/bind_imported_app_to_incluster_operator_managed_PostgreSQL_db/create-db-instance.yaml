@@ -1,3 +1,4 @@
+---
 apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
 metadata:

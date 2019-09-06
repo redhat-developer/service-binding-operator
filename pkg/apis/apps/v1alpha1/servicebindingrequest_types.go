@@ -27,10 +27,6 @@ type ServiceBindingRequestSpec struct {
 	// backing service operator.
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 
-	// TriggerRebinding forcefully triggers a binding operation if the event
-	// for the same was missed for some reason
-	TriggerRebinding *bool `json:"triggerRebinding,omitempty"`
-
 	// Custom env variables
 	// +optional
 	EnvVar []EnvMap `json:"envVar"`
