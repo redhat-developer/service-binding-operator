@@ -106,6 +106,7 @@ OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
+OPERATOR_SDK_EXTRA_ARGS ?= ""
 
 QUAY_TOKEN ?= ""
 
@@ -190,7 +191,8 @@ test-e2e: e2e-setup
 			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m"
+			--go-test-flags "-timeout=15m" \
+			$(OPERATOR_SDK_EXTRA_ARGS)
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -222,7 +224,10 @@ test-e2e-olm-ci:
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
 	$(Q)./hack/check-crds.sh
-	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m"
+	$(Q)operator-sdk --verbose test local ./test/e2e \
+			--no-setup \
+			--go-test-flags "-timeout=15m" \
+			$(OPERATOR_SDK_EXTRA_ARGS)
 
 ## -- Build Go binary and OCI image targets --
 
