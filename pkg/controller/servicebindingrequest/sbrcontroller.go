@@ -112,36 +112,6 @@ func (s *SBRController) addCSVWatch() error {
 
 // addSBRWatch creates a watchon ServiceBindingRequest GVK.
 func (s *SBRController) addSBRWatch() error {
-	/*
-		pred := predicate.Funcs{
-			UpdateFunc: func(e event.UpdateEvent) bool {
-				// FIXME: support unstructured.Unstructured types. This block is currently causing a
-				// panic with the assertion error.
-					oldKind := e.ObjectOld.DeepCopyObject().GetObjectKind().GroupVersionKind().Kind
-					if oldKind == ServiceBindingRequestKind {
-						oldSBR := e.ObjectOld.(*v1alpha1.ServiceBindingRequest)
-						newSBR := e.ObjectNew.(*v1alpha1.ServiceBindingRequest)
-
-						// if event was triggered as part of resetting TriggerRebinding True to False,
-						// we shall ignore it to avoid an infinite loop.
-						if newSBR.Spec.TriggerRebinding != nil &&
-							oldSBR.Spec.TriggerRebinding != nil &&
-							!*newSBR.Spec.TriggerRebinding &&
-							*oldSBR.Spec.TriggerRebinding {
-							return false
-						}
-					}
-
-				// ignore updates to CR status in which case metadata.Generation does not change
-				return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
-			},
-			DeleteFunc: func(e event.DeleteEvent) bool {
-				// evaluates to false if the object has been confirmed deleted
-				return !e.DeleteStateUnknown
-			},
-		}
-	*/
-
 	gvk := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
 	logger := s.logger.WithValues("GKV", gvk)
 	source := s.createSourceForGVK(gvk)
