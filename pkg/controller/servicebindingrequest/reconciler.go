@@ -171,7 +171,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	logger.Info("Retrieving data to create intermediate secret.")
-	retriever := NewRetriever(ctx, r.dynClient, plan, sbr.Spec.EnvVarPrefix)
+	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
 	retrievedObjects, err := retriever.Retrieve()
 	if err != nil {
 		logger.Error(err, "On retrieving binding data.")

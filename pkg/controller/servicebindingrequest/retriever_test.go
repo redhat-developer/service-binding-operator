@@ -1,7 +1,6 @@
 package servicebindingrequest
 
 import (
-	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -30,7 +29,7 @@ func TestRetriever(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
@@ -96,7 +95,7 @@ func TestRetriever(t *testing.T) {
 	})
 
 	t.Run("empty prefix", func(t *testing.T) {
-		retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "")
+		retriever = NewRetriever(fakeDynClient, plan, "")
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
@@ -127,7 +126,7 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
@@ -169,7 +168,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
