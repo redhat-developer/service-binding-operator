@@ -43,6 +43,11 @@ spec:
 EOS
 ```
 
+Alternatively, you can perform the same task with this make command:
+``` bash
+make install-service-binding-operator-source
+```
+
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
@@ -70,6 +75,11 @@ spec:
 EOS
 ```
 
+Alternatively, you can perform the same task with this make command:
+``` bash
+make install-backing-db-operator-source
+```
+
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
 ![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
@@ -92,6 +102,11 @@ apiVersion: v1
 metadata:
   name: service-binding-demo
 EOS
+```
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make create-project
 ```
 
 ### Import an application
@@ -130,11 +145,16 @@ spec:
   imageName: postgres
   dbName: db-demo
 EOS
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make create-backing-db-instance
 ```
+
 
 ### Set labels on the application
 
-Now the we need to set arbitrary labels on the application's `DeploymentConfig` in order for the Service Binding Operator to be able to find the application.
+Now we need to set arbitrary labels on the application's `DeploymentConfig` in order for the Service Binding Operator to be able to find the application.
 
 The labels are:
 
@@ -142,12 +162,17 @@ The labels are:
 * `environment=demo` - indicates the demo environment - it narrows the search
 
 ``` bash
- kubectl patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
+ kubectl patch dc nodejs-rest-http-crud -p '{"metadata": {"labels": {"connects-to": "postgres", "environment":"demo"}}}'
+```
+
+Alternatively, you can perform the same task with this make command:
+``` bash
+make set-labels-on-nodejs-app
 ```
 
 ### Express an intent to bind the DB and the application
 
-Now the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
+Now, the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
 
 Create the following `ServiceBindingRequest`:
 
@@ -176,6 +201,11 @@ spec:
 EOS
 ```
 
+Alternatively, you can perform the same task with this make command:
+``` bash
+make create-service-binding-request
+```
+
 There are 2 parts in the request:
 
 * `applicationSelector` - used to search for the application based on the labels that we set earlier and the `group`, `version` and `resource` of the application to be a `DeploymentConfig`.
@@ -183,7 +213,7 @@ There are 2 parts in the request:
 
 That causes the application to be re-deployed.
 
-Once the new version is up, go the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
+Once the new version is up, go to the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
 
 When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information as specified in the OLM descriptor below, into the
 application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
@@ -200,7 +230,7 @@ spec:
 
 ### ServiceBindingRequestStatus
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#spec-and-status
+`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
 | Field | Description |
 |-------|-------------|
