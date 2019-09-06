@@ -233,7 +233,7 @@ func TestCustomEnvParser(t *testing.T) {
 
 		t.Logf("\nCache %+v", retriever.cache)
 
-		envMap := []v1alpha1.EnvMap{
+		envMap := []v1alpha1.CustomEnvMap{
 			{
 				Name:  "JDBC_CONNECTION_STRING",
 				Value: `{{ .spec.imageName }}@{{ .status.dbCredentials.password }}`,

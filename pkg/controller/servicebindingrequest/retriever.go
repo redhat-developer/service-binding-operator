@@ -339,7 +339,7 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 
 	r.logger.WithValues("cache", r.cache).Info("Final cache values...")
 
-	envParser := NewCustomEnvParser(r.plan.SBR.Spec.EnvVar, r.cache)
+	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
 	values, err := envParser.Parse()
 	if err != nil {
 		return nil, err

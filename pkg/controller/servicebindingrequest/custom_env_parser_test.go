@@ -19,12 +19,12 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 		},
 	}
 
-	envMap := []v1alpha1.EnvMap{
-		v1alpha1.EnvMap{
+	envMap := []v1alpha1.CustomEnvMap{
+		v1alpha1.CustomEnvMap{
 			Name:  "JDBC_CONNECTION_STRING",
 			Value: `{{ .spec.dbName }}:{{ .status.creds.user }}@{{ .status.creds.pass }}`,
 		},
-		v1alpha1.EnvMap{
+		v1alpha1.CustomEnvMap{
 			Name:  "ANOTHER_STRING",
 			Value: `{{ .spec.dbName }}_{{ .status.creds.user }}`,
 		},

@@ -69,7 +69,7 @@ spec:
               - kind
               - resourceRef
               type: object
-            envVar:
+            customEnvVar:
               description: Custom env variables
               items:
                 properties:
@@ -94,7 +94,7 @@ spec:
           required:
           - backingServiceSelector
           - applicationSelector
-          - envVar
+          - customEnvVar
           type: object
         status:
           properties:

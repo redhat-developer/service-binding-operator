@@ -7,11 +7,11 @@ import (
 )
 
 type CustomEnvParser struct {
-	EnvMap []v1alpha1.EnvMap
+	EnvMap []v1alpha1.CustomEnvMap
 	Cache  map[string]interface{}
 }
 
-func NewCustomEnvParser(envMap []v1alpha1.EnvMap, cache map[string]interface{}) *CustomEnvParser {
+func NewCustomEnvParser(envMap []v1alpha1.CustomEnvMap, cache map[string]interface{}) *CustomEnvParser {
 	return &CustomEnvParser{
 		EnvMap: envMap,
 		Cache:  cache,

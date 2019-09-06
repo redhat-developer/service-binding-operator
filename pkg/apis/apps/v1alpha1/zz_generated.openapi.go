@@ -13,7 +13,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"./pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
 		"./pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
-		"./pkg/apis/apps/v1alpha1.EnvMap":                      schema_pkg_apis_apps_v1alpha1_EnvMap(ref),
+		"./pkg/apis/apps/v1alpha1.CustomEnvMap":                schema_pkg_apis_apps_v1alpha1_CustomEnvMap(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
@@ -103,11 +103,11 @@ func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCa
 	}
 }
 
-func schema_pkg_apis_apps_v1alpha1_EnvMap(ref common.ReferenceCallback) common.OpenAPIDefinition {
+func schema_pkg_apis_apps_v1alpha1_CustomEnvMap(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "EnvMap is a set of Name and Value of an environment variable",
+				Description: "CustomEnvMap is a set of Name and Value of an environment variable",
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -206,14 +206,14 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
-					"envVar": {
+					"customEnvVar": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Custom env variables",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("./pkg/apis/apps/v1alpha1.EnvMap"),
+										Ref: ref("./pkg/apis/apps/v1alpha1.CustomEnvMap"),
 									},
 								},
 							},
@@ -224,7 +224,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "./pkg/apis/apps/v1alpha1.EnvMap"},
+			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "./pkg/apis/apps/v1alpha1.CustomEnvMap"},
 	}
 }
 

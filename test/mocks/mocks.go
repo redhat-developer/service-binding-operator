@@ -303,7 +303,7 @@ func ServiceBindingRequestMock(
 				Resource:    "deployments",
 				MatchLabels: matchLabels,
 			},
-			EnvVar: []v1alpha1.EnvMap{
+			CustomEnvVar: []v1alpha1.CustomEnvMap{
 				{
 					Name:  "IMAGE_PATH",
 					Value: "spec.imagePath",
