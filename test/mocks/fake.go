@@ -39,6 +39,18 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	return sbr
 }
 
+func (f *Fake) AddMockedUnstructuredServiceBindingRequestWithApplicationName(
+	name string,
+	ref string,
+	appName string,
+) *unstructured.Unstructured {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, ref, matchLabels)
+	require.Nil(f.t, err)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
 func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,
 	ref string,

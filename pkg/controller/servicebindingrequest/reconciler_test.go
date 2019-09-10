@@ -53,6 +53,12 @@ func TestReconcilerReconcileError(t *testing.T) {
 	assert.True(t, res.Requeue)
 }
 
+// TestApplicationSelectorByName tests
+func TestApplicationSelectorByName(t *testing.T) {
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
+}
+
 // TestReconcilerReconcileUsingSecret test the reconciliation process using a secret, expected to be
 // the regular approach.
 func TestReconcilerReconcileUsingSecret(t *testing.T) {
