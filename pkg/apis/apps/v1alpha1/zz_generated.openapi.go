@@ -194,18 +194,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Format:      "",
 						},
 					},
-					"backingServiceSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelector is used to identify the backing service operator.",
-							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
-						},
-					},
-					"applicationSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator.",
-							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
-						},
-					},
 					"customEnvVar": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Custom env variables",
@@ -217,6 +205,18 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 									},
 								},
 							},
+						},
+					},
+					"backingServiceSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BackingServiceSelector is used to identify the backing service operator.",
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+						},
+					},
+					"applicationSelector": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator.",
+							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
 				},

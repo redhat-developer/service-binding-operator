@@ -94,7 +94,6 @@ spec:
           required:
           - backingServiceSelector
           - applicationSelector
-          - customEnvVar
           type: object
         status:
           properties:
