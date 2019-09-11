@@ -3,16 +3,17 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -54,7 +55,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	}
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		return nil , errors.NewNotFound(
+		return nil, errors.NewNotFound(
 			gvr.GroupResource(),
 			b.sbr.Spec.ApplicationSelector.Resource,
 		)
@@ -265,8 +266,18 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		logger.Info("Updating object in Kube...")
+		logger.Info("Updating object...")
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
+			return nil, err
+		}
+
+		logger.Info("Reading back updated object...")
+		// reading object back again, to comply with possible modifications
+		namespacedName := types.NamespacedName{
+			Namespace: updatedObj.GetNamespace(),
+			Name:      updatedObj.GetName(),
+		}
+		if err = b.client.Get(b.ctx, namespacedName, updatedObj); err != nil {
 			return nil, err
 		}
 

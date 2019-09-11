@@ -1,7 +1,6 @@
 package servicebindingrequest
 
 import (
-	"context"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestRetriever(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
@@ -97,7 +96,7 @@ func TestRetriever(t *testing.T) {
 	})
 
 	t.Run("empty prefix", func(t *testing.T) {
-		retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "")
+		retriever = NewRetriever(fakeDynClient, plan, "")
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
@@ -128,7 +127,7 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
@@ -171,7 +170,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("read", func(t *testing.T) {
@@ -224,7 +223,7 @@ func TestCustomEnvParser(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(context.TODO(), fakeDynClient, plan, "SERVICE_BINDING")
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
 	t.Run("Should detect custom env values", func(t *testing.T) {

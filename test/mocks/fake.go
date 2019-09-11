@@ -8,6 +8,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
@@ -27,9 +28,25 @@ type Fake struct {
 }
 
 // AddMockedServiceBindingRequest add mocked object from ServiceBindingRequestMock.
-func (f *Fake) AddMockedServiceBindingRequest(name, ref string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
+func (f *Fake) AddMockedServiceBindingRequest(
+	name string,
+	ref string,
+	matchLabels map[string]string,
+) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
 	sbr := ServiceBindingRequestMock(f.ns, name, ref, matchLabels)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
+func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
+	name string,
+	ref string,
+	matchLabels map[string]string,
+) *unstructured.Unstructured {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, ref, matchLabels)
+	require.Nil(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -72,6 +89,13 @@ func (f *Fake) AddMockedDatabaseCR(ref string) {
 	require.Nil(f.t, pgapis.AddToScheme(f.S))
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
 	f.objs = append(f.objs, DatabaseCRMock(f.ns, ref))
+}
+
+func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
+	require.Nil(f.t, pgapis.AddToScheme(f.S))
+	d, err := UnstructuredDatabaseCRMock(f.ns, ref)
+	require.Nil(f.t, err)
+	f.objs = append(f.objs, d)
 }
 
 // AddMockedUnstructuredDeployment add mocked object from UnstructuredDeploymentMock.

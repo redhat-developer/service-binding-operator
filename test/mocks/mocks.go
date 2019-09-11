@@ -282,7 +282,10 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 
 // ServiceBindingRequestMock return a binding-request mock of informed name and match labels.
 func ServiceBindingRequestMock(
-	ns, name, resourceRef string, matchLabels map[string]string,
+	ns string,
+	name string,
+	resourceRef string,
+	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	return &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -311,6 +314,23 @@ func ServiceBindingRequestMock(
 			},
 		},
 	}
+}
+
+// UnstructuredServiceBindingRequestMock returns a unstructured version of SBR.
+func UnstructuredServiceBindingRequestMock(
+	ns string,
+	name string,
+	resourceRef string,
+	matchLabels map[string]string,
+) (*unstructured.Unstructured, error) {
+	sbr := ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
+	if err != nil {
+		return nil, err
+	}
+	u := &ustrv1.Unstructured{Object: data}
+	u.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
+	return u, nil
 }
 
 // DeploymentListMock returns a list of DeploymentMock.
