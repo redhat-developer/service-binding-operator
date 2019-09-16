@@ -1,7 +1,6 @@
 package servicebindingrequest
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -22,7 +21,6 @@ type Retriever struct {
 	logger        logr.Logger                  // logger instance
 	data          map[string][]byte            // data retrieved
 	objects       []*unstructured.Unstructured // list of objects employed
-	ctx           context.Context              // request context
 	client        dynamic.Interface            // Kubernetes API client
 	plan          *Plan                        // plan instance
 	volumeKeys    []string                     // list of keys found
@@ -294,17 +292,11 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 }
 
 // NewRetriever instantiate a new retriever instance.
-func NewRetriever(
-	ctx context.Context,
-	client dynamic.Interface,
-	plan *Plan,
-	bindingPrefix string,
-) *Retriever {
+func NewRetriever(client dynamic.Interface, plan *Plan, bindingPrefix string) *Retriever {
 	return &Retriever{
 		logger:        logf.Log.WithName("retriever"),
 		data:          make(map[string][]byte),
 		objects:       []*unstructured.Unstructured{},
-		ctx:           ctx,
 		client:        client,
 		plan:          plan,
 		volumeKeys:    []string{},

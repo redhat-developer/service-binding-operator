@@ -12,10 +12,10 @@ import (
 )
 
 func TestAnnotationsExtractNamespacedName(t *testing.T) {
-	assert.Equal(t, types.NamespacedName{}, extractNamespacedName(map[string]string{}))
+	assert.Equal(t, types.NamespacedName{}, extractSBRNamespacedName(map[string]string{}))
 
 	data := map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"}
-	assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, extractNamespacedName(data))
+	assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, extractSBRNamespacedName(data))
 }
 
 func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
@@ -47,11 +47,4 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
 	})
-}
-
-func TestAnnotationsIsSBRNamespacedNameEmpty(t *testing.T) {
-	assert.True(t, IsSBRNamespacedNameEmpty(types.NamespacedName{}))
-	assert.True(t, IsSBRNamespacedNameEmpty(types.NamespacedName{Namespace: "ns"}))
-	assert.True(t, IsSBRNamespacedNameEmpty(types.NamespacedName{Name: "name"}))
-	assert.False(t, IsSBRNamespacedNameEmpty(types.NamespacedName{Namespace: "ns", Name: "name"}))
 }

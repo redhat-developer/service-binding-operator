@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -34,56 +35,88 @@ const (
 )
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
-func (r *Reconciler) setSecretName(
-	ctx context.Context,
-	instance *v1alpha1.ServiceBindingRequest,
-	name string,
-) error {
-	instance.Status.BindingStatus = bindingInProgress
-	instance.Status.Secret = name
-	return r.client.Status().Update(ctx, instance)
-
+func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
+	sbrStatus.BindingStatus = bindingInProgress
+	sbrStatus.Secret = name
 }
 
 // setStatus update the CR status field.
-func (r *Reconciler) setStatus(
-	ctx context.Context,
-	instance *v1alpha1.ServiceBindingRequest,
-	status string,
-) error {
-	instance.Status.BindingStatus = status
-	return r.client.Status().Update(ctx, instance)
-}
-
-// setStatus always updates the TriggerRebindingFlag field to False, if present
-func (r *Reconciler) setTriggerRebindingFlag(
-	ctx context.Context,
-	instance *v1alpha1.ServiceBindingRequest,
-) error {
-	if instance.Spec.TriggerRebinding != nil && *instance.Spec.TriggerRebinding {
-		newValue := false
-		instance.Spec.TriggerRebinding = &newValue
-		return r.client.Update(ctx, instance)
-	}
-	return nil
+func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string) {
+	sbrStatus.BindingStatus = status
 }
 
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
 // success, since it was able to bind applications.
 func (r *Reconciler) setApplicationObjects(
-	ctx context.Context,
-	instance *v1alpha1.ServiceBindingRequest,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objs []*unstructured.Unstructured,
-) error {
+) {
 	names := []string{}
 	for _, obj := range objs {
 		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
 	}
+	sbrStatus.BindingStatus = bindingSuccess
+	sbrStatus.ApplicationObjects = names
+}
 
-	instance.Status.BindingStatus = bindingSuccess
-	instance.Status.ApplicationObjects = names
+// getServiceBindingRequest retrieve the SBR object based on namespaced-name.
+func (r *Reconciler) getServiceBindingRequest(
+	namespacedName types.NamespacedName,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gr).Namespace(namespacedName.Namespace)
+	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	sbr := &v1alpha1.ServiceBindingRequest{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+	return sbr, nil
+}
 
-	return r.client.Status().Update(ctx, instance)
+// updateStatusServiceBindingRequest update the status field of a ServiceBindingRequest.
+func (r *Reconciler) updateStatusServiceBindingRequest(
+	sbr *v1alpha1.ServiceBindingRequest,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+) error {
+	// coping status over informed object
+	sbr.Status = *sbrStatus
+
+	// converting object into unstructured
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sbr)
+	if err != nil {
+		return err
+	}
+	u := &unstructured.Unstructured{Object: data}
+
+	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
+	_, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
+	return err
+}
+
+// onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
+// informed error to apply a different behavior for not-founds.
+func (r *Reconciler) onError(
+	err error,
+	sbr *v1alpha1.ServiceBindingRequest,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+	objs []*unstructured.Unstructured,
+) (reconcile.Result, error) {
+	// settting overall status to failed
+	r.setStatus(sbrStatus, bindingFail)
+	//
+	if objs != nil {
+		r.setApplicationObjects(sbrStatus, objs)
+	}
+	errStatus := r.updateStatusServiceBindingRequest(sbr, sbrStatus)
+	if errStatus != nil {
+		return RequeueError(errStatus)
+	}
+	return RequeueOnNotFound(err, requeueAfter)
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:
@@ -98,6 +131,7 @@ func (r *Reconciler) setApplicationObjects(
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx := context.TODO()
 	objectsToAnnotate := []*unstructured.Unstructured{}
+
 	logger := logf.Log.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
@@ -105,44 +139,28 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	logger.Info("Reconciling ServiceBindingRequest...")
 
 	// fetch the ServiceBindingRequest instance
-	instance := &v1alpha1.ServiceBindingRequest{}
-	err := r.client.Get(ctx, request.NamespacedName, instance)
+	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
 		return RequeueError(err)
 	}
 
-	// As long the request was handled, we update the TriggerRebind
-	err = r.setTriggerRebindingFlag(ctx, instance)
-	if err != nil {
-		return RequeueError(err)
-	}
+	// splitting instance from it's status
+	sbrStatus := sbr.Status
 
-	// As long the request was handled, we update the TriggerRebind
-	err = r.setTriggerRebindingFlag(ctx, instance)
-	if err != nil {
-		return RequeueError(err)
-	}
-
-	logger = logger.WithValues("ServiceBindingRequest.Name", instance.Name)
+	logger = logger.WithValues("ServiceBindingRequest.Name", sbr.Name)
 	logger.Info("Found service binding request to inspect")
-
-	if err = r.setStatus(ctx, instance, bindingInProgress); err != nil {
-		logger.Error(err, "On updating service-binding-request status.")
-		return RequeueError(err)
-	}
 
 	//
 	// Planing changes
 	//
 
 	logger.Info("Creating a plan based on OLM and CRD.")
-	planner := NewPlanner(ctx, r.dynClient, instance)
+	planner := NewPlanner(ctx, r.dynClient, sbr)
 	plan, err := planner.Plan()
 	if err != nil {
-		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On creating a plan to bind applications.")
-		return RequeueOnNotFound(err, requeueAfter)
+		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
 	// storing CR in objects to annotate
@@ -153,18 +171,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	logger.Info("Retrieving data to create intermediate secret.")
-	retriever := NewRetriever(ctx, r.dynClient, plan, instance.Spec.EnvVarPrefix)
+	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
 	retrievedObjects, err := retriever.Retrieve()
 	if err != nil {
-		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On retrieving binding data.")
-		return RequeueOnNotFound(err, requeueAfter)
+		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
-	if err = r.setSecretName(ctx, instance, plan.Name); err != nil {
-		logger.Error(err, "On updating service-binding-request status.")
-		return RequeueError(err)
-	}
+	r.setSecretName(&sbrStatus, plan.Name)
 
 	// storing objects used in Retriever
 	objectsToAnnotate = append(objectsToAnnotate, retrievedObjects...)
@@ -174,17 +188,15 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	logger.Info("Binding applications with intermediary secret.")
-	binder := NewBinder(ctx, r.client, r.dynClient, instance, retriever.volumeKeys)
+	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
 	updatedObjects, err := binder.Bind()
 	if err != nil {
-		_ = r.setStatus(ctx, instance, bindingFail)
 		logger.Error(err, "On binding application.")
-		return RequeueOnNotFound(err, requeueAfter)
-	} else if err = r.setApplicationObjects(ctx, instance, updatedObjects); err != nil {
-		logger.Error(err, "On updating application objects status field.")
-		return RequeueError(err)
+		return r.onError(err, sbr, &sbrStatus, updatedObjects)
 	}
 
+	// saving on status the list of objects that have been touched
+	r.setApplicationObjects(&sbrStatus, updatedObjects)
 	// storing objects used in Binder
 	objectsToAnnotate = append(objectsToAnnotate, updatedObjects...)
 
@@ -192,12 +204,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Annotating objects related to binding
 	//
 
-	sbrNamespacedName := types.NamespacedName{
-		Namespace: instance.GetNamespace(),
-		Name:      instance.GetName(),
-	}
-	if err = SetSBRAnnotations(ctx, r.dynClient, sbrNamespacedName, objectsToAnnotate); err != nil {
+	if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
 		logger.Error(err, "On setting annotations in related objects.")
+		return r.onError(err, sbr, &sbrStatus, updatedObjects)
+	}
+
+	// updating status of request instance
+	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
+		logger.Error(err, "On updating status of ServiceBindingRequest.")
 		return RequeueError(err)
 	}
 

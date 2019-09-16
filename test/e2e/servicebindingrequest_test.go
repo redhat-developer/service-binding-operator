@@ -77,7 +77,9 @@ func TestAddSchemesToFramework(t *testing.T) {
 		t.Run("scenario-sbr-app-db", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
+		t.Run("scenario-2 (pre create sbr then binding resources)", PreServiceBindingRequest)
 	})
+
 }
 
 // cleanUpOptions using global variables to create the object.
@@ -206,6 +208,19 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
 }
 
+// This would setup testing resources then starts a test,
+// SBR gets created in this test before creation of bindable resource objects
+func PreServiceBindingRequest(t *testing.T) {
+	t.Log("Creating a new test context...")
+	ctx := framework.NewTestCtx(t)
+	defer ctx.Cleanup()
+
+	ns, f := bootstrapNamespace(t, ctx)
+
+	// executing testing steps on operator
+	preCreateServiceBindingRequestTest(t, ctx, f, ns)
+}
+
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
 // are set, and are having "envFrom" directive.
 func assertDeploymentEnvFrom(
@@ -297,6 +312,7 @@ func retry(attempts int, sleep time.Duration, fn func() error) error {
 		if err == nil {
 			break
 		}
+		time.Sleep(sleep)
 	}
 	return err
 }
