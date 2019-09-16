@@ -270,7 +270,8 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 func ServiceBindingRequestMock(
 	ns string,
 	name string,
-	resourceRef string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	return &v1alpha1.ServiceBindingRequest{
@@ -284,12 +285,13 @@ func ServiceBindingRequestMock(
 				Group:       CRDName,
 				Version:     CRDVersion,
 				Kind:        CRDKind,
-				ResourceRef: resourceRef,
+				ResourceRef: backingServiceResourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				Group:       "apps",
 				Version:     "v1",
 				Resource:    "deployments",
+				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
 		},
@@ -300,10 +302,11 @@ func ServiceBindingRequestMock(
 func UnstructuredServiceBindingRequestMock(
 	ns string,
 	name string,
-	resourceRef string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err

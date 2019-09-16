@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -145,11 +146,23 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueError(err)
 	}
 
+	logger = logger.WithValues("ServiceBindingRequest.Name", sbr.Name)
+	logger.Info("Found service binding request to inspect")
+
 	// splitting instance from it's status
 	sbrStatus := sbr.Status
 
-	logger = logger.WithValues("ServiceBindingRequest.Name", sbr.Name)
-	logger.Info("Found service binding request to inspect")
+	// Check if application ResourceRef is present
+	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
+		logger.Info("Spec.ApplicationSelector.ResourceRef not found")
+
+		// Check if MatchLabels is present
+		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
+			err := errors.New("NotFoundError")
+			logger.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
+			return RequeueError(err)
+		}
+	}
 
 	//
 	// Planing changes

@@ -35,14 +35,14 @@ func reconcileRequest() reconcile.Request {
 }
 
 func TestReconcilerReconcileError(t *testing.T) {
-	resourceRef := "test-using-secret"
+	backingServiceResourceRef := "test-using-secret"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
 
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", matchLabels)
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
@@ -53,26 +53,52 @@ func TestReconcilerReconcileError(t *testing.T) {
 	assert.True(t, res.Requeue)
 }
 
-// TestApplicationSelectorByName tests
+// TestApplicationSelectorByName tests discovery of application by name
 func TestApplicationSelectorByName(t *testing.T) {
+	backingServiceResourceRef := "backingServiceRef"
+	applicationResourceRef := "applicationRef"
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, nil)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredDeployment(reconcilerName, nil)
+	f.AddMockedSecret("db-credentials")
+
+	fakeClient := f.FakeClient()
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+
+	t.Run("reconcile-using-secret", func(t *testing.T) {
+
+		res, err := reconciler.Reconcile(reconcileRequest())
+		assert.NoError(t, err)
+		assert.False(t, res.Requeue)
+
+		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		require.NoError(t, err)
+
+		require.Equal(t, "Success", sbrOutput.Status.BindingStatus)
+		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
+		assert.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
+	})
 }
 
 // TestReconcilerReconcileUsingSecret test the reconciliation process using a secret, expected to be
 // the regular approach.
 func TestReconcilerReconcileUsingSecret(t *testing.T) {
 	ctx := context.TODO()
-	resourceRef := "test-using-secret"
+	backingServiceResourceRef := "test-using-secret"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
 
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
-	f.AddMockedUnstructuredDatabaseCR(resourceRef)
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
 
@@ -110,16 +136,16 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	ctx := context.TODO()
-	resourceRef := "test-using-volumes"
+	backingServiceResourceRef := "test-using-volumes"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
 
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, resourceRef, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", matchLabels)
 	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
-	f.AddMockedUnstructuredDatabaseCR(resourceRef)
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedSecret("db-credentials")
 

@@ -28,7 +28,7 @@ func TestBinderNew(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -89,4 +89,30 @@ func TestBinderNew(t *testing.T) {
 		assert.NoError(t, err)
 		assert.True(t, parsedTime.Before(time.Now()))
 	})
+}
+
+func TestBinderApplicationName(t *testing.T) {
+	ns := "binder"
+	name := "service-binding-request"
+
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", nil)
+	f.AddMockedUnstructuredDeployment("ref", nil)
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+
+	t.Run("search by application name", func(t *testing.T) {
+		list, err := binder.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list.Items))
+	})
+
 }
