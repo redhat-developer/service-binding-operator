@@ -35,6 +35,19 @@ var (
 		Path:         "dbName",
 		XDescriptors: []string{"binding:env:attribute"},
 	}
+	ImageSpecDesc = olmv1alpha1.SpecDescriptor{
+		Path:         "image",
+		DisplayName:  "Image",
+		Description:  "Image Name",
+		XDescriptors: nil,
+	}
+	// DBNameSpecDesc default spec descriptor to inform the database name.
+	DBNameSpecIp = olmv1alpha1.SpecDescriptor{
+		DisplayName:  "Database IP",
+		Description:  "Database IP",
+		Path:         "dbConnectionIp",
+		XDescriptors: []string{"binding:env:attribute"},
+	}
 	// DBConfigMapSpecDesc spec descriptor to describe a operator that export username and password
 	// via config-map, instead of a usual secret.
 	DBConfigMapSpecDesc = olmv1alpha1.SpecDescriptor{
@@ -107,7 +120,7 @@ func ClusterServiceVersionListMock(ns, name string) *olmv1alpha1.ClusterServiceV
 // operator setup.
 func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc},
+		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc, ImageSpecDesc},
 		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
 	)
 }
@@ -116,7 +129,7 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 // spec-descriptor
 func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
 	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc},
+		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc, ImageSpecDesc},
 		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
 	)
 }
@@ -216,6 +229,7 @@ func DatabaseCRMock(ns, name string) *pgv1alpha1.Database {
 		Spec: pgv1alpha1.DatabaseSpec{
 			Image:     "docker.io/postgres:latest",
 			ImageName: "postgres",
+			DBName:    "test-db",
 		},
 		Status: pgv1alpha1.DatabaseStatus{
 			DBCredentials: "db-credentials",
@@ -291,6 +305,12 @@ func ServiceBindingRequestMock(
 				Version:     "v1",
 				Resource:    "deployments",
 				MatchLabels: matchLabels,
+			},
+			CustomEnvVar: []v1alpha1.CustomEnvMap{
+				{
+					Name:  "IMAGE_PATH",
+					Value: "spec.imagePath",
+				},
 			},
 		},
 	}
@@ -427,6 +447,8 @@ func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructur
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
+	ImageName string
+	Image string
 }
 
 // ConfigMapDatabase ...
@@ -450,6 +472,8 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 		},
 		Spec: ConfigMapDatabaseSpec{
 			DBConfigMap: configMapName,
+			Image: "docker.io/postgres",
+			ImageName: "postgres",
 		},
 	}
 }
@@ -458,5 +482,10 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstructured.Unstructured, error) {
 	db := DatabaseConfigMapMock(ns, name, configMapName)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+func ConvertToUnstructured(cr interface{}) (*unstructured.Unstructured, error) {
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	return &ustrv1.Unstructured{Object: data}, err
 }
