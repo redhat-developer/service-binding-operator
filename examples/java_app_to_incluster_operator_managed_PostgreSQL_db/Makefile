@@ -16,7 +16,7 @@ Q = @
 Q_FLAG = -q
 QUIET_FLAG = --quiet
 V_FLAG =
-VERBOSE_FLAG = 
+VERBOSE_FLAG =
 S_FLAG = -s
 X_FLAG =
 ifeq ($(VERBOSE),1)
@@ -84,7 +84,7 @@ install-service-binding-operator-source:
 .PHONY: install-backing-db-operator-source
 ## Install the Backing Service DB Operator
 install-backing-db-operator-source:
-	@oc apply -f backing-db-operator-source.yaml 
+	@oc apply -f backing-db-operator-source.yaml
 
 ## -- Application Developer targets --
 
@@ -103,11 +103,11 @@ create-backing-db-instance:
 create-service-binding-request:
 	@oc apply -f service-binding-request.yaml
 
-.PHONY: set-labels-on-postgress-boot-app
+.PHONY: set-labels-on-java-app
 ## Set the binding labels for the  app
-set-labels-on-postgress-boot-app:
+set-labels-on-java-app:
 	@oc project service-binding-demo
-	@oc patch dc postgress-boot-rest-http-crud -p '{"metadata": {"labels": {"connects-to": "postgres", "environment": "demo"}}}'
+	@oc patch dc java-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment": "demo"}}}'
 
 .PHONY: delete-project
 ## Delete the OpenShift project/namespace

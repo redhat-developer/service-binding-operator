@@ -18,3 +18,10 @@ spec:
     kind: Database
     resourceRef: db-demo
   mountPathPrefix: “”
+  customEnvVar:
+    - name: JDBC_URL
+      value: 'jdbc:postgresql://{{ .status.dbConnectionIP }}:{{ .status.dbConnectionPort }}/{{ .status.dbName }}'   # yamllint disable-line rule:line-length
+    - name: DB_USER
+      value: '{{ index .status.dbConfigMap "db.username" }}'
+    - name: DB_PASSWORD
+      value: '{{ index .status.dbConfigMap "db.password" }}'
