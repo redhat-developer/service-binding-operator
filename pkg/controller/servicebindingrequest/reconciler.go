@@ -14,6 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
@@ -120,6 +121,23 @@ func (r *Reconciler) onError(
 	return RequeueOnNotFound(err, requeueAfter)
 }
 
+// checkSBR checks the Service Binding Request
+func checkSBR(sbr *v1alpha1.ServiceBindingRequest, logger logr.Logger) error {
+	// Check if application ResourceRef is present
+	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
+		logger.Info("Spec.ApplicationSelector.ResourceRef not found")
+
+		// Check if MatchLabels is present
+		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
+
+			err := errors.New("NotFoundError")
+			logger.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
+			return err
+		}
+	}
+	return nil
+}
+
 // Reconcile a ServiceBindingRequest by the following steps:
 // 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
@@ -152,16 +170,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// splitting instance from it's status
 	sbrStatus := sbr.Status
 
-	// Check if application ResourceRef is present
-	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
-		logger.Info("Spec.ApplicationSelector.ResourceRef not found")
-
-		// Check if MatchLabels is present
-		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
-			err := errors.New("NotFoundError")
-			logger.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
-			return RequeueError(err)
-		}
+	// Check Service Binding Request
+	err = checkSBR(sbr, logger)
+	if err != nil {
+		logger.Error(err, "")
+		return RequeueError(err)
 	}
 
 	//
