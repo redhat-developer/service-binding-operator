@@ -2,20 +2,18 @@
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
 metadata:
-  name: mydb.to.shell-app
+  name: binding-request
   namespace: service-binding-demo
 spec:
-  mountPathPrefix: "/var/credentials"
-  envVarPrefix: "MYDB"
-  backingServiceSelector:
-    group: aws.pmacik.dev
-    version: v1alpha1
-    kind: RDSDatabase
-    resourceRef: mydb
   applicationSelector:
     matchLabels:
       connects-to: postgres
-      environment: shell
+      environment: demo
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
+  backingServiceSelector:
+    group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    resourceRef: db-demo
