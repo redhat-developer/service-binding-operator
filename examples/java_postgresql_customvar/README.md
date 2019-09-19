@@ -202,7 +202,6 @@ spec:
     version: v1alpha1
     kind: Database
     resourceRef: db-demo
-  mountPathPrefix: “”
   customEnvVar:
     - name: JDBC_URL
       value: 'jdbc:postgresql://{{ .status.dbConnectionIP }}:{{ .status.dbConnectionPort }}/{{ .status.dbName }}'

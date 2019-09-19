@@ -187,7 +187,6 @@ metadata:
   name: mydb.to.shell-app
   namespace: service-binding-demo
 spec:
-  mountPathPrefix: "/var/credentials"
   envVarPrefix: "MYDB"
   backingServiceSelector:
     group: aws.pmacik.dev
@@ -278,7 +277,6 @@ metadata:
   name: mydb.to.nodejs-app
   namespace: service-binding-demo
 spec:
-  mountPathPrefix: "/var/credentials"
   envVarPrefix: "MYDB"
   backingServiceSelector:
     group: aws.pmacik.dev
