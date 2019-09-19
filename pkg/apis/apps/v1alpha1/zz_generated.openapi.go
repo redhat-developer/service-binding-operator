@@ -11,11 +11,12 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
+		"./pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
+		"./pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
+		"./pkg/apis/apps/v1alpha1.CustomEnvMap":                schema_pkg_apis_apps_v1alpha1_CustomEnvMap(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
 	}
 }
 
@@ -102,6 +103,34 @@ func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCa
 	}
 }
 
+func schema_pkg_apis_apps_v1alpha1_CustomEnvMap(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CustomEnvMap is a set of Name and Value of an environment variable",
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "key of custom env variable",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"value": {
+						SchemaProps: spec.SchemaProps{
+							Description: "value template, currently supports expected is go template",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"name", "value"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
 func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -129,19 +158,19 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec"),
+							Ref: ref("./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
+							Ref: ref("./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -165,16 +194,29 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"customEnvVar": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Custom env variables",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("./pkg/apis/apps/v1alpha1.CustomEnvMap"),
+									},
+								},
+							},
+						},
+					},
 					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BackingServiceSelector is used to identify the backing service operator.",
-							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
 						},
 					},
 					"applicationSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator.",
-							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector"),
+							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
 				},
@@ -182,7 +224,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"},
+			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "./pkg/apis/apps/v1alpha1.CustomEnvMap"},
 	}
 }
 

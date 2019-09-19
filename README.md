@@ -92,9 +92,11 @@ We'll add more examples in the future. The following section in this README file
 
 The following example scenarios are available:
 
-[Binding an Imported app to an In-cluster Operator Managed PostgreSQL Database](examples/bind_imported_app_to_incluster_operator_managed_PostgreSQL_db/README.md)
+[Binding an Imported app to an In-cluster Operator Managed PostgreSQL Database](examples/app_to_incluster_operator_managed_PostgreSQL_db/README.md)
 
-[Binding an Imported app to an Off-cluster Operator Managed AWS RDS Database](examples/bind_imported_app_to_offcluster_operator_managed_AWS_RDS_db/README.md)
+[Binding an Imported app to an Off-cluster Operator Managed AWS RDS Database](examples/app_to_offcluster_operator_managed_AWS_RDS_db/README.md)
+
+[Binding an Imported Java Spring Boot app to an In-cluster Operator Managed PostgreSQL Database](examples/java_app_to_incluster_operator_managed_PostgreSQL_db/README.md)
 
 
 

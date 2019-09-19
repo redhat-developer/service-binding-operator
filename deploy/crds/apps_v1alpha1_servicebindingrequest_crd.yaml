@@ -70,6 +70,22 @@ spec:
               - kind
               - resourceRef
               type: object
+            customEnvVar:
+              description: Custom env variables
+              items:
+                properties:
+                  name:
+                    description: key of custom env variable
+                    type: string
+                  value:
+                    description: value template, currently supports expected is go
+                      template
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string

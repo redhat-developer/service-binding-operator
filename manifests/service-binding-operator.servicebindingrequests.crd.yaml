@@ -8,10 +8,10 @@ spec:
     kind: ServiceBindingRequest
     listKind: ServiceBindingRequestList
     plural: servicebindingrequests
-    singular: servicebindingrequest
     shortNames:
-    - sbr
-    - sbrs
+      - sbr
+      - sbrs
+    singular: servicebindingrequest
   scope: Namespaced
   subresources:
     status: {}
@@ -19,26 +19,25 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this
-            representation of an object. Servers should convert recognized
-            schemas to the latest internal value, and may reject unrecognized
-            values. More info:
-            https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+          description:
+            "APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources"
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource
-            this object represents. Servers may infer this from the endpoint
-            the client submits requests to. Cannot be updated. In CamelCase.
-            More info:
-            https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+          description:
+            "Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds"
           type: string
         metadata:
           type: object
         spec:
           properties:
             applicationSelector:
-              description: ApplicationSelector is used to identify the
-                application connecting to the backing service operator.
+              description:
+                ApplicationSelector is used to identify the application
+                connecting to the backing service operator.
               properties:
                 group:
                   type: string
@@ -53,12 +52,14 @@ spec:
                 version:
                   type: string
               required:
-              - version
-              - resource
+                - matchLabels
+                - version
+                - resource
               type: object
             backingServiceSelector:
-              description: BackingServiceSelector is used to identify the
-                backing service operator.
+              description:
+                BackingServiceSelector is used to identify the backing
+                service operator.
               properties:
                 group:
                   type: string
@@ -69,11 +70,28 @@ spec:
                 version:
                   type: string
               required:
-              - group
-              - version
-              - kind
-              - resourceRef
+                - group
+                - version
+                - kind
+                - resourceRef
               type: object
+            customEnvVar:
+              description: Custom env variables
+              items:
+                properties:
+                  name:
+                    description: key of custom env variable
+                    type: string
+                  value:
+                    description:
+                      value template, currently supports expected is go
+                      template
+                    type: string
+                required:
+                  - name
+                  - value
+                type: object
+              type: array
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
@@ -81,20 +99,20 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
-          - backingServiceSelector
-          - applicationSelector
+            - backingServiceSelector
+            - applicationSelector
           type: object
         status:
           properties:
             applicationObjects:
-              description: ApplicationObjects contains all the application
-                objects filtered by label
+              description:
+                ApplicationObjects contains all the application objects
+                filtered by label
               items:
                 type: string
               type: array
             bindingStatus:
-              description: BindingStatus is the status of the service
-                binding request.
+              description: BindingStatus is the status of the service binding request.
               type: string
             secret:
               description: Secret is the name of the intermediate secret
@@ -102,6 +120,6 @@ spec:
           type: object
   version: v1alpha1
   versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+    - name: v1alpha1
+      served: true
+      storage: true
