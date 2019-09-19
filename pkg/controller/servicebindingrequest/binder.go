@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -44,15 +45,28 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		Version:  b.sbr.Spec.ApplicationSelector.Version,
 		Resource: b.sbr.Spec.ApplicationSelector.Resource,
 	}
-	matchLabels := b.sbr.Spec.ApplicationSelector.MatchLabels
-	opts := metav1.ListOptions{
-		LabelSelector: labels.Set(matchLabels).String(),
+
+	var opts metav1.ListOptions
+
+	// If Application name is present
+	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
+		fieldName := make(map[string]string)
+		fieldName["name"] = b.sbr.Spec.ApplicationSelector.ResourceRef
+		opts = metav1.ListOptions{
+			FieldSelector: fields.Set(fieldName).String(),
+		}
+	} else {
+		matchLabels := b.sbr.Spec.ApplicationSelector.MatchLabels
+		opts = metav1.ListOptions{
+			LabelSelector: labels.Set(matchLabels).String(),
+		}
 	}
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
+
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
 		return nil, errors.NewNotFound(

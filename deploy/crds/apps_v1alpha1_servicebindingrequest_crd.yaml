@@ -38,6 +38,8 @@ spec:
               properties:
                 group:
                   type: string
+                name:
+                  type: string
                 matchLabels:
                   additionalProperties:
                     type: string
@@ -47,7 +49,6 @@ spec:
                 version:
                   type: string
               required:
-              - matchLabels
               - version
               - resource
               type: object

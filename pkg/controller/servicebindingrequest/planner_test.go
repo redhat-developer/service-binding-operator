@@ -27,7 +27,7 @@ func TestPlannerNew(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef)
 

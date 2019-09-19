@@ -249,7 +249,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	// creating service-binding-request, which will trigger actions in the controller
 	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels)
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, sbr)
 	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
@@ -328,7 +328,7 @@ func preCreateServiceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f 
 
 	// creating service-binding-request, which will trigger actions in the controller
 	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels)
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, sbr)
 	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))

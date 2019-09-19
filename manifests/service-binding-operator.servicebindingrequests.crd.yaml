@@ -41,6 +41,8 @@ spec:
               properties:
                 group:
                   type: string
+                name:
+                  type: string
                 matchLabels:
                   additionalProperties:
                     type: string

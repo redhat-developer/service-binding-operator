@@ -30,22 +30,24 @@ type Fake struct {
 // AddMockedServiceBindingRequest add mocked object from ServiceBindingRequestMock.
 func (f *Fake) AddMockedServiceBindingRequest(
 	name string,
-	ref string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, ref, matchLabels)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
 
 func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,
-	ref string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, ref, matchLabels)
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
 	require.Nil(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
