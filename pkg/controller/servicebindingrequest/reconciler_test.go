@@ -68,7 +68,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 	fakeDynClient := f.FakeDynClient()
 	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
 
-	t.Run("reconcile-using-secret", func(t *testing.T) {
+	t.Run("test-application-selector-by-name", func(t *testing.T) {
 
 		res, err := reconciler.Reconcile(reconcileRequest())
 		assert.NoError(t, err)
