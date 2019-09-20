@@ -91,6 +91,25 @@ func TestBinderNew(t *testing.T) {
 	})
 }
 
+func TestAppendEnvVar(t *testing.T) {
+	envName := "lastbound"
+	envList := []corev1.EnvVar{
+		corev1.EnvVar{
+			Name:  envName,
+			Value: "lastboundvalue",
+		},
+	}
+
+	binder := &Binder{}
+	updatedEnvVarList := binder.appendEnvVar(envList, envName, "someothervalue")
+
+	// validate that no new key is added.
+	// the existing key should be overwritten with the new value.
+
+	require.Len(t, updatedEnvVarList, 1)
+	require.Equal(t, updatedEnvVarList[0].Value, "someothervalue")
+}
+
 func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"

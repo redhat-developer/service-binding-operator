@@ -191,10 +191,24 @@ func (b *Binder) updateContainers(
 }
 
 func (b *Binder) appendEnvVar(envList []corev1.EnvVar, envParam string, envValue string) []corev1.EnvVar {
-	return append(envList, corev1.EnvVar{
-		Name:  envParam,
-		Value: envValue,
-	})
+	var updatedEnvList []corev1.EnvVar
+
+	alreadyPresent := false
+	for _, env := range envList {
+		if env.Name == envParam {
+			env.Value = envValue
+			alreadyPresent = true
+		}
+		updatedEnvList = append(updatedEnvList, env)
+	}
+
+	if !alreadyPresent {
+		updatedEnvList = append(updatedEnvList, corev1.EnvVar{
+			Name:  envParam,
+			Value: envValue,
+		})
+	}
+	return updatedEnvList
 }
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
