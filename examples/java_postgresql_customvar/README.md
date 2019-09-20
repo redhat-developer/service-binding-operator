@@ -227,8 +227,7 @@ That causes the application to be re-deployed.
 
 Once the new version is up, go to the application's route to check the UI. Now, it works!
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information as specified in the OLM descriptor below, into the
-application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
+When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
 
 ```yaml
 spec:
