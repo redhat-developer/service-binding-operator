@@ -226,15 +226,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// storing objects used in Binder
 	objectsToAnnotate = append(objectsToAnnotate, updatedObjects...)
 
-	//
-	// Annotating objects related to binding
-	//
-
-	if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
-		logger.Error(err, "On setting annotations in related objects.")
-		return r.onError(err, sbr, &sbrStatus, updatedObjects)
-	}
-
 	// updating status of request instance
 	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
 		logger.Error(err, "On updating status of ServiceBindingRequest.")
