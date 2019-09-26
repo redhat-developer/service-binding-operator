@@ -368,7 +368,9 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 
 	if r.Annotation {
 		for key, value := range annotations {
-			r.readAnnotation(key, value)
+			if err = r.readAnnotation(key, value); err != nil {
+				return nil, err
+			}
 		}
 	} else {
 		r.logger.Info("Looking for spec-descriptors in 'spec'...")
