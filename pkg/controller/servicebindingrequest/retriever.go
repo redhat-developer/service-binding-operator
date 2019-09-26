@@ -384,7 +384,7 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var isAnnotation bool
 	annotations := r.plan.CR.GetAnnotations()
 	for key := range annotations {
-		if strings.HasPrefix("servicebindingoperator.redhat.io/", key) {
+		if strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
 			isAnnotation = true
 			break
 		}

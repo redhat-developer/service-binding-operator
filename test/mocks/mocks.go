@@ -450,8 +450,8 @@ func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructur
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
-	ImageName string
-	Image string
+	ImageName   string
+	Image       string
 }
 
 // ConfigMapDatabase ...
@@ -475,8 +475,8 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 		},
 		Spec: ConfigMapDatabaseSpec{
 			DBConfigMap: configMapName,
-			Image: "docker.io/postgres",
-			ImageName: "postgres",
+			Image:       "docker.io/postgres",
+			ImageName:   "postgres",
 		},
 	}
 }
@@ -491,4 +491,37 @@ func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstruc
 func ConvertToUnstructured(cr interface{}) (*unstructured.Unstructured, error) {
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	return &ustrv1.Unstructured{Object: data}, err
+}
+
+// DatabaseCRMockWithAnnotation based on PostgreSQL operator, returning a instantiated object.
+func DatabaseCRMockWithAnnotation(ns, name string) *pgv1alpha1.Database {
+	annotations := map[string]string{
+		"servicebindingoperator.redhat.io/status.dbConfigMap.password": "binding:env:object:configmap",
+	}
+	return &pgv1alpha1.Database{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       CRDKind,
+			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:   ns,
+			Name:        name,
+			Annotations: annotations,
+		},
+		Spec: pgv1alpha1.DatabaseSpec{
+			Image:     "docker.io/postgres:latest",
+			ImageName: "postgres",
+			DBName:    "test-db",
+		},
+		Status: pgv1alpha1.DatabaseStatus{
+			DBCredentials: "db-credentials",
+		},
+	}
+}
+
+// UnstructuredDatabaseCRMockWithAnnotation returns a unstructured version of DatabaseCRMockWithAnnotation.
+func UnstructuredDatabaseCRMockWithAnnotation(ns, name string) (*unstructured.Unstructured, error) {
+	db := DatabaseCRMockWithAnnotation(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(db)
+	return &unstructured.Unstructured{Object: data}, err
 }

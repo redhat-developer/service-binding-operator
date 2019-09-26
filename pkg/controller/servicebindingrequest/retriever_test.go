@@ -264,11 +264,10 @@ func TestReadAnnotation(t *testing.T) {
 	f.AddMockedUnstructuredCSV("csv")
 	f.AddMockedSecret("db-credentials")
 
-	crdDescription := mocks.CRDDescriptionMock()
-	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
+	cr, err := mocks.UnstructuredDatabaseCRMockWithAnnotation(ns, crName)
 	require.Nil(t, err)
 
-	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+	plan := &Plan{Ns: ns, Name: "retriever", CR: cr}
 
 	fakeDynClient := f.FakeDynClient()
 
