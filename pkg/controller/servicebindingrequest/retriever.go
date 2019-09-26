@@ -143,6 +143,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 }
 
 func (r *Retriever) readAnnotation(key, value string) error {
+	logger := r.logger.WithValues("key", key)
 	// holds the secret name and items
 	secrets := make(map[string][]string)
 
@@ -160,6 +161,29 @@ func (r *Retriever) readAnnotation(key, value string) error {
 	fullpathslice := strings.SplitN(fullpath, ".", 2)
 	place := fullpathslice[0]
 	path := fullpathslice[1]
+
+	pathValue, _, _ := r.getCRKey(place, path)
+	if _, ok := r.cache[place].(map[string]interface{}); !ok {
+		r.cache[place] = make(map[string]interface{})
+	}
+	if strings.HasPrefix(value, secretPrefix) {
+		secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(value))
+		if _, ok := r.cache[place].(map[string]interface{})[r.extractSecretItemName(value)]; !ok {
+			r.markVisitedPaths(r.extractSecretItemName(value), pathValue, place)
+			r.cache[place].(map[string]interface{})[r.extractSecretItemName(value)] = make(map[string]interface{})
+		}
+	} else if strings.HasPrefix(value, configMapPrefix) {
+		configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(value))
+		r.markVisitedPaths(r.extractConfigMapItemName(value), pathValue, place)
+	} else if strings.HasPrefix(value, volumeMountSecretPrefix) {
+		secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(value))
+		r.markVisitedPaths(r.extractSecretItemName(value), pathValue, place)
+		r.volumeKeys = append(r.volumeKeys, pathValue)
+	} else if strings.HasPrefix(value, attributePrefix) {
+		r.store(path, []byte(pathValue))
+	} else {
+		logger.Info("Defaulting....")
+	}
 
 	for name, items := range secrets {
 		// loading secret items all-at-once
