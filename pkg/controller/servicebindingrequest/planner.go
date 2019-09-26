@@ -26,11 +26,11 @@ type Planner struct {
 
 // Plan outcome, after executing planner.
 type Plan struct {
-	Ns             string                      // namespace name
-	Name           string                      // plan name, same than ServiceBindingRequest
-	CRDDescription *olmv1alpha1.CRDDescription // custom resource definition description
-	CR             *unstructured.Unstructured  // custom resource object
-	SBR v1alpha1.ServiceBindingRequest	// service binding request
+	Ns             string                         // namespace name
+	Name           string                         // plan name, same than ServiceBindingRequest
+	CRDDescription *olmv1alpha1.CRDDescription    // custom resource definition description
+	CR             *unstructured.Unstructured     // custom resource object
+	SBR            v1alpha1.ServiceBindingRequest // service binding request
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
@@ -44,6 +44,7 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	logger.Info("Searching for CR instance...")
 
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
+
 	if err != nil {
 		logger.Error(err, "during reading CR")
 		return nil, err
@@ -74,7 +75,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		Name:           p.sbr.GetName(),
 		CRDDescription: crdDescription,
 		CR:             cr,
-		SBR: *p.sbr,
+		SBR:            *p.sbr,
 	}, nil
 }
 

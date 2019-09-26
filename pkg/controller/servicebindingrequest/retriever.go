@@ -26,6 +26,7 @@ type Retriever struct {
 	volumeKeys    []string                     // list of keys found
 	bindingPrefix string                       // prefix for variable names
 	cache         map[string]interface{}       // store visited paths
+	Annotation    bool                         // If true use CRD annotation otherwise fallback to CSV
 }
 
 const (
@@ -37,20 +38,20 @@ const (
 )
 
 // getNestedValue retrieve value from dotted key path
-func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, error, interface{}) {
+func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, interface{}, error) {
 	logger := r.logger.WithValues("Key", key, "SectionMap", sectionMap)
 	if !strings.Contains(key, ".") {
 		value, exists := sectionMap.(map[string]interface{})[key]
 		if !exists {
-			return "", fmt.Errorf("Can't find key '%s'", key), sectionMap
+			return "", sectionMap, fmt.Errorf("Can't find key '%s'", key)
 		}
-		return fmt.Sprintf("%v", value), nil, sectionMap
+		return fmt.Sprintf("%v", value), sectionMap, nil
 	}
 	attrs := strings.SplitN(key, ".", 2)
 	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
 	logger.Info("Section maps :  ")
 	if !exists {
-		return "", fmt.Errorf("Can't find '%v' section in CR", attrs), newSectionMap
+		return "", newSectionMap, fmt.Errorf("Can't find '%v' section in CR", attrs)
 	}
 	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
 }
@@ -67,7 +68,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
-	v, err, _ := r.getNestedValue(key, sectionMap)
+	v, _, err := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
 		if _, ok := r.cache[section]; !ok {
 			r.cache[section] = make(map[string]interface{})
@@ -138,6 +139,43 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (r *Retriever) readAnnotation(key, value string) error {
+	// holds the secret name and items
+	secrets := make(map[string][]string)
+
+	// holds the configMap name and items
+	configMaps := make(map[string][]string)
+
+	// eg:- `servicebindingoperator.redhat.io/status.dbConfigMap.password: 'volume:configmap'`
+
+	if !strings.HasPrefix("servicebindingoperator.redhat.io/", key) {
+		// FIXME: Error?
+		return nil
+	}
+
+	fullpath := strings.Split(key, "servicebindingoperator.redhat.io/")[1]
+	fullpathslice := strings.SplitN(fullpath, ".", 2)
+	place := fullpathslice[0]
+	path := fullpathslice[1]
+
+	for name, items := range secrets {
+		// loading secret items all-at-once
+		err := r.readSecret(name, items, place, path)
+		if err != nil {
+			return err
+		}
+	}
+	for name, items := range configMaps {
+		// add the function readConfigMap
+		err := r.readConfigMap(name, items, place, path)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -320,18 +358,31 @@ func (r *Retriever) saveDataOnSecret() error {
 // Unstructured refering the objects in use by the Retriever, and error when issues reading fields.
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
-
-	r.logger.Info("Looking for spec-descriptors in 'spec'...")
-	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
-		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
-			return nil, err
+	annotations := r.plan.CR.GetAnnotations()
+	for key := range annotations {
+		if strings.HasPrefix("servicebindingoperator.redhat.io/", key) {
+			r.Annotation = true
+			break
 		}
 	}
 
-	r.logger.Info("Looking for status-descriptors in 'status'...")
-	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
-		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
-			return nil, err
+	if r.Annotation {
+		for key, value := range annotations {
+			r.readAnnotation(key, value)
+		}
+	} else {
+		r.logger.Info("Looking for spec-descriptors in 'spec'...")
+		for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
+			if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+				return nil, err
+			}
+		}
+
+		r.logger.Info("Looking for status-descriptors in 'status'...")
+		for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
+			if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+				return nil, err
+			}
 		}
 	}
 
