@@ -26,7 +26,6 @@ type Retriever struct {
 	volumeKeys    []string                     // list of keys found
 	bindingPrefix string                       // prefix for variable names
 	cache         map[string]interface{}       // store visited paths
-	Annotation    bool                         // If true use CRD annotation otherwise fallback to CSV
 }
 
 const (
@@ -382,15 +381,16 @@ func (r *Retriever) saveDataOnSecret() error {
 // Unstructured refering the objects in use by the Retriever, and error when issues reading fields.
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
+	var isAnnotation bool
 	annotations := r.plan.CR.GetAnnotations()
 	for key := range annotations {
 		if strings.HasPrefix("servicebindingoperator.redhat.io/", key) {
-			r.Annotation = true
+			isAnnotation = true
 			break
 		}
 	}
 
-	if r.Annotation {
+	if isAnnotation {
 		for key, value := range annotations {
 			if err = r.readAnnotation(key, value); err != nil {
 				return nil, err
