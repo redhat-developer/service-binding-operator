@@ -1,8 +1,9 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"testing"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -201,7 +202,6 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
 	})
 
-
 }
 
 func TestCustomEnvParser(t *testing.T) {
@@ -251,4 +251,46 @@ func TestCustomEnvParser(t *testing.T) {
 		assert.Equal(t, "dXNlcg==_cGFzc3dvcmQ=", values["ANOTHER_STRING"], "Custom env values are not matching")
 		assert.Equal(t, "postgres@cGFzc3dvcmQ=", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
+}
+
+func TestReadAnnotation(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
+
+	ns := "testing"
+	crName := "db-testing"
+
+	f := mocks.NewFake(t, ns)
+	f.AddMockedUnstructuredCSV("csv")
+	f.AddMockedSecret("db-credentials")
+
+	crdDescription := mocks.CRDDescriptionMock()
+	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
+	require.Nil(t, err)
+
+	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+
+	fakeDynClient := f.FakeDynClient()
+
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+	require.NotNil(t, retriever)
+
+	t.Run("retrive", func(t *testing.T) {
+		objs, err := retriever.Retrieve()
+		assert.Nil(t, err)
+		assert.NotEmpty(t, retriever.data)
+		assert.True(t, len(objs) > 0)
+	})
+
+	t.Run("read annotation", func(t *testing.T) {
+		// reading from secret, from status attribute
+		err := retriever.readAnnotation("servicebindingoperator.redhat.io/status.dbConfigMap.password", "binding:env:object:configmap")
+		assert.Nil(t, err)
+
+		t.Logf("retriever.data '%#v'", retriever.data)
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
+
+	})
+
 }
