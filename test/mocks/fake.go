@@ -8,6 +8,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -106,6 +107,20 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 	d, err := UnstructuredDeploymentMock(f.ns, name, matchLabels)
 	require.Nil(f.t, err)
 	f.S.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
+	f.objs = append(f.objs, d)
+}
+
+func (f *Fake) AddMockedUnstructuredDatabaseCRD() {
+	require.Nil(f.t, apiextensionv1beta1.AddToScheme(f.S))
+	c, err := UnstructuredDatabaseCRDMock()
+	require.Nil(f.t, err)
+	f.S.AddKnownTypes(apiextensionv1beta1.SchemeGroupVersion, &apiextensionv1beta1.CustomResourceDefinition{})
+	f.objs = append(f.objs, c)
+}
+
+func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) {
+	d, err := UnstructuredPostgresDatabaseCRMock(f.ns, ref)
+	require.Nil(f.t, err)
 	f.objs = append(f.objs, d)
 }
 

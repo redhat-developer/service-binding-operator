@@ -148,6 +148,7 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, logger logr.Logger) error {
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
 //    Deployment (and other kinds) will be updated in "spec" level.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+
 	ctx := context.TODO()
 	objectsToAnnotate := []*unstructured.Unstructured{}
 

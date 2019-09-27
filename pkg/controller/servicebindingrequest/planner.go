@@ -31,6 +31,7 @@ type Plan struct {
 	CRDDescription *olmv1alpha1.CRDDescription    // custom resource definition description
 	CR             *unstructured.Unstructured     // custom resource object
 	SBR            v1alpha1.ServiceBindingRequest // service binding request
+	Annotations    map[string]string              // annotations in the backing service CRD
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
@@ -54,6 +55,27 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	return cr, nil
 }
 
+// searchCRD based on a CustomResourceDefinitionDescription and name, search for the object.
+func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
+	bss := p.sbr.Spec.BackingServiceSelector
+	gvk := schema.GroupVersionKind{Group: "apiextensions.k8s.io", Version: "v1beta1", Kind: "CustomResourceDefinition"}
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+	opts := metav1.GetOptions{}
+
+	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
+	logger.Info("Searching for CR instance...")
+
+	crd, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.Kind, opts)
+
+	if err != nil {
+		logger.Error(err, "during reading CR")
+		return nil, err
+	}
+
+	logger.WithValues("CR.Name", crd.GetName()).Info("Found target CR!")
+	return crd, nil
+}
+
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
@@ -70,12 +92,19 @@ func (p *Planner) Plan() (*Plan, error) {
 		return nil, err
 	}
 
+	// retrieve the CR based on kind, api-version and name
+	crd, err := p.searchCRD()
+	if err != nil {
+		return nil, err
+	}
+
 	return &Plan{
 		Ns:             p.sbr.GetNamespace(),
 		Name:           p.sbr.GetName(),
 		CRDDescription: crdDescription,
 		CR:             cr,
 		SBR:            *p.sbr,
+		Annotations:    crd.GetAnnotations(),
 	}, nil
 }
 

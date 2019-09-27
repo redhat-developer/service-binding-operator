@@ -151,7 +151,8 @@ func (r *Retriever) readAnnotation(key, value string) error {
 
 	// eg:- `servicebindingoperator.redhat.io/status.dbConfigMap.password: 'volume:configmap'`
 
-	if !strings.HasPrefix("servicebindingoperator.redhat.io/", key) {
+	fmt.Println("BBBBBBBBBBBBBBBBBBBBBBBBBBB", key, "   CCC   ", value)
+	if !strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
 		// FIXME: Error?
 		return nil
 	}
@@ -161,6 +162,7 @@ func (r *Retriever) readAnnotation(key, value string) error {
 	place := fullpathslice[0]
 	path := fullpathslice[1]
 
+	fmt.Println("DDDDDDDD", place, path)
 	pathValue, _, _ := r.getCRKey(place, path)
 	if _, ok := r.cache[place].(map[string]interface{}); !ok {
 		r.cache[place] = make(map[string]interface{})
@@ -382,8 +384,7 @@ func (r *Retriever) saveDataOnSecret() error {
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
 	var isAnnotation bool
-	annotations := r.plan.CR.GetAnnotations()
-	for key := range annotations {
+	for key := range r.plan.Annotations {
 		if strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
 			isAnnotation = true
 			break
@@ -391,7 +392,7 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	}
 
 	if isAnnotation {
-		for key, value := range annotations {
+		for key, value := range r.plan.Annotations {
 			if err = r.readAnnotation(key, value); err != nil {
 				return nil, err
 			}
