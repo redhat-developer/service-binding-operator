@@ -177,9 +177,9 @@ spec:
     matchLabels:
       connects-to: postgres
       environment: demo
-    group: apps.openshift.io
-    version: v1
-    resource: deploymentconfigs
+    group: serving.knative.dev
+    version: v1beta1
+    resource: services
   backingServiceSelector:
     group: postgresql.baiju.dev
     version: v1alpha1
