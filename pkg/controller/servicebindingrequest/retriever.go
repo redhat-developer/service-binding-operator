@@ -151,7 +151,6 @@ func (r *Retriever) readAnnotation(key, value string) error {
 
 	// eg:- `servicebindingoperator.redhat.io/status.dbConfigMap.password: 'volume:configmap'`
 
-	fmt.Println("BBBBBBBBBBBBBBBBBBBBBBBBBBB", key, "   CCC   ", value)
 	if !strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
 		// FIXME: Error?
 		return nil
@@ -162,7 +161,6 @@ func (r *Retriever) readAnnotation(key, value string) error {
 	place := fullpathslice[0]
 	path := fullpathslice[1]
 
-	fmt.Println("DDDDDDDD", place, path)
 	pathValue, _, _ := r.getCRKey(place, path)
 	if _, ok := r.cache[place].(map[string]interface{}); !ok {
 		r.cache[place] = make(map[string]interface{})

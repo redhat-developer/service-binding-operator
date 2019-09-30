@@ -96,6 +96,10 @@ func DatabaseCRDMock() apiextensionv1beta1.CustomResourceDefinition {
 	}
 
 	crd := apiextensionv1beta1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CustomResourceDefinition",
+			APIVersion: "apiextensions.k8s.io/v1beta1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        FullCRDName,
 			Annotations: annotations,
@@ -121,6 +125,7 @@ func UnstructuredDatabaseCRDMock() (*ustrv1.Unstructured, error) {
 }
 
 type PostgresDatabaseSpec struct {
+	Username string `json:"username"`
 }
 
 type PostgresDatabase struct {
@@ -142,7 +147,9 @@ func PostgresDatabaseCRMock(ns, name string) PostgresDatabase {
 			Namespace: ns,
 			Name:      name,
 		},
-		Spec: PostgresDatabaseSpec{},
+		Spec: PostgresDatabaseSpec{
+			Username: "redhatdeveloper",
+		},
 	}
 }
 

@@ -269,14 +269,16 @@ func TestReadAnnotation(t *testing.T) {
 	cr, err := mocks.UnstructuredPostgresDatabaseCRMock(ns, crName)
 	require.Nil(t, err)
 
-	plan := &Plan{Ns: ns, Name: "retriever", CR: cr}
+	ann := map[string]string{"servicebindingoperator.redhat.io/status.username": "binding:env:attribute"}
+
+	plan := &Plan{Ns: ns, Name: "retriever", CR: cr, Annotations: ann}
 
 	fakeDynClient := f.FakeDynClient()
 
 	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
-	t.Run("retrive", func(t *testing.T) {
+	t.Run("retrieve", func(t *testing.T) {
 		objs, err := retriever.Retrieve()
 		assert.Nil(t, err)
 		assert.NotEmpty(t, retriever.data)
@@ -285,12 +287,11 @@ func TestReadAnnotation(t *testing.T) {
 
 	t.Run("read annotation", func(t *testing.T) {
 		// reading from secret, from status attribute
-		err := retriever.readAnnotation("servicebindingoperator.redhat.io/status.dbConfigMap.password", "binding:env:object:configmap")
+		err := retriever.readAnnotation("servicebindingoperator.redhat.io/status.username", "binding:env:attribute")
 		assert.Nil(t, err)
 
 		t.Logf("retriever.data '%#v'", retriever.data)
-		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
-		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_USERNAME")
 
 	})
 
