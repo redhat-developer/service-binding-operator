@@ -76,15 +76,39 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 
 ## -- Cluster Admin targets --
 
-.PHONY: install-service-binding-operator-source
+.PHONY: install-service-binding-operator
 ## Install the Service Binding Operator
-install-service-binding-operator-source:
+install-service-binding-operator:
 	@oc apply -f service-binding-operator-source.yaml
+	$(eval CSV_VERSION := $(shell oc get packagemanifest service-binding-operator -o jsonpath='{.status.channels[?(@.name == "stable")].currentCSV}'))
+	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' service-binding-operator-subscription.yaml | oc apply -f -
 
-.PHONY: install-backing-db-operator-source
+.PHONY: install-backing-db-operator
 ## Install the Backing Service DB Operator
-install-backing-db-operator-source:
+install-backing-db-operator:
 	@oc apply -f backing-db-operator-source.yaml
+	$(eval CSV_VERSION := $(shell oc get packagemanifest db-operators -o jsonpath='{.status.channels[?(@.name == "stable")].currentCSV}'))
+	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' backing-db-operator-subscription.yaml | oc apply -f -
+
+.PHONY: install-serverless-operator
+## Install the Serverless Operator
+install-serverless-operator:
+	$(eval CSV_VERSION := $(shell oc get packagemanifest serverless-operator -o jsonpath='{.status.channels[?(@.name == "techpreview")].currentCSV}'))
+	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' serverless-operator-subscription.yaml | oc apply -f -
+
+.PHONY: install-service-mesh-operator
+## Install the Service Mesh Operator
+install-service-mesh-operator:
+	$(eval CSV_VERSION := $(shell oc get packagemanifest servicemeshoperator -o jsonpath='{.status.channels[?(@.name == "1.0")].currentCSV}'))
+	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' service-mesh-operator-subscription.yaml | oc apply -f -
+
+.PHONY: install-all-operators
+## Install all the operators
+install-all-operators: install-backing-db-operator install-service-binding-operator install-serverless-operator install-service-mesh-operator
+
+.PHONY: install-all
+## Install all the operators and the quarkus native s2i builder image
+install-all: install-all-operators install-quarkus-native-s2i-builder
 
 .PHONY: install-quarkus-native-s2i-builder
 ## Install ubi-quarkus-native-s2i builder

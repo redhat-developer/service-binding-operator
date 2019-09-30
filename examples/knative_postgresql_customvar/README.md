@@ -13,10 +13,13 @@ In this example there are 2 roles:
 
 ### Cluster Admin
 
-The cluster admin needs to install 2 operators into the cluster:
+The cluster admin needs to install operators and a builder image into the cluster:
 
 * Service Binding Operator
 * Backing Service Operator
+* Service Mesh Opearator
+* Serverless Operator
+* Quarkus Native S2i Builder Image
 
 A Backing Service Operator that is "bind-able," in other
 words a Backing Service Operator that exposes binding information in secrets, config maps, status, and/or spec
@@ -24,71 +27,51 @@ attributes. The Backing Service Operator may represent a database or other servi
 applications. We'll use [postgresql-operator](https://github.com/operator-backing-service-samples/postgresql-operator) to
 demonstrate a sample use case.
 
-#### Install the Service Binding Operator using an `OperatorSource`
-
-Apply the following `OperatorSource`:
+You can install all by running the following make target:
 
 ```shell
-cat <<EOS |kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
+make install-all
 ```
 
-Alternatively, you can perform the same task with this make command:
+#### Install the Service Binding Operator
 
 ```shell
-make install-service-binding-operator-source
+make install-service-binding-operator
 ```
-
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
-
-![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
-
-and install a `stable` version.
 
 This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
 
-#### Install the DB operator using an `OperatorSource`
-
-Apply the following `OperatorSource`:
+#### Install the backing DB (PostgreSQL) operator
 
 ```shell
-cat <<EOS |kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: db-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: pmacik
-EOS
+make install-backing-db-operator
 ```
-
-Alternatively, you can perform the same task with this make command:
-
-```shell
-make install-backing-db-operator-source
-```
-
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
-
-![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
-
-and install a `stable` version.
 
 This makes the `Database` custom resource available, that the application developer will use later.
+
+#### Install the Service Mesh Operator
+
+```shell
+make install-service-mesh-operator
+```
+
+This makes the `ServiceMeshControlPlane` and `ServiceMeshMemberRoll` custom resourced available, that the application developer will use later.
+
+#### Install the Serverless Operator
+
+```shell
+make install-serverless-operator
+```
+
+This makes the `KnativeServing` custom resource available, that the application developer will use later to deploy the application.
+
+#### Install the `ubi-quarkus-native-s2i` builder image
+
+```shell
+make install-quarkus-native-s2i-builder
+```
+
+This makes the `Ubi Quarkus Native S2i` builder image available for the application to be built when imported by the application developer.
 
 ### Application Developer
 
