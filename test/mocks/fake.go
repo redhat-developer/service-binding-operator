@@ -119,6 +119,10 @@ func (f *Fake) AddMockedConfigMap(name string) {
 	f.objs = append(f.objs, ConfigMapMock(f.ns, name))
 }
 
+func (f *Fake) AddMockResource(resource runtime.Object)  {
+	f.objs = append(f.objs, resource)
+}
+
 // FakeClient returns fake structured api client.
 func (f *Fake) FakeClient() client.Client {
 	return fake.NewFakeClientWithScheme(f.S, f.objs...)

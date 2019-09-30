@@ -28,7 +28,7 @@ type SBRController struct {
 }
 
 var (
-	// controllerName commong name of this controller
+	// controllerName common name of this controller
 	controllerName = "servicebindingrequest-controller"
 	// defaultPredicate default predicate functions
 	defaultPredicate = predicate.Funcs{
