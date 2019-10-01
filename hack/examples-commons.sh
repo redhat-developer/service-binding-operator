@@ -1,6 +1,6 @@
 #!/bin/bash
 export EXAMPLE_NAMESPACE="service-binding-demo"
-set -x
+
 function pathname() {
   DIR="${1%/*}"
   (cd "$DIR" && echo "$(pwd -P)")
