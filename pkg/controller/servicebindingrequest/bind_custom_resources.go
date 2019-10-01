@@ -39,6 +39,7 @@ func NewBindNonBindable(
 	b.cr = cr
 	b.resourcesToCheck = resources
 	b.sbr = sbr
+	b.data = make(map[string]interface{})
 	return b
 }
 
@@ -66,10 +67,9 @@ func (b BindNonBindableResources) GetOwnedResources() ([]unstructured.Unstructur
 
 // GetBindableVariables extracts required key value information from provided GVRs subresources
 func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}, error) {
-	data := make(map[string]interface{})
 	ownedResources, err := b.GetOwnedResources()
 	if err != nil {
-		return data, err
+		return b.data, err
 	}
 	for _, resource := range ownedResources {
 		switch resource.GetKind() {
@@ -78,15 +78,15 @@ func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}
 			for _, v := range path[resource.GetKind()] {
 				d, exist, err := unstructured.NestedMap(resource.Object, v...)
 				if err != nil {
+					// skipping on error
 					continue
 				}
 				if exist {
 					for k, val := range d {
-						data[k] = val
+						b.data[k] = val
 					}
 				}
 			}
-			break
 
 			// In case of Route and Service we would extract information from respective path
 		case "Route", "Service":
@@ -97,11 +97,10 @@ func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}
 				}
 				if exist {
 					val := v[len(v)-1]
-					data[val] = d
+					b.data[val] = d
 				}
 			}
-			break
 		}
 	}
-	return data, nil
+	return b.data, nil
 }
