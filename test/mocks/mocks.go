@@ -450,8 +450,8 @@ func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructur
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
-	ImageName string
-	Image string
+	ImageName   string
+	Image       string
 }
 
 // ConfigMapDatabase ...
@@ -475,8 +475,8 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 		},
 		Spec: ConfigMapDatabaseSpec{
 			DBConfigMap: configMapName,
-			Image: "docker.io/postgres",
-			ImageName: "postgres",
+			Image:       "docker.io/postgres",
+			ImageName:   "postgres",
 		},
 	}
 }

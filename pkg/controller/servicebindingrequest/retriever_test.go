@@ -201,7 +201,6 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
 	})
 
-
 }
 
 func TestCustomEnvParser(t *testing.T) {

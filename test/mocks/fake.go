@@ -119,7 +119,7 @@ func (f *Fake) AddMockedConfigMap(name string) {
 	f.objs = append(f.objs, ConfigMapMock(f.ns, name))
 }
 
-func (f *Fake) AddMockResource(resource runtime.Object)  {
+func (f *Fake) AddMockResource(resource runtime.Object) {
 	f.objs = append(f.objs, resource)
 }
 
