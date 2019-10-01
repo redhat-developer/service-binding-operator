@@ -15,7 +15,8 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	ocv1 "github.com/openshift/api/route/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // resource details employed in mocks
@@ -234,6 +235,23 @@ func DatabaseCRMock(ns, name string) *pgv1alpha1.Database {
 		Status: pgv1alpha1.DatabaseStatus{
 			DBCredentials: "db-credentials",
 		},
+	}
+}
+
+func RouteCRMock(ns, name string) *ocv1.Route {
+	return &ocv1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Route",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: ocv1.RouteSpec{
+			Host: "https://openshift.cluster.com/host_url",
+		},
+		Status: ocv1.RouteStatus{},
 	}
 }
 

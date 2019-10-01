@@ -337,6 +337,26 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 
 	r.logger.WithValues("cache", r.cache).Info("Final cache values...")
 
+	b := NewBindNonBindable(&r.plan.SBR, r.plan.CR, []schema.GroupVersionResource{
+		{
+			Group:    "",
+			Version:  "v1",
+			Resource: "configmaps",
+		},
+		{
+			Group:    "route.openshift.io",
+			Version:  "v1",
+			Resource: "routes",
+		},
+	}, r.client)
+
+	vals, err := b.GetBindableVariables()
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("\n NON BINDABLE VALUES ARE %+v", vals)
+	// TODO(Akash): fill up r.Data with vals
+
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
 	values, err := envParser.Parse()
 	if err != nil {

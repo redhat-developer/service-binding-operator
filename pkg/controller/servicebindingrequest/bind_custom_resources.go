@@ -9,13 +9,16 @@ import (
 )
 
 var (
-	path = map[string][]string{
-		"ConfigMap": {"data"},
-		"Secret": {"data"},
-		"Route": {"spec", "host"},
+	path = map[string][][]string{
+		"ConfigMap": {{"data"}},
+		"Secret":    {{"data"}},
+		"Route":     {{"spec", "host"}},
+		"Service":   {{"spec", "clusterIP"}},
 	}
 )
 
+// BindNonBindableResources struct contains information about operator backed CR and
+// list of expected GVRs to extract information from.
 type BindNonBindableResources struct {
 	sbr              *v1alpha1.ServiceBindingRequest
 	cr               *unstructured.Unstructured
@@ -24,6 +27,7 @@ type BindNonBindableResources struct {
 	data             map[string]interface{}
 }
 
+// NewBindNonBindable returns new instance
 func NewBindNonBindable(
 	sbr *v1alpha1.ServiceBindingRequest,
 	cr *unstructured.Unstructured,
@@ -38,6 +42,7 @@ func NewBindNonBindable(
 	return b
 }
 
+// GetBindableVariables returns list of subresources owned by operator backed CR
 func (b BindNonBindableResources) GetOwnedResources() ([]unstructured.Unstructured, error) {
 	var subResources []unstructured.Unstructured
 	for _, resource := range b.resourcesToCheck {
@@ -59,6 +64,7 @@ func (b BindNonBindableResources) GetOwnedResources() ([]unstructured.Unstructur
 	return subResources, nil
 }
 
+// GetBindableVariables extracts required key value information from provided GVRs subresources
 func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	ownedResources, err := b.GetOwnedResources()
@@ -67,25 +73,32 @@ func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}
 	}
 	for _, resource := range ownedResources {
 		switch resource.GetKind() {
+		// In case ConfigMap and Secret we would read data field
 		case "ConfigMap", "Secret":
-			d, exist, err := unstructured.NestedMap(resource.Object, path["ConfigMap"]...)
-			if err != nil {
-				continue
-			}
-			if exist {
-				for k, v := range d {
-					data[k] = v
+			for _, v := range path[resource.GetKind()] {
+				d, exist, err := unstructured.NestedMap(resource.Object, v...)
+				if err != nil {
+					continue
+				}
+				if exist {
+					for k, val := range d {
+						data[k] = val
+					}
 				}
 			}
 			break
-		case "Route":
-			d, exist, err := unstructured.NestedString(resource.Object, path["Route"]...)
-			if err != nil {
-				continue
-			}
-			if exist {
-				val := path["Route"][len(path["Route"]) - 1]
-				data[val] = d
+
+			// In case of Route and Service we would extract information from respective path
+		case "Route", "Service":
+			for _, v := range path[resource.GetKind()] {
+				d, exist, err := unstructured.NestedString(resource.Object, v...)
+				if err != nil {
+					continue
+				}
+				if exist {
+					val := v[len(v)-1]
+					data[val] = d
+				}
 			}
 			break
 		}
