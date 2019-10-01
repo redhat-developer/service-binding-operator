@@ -32,6 +32,7 @@ ifeq ($(VERBOSE),2)
 	X_FLAG = -x
 endif
 
+export HACK_YAMLS=../../hack/yamls
 
 .DEFAULT_GOAL := help
 
@@ -79,36 +80,66 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 .PHONY: install-service-binding-operator
 ## Install the Service Binding Operator
 install-service-binding-operator:
-	@oc apply -f service-binding-operator-source.yaml
-	$(eval CSV_VERSION := $(shell oc get packagemanifest service-binding-operator -o jsonpath='{.status.channels[?(@.name == "stable")].currentCSV}'))
-	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' service-binding-operator-subscription.yaml | oc apply -f -
+	@. ../../hack/examples-commons.sh && \
+	install_service_binding_operator_source && \
+	install_service_binding_operator_subscription
+
+.PHONY: uninstall-service-binding-operator
+## Uninstall the Service Binding Operator
+uninstall-service-binding-operator:
+	@-. ../../hack/examples-commons.sh && \
+	uninstall_service_binding_operator_subscription && \
+	uninstall_service_binding_operator_source
 
 .PHONY: install-backing-db-operator
 ## Install the Backing Service DB Operator
 install-backing-db-operator:
-	@oc apply -f backing-db-operator-source.yaml
-	$(eval CSV_VERSION := $(shell oc get packagemanifest db-operators -o jsonpath='{.status.channels[?(@.name == "stable")].currentCSV}'))
-	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' backing-db-operator-subscription.yaml | oc apply -f -
+	@. ../../hack/examples-commons.sh && \
+	install_postgresql_operator_source && \
+	install_postgresql_operator_subscription
+
+.PHONY: uninstall-backing-db-operator
+## Uninstall the Backing Service DB Operator
+uninstall-backing-db-operator:
+	@-. ../../hack/examples-commons.sh && \
+	uninstall_postgresql_operator_subscription && \
+	uninstall_postgresql_operator_source
 
 .PHONY: install-serverless-operator
 ## Install the Serverless Operator
 install-serverless-operator:
-	$(eval CSV_VERSION := $(shell oc get packagemanifest serverless-operator -o jsonpath='{.status.channels[?(@.name == "techpreview")].currentCSV}'))
-	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' serverless-operator-subscription.yaml | oc apply -f -
+	@. ../../hack/examples-commons.sh && \
+	install_serverless_operator_subscription
+
+.PHONY: uninstall-serverless-operator
+## Uninstall the Serverless Operator
+uninstall-serverless-operator:
+	@-. ../../hack/examples-commons.sh && \
+	uninstall_serverless_operator_subscription
 
 .PHONY: install-service-mesh-operator
 ## Install the Service Mesh Operator
 install-service-mesh-operator:
-	$(eval CSV_VERSION := $(shell oc get packagemanifest servicemeshoperator -o jsonpath='{.status.channels[?(@.name == "1.0")].currentCSV}'))
-	@sed -e 's,REPLACE_CSV_VERSION,$(CSV_VERSION),g' service-mesh-operator-subscription.yaml | oc apply -f -
+	@. ../../hack/examples-commons.sh && \
+	install_service_mesh_operator_subscription
+
+.PHONY: uninstall-service-mesh-operator
+## Uninstall the Service Mesh Operator
+uninstall-service-mesh-operator:
+	@-. ../../hack/examples-commons.sh && \
+	uninstall_service_mesh_operator_subscription
 
 .PHONY: install-all-operators
 ## Install all the operators
 install-all-operators: install-backing-db-operator install-service-binding-operator install-serverless-operator install-service-mesh-operator
 
+.PHONY: uninstall-all-operators
+## Uninstall all the operators
+uninstall-all-operators: uninstall-backing-db-operator uninstall-service-binding-operator uninstall-serverless-operator uninstall-service-mesh-operator
+
 .PHONY: install-all
 ## Install all the operators and the quarkus native s2i builder image
-install-all: install-all-operators install-quarkus-native-s2i-builder
+install-all: create-project install-all-operators install-quarkus-native-s2i-builder
 
 .PHONY: install-quarkus-native-s2i-builder
 ## Install ubi-quarkus-native-s2i builder
@@ -121,17 +152,21 @@ install-quarkus-native-s2i-builder:
 .PHONY: create-project
 ## Create the OpenShift project/namespace
 create-project:
-	@oc new-project service-binding-demo
+	@. ../../hack/examples-commons.sh && \
+	create_project
+
+.PHONY: delete-project
+## Delete the OpenShift project/namespace
+delete-project:
+	@. ../../hack/examples-commons.sh && \
+	delete_project
+
 
 .PHONY: create-backing-db-instance
 ## Create the Backing Service Database
 create-backing-db-instance:
-	@oc apply -f create-db-instance.yaml
-
-.PHONY: create-service-binding-request
-## Create the Service Binding Request
-create-service-binding-request:
-	@oc apply -f service-binding-request.yaml
+	@. ../../hack/examples-commons.sh && \
+	install_postgresql_db_instance
 
 #PHONY: set-labels-on-knative-app
 ## Set the binding labels for the app
@@ -139,7 +174,7 @@ create-service-binding-request:
 #	@oc project service-binding-demo
 #	@oc patch dc knative-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment": "demo"}}}'
 
-.PHONY: delete-project
-## Delete the OpenShift project/namespace
-delete-project:
-	@-oc delete project service-binding-demo
+.PHONY: create-service-binding-request
+## Create the Service Binding Request
+create-service-binding-request:
+	@oc apply -f service-binding-request.yaml
