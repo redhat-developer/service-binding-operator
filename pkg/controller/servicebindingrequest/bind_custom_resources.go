@@ -8,11 +8,20 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+var (
+	path = map[string][]string{
+		"ConfigMap": {"data"},
+		"Secret": {"data"},
+		"Route": {"spec", "host"},
+	}
+)
+
 type BindNonBindableResources struct {
 	sbr              *v1alpha1.ServiceBindingRequest
 	cr               *unstructured.Unstructured
 	resourcesToCheck []schema.GroupVersionResource
 	client           dynamic.Interface
+	data             map[string]interface{}
 }
 
 func NewBindNonBindable(
@@ -59,7 +68,7 @@ func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}
 	for _, resource := range ownedResources {
 		switch resource.GetKind() {
 		case "ConfigMap", "Secret":
-			d, exist, err := unstructured.NestedMap(resource.Object, "data")
+			d, exist, err := unstructured.NestedMap(resource.Object, path["ConfigMap"]...)
 			if err != nil {
 				continue
 			}
@@ -67,6 +76,16 @@ func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}
 				for k, v := range d {
 					data[k] = v
 				}
+			}
+			break
+		case "Route":
+			d, exist, err := unstructured.NestedString(resource.Object, path["Route"]...)
+			if err != nil {
+				continue
+			}
+			if exist {
+				val := path["Route"][len(path["Route"]) - 1]
+				data[val] = d
 			}
 			break
 		}
