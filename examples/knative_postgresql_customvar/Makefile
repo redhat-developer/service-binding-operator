@@ -157,7 +157,7 @@ install-quarkus-native-s2i-builder:
 
 .PHONY: install-all
 ## Install all the operators, Knative Serving and the Quarkus native s2i builder image
-install-all: create-project install-all-operators install-knative-serving install-quarkus-native-s2i-builder
+install-all: install-all-operators install-knative-serving install-quarkus-native-s2i-builder
 
 ## -- Application Developer targets --
 
@@ -173,18 +173,11 @@ delete-project:
 	@. ../../hack/examples-commons.sh && \
 	delete_project
 
-
 .PHONY: create-backing-db-instance
 ## Create the Backing Service Database
 create-backing-db-instance:
 	@. ../../hack/examples-commons.sh && \
 	install_postgresql_db_instance
-
-#PHONY: set-labels-on-knative-app
-## Set the binding labels for the app
-#set-labels-on-knative-app:
-#	@oc project service-binding-demo
-#	@oc patch dc knative-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment": "demo"}}}'
 
 .PHONY: create-service-binding-request
 ## Create the Service Binding Request
