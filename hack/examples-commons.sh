@@ -197,5 +197,40 @@ function uninstall_service_mesh_operator_subscription {
     uninstall_current_csv $NAME $CHANNEL
 }
 
+## Knative Serving
+function install_knative_serving {
+    echo " ==   -  STEP 1/5 -   ==  "
+    echo "  -  Cleanup process  -  "
+    oc delete -f $HACK_YAMLS/service-mesh-control-plane.yaml
+    oc delete -f $HACK_YAMLS/service-mesh-member-roll.yaml
+    oc delete -f $HACK_YAMLS/knative-serving.yaml
+    sleep 5
+    echo " ==   -  STEP 2/5 -   == "
+    echo "  - SETTING ENVIRONMENT NAMESPACE CONTROLLERS  - "
+    oc new-project serverless-test
+    sleep 5
+    oc new-project istio-system
+    echo " - In the installation process!! THIS SHOULD TAKE 4-5 MINUTES  - "
+    oc apply -f $HACK_YAMLS/service-mesh-control-plane.yaml
+    sleep 300
+    echo " - watch the progress of the pods during the installation process!! - "
+    oc get pods -n istio-system
+    echo " ==   -  STEP 3/5 -   ==  "
+    echo " - Installing a ServiceMeshMemberRoll  - "
+    oc apply -f $HACK_YAMLS/service-mesh-member-roll.yaml
+    echo " ==   -  STEP 4/5 -   ==  "
+    echo "  -  Installing a ServiceMeshMemberRoll  -  "
+    sleep 15
+    oc apply -f $HACK_YAMLS/knative-serving.yaml
+    echo " ==   -  STEP 5/5 -   ==  "
+    echo " -  Installing Knative Serving!! THIS SHOULD TAKE 1-2 MINUTES - "
+    sleep 120
+    oc get knativeserving/knative-serving -n knative-serving --template='{{range .status.conditions}}{{printf "%s=%s\n" .type .status}}{{end}}'
+}
 
-print_operator_subscription servicemeshoperator redhat-operators 1.0
+## Uninstall Knative Serving
+function uninstall_knative_serving {
+    oc delete -f $HACK_YAMLS/service-mesh-control-plane.yaml
+    oc delete -f $HACK_YAMLS/service-mesh-member-roll.yaml
+    oc delete -f $HACK_YAMLS/knative-serving.yaml
+}

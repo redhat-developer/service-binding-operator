@@ -137,15 +137,27 @@ install-all-operators: install-backing-db-operator install-service-binding-opera
 ## Uninstall all the operators
 uninstall-all-operators: uninstall-backing-db-operator uninstall-service-binding-operator uninstall-serverless-operator uninstall-service-mesh-operator
 
-.PHONY: install-all
-## Install all the operators and the quarkus native s2i builder image
-install-all: create-project install-all-operators install-quarkus-native-s2i-builder
+.PHONY: install-knative-serving
+## Install Knative Serving
+install-knative-serving:
+	@. ../../hack/examples-commons.sh && \
+	install_knative_serving
+
+.PHONY: uninstall-knative-serving
+## Uninstall Knative Serving
+uninstall-knative-serving:
+	@. ../../hack/examples-commons.sh && \
+	uninstall_knative_serving
 
 .PHONY: install-quarkus-native-s2i-builder
 ## Install ubi-quarkus-native-s2i builder
 install-quarkus-native-s2i-builder:
 	@oc import-image quay.io/quarkus/ubi-quarkus-native-s2i:19.1.1 -n openshift --confirm
 	@oc patch is ubi-quarkus-native-s2i -n openshift -p '{"spec": {"tags": [{"name" : "19.1.1", "annotations": {"tags": "builder"}}]}}'
+
+.PHONY: install-all
+## Install all the operators, Knative Serving and the Quarkus native s2i builder image
+install-all: create-project install-all-operators install-knative-serving install-quarkus-native-s2i-builder
 
 ## -- Application Developer targets --
 
