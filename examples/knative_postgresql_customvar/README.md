@@ -127,6 +127,25 @@ It take several minutes to build the application using the Quarkus native s2i bu
 
 After the application is built you can check the `Services` under `Serverless` view to see the deployed application. The application should fail at this point with `Reason` to be the "connection refused" error. That indicates that the application is not connected to the DB.
 
+#### Set labels on the application
+
+Now we need to set arbitrary labels on the application's `Service` in order for the Service Binding Operator to be able to find the application.
+
+The labels are:
+
+* `connects-to=postgres` - indicates that the application needs to connect to a PostgreSQL DB
+* `environment=demo` - indicates the demo environment - it narrows the search
+
+```shell
+oc label services.serving.knative.dev knative-app connects-to=postgres environment=demo --overwrite
+```
+
+Alternatively, you can perform the same task with this make command:
+
+```shell
+make set-labels-on-knative-app
+```
+
 #### Create a DB instance for the application
 
 Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `Database` custom resource in the `service-binding-demo` namespace called `db-demo`:
@@ -171,7 +190,9 @@ spec:
     group: serving.knative.dev
     version: v1beta1
     resource: services
-    resourceRef: knative-app
+    matchLabels:
+      connects-to: postgres
+      environment: demo
   backingServiceSelector:
     group: postgresql.baiju.dev
     version: v1alpha1
@@ -195,7 +216,7 @@ make create-service-binding-request
 
 There are 2 parts in the request:
 
-* `applicationSelector` - used to search for the application based on the application's name defined by the `resourceRef` parameter and the `group`, `version` and `resource` of the application to be a `KnativeServing`.
+* `applicationSelector` - used to search for the application based on the labels that we set earlier and the `group`, `version` and `resource` of the application to be a knative `Service`.
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.

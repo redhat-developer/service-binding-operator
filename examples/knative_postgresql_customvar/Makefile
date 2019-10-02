@@ -169,6 +169,11 @@ delete-project:
 create-backing-db-instance:
 	${Q}${EC} install_postgresql_db_instance
 
+.PHONY: set-labels-on-knative-app
+## Set binding labels on the knative application
+set-labels-on-knative-app:
+	${Q}oc label services.serving.knative.dev knative-app connects-to=postgres environment=demo --overwrite
+
 .PHONY: create-service-binding-request
 ## Create the Service Binding Request
 create-service-binding-request:
