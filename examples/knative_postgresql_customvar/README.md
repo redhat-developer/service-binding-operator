@@ -29,13 +29,13 @@ attributes. The Backing Service Operator may represent a database or other servi
 applications. We'll use [postgresql-operator](https://github.com/operator-backing-service-samples/postgresql-operator) to
 demonstrate a sample use case.
 
-You can install all by running the following make target:
+We can install all by running the following make target:
 
 ```shell
 make install-all
 ```
 
-or you can install one by one via the following make targets.
+or we can install one by one via the following make targets.
 
 #### Install the Service Binding Operator
 
@@ -57,7 +57,7 @@ This makes the `Database` custom resource available, that the application develo
 
 The installation process for the Serverless plugin to OpenShift is documented [here](https://docs.openshift.com/container-platform/4.1/serverless/installing-openshift-serverless.html).
 
-However there're several make targets for each step to make it easy for you.
+However there're several make targets for each step to make it easy for us.
 
 ##### Install the Service Mesh Operator
 
@@ -91,7 +91,7 @@ make install-quarkus-native-s2i-builder
 
 This makes the `Ubi Quarkus Native S2i` builder image available for the application to be built when imported by the application developer.
 
-When everyghing is installed, make sure you refresh the OpenShift Console Page to make the Serverless features visible.
+When everything is installed, let's refresh the OpenShift Console Page to make the Serverless features visible.
 
 ### Application Developer
 
@@ -109,7 +109,7 @@ This creates a project/namespace called `service-binding-demo`.
 
 In this example we will import an arbitrary [Quarkus application](https://github.com/sbose78/using-spring-data-jpa-quarkus).
 
-In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+Add` page from the menu and then click on the `[From Git]` button. Fill in the form with the following:
+In the OpenShift Console switch to the Developer perspective. (We need to make sure we've selected the `service-binding-demo` project). Navigate to the `+Add` page from the menu and then click on the `[From Git]` button. Fill in the form with the following:
 
 * `Git Repo URL` = `https://github.com/sbose78/using-spring-data-jpa-quarkus`
 * `Builder Image` = `Ubi Quarkus Native S2i`
@@ -123,9 +123,9 @@ and click on the `[Create]` button.
 
 Notice, that during the import no DB config was mentioned or requestd.
 
-It take several minutes to build the application using the Quarkus native s2i builder image, you can check the running build progress in the Administrator's perspective under `Builds`->`Builds` view until the build status is `Complete`.
+It take several minutes to build the application using the Quarkus native s2i builder image, we can check the running build progress in the Administrator's perspective under `Builds`->`Builds` view until the build status is `Complete`.
 
-After the application is built you can check the `Services` under `Serverless` view to see the deployed application. The application should fail at this point with `Reason` to be the "connection refused" error. That indicates that the application is not connected to the DB.
+After the application is built we can check the `Services` under `Serverless` view to see the deployed application. The application should fail at this point with `Reason` to be the "connection refused" error. That indicates that the application is not connected to the DB.
 
 #### Set labels on the application
 
@@ -140,7 +140,7 @@ The labels are:
 oc label services.serving.knative.dev knative-app connects-to=postgres environment=demo --overwrite
 ```
 
-Alternatively, you can perform the same task with this make command:
+Alternatively, we can perform the same task with this make command:
 
 ```shell
 make set-labels-on-knative-app
@@ -165,7 +165,7 @@ spec:
 EOS
 ```
 
-Alternatively, you can perform the same task with this make command:
+Alternatively, we can perform the same task with this make command:
 
 ```shell
 make create-backing-db-instance
@@ -208,7 +208,7 @@ spec:
 EOS
 ```
 
-Alternatively, you can perform the same task with this make command:
+Alternatively, we can perform the same task with this make command:
 
 ```shell
 make create-service-binding-request
