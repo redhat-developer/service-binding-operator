@@ -8,7 +8,7 @@ This scenario illustrates binding a Quarkus application deployed as Knative serv
 
 In this example there are 2 roles:
 
-* Cluster Admin - Installs the operators to the cluster
+* Cluster Admin - Installs the operators and Serverless plugin to the OpenShift cluster
 * Application Developer - Imports a Node.js application, creates a DB instance, creates a request to bind the application and DB (to connect the DB and the application).
 
 ### Cluster Admin
@@ -20,7 +20,7 @@ The cluster admin needs to install operators, knative serving and a builder imag
 * Serverless plugin
   * Service Mesh Opearator
   * Serverless Operator
-  * Knative Serving
+  * Serverless UI
 * Quarkus Native S2i Builder Image
 
 A Backing Service Operator that is "bind-able," in other
