@@ -32,6 +32,10 @@ ifeq ($(VERBOSE),2)
 	X_FLAG = -x
 endif
 
+EC=$(SHELL) -c '. ../../hack/examples-commons.sh && $$1' EC
+ifneq (,$(findstring n,$(MAKEFLAGS)))
+EC=: EC
+endif
 export HACK_YAMLS=../../hack/yamls
 
 .DEFAULT_GOAL := help
@@ -80,54 +84,46 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 .PHONY: install-service-binding-operator
 ## Install the Service Binding Operator
 install-service-binding-operator:
-	@. ../../hack/examples-commons.sh && \
-	install_service_binding_operator_source && \
-	install_service_binding_operator_subscription
+	${Q}${EC} install_service_binding_operator_source
+	${Q}${EC} install_service_binding_operator_subscription
 
 .PHONY: uninstall-service-binding-operator
 ## Uninstall the Service Binding Operator
 uninstall-service-binding-operator:
-	@-. ../../hack/examples-commons.sh && \
-	uninstall_service_binding_operator_subscription && \
-	uninstall_service_binding_operator_source
+	${Q}-${EC} uninstall_service_binding_operator_subscription
+	${Q}-${EC} uninstall_service_binding_operator_source
 
 .PHONY: install-backing-db-operator
 ## Install the Backing Service DB Operator
 install-backing-db-operator:
-	@. ../../hack/examples-commons.sh && \
-	install_postgresql_operator_source && \
-	install_postgresql_operator_subscription
+	${Q}${EC} install_postgresql_operator_source
+	${Q}${EC} install_postgresql_operator_subscription
 
 .PHONY: uninstall-backing-db-operator
 ## Uninstall the Backing Service DB Operator
 uninstall-backing-db-operator:
-	@-. ../../hack/examples-commons.sh && \
-	uninstall_postgresql_operator_subscription && \
-	uninstall_postgresql_operator_source
+	${Q}-${EC} uninstall_postgresql_operator_subscription
+	${Q}-${EC} uninstall_postgresql_operator_source
 
 .PHONY: install-serverless-operator
 ## Install the Serverless Operator
 install-serverless-operator:
-	@. ../../hack/examples-commons.sh && \
-	install_serverless_operator_subscription
+	${Q}${EC} install_serverless_operator_subscription
 
 .PHONY: uninstall-serverless-operator
 ## Uninstall the Serverless Operator
 uninstall-serverless-operator:
-	@-. ../../hack/examples-commons.sh && \
-	uninstall_serverless_operator_subscription
+	${Q}-${EC} uninstall_serverless_operator_subscription
 
 .PHONY: install-service-mesh-operator
 ## Install the Service Mesh Operator
 install-service-mesh-operator:
-	@. ../../hack/examples-commons.sh && \
-	install_service_mesh_operator_subscription
+	${Q}${EC} install_service_mesh_operator_subscription
 
 .PHONY: uninstall-service-mesh-operator
 ## Uninstall the Service Mesh Operator
 uninstall-service-mesh-operator:
-	@-. ../../hack/examples-commons.sh && \
-	uninstall_service_mesh_operator_subscription
+	${Q}-${EC} uninstall_service_mesh_operator_subscription
 
 .PHONY: install-all-operators
 ## Install all the operators
@@ -140,20 +136,17 @@ uninstall-all-operators: uninstall-backing-db-operator uninstall-service-binding
 .PHONY: install-knative-serving
 ## Install Knative Serving
 install-knative-serving:
-	@. ../../hack/examples-commons.sh && \
-	install_knative_serving
+	${Q}${EC} install_knative_serving
 
 .PHONY: uninstall-knative-serving
 ## Uninstall Knative Serving
 uninstall-knative-serving:
-	@. ../../hack/examples-commons.sh && \
-	uninstall_knative_serving
+	${Q}-${EC} uninstall_knative_serving
 
 .PHONY: install-quarkus-native-s2i-builder
 ## Install ubi-quarkus-native-s2i builder
 install-quarkus-native-s2i-builder:
-	@oc import-image quay.io/quarkus/ubi-quarkus-native-s2i:19.1.1 -n openshift --confirm
-	@oc patch is ubi-quarkus-native-s2i -n openshift -p '{"spec": {"tags": [{"name" : "19.1.1", "annotations": {"tags": "builder"}}]}}'
+	${Q}${EC} install_ubi_quarkus_native_s2i_builder_image
 
 .PHONY: install-all
 ## Install all the operators, Knative Serving and the Quarkus native s2i builder image
@@ -164,22 +157,19 @@ install-all: install-all-operators install-knative-serving install-quarkus-nativ
 .PHONY: create-project
 ## Create the OpenShift project/namespace
 create-project:
-	@. ../../hack/examples-commons.sh && \
-	create_project
+	${Q}-${EC} create_project
 
 .PHONY: delete-project
 ## Delete the OpenShift project/namespace
 delete-project:
-	@. ../../hack/examples-commons.sh && \
-	delete_project
+	${Q}${EC} delete_project
 
 .PHONY: create-backing-db-instance
 ## Create the Backing Service Database
 create-backing-db-instance:
-	@. ../../hack/examples-commons.sh && \
-	install_postgresql_db_instance
+	${Q}${EC} install_postgresql_db_instance
 
 .PHONY: create-service-binding-request
 ## Create the Service Binding Request
 create-service-binding-request:
-	@oc apply -f service-binding-request.yaml
+	${Q}oc apply -f service-binding-request.yaml

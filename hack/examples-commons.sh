@@ -228,9 +228,14 @@ function install_knative_serving {
     oc get knativeserving/knative-serving -n knative-serving --template='{{range .status.conditions}}{{printf "%s=%s\n" .type .status}}{{end}}'
 }
 
-## Uninstall Knative Serving
 function uninstall_knative_serving {
     oc delete -f $HACK_YAMLS/service-mesh-control-plane.yaml
     oc delete -f $HACK_YAMLS/service-mesh-member-roll.yaml
     oc delete -f $HACK_YAMLS/knative-serving.yaml
+}
+
+## UBI Quarkus Native S2I Builder Image
+function install_ubi_quarkus_native_s2i_builder_image {
+    oc import-image quay.io/quarkus/ubi-quarkus-native-s2i:19.1.1 -n openshift --confirm
+	oc patch is ubi-quarkus-native-s2i -n openshift -p '{"spec": {"tags": [{"name" : "19.1.1", "annotations": {"tags": "builder"}}]}}'
 }
