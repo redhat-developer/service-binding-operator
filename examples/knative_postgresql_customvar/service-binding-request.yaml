@@ -6,12 +6,10 @@ metadata:
   namespace: service-binding-demo
 spec:
   applicationSelector:
-    matchLabels:
-      connects-to: postgres
-      environment: demo
     group: serving.knative.dev
     version: v1beta1
     resource: services
+    resourceRef: knative-app
   backingServiceSelector:
     group: postgresql.baiju.dev
     version: v1alpha1
