@@ -92,11 +92,10 @@ We'll add more examples in the future. The following section in this README file
 
 The following example scenarios are available:
 
-[Binding an Imported app to an In-cluster Operator Managed PostgreSQL Database](examples/nodejs_postgresql/README.md)
+[Binding an Imported app with an In-cluster Operator Managed PostgreSQL Database](examples/nodejs_postgresql/README.md)
 
-[Binding an Imported app to an Off-cluster Operator Managed AWS RDS Database](examples/nodejs_awsrds_varprefix/README.md)
+[Binding an Imported app with an Off-cluster Operator Managed AWS RDS Database](examples/nodejs_awsrds_varprefix/README.md)
 
-[Binding an Imported Java Spring Boot app to an In-cluster Operator Managed PostgreSQL Database](examples/java_postgresql_customvar/README.md)
+[Binding an Imported Java Spring Boot app with an In-cluster Operator Managed PostgreSQL Database](examples/java_postgresql_customvar/README.md)
 
-
-
+[Binding an Quarkus app deployed as Knative service with an In-cluster Operator Managed PostgreSQL Database](examples/knative_postgresql_customvar/README.md)
