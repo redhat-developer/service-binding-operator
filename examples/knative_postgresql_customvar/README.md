@@ -17,9 +17,10 @@ The cluster admin needs to install operators, knative serving and a builder imag
 
 * Service Binding Operator
 * Backing Service Operator
-* Service Mesh Opearator
-* Serverless Operator
-* Knative Serving
+* Serverless plugin
+  * Service Mesh Opearator
+  * Serverless Operator
+  * Knative Serving
 * Quarkus Native S2i Builder Image
 
 A Backing Service Operator that is "bind-able," in other
@@ -52,7 +53,13 @@ make install-backing-db-operator
 
 This makes the `Database` custom resource available, that the application developer will use later.
 
-#### Install the Service Mesh Operator
+#### Install the Serverless plugin to OpenShift
+
+The installation process for the Serverless plugin to OpenShift is documented [here](https://docs.openshift.com/container-platform/4.1/serverless/installing-openshift-serverless.html).
+
+However there're several make targets for each step to make it easy for you.
+
+##### Install the Service Mesh Operator
 
 ```shell
 make install-service-mesh-operator
@@ -60,7 +67,7 @@ make install-service-mesh-operator
 
 This makes the `ServiceMeshControlPlane` and `ServiceMeshMemberRoll` custom resourced available, that the application developer will use later.
 
-#### Install the Serverless Operator
+##### Install the Serverless Operator
 
 ```shell
 make install-serverless-operator
@@ -68,7 +75,7 @@ make install-serverless-operator
 
 This makes the `KnativeServing` custom resource available, that the application developer will use later to deploy the application.
 
-#### Install Knative Serving UI
+##### Install Serverless UI
 
 ```shell
 make install-knative-serving
