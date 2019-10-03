@@ -29,13 +29,13 @@ attributes. The Backing Service Operator may represent a database or other servi
 applications. We'll use [postgresql-operator](https://github.com/operator-backing-service-samples/postgresql-operator) to
 demonstrate a sample use case.
 
-We can install all by running the following make target:
+We can install all by running the following make target (note that the command will take up to ten minutes to run):
 
 ```shell
 make install-all
 ```
 
-or we can install one by one via the following make targets.
+or we can install one by one via the following six individual make targets.
 
 #### Install the Service Binding Operator
 
@@ -81,7 +81,7 @@ This makes the `KnativeServing` custom resource available, that the application 
 make install-knative-serving
 ```
 
-This enables `Serverless` view in the UI.
+This enables `Serverless` view in the UI. Note that installing the Serverless features will require around seven minutes for the command to run.
 
 #### Install the `ubi-quarkus-native-s2i` builder image
 
