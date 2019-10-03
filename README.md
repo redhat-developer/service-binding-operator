@@ -99,4 +99,6 @@ The following example scenarios are available:
 [Binding an Imported Java Spring Boot app to an In-cluster Operator Managed PostgreSQL Database](examples/java_postgresql_customvar/README.md)
 
 
+## Run Tests
 
+Run `make test` to run e2e and unit tests, and with verbosity try `make test VERBOSE=2`.
