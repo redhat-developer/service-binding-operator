@@ -36,9 +36,7 @@ endif
 # Examples Commons
 #-----------------------------------------------------------------------------
 EC=$(SHELL) -c '. ../../hack/examples-commons.sh && $$1' EC
-ifneq (,$(findstring n,$(MAKEFLAGS)))
-EC=: EC
-endif
+
 export HACK_YAMLS=../../hack/yamls
 
 ## -- Commmon Utility targets --
