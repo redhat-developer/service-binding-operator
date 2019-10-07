@@ -30,6 +30,8 @@ func TestPlannerNew(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef)
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredPostgresDatabaseCR("dbtesting2")
 
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
 	require.NotNil(t, planner)
