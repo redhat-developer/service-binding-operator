@@ -225,9 +225,9 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
-					"bindUnannotated": {
+					"detectBindingResources": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BindUnannotated is flag used to bind all non-bindable variables from different subresources owned by backing operator CR.",
+							Description: "DetectBindingResources is flag used to bind all non-bindable variables from different subresources owned by backing operator CR.",
 							Type:        []string{"boolean"},
 							Format:      "",
 						},

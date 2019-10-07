@@ -333,7 +333,7 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			BindUnannotated: bindUnannotated,
+			DetectBindingResources: bindUnannotated,
 		},
 	}
 }

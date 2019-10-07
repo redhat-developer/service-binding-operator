@@ -31,10 +31,10 @@ type ServiceBindingRequestSpec struct {
 	// backing service operator.
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 
-	// BindUnannotated is flag used to bind all non-bindable variables from
+	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
 	// +optional
-	BindUnannotated bool `json:"bindUnannotated"`
+	DetectBindingResources bool `json:"detectBindingResources"`
 }
 
 // CustomEnvMap is a set of Name and Value of an environment variable

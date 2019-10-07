@@ -41,7 +41,7 @@ func (f *Fake) AddMockedServiceBindingRequest(
 }
 
 
-// AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with BindUnannotated.
+// AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with DetectBindingResources.
 func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,
 	backingServiceResourceRef string,
