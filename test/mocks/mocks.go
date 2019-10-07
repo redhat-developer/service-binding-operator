@@ -305,6 +305,7 @@ func ServiceBindingRequestMock(
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	matchLabels map[string]string,
+	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
 	return &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -313,6 +314,12 @@ func ServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
+			CustomEnvVar: []v1alpha1.CustomEnvMap{
+				{
+					Name:  "IMAGE_PATH",
+					Value: "spec.imagePath",
+				},
+			},
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				Group:       CRDName,
 				Version:     CRDVersion,
@@ -326,12 +333,7 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			CustomEnvVar: []v1alpha1.CustomEnvMap{
-				{
-					Name:  "IMAGE_PATH",
-					Value: "spec.imagePath",
-				},
-			},
+			BindUnannotated: bindUnannotated,
 		},
 	}
 }
@@ -344,7 +346,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationResourceRef string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err

@@ -251,3 +251,4 @@ func TestCustomEnvParser(t *testing.T) {
 		assert.Equal(t, "postgres@cGFzc3dvcmQ=", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
 }
+

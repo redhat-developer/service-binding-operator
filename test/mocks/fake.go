@@ -35,7 +35,21 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
+
+// AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with BindUnannotated.
+func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
+	name string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
+	matchLabels map[string]string,
+) *v1alpha1.ServiceBindingRequest {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, true)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }

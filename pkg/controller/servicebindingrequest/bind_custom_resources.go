@@ -47,9 +47,7 @@ func NewBindNonBindable(
 func (b BindNonBindableResources) GetOwnedResources() ([]unstructured.Unstructured, error) {
 	var subResources []unstructured.Unstructured
 	for _, resource := range b.resourcesToCheck {
-		lst, err := b.client.Resource(resource).Namespace("test").List(v1.ListOptions{
-			ResourceVersion: resource.GroupResource().String(),
-		})
+		lst, err := b.client.Resource(resource).List(v1.ListOptions{})
 		if err != nil {
 			return subResources, err
 		}

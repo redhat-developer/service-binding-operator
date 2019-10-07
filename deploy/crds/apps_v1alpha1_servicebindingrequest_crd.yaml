@@ -38,19 +38,21 @@ spec:
               properties:
                 group:
                   type: string
-                name:
-                  type: string
                 matchLabels:
                   additionalProperties:
                     type: string
                   type: object
                 resource:
                   type: string
+                resourceRef:
+                  type: string
                 version:
                   type: string
               required:
+              - matchLabels
               - version
               - resource
+              - resourceRef
               type: object
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
@@ -70,6 +72,10 @@ spec:
               - kind
               - resourceRef
               type: object
+            bindUnannotated:
+              description: BindUnannotated is flag used to bind all non-bindable variables
+                from different subresources owned by backing operator CR.
+              type: boolean
             customEnvVar:
               description: Custom env variables
               items:
@@ -93,8 +99,10 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
+          - customEnvVar
           - backingServiceSelector
           - applicationSelector
+          - bindUnannotated
           type: object
         status:
           properties:
