@@ -75,24 +75,23 @@ func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 		log.Error(err, "On listing owned CSV as GVKs")
 		return nil, err
 	}
-	log.WithValues("CSVOwnedGVK.Amount", len(olmGVKs)).
-		Info("Amount of GVK founds in CSV objects.")
+	LogDebug(&log, "Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
 	return append(gvks, olmGVKs...), nil
 }
 
 // AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
 func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	logger := s.logger.WithValues("GVK", gvk)
-	logger.Info("Adding watch for GVK...")
+	LogDebug(&logger, "Adding watch for GVK...")
 	if _, exists := s.watchingGVKs[gvk]; exists {
-		logger.Info("Skipping watch on GVK twice, it's already under watch!")
+		LogDebug(&logger, "Skipping watch on GVK twice, it's already under watch!")
 		return nil
 	}
 
 	// saving GVK in cache
 	s.watchingGVKs[gvk] = true
 
-	logger.Info("Creating watch on GVK")
+	LogDebug(&logger, "Creating watch on GVK")
 	source := s.createSourceForGVK(gvk)
 	return s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 }
@@ -105,7 +104,7 @@ func (s *SBRController) addCSVWatch() error {
 	if err != nil {
 		return err
 	}
-	log.WithValues("GVK", csvGVK).Info("Watch added for ClusterServiceVersion")
+	LogDebug(&log, "Watch added for ClusterServiceVersion", "GVK", csvGVK)
 
 	return nil
 }
@@ -117,29 +116,29 @@ func (s *SBRController) addSBRWatch() error {
 	source := s.createSourceForGVK(gvk)
 	err := s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 	if err != nil {
-		logger.Error(err, "on creating watch for ServiceBindingRequest")
+		LogError(err, &logger, "on creating watch for ServiceBindingRequest")
 		return err
 	}
-	logger.Info("Watch added for ServiceBindingRequest")
+	LogDebug(&logger, "Watch added for ServiceBindingRequest")
 
 	return nil
 }
 
 // addWhitelistedGVKWatches create watch on GVKs employed on CSVs.
 func (s *SBRController) addWhitelistedGVKWatches() error {
+	logger := &(s.logger)
 	// list of interesting GVKs to watch
 	gvks, err := s.getWatchingGVKs()
 	if err != nil {
-		s.logger.Error(err, "on retrieving list of GVKs to watch")
+		LogError(err, logger, "on retrieving list of GVKs to watch")
 		return err
 	}
 
 	for _, gvk := range gvks {
-		logger := s.logger.WithValues("GVK", gvk)
-		logger.Info("Adding watch for whitelisted GVK...")
+		LogDebug(logger, "Adding watch for whitelisted GVK...", "GVK", gvk)
 		err = s.AddWatchForGVK(gvk)
 		if err != nil {
-			logger.Error(err, "on creating watch for GVK")
+			LogError(err, logger, "on creating watch for GVK")
 			return err
 		}
 	}
@@ -149,21 +148,22 @@ func (s *SBRController) addWhitelistedGVKWatches() error {
 
 // Watch setup "watch" for all GVKs relevant for SBRController.
 func (s *SBRController) Watch() error {
+	logger := &(s.logger)
 	err := s.addSBRWatch()
 	if err != nil {
-		s.logger.Error(err, "on adding watch for ServiceBindingRequest")
+		LogError(err, logger, "on adding watch for ServiceBindingRequest")
 		return err
 	}
 
 	err = s.addWhitelistedGVKWatches()
 	if err != nil {
-		s.logger.Error(err, "on adding watch for whitelisted GVKs")
+		LogError(err, logger, "on adding watch for whitelisted GVKs")
 		return err
 	}
 
 	err = s.addCSVWatch()
 	if err != nil {
-		s.logger.Error(err, "on adding watch for ClusterServiceVersion")
+		LogError(err, logger, "on adding watch for ClusterServiceVersion")
 		return err
 	}
 

@@ -85,12 +85,12 @@ func (b *Binder) updateSpecVolumes(
 	volumesPath := []string{"spec", "template", "spec", "volumes"}
 	logger = logger.WithValues("Volumes.NestedPath", volumesPath)
 
-	logger.Info("Reading volumes definitions...")
+	LogDebug(&logger, "Reading volumes definitions...")
 	volumes, _, err := unstructured.NestedSlice(obj.Object, volumesPath...)
 	if err != nil {
 		return nil, err
 	}
-	logger.WithValues("Volumes", len(volumes)).Info("Amount of volumes in spec.")
+	LogDebug(&logger, "Amount of volumes in spec.", "Volumes", len(volumes))
 
 	volumes, err = b.updateVolumes(logger, volumes)
 	if err != nil {
@@ -108,11 +108,11 @@ func (b *Binder) updateSpecVolumes(
 func (b *Binder) updateVolumes(logger logr.Logger, volumes []interface{}) ([]interface{}, error) {
 	name := b.sbr.GetName()
 
-	logger.Info("Checking if binding volume is already defined...")
+	LogDebug(&logger, "Checking if binding volume is already defined...")
 	for _, v := range volumes {
 		volume := v.(corev1.Volume)
 		if name == volume.Name {
-			logger.Info("Volume is already defined!")
+			LogDebug(&logger, "Volume is already defined!")
 			return volumes, nil
 		}
 	}
@@ -122,7 +122,7 @@ func (b *Binder) updateVolumes(logger logr.Logger, volumes []interface{}) ([]int
 		items = append(items, corev1.KeyToPath{Key: k, Path: k})
 	}
 
-	logger.WithValues("Items", items).Info("Appending new volume with items.")
+	LogDebug(&logger, "Appending new volume with items.", "Items", items)
 	bindVolume := corev1.Volume{
 		Name: name,
 		VolumeSource: corev1.VolumeSource{
@@ -156,7 +156,7 @@ func (b *Binder) updateSpecContainers(
 	if !found {
 		err = fmt.Errorf("unable to find '%#v' in object kind '%s'",
 			containersPath, obj.GetKind())
-		logger.Error(err, "is this definition supported by this operator?")
+		LogError(err, &logger, "is this definition supported by this operator?")
 		return nil, err
 	}
 
@@ -178,11 +178,11 @@ func (b *Binder) updateContainers(
 
 	for i, container := range containers {
 		logger := logger.WithValues("Obj.Container.Number", i)
-		logger.Info("Inspecting container...")
+		LogDebug(&logger, "Inspecting container...")
 
 		containers[i], err = b.updateContainer(container)
 		if err != nil {
-			logger.Error(err, "during container update.")
+			LogError(err, &logger, "during container update.")
 			return nil, err
 		}
 	}
@@ -214,15 +214,16 @@ func (b *Binder) appendEnvVar(envList []corev1.EnvVar, envParam string, envValue
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
 func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+	logger := &(b.logger)
 	for _, env := range envList {
 		if env.SecretRef.Name == secret {
-			b.logger.Info("Directive 'envFrom' is already present!")
+			LogDebug(logger, "Directive 'envFrom' is already present!")
 			// secret name is already referenced
 			return envList
 		}
 	}
 
-	b.logger.Info("Adding 'envFrom' directive...")
+	LogDebug(logger, "Adding 'envFrom' directive...")
 	return append(envList, corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{
@@ -280,7 +281,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 	for _, obj := range objs.Items {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
-		logger.Info("Inspecting object...")
+		LogDebug(&logger, "Inspecting object...")
 
 		updatedObj, err := b.updateSpecContainers(logger, &obj)
 		if err != nil {
@@ -294,12 +295,12 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		logger.Info("Updating object...")
+		LogDebug(&logger, "Updating object...")
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return nil, err
 		}
 
-		logger.Info("Reading back updated object...")
+		LogDebug(&logger, "Reading back updated object...")
 		// reading object back again, to comply with possible modifications
 		namespacedName := types.NamespacedName{
 			Namespace: updatedObj.GetNamespace(),

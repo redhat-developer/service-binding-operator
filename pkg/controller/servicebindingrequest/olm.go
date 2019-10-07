@@ -29,11 +29,12 @@ const (
 
 // listCSVs simple list to all CSV objects in the cluster.
 func (o *OLM) listCSVs() ([]unstructured.Unstructured, error) {
+	logger := &(o.logger)
 	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := o.client.Resource(gvr).Namespace(o.ns)
 	csvs, err := resourceClient.List(metav1.ListOptions{})
 	if err != nil {
-		o.logger.Error(err, "during listing CSV objects from cluster")
+		LogError(err, logger, "during listing CSV objects from cluster")
 		return nil, err
 	}
 	return csvs.Items, nil
@@ -50,7 +51,7 @@ func (o *OLM) extractOwnedCRDs(
 
 		ownedCRDs, exists, err := unstructured.NestedSlice(csv.Object, ownedPath...)
 		if err != nil {
-			logger.Error(err, "on extracting nested slice")
+			LogError(err, &logger, "on extracting nested slice")
 			return nil, err
 		}
 		if !exists {
@@ -68,9 +69,10 @@ func (o *OLM) extractOwnedCRDs(
 
 // ListCSVOwnedCRDs return a unstructured list of CRD objects from "owned" section in CSVs.
 func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
+	logger := &(o.logger)
 	csvs, err := o.listCSVs()
 	if err != nil {
-		o.logger.Error(err, "on listting CSVs")
+		LogError(err, logger, "on listting CSVs")
 		return nil, err
 	}
 	return o.extractOwnedCRDs(csvs)
@@ -87,16 +89,16 @@ func (o *OLM) loopCRDDescriptions(
 	fn eachCRDDescriptionFn,
 ) error {
 	for _, u := range crdDescriptions {
+		logger := &(o.logger)
 		crdDescription := &olmv1alpha1.CRDDescription{}
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, crdDescription)
 		if err != nil {
-			o.logger.Error(err, "on converting from unstructured to CRD")
+			LogError(err, logger, "on converting from unstructured to CRD")
 			return err
 		}
-		logger := o.logger.WithValues("CRDDescription", crdDescription)
-		logger.Info("Inspecting CRDDescription...")
+		LogDebug(logger, "Inspecting CRDDescription...", "CRDDescription", crdDescription)
 		if crdDescription.Name == "" {
-			logger.Info("Skipping empty CRDDescription!")
+			LogDebug(logger, "Skipping empty CRDDescription!")
 			continue
 		}
 		fn(crdDescription)
@@ -109,7 +111,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 	logger := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
-		logger.Error(err, "on listing owned CRDs")
+		LogError(err, &logger, "on listing owned CRDs")
 		return nil, err
 	}
 
@@ -120,7 +122,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 			"CRDDescription.Version", crdDescription.Version,
 			"CRDDescription.Kind", crdDescription.Kind,
 		)
-		logger.Info("Inspecting CRDDescription object...")
+		LogDebug(&logger, "Inspecting CRDDescription object...")
 		// checking for suffix since is expected to have object type as prefix
 		if !strings.EqualFold(strings.ToLower(crdDescription.Kind), strings.ToLower(gvk.Kind)) {
 			return
@@ -130,7 +132,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 			strings.ToLower(gvk.Version) != strings.ToLower(crdDescription.Version) {
 			return
 		}
-		logger.Info("CRDDescription object matches selector!")
+		LogDebug(&logger, "CRDDescription object matches selector!")
 		crdDescriptions = append(crdDescriptions, crdDescription)
 	})
 	if err != nil {
@@ -138,7 +140,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 	}
 
 	if len(crdDescriptions) == 0 {
-		logger.Info("No CRD could be found for GVK.")
+		LogDebug(&logger, "No CRD could be found for GVK.")
 		return nil, fmt.Errorf("no crd could be found for gvk")
 	}
 	return crdDescriptions[0], nil
@@ -148,10 +150,10 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 func (o *OLM) extractGVKs(
 	crdDescriptions []unstructured.Unstructured,
 ) ([]schema.GroupVersionKind, error) {
+	logger := &(o.logger)
 	gvks := []schema.GroupVersionKind{}
 	err := o.loopCRDDescriptions(crdDescriptions, func(crdDescription *olmv1alpha1.CRDDescription) {
-		o.logger.WithValues("CRDDescription.Name", crdDescription.Name).
-			Info("Extracting GVK from CRDDescription")
+		LogDebug(logger, "Extracting GVK from CRDDescription", "CRDDescription.Name", crdDescription.Name)
 		_, gv := schema.ParseResourceArg(crdDescription.Name)
 		gvks = append(gvks, schema.GroupVersionKind{
 			Group:   gv.Group,
@@ -167,9 +169,10 @@ func (o *OLM) extractGVKs(
 
 // ListCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
 func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
+	logger := &(o.logger)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
-		o.logger.Error(err, "on listting CSVs")
+		LogError(err, logger, "on listting CSVs")
 		return nil, err
 	}
 	return o.extractGVKs(ownedCRDs)
@@ -180,12 +183,12 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 	namespacedName types.NamespacedName,
 ) ([]schema.GroupVersionKind, error) {
 	logger := o.logger.WithValues("CSV.NamespacedName", namespacedName)
-	logger.Info("Reading CSV to extract GVKs...")
+	LogDebug(&logger, "Reading CSV to extract GVKs...")
 	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
-		logger.Error(err, "on reading CSV object")
+		LogError(err, &logger, "on reading CSV object")
 		return []schema.GroupVersionKind{}, err
 	}
 
@@ -194,7 +197,7 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 
 	ownedCRDs, err := o.extractOwnedCRDs(csvs)
 	if err != nil {
-		logger.Error(err, "on extracting owned CRDs")
+		LogError(err, &logger, "on extracting owned CRDs")
 		return []schema.GroupVersionKind{}, err
 	}
 
