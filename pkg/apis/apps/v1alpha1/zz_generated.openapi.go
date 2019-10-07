@@ -233,7 +233,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"backingServiceSelector", "applicationSelector", "bindUnannotated"},
+				Required: []string{"backingServiceSelector", "applicationSelector"},
 			},
 		},
 		Dependencies: []string{

@@ -33,6 +33,7 @@ type ServiceBindingRequestSpec struct {
 
 	// BindUnannotated is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
+	// +optional
 	BindUnannotated bool `json:"bindUnannotated"`
 }
 
