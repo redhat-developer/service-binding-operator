@@ -142,63 +142,43 @@ uninstall-backing-db-operator: uninstall-backing-db-operator-source uninstall-ba
 
 # === Serverless Operator ===
 
-.PHONY: install-serverless-operator-source
-## Install the Serverless Operator Source
-install-serverless-operator-source:
-	${Q}${EC} install_postgresql_operator_source
-
 .PHONY: install-serverless-operator-subscription
 ## Install the Serverless Operator Subscription
 install-serverless-operator-subscription:
-	${Q}${EC} install_postgresql_operator_subscription
+	${Q}${EC} install_serverless_operator_subscription
 
 .PHONY: install-serverless-operator
 ## Install the Serverless Operator
-install-serverless-operator: install-serverless-operator-source install-serverless-operator-subscription
-
-.PHONY: uninstall-serverless-operator-source
-## Uninstall the Serverless Operator Source
-uninstall-serverless-operator-source:
-	${Q}${EC} uninstall_postgresql_operator_source
+install-serverless-operator: install-serverless-operator-subscription
 
 .PHONY: uninstall-serverless-operator-subscription
 ## Uninstall the Serverless Operator Subscription
 uninstall-serverless-operator-subscription:
-	${Q}${EC} uninstall_postgresql_operator_subscription
+	${Q}${EC} uninstall_serverless_operator_subscription
 
 .PHONY: uninstall-serverless-operator
 ## Uninstall the Serverless Operator
-uninstall-serverless-operator: uninstall-serverless-operator-source uninstall-serverless-operator-subscription
+uninstall-serverless-operator: uninstall-serverless-operator-subscription
 
 # === Service Mesh Operator ===
-
-.PHONY: install-service-mesh-operator-source
-## Install the Service Mesh Operator Source
-install-service-mesh-operator-source:
-	${Q}${EC} install_postgresql_operator_source
 
 .PHONY: install-service-mesh-operator-subscription
 ## Install the Service Mesh Operator Subscription
 install-service-mesh-operator-subscription:
-	${Q}${EC} install_postgresql_operator_subscription
+	${Q}${EC} install_service_mesh_operator_subscription
 
 .PHONY: install-service-mesh-operator
 ## Install the Service Mesh Operator
-install-service-mesh-operator: install-service-mesh-operator-source install-service-mesh-operator-subscription
-
-.PHONY: uninstall-service-mesh-operator-source
-## Uninstall the Service Mesh Operator Source
-uninstall-service-mesh-operator-source:
-	${Q}${EC} uninstall_postgresql_operator_source
+install-service-mesh-operator: install-service-mesh-operator-subscription
 
 .PHONY: uninstall-service-mesh-operator-subscription
 ## Uninstall the Service Mesh Operator Subscription
 uninstall-service-mesh-operator-subscription:
-	${Q}${EC} uninstall_postgresql_operator_subscription
+	${Q}${EC} uninstall_service_mesh_operator_subscription
 
 .PHONY: uninstall-service-mesh-operator
 ## Uninstall the Service Mesh Operator
-uninstall-service-mesh-operator: uninstall-service-mesh-operator-source uninstall-service-mesh-operator-subscription
+uninstall-service-mesh-operator: uninstall-service-mesh-operator-subscription
 
 # === Knative Serving (Serverless UI) ===
 
