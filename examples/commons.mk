@@ -80,7 +80,7 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 
 ## -- Common Cluster Admin Targets --
 
-# === Service Bidining Operator ===
+## --- Service Binding Operator ---
 
 .PHONY: install-service-binding-operator-source
 ## Install the Service Binding Operator Source
@@ -110,7 +110,7 @@ uninstall-service-binding-operator-subscription:
 ## Uninstall the Service Binding Operator
 uninstall-service-binding-operator: uninstall-service-binding-operator-source uninstall-service-binding-operator-subscription
 
-# === Backing Service DB (PostgreSQL) Operator ===
+## --- Backing Service DB (PostgreSQL) Operator ---
 
 .PHONY: install-backing-db-operator-source
 ## Install the Backing Service DB Operator Source
@@ -140,7 +140,7 @@ uninstall-backing-db-operator-subscription:
 ## Uninstall the Backing Service DB Operator
 uninstall-backing-db-operator: uninstall-backing-db-operator-source uninstall-backing-db-operator-subscription
 
-# === Serverless Operator ===
+## --- Serverless Operator ---
 
 .PHONY: install-serverless-operator-subscription
 ## Install the Serverless Operator Subscription
@@ -160,7 +160,7 @@ uninstall-serverless-operator-subscription:
 ## Uninstall the Serverless Operator
 uninstall-serverless-operator: uninstall-serverless-operator-subscription
 
-# === Service Mesh Operator ===
+## --- Service Mesh Operator ---
 
 .PHONY: install-service-mesh-operator-subscription
 ## Install the Service Mesh Operator Subscription
@@ -180,7 +180,7 @@ uninstall-service-mesh-operator-subscription:
 ## Uninstall the Service Mesh Operator
 uninstall-service-mesh-operator: uninstall-service-mesh-operator-subscription
 
-# === Knative Serving (Serverless UI) ===
+## --- Knative Serving (Serverless UI) 
 
 .PHONY: install-knative-serving
 ## Install Knative Serving
