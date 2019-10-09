@@ -115,7 +115,7 @@ func (b *Binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 	for _, v := range volumes {
 		volume := v.(corev1.Volume)
 		if name == volume.Name {
-			logging.Debug(&binderLogger, "Volume is already defined!")
+			logging.Debug(log, "Volume is already defined!")
 			return volumes, nil
 		}
 	}
