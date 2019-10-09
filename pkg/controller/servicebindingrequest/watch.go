@@ -1,9 +1,14 @@
 package servicebindingrequest
 
 import (
+	"github.com/redhat-developer/service-binding-operator/pkg/logging"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+var (
+	watchLogger = logging.Logger("watch")
 )
 
 // CSVToWatcherMapper creates a EventHandler interface to map ClusterServiceVersion objects back to
@@ -21,19 +26,19 @@ func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
 		Name:      obj.Meta.GetName(),
 	}
 
-	logger := log.WithName("CSVToWatcherMapper").WithValues("Obj.NamespacedName", namespacedName)
+	log := watchLogger.WithName("CSVToWatcherMapper").WithValues("Obj.NamespacedName", namespacedName)
 
 	gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
 	if err != nil {
-		LogError(err, &logger, "Failed on listing GVK with namespaced-name!")
+		logging.LogError(err, &log, "Failed on listing GVK with namespaced-name!")
 		return []reconcile.Request{}
 	}
 
 	for _, gvk := range gvks {
-		LogDebug(&logger, "Adding watch for GVK", "GVK", gvk)
+		logging.LogDebug(&log, "Adding watch for GVK", "GVK", gvk)
 		err = c.controller.AddWatchForGVK(gvk)
 		if err != nil {
-			LogError(err, &logger, "Failed to create a watch")
+			logging.LogError(err, &log, "Failed to create a watch")
 		}
 	}
 

@@ -12,10 +12,10 @@ import (
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/logging"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -34,6 +34,10 @@ const (
 	bindingFail = "Fail"
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
+)
+
+var (
+	reconcilerLogger = logging.Logger("reconciler")
 )
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
@@ -122,16 +126,16 @@ func (r *Reconciler) onError(
 }
 
 // checkSBR checks the Service Binding Request
-func checkSBR(sbr *v1alpha1.ServiceBindingRequest, logger logr.Logger) error {
+func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log logr.Logger) error {
 	// Check if application ResourceRef is present
 	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
-		LogDebug(&logger, "Spec.ApplicationSelector.ResourceRef not found")
+		logging.LogDebug(&log, "Spec.ApplicationSelector.ResourceRef not found")
 
 		// Check if MatchLabels is present
 		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
 
 			err := errors.New("NotFoundError")
-			LogError(err, &logger, "Spec.ApplicationSelector.MatchLabels not found")
+			logging.LogError(err, &log, "Spec.ApplicationSelector.MatchLabels not found")
 			return err
 		}
 	}
@@ -151,29 +155,29 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx := context.TODO()
 	objectsToAnnotate := []*unstructured.Unstructured{}
 
-	logger := logf.Log.WithValues(
+	log := reconcilerLogger.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
 	)
-	LogInfo(&logger, "Reconciling ServiceBindingRequest...")
+	logging.LogInfo(&log, "Reconciling ServiceBindingRequest...")
 
 	// fetch the ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		LogError(err, &logger, "On retrieving service-binding-request instance.")
+		logging.LogError(err, &log, "On retrieving service-binding-request instance.")
 		return RequeueError(err)
 	}
 
-	logger = logger.WithValues("ServiceBindingRequest.Name", sbr.Name)
-	LogDebug(&logger, "Found service binding request to inspect")
+	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
+	logging.LogDebug(&log, "Found service binding request to inspect")
 
 	// splitting instance from it's status
 	sbrStatus := sbr.Status
 
 	// Check Service Binding Request
-	err = checkSBR(sbr, logger)
+	err = checkSBR(sbr, log)
 	if err != nil {
-		LogError(err, &logger, "")
+		logging.LogError(err, &log, "")
 		return RequeueError(err)
 	}
 
@@ -181,11 +185,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Planing changes
 	//
 
-	LogDebug(&logger, "Creating a plan based on OLM and CRD.")
+	logging.LogDebug(&log, "Creating a plan based on OLM and CRD.")
 	planner := NewPlanner(ctx, r.dynClient, sbr)
 	plan, err := planner.Plan()
 	if err != nil {
-		LogError(err, &logger, "On creating a plan to bind applications.")
+		logging.LogError(err, &log, "On creating a plan to bind applications.")
 		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
@@ -196,11 +200,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Retrieving data
 	//
 
-	LogDebug(&logger, "Retrieving data to create intermediate secret.")
+	logging.LogDebug(&log, "Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
 	retrievedObjects, err := retriever.Retrieve()
 	if err != nil {
-		LogError(err, &logger, "On retrieving binding data.")
+		logging.LogError(err, &log, "On retrieving binding data.")
 		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
@@ -213,11 +217,11 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Updating applications to use intermediary secret
 	//
 
-	LogInfo(&logger, "Binding applications with intermediary secret.")
+	logging.LogInfo(&log, "Binding applications with intermediary secret.")
 	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
 	updatedObjects, err := binder.Bind()
 	if err != nil {
-		LogError(err, &logger, "On binding application.")
+		logging.LogError(err, &log, "On binding application.")
 		return r.onError(err, sbr, &sbrStatus, updatedObjects)
 	}
 
@@ -231,16 +235,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
-		LogError(err, &logger, "On setting annotations in related objects.")
+		logging.LogError(err, &log, "On setting annotations in related objects.")
 		return r.onError(err, sbr, &sbrStatus, updatedObjects)
 	}
 
 	// updating status of request instance
 	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
-		LogError(err, &logger, "On updating status of ServiceBindingRequest.")
+		logging.LogError(err, &log, "On updating status of ServiceBindingRequest.")
 		return RequeueError(err)
 	}
 
-	LogInfo(&logger, "All done!")
+	logging.LogInfo(&log, "All done!")
 	return Done()
 }

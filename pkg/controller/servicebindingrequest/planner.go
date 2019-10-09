@@ -10,9 +10,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+)
+
+var (
+	plannerLogger = logging.Logger("planner")
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
@@ -40,16 +44,16 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	opts := metav1.GetOptions{}
 
-	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
-	LogDebug(&logger, "Searching for CR instance...")
+	log := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
+	logging.LogDebug(&log, "Searching for CR instance...")
 
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
 	if err != nil {
-		LogError(err, &logger, "during reading CR")
+		logging.LogError(err, &log, "during reading CR")
 		return nil, err
 	}
 
-	LogDebug(&logger, "Found target CR!", "CR.Name", cr.GetName())
+	logging.LogDebug(&log, "Found target CR!", "CR.Name", cr.GetName())
 	return cr, nil
 }
 
@@ -88,6 +92,6 @@ func NewPlanner(
 		ctx:    ctx,
 		client: client,
 		sbr:    sbr,
-		logger: logf.Log.WithName("plan"),
+		logger: plannerLogger,
 	}
 }

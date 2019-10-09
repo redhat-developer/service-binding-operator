@@ -9,11 +9,16 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/logging"
 )
 
 const (
 	sbrNamespaceAnnotation = "service-binding-operator.apps.openshift.io/binding-namespace"
 	sbrNameAnnotation      = "service-binding-operator.apps.openshift.io/binding-name"
+)
+
+var (
+	annotationsLogger = logging.Logger("annotations")
 )
 
 // extractSBRNamespacedName returns a types.NamespacedName if the required service binding request keys
@@ -47,7 +52,7 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	u := &unstructured.Unstructured{Object: data}
 
 	sbrNamespacedName = extractSBRNamespacedName(u.GetAnnotations())
-	logger := log.WithValues(
+	log := annotationsLogger.WithValues(
 		"Resource.GVK", u.GroupVersionKind(),
 		"Resource.Namespace", u.GetNamespace(),
 		"Resource.Name", u.GetName(),
@@ -55,22 +60,22 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	)
 
 	if IsNamespacedNameEmpty(sbrNamespacedName) {
-		LogDebug(&logger, "SBR information not present in annotations, continue inspecting object")
+		logging.LogDebug(&log, "SBR information not present in annotations, continue inspecting object")
 	} else {
 		// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
-		LogTrace(&logger, "SBR information found in annotations, returning it")
+		logging.LogTrace(&log, "SBR information found in annotations, returning it")
 		return sbrNamespacedName, nil
 	}
 
 	if u.GroupVersionKind() == v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind) {
-		LogDebug(&logger, "Object is a SBR, returning its namespaced name")
+		logging.LogDebug(&log, "Object is a SBR, returning its namespaced name")
 		sbrNamespacedName.Namespace = u.GetNamespace()
 		sbrNamespacedName.Name = u.GetName()
 		return sbrNamespacedName, nil
 	}
 
 	// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
-	LogTrace(&logger, "Object is not a SBR, returning an empty namespaced name")
+	logging.LogTrace(&log, "Object is not a SBR, returning an empty namespaced name")
 	return sbrNamespacedName, nil
 }
 
@@ -95,17 +100,17 @@ func SetSBRAnnotations(
 		gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 		opts := metav1.UpdateOptions{}
 
-		logger := log.WithValues(
+		log := annotationsLogger.WithValues(
 			"SBR.Namespace", namespacedName.Namespace,
 			"SBR.Name", namespacedName.Name,
 			"Resource.GVK", gvk,
 			"Resource.Namespace", obj.GetNamespace(),
 			"Resource.Name", obj.GetName(),
 		)
-		LogDebug(&logger, "Updating resource annotations...")
+		logging.LogDebug(&log, "Updating resource annotations...")
 		_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
 		if err != nil {
-			LogError(err, &logger, "unable to set/update annotations in object")
+			logging.LogError(err, &log, "unable to set/update annotations in object")
 			return err
 		}
 	}

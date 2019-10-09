@@ -1,8 +1,13 @@
 package servicebindingrequest
 
 import (
+	"github.com/redhat-developer/service-binding-operator/pkg/logging"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+var (
+	mapperLogger = logging.Logger("mapper")
 )
 
 // SBRRequestMapper is the handler.Mapper interface implementation. It should influence the
@@ -12,7 +17,7 @@ type SBRRequestMapper struct{}
 // Map execute the mapping of a resource with the requests it would produce. Here we inspect the
 // given object trying to identify if this object is part of a SBR, or a actual SBR resource.
 func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
-	logger := log.WithValues(
+	log := mapperLogger.WithValues(
 		"Object.Namespace", obj.Meta.GetNamespace(),
 		"Object.Name", obj.Meta.GetName(),
 	)
@@ -20,12 +25,11 @@ func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 
 	sbrNamespacedName, err := GetSBRNamespacedNameFromObject(obj.Object)
 	if err != nil {
-		LogError(err, &logger, "on inspecting object for annotations for SBR object")
+		logging.LogError(err, &log, "on inspecting object for annotations for SBR object")
 		return toReconcile
 	}
 	if IsNamespacedNameEmpty(sbrNamespacedName) {
-		LogWarning(&logger, "not able to extract SBR namespaced-name")
-		LogWarning(&logger, "not able to extract SBR namespaced-name")
+		logging.LogDebug(&log, "not able to extract SBR namespaced-name")
 		return toReconcile
 	}
 
