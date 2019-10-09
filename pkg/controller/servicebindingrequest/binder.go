@@ -158,7 +158,7 @@ func (b *Binder) updateSpecContainers(
 	if !found {
 		err = fmt.Errorf("unable to find '%#v' in object kind '%s'",
 			containersPath, obj.GetKind())
-		logging.LogError(err, &log, "is this definition supported by this operator?")
+		logging.Error(err, &log, "is this definition supported by this operator?")
 		return nil, err
 	}
 
@@ -183,7 +183,7 @@ func (b *Binder) updateContainers(
 
 		containers[i], err = b.updateContainer(container)
 		if err != nil {
-			logging.LogError(err, &log, "during container update.")
+			logging.Error(err, &log, "during container update.")
 			return nil, err
 		}
 	}

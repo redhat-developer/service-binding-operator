@@ -38,7 +38,7 @@ func (o *OLM) listCSVs() ([]unstructured.Unstructured, error) {
 	resourceClient := o.client.Resource(gvr).Namespace(o.ns)
 	csvs, err := resourceClient.List(metav1.ListOptions{})
 	if err != nil {
-		logging.LogError(err, log, "during listing CSV objects from cluster")
+		logging.Error(err, log, "during listing CSV objects from cluster")
 		return nil, err
 	}
 	return csvs.Items, nil
@@ -55,7 +55,7 @@ func (o *OLM) extractOwnedCRDs(
 
 		ownedCRDs, exists, err := unstructured.NestedSlice(csv.Object, ownedPath...)
 		if err != nil {
-			logging.LogError(err, &log, "on extracting nested slice")
+			logging.Error(err, &log, "on extracting nested slice")
 			return nil, err
 		}
 		if !exists {
@@ -76,7 +76,7 @@ func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
 	log := &(o.logger)
 	csvs, err := o.listCSVs()
 	if err != nil {
-		logging.LogError(err, log, "on listting CSVs")
+		logging.Error(err, log, "on listting CSVs")
 		return nil, err
 	}
 	return o.extractOwnedCRDs(csvs)
@@ -97,7 +97,7 @@ func (o *OLM) loopCRDDescriptions(
 		crdDescription := &olmv1alpha1.CRDDescription{}
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, crdDescription)
 		if err != nil {
-			logging.LogError(err, log, "on converting from unstructured to CRD")
+			logging.Error(err, log, "on converting from unstructured to CRD")
 			return err
 		}
 		logging.Debug(log, "Inspecting CRDDescription...", "CRDDescription", crdDescription)
@@ -115,7 +115,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 	log := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
-		logging.LogError(err, &log, "on listing owned CRDs")
+		logging.Error(err, &log, "on listing owned CRDs")
 		return nil, err
 	}
 
@@ -176,7 +176,7 @@ func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
 	log := &(o.logger)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
-		logging.LogError(err, log, "on listting CSVs")
+		logging.Error(err, log, "on listting CSVs")
 		return nil, err
 	}
 	return o.extractGVKs(ownedCRDs)
@@ -192,7 +192,7 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
-		logging.LogError(err, &log, "on reading CSV object")
+		logging.Error(err, &log, "on reading CSV object")
 		return []schema.GroupVersionKind{}, err
 	}
 
@@ -201,7 +201,7 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 
 	ownedCRDs, err := o.extractOwnedCRDs(csvs)
 	if err != nil {
-		logging.LogError(err, &log, "on extracting owned CRDs")
+		logging.Error(err, &log, "on extracting owned CRDs")
 		return []schema.GroupVersionKind{}, err
 	}
 

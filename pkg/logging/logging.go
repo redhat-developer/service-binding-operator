@@ -7,8 +7,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-// LogError logs the message using go-logr package on a default level as ERROR
-func LogError(err error, logger *logr.Logger, msg string, keysAndValues ...interface{}) {
+// Error logs the message using go-logr package on a default level as ERROR
+func Error(err error, logger *logr.Logger, msg string, keysAndValues ...interface{}) {
 	(*logger).Error(err, msg, keysAndValues...)
 }
 

@@ -135,7 +135,7 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log logr.Logger) error {
 		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
 
 			err := errors.New("NotFoundError")
-			logging.LogError(err, &log, "Spec.ApplicationSelector.MatchLabels not found")
+			logging.Error(err, &log, "Spec.ApplicationSelector.MatchLabels not found")
 			return err
 		}
 	}
@@ -164,7 +164,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch the ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		logging.LogError(err, &log, "On retrieving service-binding-request instance.")
+		logging.Error(err, &log, "On retrieving service-binding-request instance.")
 		return RequeueError(err)
 	}
 
@@ -177,7 +177,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Check Service Binding Request
 	err = checkSBR(sbr, log)
 	if err != nil {
-		logging.LogError(err, &log, "")
+		logging.Error(err, &log, "")
 		return RequeueError(err)
 	}
 
@@ -189,7 +189,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	planner := NewPlanner(ctx, r.dynClient, sbr)
 	plan, err := planner.Plan()
 	if err != nil {
-		logging.LogError(err, &log, "On creating a plan to bind applications.")
+		logging.Error(err, &log, "On creating a plan to bind applications.")
 		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
@@ -204,7 +204,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
 	retrievedObjects, err := retriever.Retrieve()
 	if err != nil {
-		logging.LogError(err, &log, "On retrieving binding data.")
+		logging.Error(err, &log, "On retrieving binding data.")
 		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
@@ -221,7 +221,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
 	updatedObjects, err := binder.Bind()
 	if err != nil {
-		logging.LogError(err, &log, "On binding application.")
+		logging.Error(err, &log, "On binding application.")
 		return r.onError(err, sbr, &sbrStatus, updatedObjects)
 	}
 
@@ -235,13 +235,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
-		logging.LogError(err, &log, "On setting annotations in related objects.")
+		logging.Error(err, &log, "On setting annotations in related objects.")
 		return r.onError(err, sbr, &sbrStatus, updatedObjects)
 	}
 
 	// updating status of request instance
 	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
-		logging.LogError(err, &log, "On updating status of ServiceBindingRequest.")
+		logging.Error(err, &log, "On updating status of ServiceBindingRequest.")
 		return RequeueError(err)
 	}
 

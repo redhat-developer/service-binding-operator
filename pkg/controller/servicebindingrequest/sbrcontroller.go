@@ -74,7 +74,7 @@ func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 	olm := NewOLM(s.Client, os.Getenv("WATCH_NAMESPACE"))
 	olmGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
 	if err != nil {
-		logging.LogError(err, log, "On listing owned CSV as GVKs")
+		logging.Error(err, log, "On listing owned CSV as GVKs")
 		return nil, err
 	}
 	logging.Debug(log, "Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
@@ -119,7 +119,7 @@ func (s *SBRController) addSBRWatch() error {
 	source := s.createSourceForGVK(gvk)
 	err := s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 	if err != nil {
-		logging.LogError(err, &log, "on creating watch for ServiceBindingRequest")
+		logging.Error(err, &log, "on creating watch for ServiceBindingRequest")
 		return err
 	}
 	logging.Debug(&log, "Watch added for ServiceBindingRequest")
@@ -133,7 +133,7 @@ func (s *SBRController) addWhitelistedGVKWatches() error {
 	// list of interesting GVKs to watch
 	gvks, err := s.getWatchingGVKs()
 	if err != nil {
-		logging.LogError(err, log, "on retrieving list of GVKs to watch")
+		logging.Error(err, log, "on retrieving list of GVKs to watch")
 		return err
 	}
 
@@ -141,7 +141,7 @@ func (s *SBRController) addWhitelistedGVKWatches() error {
 		logging.Debug(log, "Adding watch for whitelisted GVK...", "GVK", gvk)
 		err = s.AddWatchForGVK(gvk)
 		if err != nil {
-			logging.LogError(err, log, "on creating watch for GVK")
+			logging.Error(err, log, "on creating watch for GVK")
 			return err
 		}
 	}
@@ -154,19 +154,19 @@ func (s *SBRController) Watch() error {
 	log := &(s.logger)
 	err := s.addSBRWatch()
 	if err != nil {
-		logging.LogError(err, log, "on adding watch for ServiceBindingRequest")
+		logging.Error(err, log, "on adding watch for ServiceBindingRequest")
 		return err
 	}
 
 	err = s.addWhitelistedGVKWatches()
 	if err != nil {
-		logging.LogError(err, log, "on adding watch for whitelisted GVKs")
+		logging.Error(err, log, "on adding watch for whitelisted GVKs")
 		return err
 	}
 
 	err = s.addCSVWatch()
 	if err != nil {
-		logging.LogError(err, log, "on adding watch for ClusterServiceVersion")
+		logging.Error(err, log, "on adding watch for ClusterServiceVersion")
 		return err
 	}
 

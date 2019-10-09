@@ -110,7 +110,7 @@ func SetSBRAnnotations(
 		logging.Debug(&log, "Updating resource annotations...")
 		_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
 		if err != nil {
-			logging.LogError(err, &log, "unable to set/update annotations in object")
+			logging.Error(err, &log, "unable to set/update annotations in object")
 			return err
 		}
 	}

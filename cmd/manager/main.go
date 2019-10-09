@@ -70,14 +70,14 @@ func main() {
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		logging.LogError(err, &mainLogger, "Failed to get watch namespace")
+		logging.Error(err, &mainLogger, "Failed to get watch namespace")
 		os.Exit(1)
 	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		logging.LogError(err, &mainLogger, "Failed to acquire a configuration to talk to the API server")
+		logging.Error(err, &mainLogger, "Failed to acquire a configuration to talk to the API server")
 		os.Exit(1)
 	}
 
@@ -88,7 +88,7 @@ func main() {
 		// Become the leader before proceeding
 		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
 		if err != nil {
-			logging.LogError(err, &mainLogger, "Failed to become the leader")
+			logging.Error(err, &mainLogger, "Failed to become the leader")
 			os.Exit(1)
 		}
 	} else {
@@ -102,7 +102,7 @@ func main() {
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
-		logging.LogError(err, &mainLogger, "Error on creating a new manager instance")
+		logging.Error(err, &mainLogger, "Error on creating a new manager instance")
 		os.Exit(1)
 	}
 
@@ -110,18 +110,18 @@ func main() {
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		logging.LogError(err, &mainLogger, "Error adding local operator scheme")
+		logging.Error(err, &mainLogger, "Error adding local operator scheme")
 		os.Exit(1)
 	}
 
 	if err := osappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		logging.LogError(err, &mainLogger, "Error on adding OS APIs to scheme")
+		logging.Error(err, &mainLogger, "Error on adding OS APIs to scheme")
 		os.Exit(1)
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		logging.LogError(err, &mainLogger, "Failed to setup the controller manager")
+		logging.Error(err, &mainLogger, "Failed to setup the controller manager")
 		os.Exit(1)
 	}
 
@@ -157,7 +157,7 @@ func main() {
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		logging.LogError(err, &mainLogger, "Manager exited non-zero")
+		logging.Error(err, &mainLogger, "Manager exited non-zero")
 		os.Exit(1)
 	}
 }

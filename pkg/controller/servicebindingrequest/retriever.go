@@ -295,7 +295,7 @@ func (r *Retriever) saveDataOnSecret() error {
 
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(secretObj)
 	if err != nil {
-		logging.LogError(err, &log, "Converting secret to unstructured")
+		logging.Error(err, &log, "Converting secret to unstructured")
 		return err
 	}
 	u := &unstructured.Unstructured{Object: data}
@@ -304,13 +304,13 @@ func (r *Retriever) saveDataOnSecret() error {
 	logging.Debug(&log, "Creating intermediary secret...")
 	_, err = resourceClient.Create(u, metav1.CreateOptions{})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logging.LogError(err, &log, "on creating intermediary secret")
+		logging.Error(err, &log, "on creating intermediary secret")
 		return err
 	}
 	logging.Debug(&log, "Secret is already found, updating...")
 	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
 	if err != nil {
-		logging.LogError(err, &log, "on updating intermediary secret")
+		logging.Error(err, &log, "on updating intermediary secret")
 		return err
 	}
 
