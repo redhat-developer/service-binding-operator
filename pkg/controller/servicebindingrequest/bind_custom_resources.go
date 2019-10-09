@@ -20,7 +20,6 @@ var (
 // DetectBindableResources struct contains information about operator backed CR and
 // list of expected GVRs to extract information from.
 type DetectBindableResources struct {
-	sbr              *v1alpha1.ServiceBindingRequest
 	cr               *unstructured.Unstructured
 	resourcesToCheck []schema.GroupVersionResource
 	client           dynamic.Interface
@@ -38,7 +37,6 @@ func NewDetectBindableResources(
 	b.client = client
 	b.cr = cr
 	b.resourcesToCheck = resources
-	b.sbr = sbr
 	b.data = make(map[string]interface{})
 	return b
 }
