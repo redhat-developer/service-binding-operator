@@ -7,7 +7,21 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
-// Log logs messages to various levels
+/*
+Log logs messages to various levels.
+
+Based on the go-logr package.
+
+The Log type enables various verbosity levels to be logged based on to the --zap-level argument to the operator.
+
+To create an instance of the logger:
+
+    log := logging.Logger("main")
+
+When --zap-level is not provided, the logging defaults to INFO level where log.Warning() and log.Info() are logged,
+if --zap-level is set to 1 then the logging goes to the DEBUG level where log.Debug() is logged, while the
+--zap-level set to 2 is reserved for more finer DEBUG-level logging provided by the log.Trace() function.
+*/
 type Log struct {
 	logger *logr.Logger //logger instance
 }
@@ -41,6 +55,7 @@ func (l *Log) Debug(msg string, keysAndValues ...interface{}) {
 // Trace logs the message using go-logr package on a V=1 level as TRACE
 func (l *Log) Trace(msg string, keysAndValues ...interface{}) {
 	if (*l.logger).V(2).Enabled() {
+		// The V(1) level here is intentional: TRACE = finer DEBUG logging but is only enabled by setting V=2
 		(*l.logger).V(1).Info(fmt.Sprintf("TRACE: %s", msg), keysAndValues...)
 	}
 }
