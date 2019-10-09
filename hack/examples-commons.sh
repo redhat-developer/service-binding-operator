@@ -69,6 +69,7 @@ function wait_for_packagemanifest {
     PACKAGE_NAME=$1
     i=1
     while [[ -z "$(oc get packagemanifest | grep $PACKAGE_NAME)" ]] && [ $i -le 5 ]; do
+        echo "Waiting for package install to complete..."
         sleep 5
         i=$(($i+1))
     done
@@ -201,9 +202,9 @@ function uninstall_service_mesh_operator_subscription {
 function install_knative_serving {
     echo " ==   -  STEP 1/5 -   ==  "
     echo "  -  Cleanup process  -  "
-    oc delete -f $HACK_YAMLS/service-mesh-control-plane.yaml
-    oc delete -f $HACK_YAMLS/service-mesh-member-roll.yaml
-    oc delete -f $HACK_YAMLS/knative-serving.yaml
+    oc delete -f $HACK_YAMLS/service-mesh-control-plane.yaml --ignore-not-found=true
+    oc delete -f $HACK_YAMLS/service-mesh-member-roll.yaml --ignore-not-found=true
+    oc delete -f $HACK_YAMLS/knative-serving.yaml --ignore-not-found=true
     sleep 5
     echo " ==   -  STEP 2/5 -   == "
     echo "  - SETTING ENVIRONMENT NAMESPACE CONTROLLERS  - "
