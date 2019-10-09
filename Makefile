@@ -20,6 +20,7 @@ QUIET_FLAG = --quiet
 V_FLAG =
 S_FLAG = -s
 X_FLAG =
+ZAP_LEVEL_FLAG =
 ifeq ($(VERBOSE),1)
 	Q =
 endif
@@ -30,6 +31,10 @@ ifeq ($(VERBOSE),2)
 	S_FLAG =
 	V_FLAG = -v
 	X_FLAG = -x
+	ZAP_LEVEL_FLAG = --zap-level 1
+endif
+ifeq ($(VERBOSE),3)
+	ZAP_LEVEL_FLAG = --zap-level 2
 endif
 
 # Create output directory for artifacts and test results. ./out is supposed to
@@ -292,7 +297,7 @@ push-image: build-image
 .PHONY: local
 ## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds
-	$(Q)operator-sdk --verbose up local
+	$(Q)operator-sdk --verbose up local --operator-flags "$(ZAP_LEVEL_FLAG)"
 
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
