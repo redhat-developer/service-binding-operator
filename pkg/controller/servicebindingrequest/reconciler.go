@@ -129,7 +129,7 @@ func (r *Reconciler) onError(
 func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log logr.Logger) error {
 	// Check if application ResourceRef is present
 	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
-		logging.LogDebug(&log, "Spec.ApplicationSelector.ResourceRef not found")
+		logging.Debug(&log, "Spec.ApplicationSelector.ResourceRef not found")
 
 		// Check if MatchLabels is present
 		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
@@ -159,7 +159,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
 	)
-	logging.LogInfo(&log, "Reconciling ServiceBindingRequest...")
+	logging.Info(&log, "Reconciling ServiceBindingRequest...")
 
 	// fetch the ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
@@ -169,7 +169,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
-	logging.LogDebug(&log, "Found service binding request to inspect")
+	logging.Debug(&log, "Found service binding request to inspect")
 
 	// splitting instance from it's status
 	sbrStatus := sbr.Status
@@ -185,7 +185,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Planing changes
 	//
 
-	logging.LogDebug(&log, "Creating a plan based on OLM and CRD.")
+	logging.Debug(&log, "Creating a plan based on OLM and CRD.")
 	planner := NewPlanner(ctx, r.dynClient, sbr)
 	plan, err := planner.Plan()
 	if err != nil {
@@ -200,7 +200,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Retrieving data
 	//
 
-	logging.LogDebug(&log, "Retrieving data to create intermediate secret.")
+	logging.Debug(&log, "Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
 	retrievedObjects, err := retriever.Retrieve()
 	if err != nil {
@@ -217,7 +217,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Updating applications to use intermediary secret
 	//
 
-	logging.LogInfo(&log, "Binding applications with intermediary secret.")
+	logging.Info(&log, "Binding applications with intermediary secret.")
 	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
 	updatedObjects, err := binder.Bind()
 	if err != nil {
@@ -245,6 +245,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueError(err)
 	}
 
-	logging.LogInfo(&log, "All done!")
+	logging.Info(&log, "All done!")
 	return Done()
 }

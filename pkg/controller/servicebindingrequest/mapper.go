@@ -29,7 +29,7 @@ func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 		return toReconcile
 	}
 	if IsNamespacedNameEmpty(sbrNamespacedName) {
-		logging.LogDebug(&log, "not able to extract SBR namespaced-name")
+		logging.Debug(&log, "not able to extract SBR namespaced-name")
 		return toReconcile
 	}
 

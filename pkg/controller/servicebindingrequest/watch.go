@@ -35,7 +35,7 @@ func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
 	}
 
 	for _, gvk := range gvks {
-		logging.LogDebug(&log, "Adding watch for GVK", "GVK", gvk)
+		logging.Debug(&log, "Adding watch for GVK", "GVK", gvk)
 		err = c.controller.AddWatchForGVK(gvk)
 		if err != nil {
 			logging.LogError(err, &log, "Failed to create a watch")

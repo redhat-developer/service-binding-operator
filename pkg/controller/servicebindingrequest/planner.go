@@ -45,7 +45,7 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	opts := metav1.GetOptions{}
 
 	log := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
-	logging.LogDebug(&log, "Searching for CR instance...")
+	logging.Debug(&log, "Searching for CR instance...")
 
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
 	if err != nil {
@@ -53,7 +53,7 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 		return nil, err
 	}
 
-	logging.LogDebug(&log, "Found target CR!", "CR.Name", cr.GetName())
+	logging.Debug(&log, "Found target CR!", "CR.Name", cr.GetName())
 	return cr, nil
 }
 

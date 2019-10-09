@@ -77,23 +77,23 @@ func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 		logging.LogError(err, log, "On listing owned CSV as GVKs")
 		return nil, err
 	}
-	logging.LogDebug(log, "Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
+	logging.Debug(log, "Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
 	return append(gvks, olmGVKs...), nil
 }
 
 // AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
 func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	log := s.logger.WithValues("GVK", gvk)
-	logging.LogDebug(&log, "Adding watch for GVK...")
+	logging.Debug(&log, "Adding watch for GVK...")
 	if _, exists := s.watchingGVKs[gvk]; exists {
-		logging.LogDebug(&log, "Skipping watch on GVK twice, it's already under watch!")
+		logging.Debug(&log, "Skipping watch on GVK twice, it's already under watch!")
 		return nil
 	}
 
 	// saving GVK in cache
 	s.watchingGVKs[gvk] = true
 
-	logging.LogDebug(&log, "Creating watch on GVK")
+	logging.Debug(&log, "Creating watch on GVK")
 	source := s.createSourceForGVK(gvk)
 	return s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
 }
@@ -107,7 +107,7 @@ func (s *SBRController) addCSVWatch() error {
 	if err != nil {
 		return err
 	}
-	logging.LogDebug(log, "Watch added for ClusterServiceVersion", "GVK", csvGVK)
+	logging.Debug(log, "Watch added for ClusterServiceVersion", "GVK", csvGVK)
 
 	return nil
 }
@@ -122,7 +122,7 @@ func (s *SBRController) addSBRWatch() error {
 		logging.LogError(err, &log, "on creating watch for ServiceBindingRequest")
 		return err
 	}
-	logging.LogDebug(&log, "Watch added for ServiceBindingRequest")
+	logging.Debug(&log, "Watch added for ServiceBindingRequest")
 
 	return nil
 }
@@ -138,7 +138,7 @@ func (s *SBRController) addWhitelistedGVKWatches() error {
 	}
 
 	for _, gvk := range gvks {
-		logging.LogDebug(log, "Adding watch for whitelisted GVK...", "GVK", gvk)
+		logging.Debug(log, "Adding watch for whitelisted GVK...", "GVK", gvk)
 		err = s.AddWatchForGVK(gvk)
 		if err != nil {
 			logging.LogError(err, log, "on creating watch for GVK")

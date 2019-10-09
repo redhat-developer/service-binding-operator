@@ -40,9 +40,9 @@ var (
 )
 
 func printVersion() {
-	logging.LogInfo(&mainLogger, fmt.Sprintf("Go Version: %s", runtime.Version()))
-	logging.LogInfo(&mainLogger, fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	logging.LogInfo(&mainLogger, fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+	logging.Info(&mainLogger, fmt.Sprintf("Go Version: %s", runtime.Version()))
+	logging.Info(&mainLogger, fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
+	logging.Info(&mainLogger, fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
 // getOperatorName based on environment variable OPERATOR_NAME, or returns the default name for
@@ -92,7 +92,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		logging.LogWarning(&mainLogger, "Leader election is disabled")
+		logging.Warning(&mainLogger, "Leader election is disabled")
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
@@ -106,7 +106,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logging.LogInfo(&mainLogger, "Registering Components.")
+	logging.Info(&mainLogger, "Registering Components.")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
@@ -126,7 +126,7 @@ func main() {
 	}
 
 	if err = serveCRMetrics(cfg); err != nil {
-		logging.LogInfo(&mainLogger, "Could not generate and serve custom resource metrics", "error", err.Error())
+		logging.Info(&mainLogger, "Could not generate and serve custom resource metrics", "error", err.Error())
 	}
 
 	// Add to the below struct any other metrics ports you want to expose.
@@ -137,7 +137,7 @@ func main() {
 	// Create Service object to expose the metrics port(s).
 	service, err := metrics.CreateMetricsService(ctx, cfg, servicePorts)
 	if err != nil {
-		logging.LogInfo(&mainLogger, "Could not create metrics Service", "error", err.Error())
+		logging.Info(&mainLogger, "Could not create metrics Service", "error", err.Error())
 	}
 
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
@@ -145,15 +145,15 @@ func main() {
 	services := []*v1.Service{service}
 	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
 	if err != nil {
-		logging.LogInfo(&mainLogger, "Could not create ServiceMonitor object", "error", err.Error())
+		logging.Info(&mainLogger, "Could not create ServiceMonitor object", "error", err.Error())
 		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
 		if err == metrics.ErrServiceMonitorNotPresent {
-			logging.LogInfo(&mainLogger, "Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
+			logging.Info(&mainLogger, "Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
 
-	logging.LogInfo(&mainLogger, "Starting the Cmd.")
+	logging.Info(&mainLogger, "Starting the Cmd.")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
