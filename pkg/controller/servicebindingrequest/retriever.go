@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/pkg/logging"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -18,7 +17,7 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	logger        logr.Logger                  // logger instance
+	logger        *logging.Log                 // logger instance
 	data          map[string][]byte            // data retrieved
 	objects       []*unstructured.Unstructured // list of objects employed
 	client        dynamic.Interface            // Kubernetes API client
@@ -52,7 +51,7 @@ func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, 
 	}
 	attrs := strings.SplitN(key, ".", 2)
 	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
-	logging.Debug(&log, "Section maps :  ")
+	log.Debug("Section maps :  ")
 	if !exists {
 		return "", fmt.Errorf("Can't find '%v' section in CR", attrs), newSectionMap
 	}
@@ -64,7 +63,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 	obj := r.plan.CR.Object
 	objName := r.plan.CR.GetName()
 	log := r.logger.WithValues("CR.Name", objName, "CR.section", section, "CR.key", key)
-	logging.Debug(&log, "Reading CR attributes...")
+	log.Debug("Reading CR attributes...")
 
 	sectionMap, exists := obj[section]
 	if !exists {
@@ -90,7 +89,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 		"CRDDescription.Path", path,
 		"CRDDescription.XDescriptors", xDescriptors,
 	)
-	logging.Debug(&log, "Reading CRDDescription attributes...")
+	log.Debug("Reading CRDDescription attributes...")
 
 	// holds the secret name and items
 	secrets := make(map[string][]string)
@@ -100,7 +99,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 	pathValue, _, err := r.getCRKey(place, path)
 	for _, xDescriptor := range xDescriptors {
 		log = log.WithValues("CRDDescription.xDescriptor", xDescriptor, "cache", r.cache)
-		logging.Debug(&log, "Inspecting xDescriptor...")
+		log.Debug("Inspecting xDescriptor...")
 		if err != nil {
 			return err
 		}
@@ -124,7 +123,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(path, []byte(pathValue))
 		} else {
-			logging.Debug(&log, "Defaulting....")
+			log.Debug("Defaulting....")
 		}
 	}
 
@@ -181,7 +180,7 @@ func (r *Retriever) readSecret(
 	fromPath string,
 	path string) error {
 	log := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
-	logging.Debug(&log, "Reading secret items...")
+	log.Debug("Reading secret items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	u, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
@@ -204,7 +203,7 @@ func (r *Retriever) readSecret(
 			return err
 		}
 		log = log.WithValues("Secret.Key.Name", k, "Secret.Key.Length", len(data))
-		logging.Debug(&log, "Inspecting secret key...")
+		log.Debug("Inspecting secret key...")
 		r.markVisitedPaths(path, k, fromPath)
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(value)
@@ -225,7 +224,7 @@ func (r *Retriever) readConfigMap(
 	fromPath string,
 	path string) error {
 	log := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
-	logging.Debug(&log, "Reading ConfigMap items...")
+	log.Debug("Reading ConfigMap items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
 	u, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
@@ -241,10 +240,10 @@ func (r *Retriever) readConfigMap(
 		return fmt.Errorf("could not find 'data' in secret")
 	}
 
-	logging.Debug(&log, "Inspecting configMap data...")
+	log.Debug("Inspecting configMap data...")
 	for k, v := range data {
 		value := v.(string)
-		logging.Debug(&log, "Inspecting configMap key...", "configMap.Key.Name", k, "configMap.Key.Length", len(value))
+		log.Debug("Inspecting configMap key...", "configMap.Key.Name", k, "configMap.Key.Length", len(value))
 		r.markVisitedPaths(path, k, fromPath)
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = value
@@ -279,7 +278,7 @@ func (r *Retriever) saveDataOnSecret() error {
 		"Secret.Namespace", r.plan.Ns,
 		"Secret.Name", r.plan.Name,
 	)
-	logging.Debug(&log, "Retrieving intermediary secret...")
+	log.Debug("Retrieving intermediary secret...")
 
 	secretObj := &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
@@ -295,26 +294,26 @@ func (r *Retriever) saveDataOnSecret() error {
 
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(secretObj)
 	if err != nil {
-		logging.Error(err, &log, "Converting secret to unstructured")
+		log.Error(err, "Converting secret to unstructured")
 		return err
 	}
 	u := &unstructured.Unstructured{Object: data}
 	u.SetGroupVersionKind(gvk)
 
-	logging.Debug(&log, "Creating intermediary secret...")
+	log.Debug("Creating intermediary secret...")
 	_, err = resourceClient.Create(u, metav1.CreateOptions{})
 	if err != nil && !errors.IsAlreadyExists(err) {
-		logging.Error(err, &log, "on creating intermediary secret")
+		log.Error(err, "on creating intermediary secret")
 		return err
 	}
-	logging.Debug(&log, "Secret is already found, updating...")
+	log.Debug("Secret is already found, updating...")
 	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
 	if err != nil {
-		logging.Error(err, &log, "on updating intermediary secret")
+		log.Error(err, "on updating intermediary secret")
 		return err
 	}
 
-	logging.Debug(&log, "Intermediary secret created/updated!")
+	log.Debug("Intermediary secret created/updated!")
 	r.objects = append(r.objects, u)
 	return nil
 }
@@ -323,22 +322,22 @@ func (r *Retriever) saveDataOnSecret() error {
 // Unstructured refering the objects in use by the Retriever, and error when issues reading fields.
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
-	log := &(r.logger)
-	logging.Debug(log, "Looking for spec-descriptors in 'spec'...")
+	log := r.logger
+	log.Debug("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
 		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return nil, err
 		}
 	}
 
-	logging.Debug(log, "Looking for status-descriptors in 'status'...")
+	log.Debug("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
 		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return nil, err
 		}
 	}
 
-	logging.Debug(log, "Final cache values...", "cache", r.cache)
+	log.Debug("Final cache values...", "cache", r.cache)
 
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
 	values, err := envParser.Parse()
@@ -349,7 +348,7 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 		r.data[k] = []byte(v.(string))
 	}
 
-	logging.Debug(log, "Saving data on intermediary secret...")
+	log.Debug("Saving data on intermediary secret...")
 	if err = r.saveDataOnSecret(); err != nil {
 		return nil, err
 	}

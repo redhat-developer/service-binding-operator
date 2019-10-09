@@ -60,22 +60,22 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	)
 
 	if IsNamespacedNameEmpty(sbrNamespacedName) {
-		logging.Debug(&log, "SBR information not present in annotations, continue inspecting object")
+		log.Debug("SBR information not present in annotations, continue inspecting object")
 	} else {
 		// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
-		logging.Trace(&log, "SBR information found in annotations, returning it")
+		log.Trace("SBR information found in annotations, returning it")
 		return sbrNamespacedName, nil
 	}
 
 	if u.GroupVersionKind() == v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind) {
-		logging.Debug(&log, "Object is a SBR, returning its namespaced name")
+		log.Debug("Object is a SBR, returning its namespaced name")
 		sbrNamespacedName.Namespace = u.GetNamespace()
 		sbrNamespacedName.Name = u.GetName()
 		return sbrNamespacedName, nil
 	}
 
 	// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
-	logging.Trace(&log, "Object is not a SBR, returning an empty namespaced name")
+	log.Trace("Object is not a SBR, returning an empty namespaced name")
 	return sbrNamespacedName, nil
 }
 
@@ -107,10 +107,10 @@ func SetSBRAnnotations(
 			"Resource.Namespace", obj.GetNamespace(),
 			"Resource.Name", obj.GetName(),
 		)
-		logging.Debug(&log, "Updating resource annotations...")
+		log.Debug("Updating resource annotations...")
 		_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
 		if err != nil {
-			logging.Error(err, &log, "unable to set/update annotations in object")
+			log.Error(err, "unable to set/update annotations in object")
 			return err
 		}
 	}

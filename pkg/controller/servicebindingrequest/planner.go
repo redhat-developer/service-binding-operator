@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +24,7 @@ type Planner struct {
 	ctx    context.Context                 // request context
 	client dynamic.Interface               // kubernetes dynamic api client
 	sbr    *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	logger logr.Logger                     // logger instance
+	logger *logging.Log                    // logger instance
 }
 
 // Plan outcome, after executing planner.
@@ -45,15 +44,15 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	opts := metav1.GetOptions{}
 
 	log := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
-	logging.Debug(&log, "Searching for CR instance...")
+	log.Debug("Searching for CR instance...")
 
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
 	if err != nil {
-		logging.Error(err, &log, "during reading CR")
+		log.Error(err, "during reading CR")
 		return nil, err
 	}
 
-	logging.Debug(&log, "Found target CR!", "CR.Name", cr.GetName())
+	log.Debug("Found target CR!", "CR.Name", cr.GetName())
 	return cr, nil
 }
 

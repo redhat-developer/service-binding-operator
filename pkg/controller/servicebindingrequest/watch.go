@@ -30,15 +30,15 @@ func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
 
 	gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
 	if err != nil {
-		logging.Error(err, &log, "Failed on listing GVK with namespaced-name!")
+		log.Error(err, "Failed on listing GVK with namespaced-name!")
 		return []reconcile.Request{}
 	}
 
 	for _, gvk := range gvks {
-		logging.Debug(&log, "Adding watch for GVK", "GVK", gvk)
+		log.Debug("Adding watch for GVK", "GVK", gvk)
 		err = c.controller.AddWatchForGVK(gvk)
 		if err != nil {
-			logging.Error(err, &log, "Failed to create a watch")
+			log.Error(err, "Failed to create a watch")
 		}
 	}
 
