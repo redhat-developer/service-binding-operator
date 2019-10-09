@@ -275,10 +275,9 @@ func TestReadAnnotation(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 
-	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
-	require.NotNil(t, retriever)
-
 	t.Run("retrieve", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+		require.NotNil(t, retriever)
 		objs, err := retriever.Retrieve()
 		assert.Nil(t, err)
 		assert.NotEmpty(t, retriever.data)
@@ -286,6 +285,8 @@ func TestReadAnnotation(t *testing.T) {
 	})
 
 	t.Run("read annotation", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+		require.NotNil(t, retriever)
 		// reading from secret, from status attribute
 		err := retriever.readAnnotation("servicebindingoperator.redhat.io/status.username", "binding:env:attribute")
 		assert.Nil(t, err)
