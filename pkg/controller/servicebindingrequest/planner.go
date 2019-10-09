@@ -47,7 +47,7 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
 
 	if err != nil {
-		logger.Error(err, "during reading CR")
+		logger.Info("during reading CR")
 		return nil, err
 	}
 
@@ -63,12 +63,12 @@ func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
 	opts := metav1.GetOptions{}
 
 	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
-	logger.Info("Searching for CR instance...")
+	logger.Info("Searching for CRD instance...")
 
 	crd, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.Kind, opts)
 
 	if err != nil {
-		logger.Error(err, "during reading CR")
+		logger.Info("during reading CRD")
 		return nil, err
 	}
 
@@ -92,7 +92,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		return nil, err
 	}
 
-	// retrieve the CR based on kind, api-version and name
+	// retrieve the CRD based on kind, api-version and name
 	crd, err := p.searchCRD()
 	if err != nil {
 		return nil, err

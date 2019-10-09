@@ -43,13 +43,20 @@ func TestPlannerNew(t *testing.T) {
 		assert.NotNil(t, cr)
 	})
 
+	t.Run("searchCRD", func(t *testing.T) {
+		crd, err := planner.searchCRD()
+
+		require.Nil(t, err)
+		require.NotNil(t, crd)
+	})
+
 	t.Run("plan", func(t *testing.T) {
 		plan, err := planner.Plan()
 
-		assert.Nil(t, err)
-		assert.NotNil(t, plan)
-		assert.NotNil(t, plan.CRDDescription)
-		assert.NotNil(t, plan.CR)
+		require.Nil(t, err)
+		require.NotNil(t, plan)
+		require.NotNil(t, plan.CRDDescription)
+		require.NotNil(t, plan.CR)
 		assert.Equal(t, ns, plan.Ns)
 		assert.Equal(t, name, plan.Name)
 	})
