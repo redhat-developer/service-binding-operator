@@ -17,9 +17,9 @@ var (
 	}
 )
 
-// BindNonBindableResources struct contains information about operator backed CR and
+// DetectBindableResources struct contains information about operator backed CR and
 // list of expected GVRs to extract information from.
-type BindNonBindableResources struct {
+type DetectBindableResources struct {
 	sbr              *v1alpha1.ServiceBindingRequest
 	cr               *unstructured.Unstructured
 	resourcesToCheck []schema.GroupVersionResource
@@ -27,14 +27,14 @@ type BindNonBindableResources struct {
 	data             map[string]interface{}
 }
 
-// NewBindNonBindable returns new instance
-func NewBindNonBindable(
+// NewDetectBindableResources returns new instance
+func NewDetectBindableResources(
 	sbr *v1alpha1.ServiceBindingRequest,
 	cr *unstructured.Unstructured,
 	resources []schema.GroupVersionResource,
 	client dynamic.Interface,
-) *BindNonBindableResources {
-	b := new(BindNonBindableResources)
+) *DetectBindableResources {
+	b := new(DetectBindableResources)
 	b.client = client
 	b.cr = cr
 	b.resourcesToCheck = resources
@@ -44,7 +44,7 @@ func NewBindNonBindable(
 }
 
 // GetBindableVariables returns list of subresources owned by operator backed CR
-func (b BindNonBindableResources) GetOwnedResources() ([]unstructured.Unstructured, error) {
+func (b DetectBindableResources) GetOwnedResources() ([]unstructured.Unstructured, error) {
 	var subResources []unstructured.Unstructured
 	for _, resource := range b.resourcesToCheck {
 		lst, err := b.client.Resource(resource).List(v1.ListOptions{})
@@ -64,7 +64,7 @@ func (b BindNonBindableResources) GetOwnedResources() ([]unstructured.Unstructur
 }
 
 // GetBindableVariables extracts required key value information from provided GVRs subresources
-func (b BindNonBindableResources) GetBindableVariables() (map[string]interface{}, error) {
+func (b DetectBindableResources) GetBindableVariables() (map[string]interface{}, error) {
 	ownedResources, err := b.GetOwnedResources()
 	if err != nil {
 		return b.data, err

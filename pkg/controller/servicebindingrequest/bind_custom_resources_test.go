@@ -42,7 +42,7 @@ func TestBindNonBindableResources_GetOwnedResources(t *testing.T) {
 
 	unstructuredCr, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	u := &unstructured.Unstructured{Object: unstructuredCr}
-	b := NewBindNonBindable(
+	b := NewDetectBindableResources(
 		nil,
 		u,
 		[]schema.GroupVersionResource{

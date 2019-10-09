@@ -338,7 +338,7 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	r.logger.WithValues("cache", r.cache).Info("Final cache values...")
 
 	if r.plan.SBR.Spec.DetectBindingResources {
-		b := NewBindNonBindable(&r.plan.SBR, r.plan.CR, []schema.GroupVersionResource{
+		b := NewDetectBindableResources(&r.plan.SBR, r.plan.CR, []schema.GroupVersionResource{
 			// We can add extra gvrs here
 			{Group: "", Version: "v1", Resource: "configmaps"},
 			{Group: "", Version: "v1", Resource: "services"},
