@@ -146,7 +146,7 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
-	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
+	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
 
 .PHONY: courier
 ## Validate manifests using operator-courier
