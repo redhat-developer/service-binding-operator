@@ -201,6 +201,7 @@ test-e2e: e2e-setup
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
 			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_LEVEL_FLAG)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
 
 .PHONY: test-unit
@@ -236,6 +237,7 @@ test-e2e-olm-ci:
 	$(Q)operator-sdk --verbose test local ./test/e2e \
 			--no-setup \
 			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_LEVEL_FLAG)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
 
 ## -- Build Go binary and OCI image targets --
