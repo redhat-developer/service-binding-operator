@@ -108,7 +108,7 @@ uninstall-service-binding-operator-subscription:
 
 .PHONY: uninstall-service-binding-operator
 ## Uninstall the Service Binding Operator
-uninstall-service-binding-operator: uninstall-service-binding-operator-source uninstall-service-binding-operator-subscription
+uninstall-service-binding-operator: uninstall-service-binding-operator-subscription uninstall-service-binding-operator-source
 
 ## --- Backing Service DB (PostgreSQL) Operator ---
 
@@ -138,7 +138,7 @@ uninstall-backing-db-operator-subscription:
 
 .PHONY: uninstall-backing-db-operator
 ## Uninstall the Backing Service DB Operator
-uninstall-backing-db-operator: uninstall-backing-db-operator-source uninstall-backing-db-operator-subscription
+uninstall-backing-db-operator: uninstall-backing-db-operator-subscription uninstall-backing-db-operator-source
 
 ## --- Serverless Operator ---
 
@@ -180,7 +180,7 @@ uninstall-service-mesh-operator-subscription:
 ## Uninstall the Service Mesh Operator
 uninstall-service-mesh-operator: uninstall-service-mesh-operator-subscription
 
-## --- Knative Serving (Serverless UI) 
+## --- Knative Serving (Serverless UI)
 
 .PHONY: install-knative-serving
 ## Install Knative Serving
