@@ -92,10 +92,11 @@ func (p *Planner) Plan() (*Plan, error) {
 		return nil, err
 	}
 
+	var ann map[string]string
 	// retrieve the CRD based on kind, api-version and name
 	crd, err := p.searchCRD()
-	if err != nil {
-		return nil, err
+	if err == nil {
+		ann = crd.GetAnnotations()
 	}
 
 	return &Plan{
@@ -104,7 +105,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		CRDDescription: crdDescription,
 		CR:             cr,
 		SBR:            *p.sbr,
-		Annotations:    crd.GetAnnotations(),
+		Annotations:    ann,
 	}, nil
 }
 
