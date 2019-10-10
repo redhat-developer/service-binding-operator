@@ -34,6 +34,11 @@ ifeq ($(VERBOSE),2)
 	ZAP_LEVEL_FLAG = --zap-level 1
 endif
 ifeq ($(VERBOSE),3)
+	Q_FLAG =
+	QUIET_FLAG =
+	S_FLAG =
+	V_FLAG = -v
+	X_FLAG = -x
 	ZAP_LEVEL_FLAG = --zap-level 2
 endif
 
