@@ -112,7 +112,7 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 
 func (f *Fake) AddMockedUnstructuredDatabaseCRD() {
 	require.Nil(f.t, apiextensionv1beta1.AddToScheme(f.S))
-	c, err := UnstructuredDatabaseCRDMock()
+	c, err := UnstructuredDatabaseCRDMock(f.ns)
 	require.Nil(f.t, err)
 	f.S.AddKnownTypes(apiextensionv1beta1.SchemeGroupVersion, &apiextensionv1beta1.CustomResourceDefinition{})
 	f.objs = append(f.objs, c)

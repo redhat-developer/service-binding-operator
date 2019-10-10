@@ -88,7 +88,7 @@ var (
 	}
 )
 
-func DatabaseCRDMock() apiextensionv1beta1.CustomResourceDefinition {
+func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	CRDPlural := "databases"
 	FullCRDName := CRDPlural + "." + CRDName
 	annotations := map[string]string{
@@ -101,6 +101,7 @@ func DatabaseCRDMock() apiextensionv1beta1.CustomResourceDefinition {
 			APIVersion: "apiextensions.k8s.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
+			Namespace:   ns,
 			Name:        FullCRDName,
 			Annotations: annotations,
 		},
@@ -118,8 +119,8 @@ func DatabaseCRDMock() apiextensionv1beta1.CustomResourceDefinition {
 	return crd
 }
 
-func UnstructuredDatabaseCRDMock() (*ustrv1.Unstructured, error) {
-	c := DatabaseCRDMock()
+func UnstructuredDatabaseCRDMock(ns string) (*ustrv1.Unstructured, error) {
+	c := DatabaseCRDMock(ns)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
 	return &ustrv1.Unstructured{Object: data}, err
 }
