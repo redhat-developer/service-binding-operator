@@ -261,10 +261,6 @@ func TestReadAnnotation(t *testing.T) {
 	crName := "db-testing"
 
 	f := mocks.NewFake(t, ns)
-	//f.AddMockedUnstructuredCSV("csv")
-	f.AddMockedSecret("db-credentials")
-	f.AddMockedUnstructuredDatabaseCRD()
-	f.AddMockedUnstructuredPostgresDatabaseCR(crName)
 
 	cr, err := mocks.UnstructuredPostgresDatabaseCRMock(ns, crName)
 	require.Nil(t, err)

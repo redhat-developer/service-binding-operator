@@ -65,7 +65,6 @@ func TestPlannerAnnotation(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", matchLabels)
 	f.AddMockedUnstructuredDatabaseCRD()
-	f.AddMockedUnstructuredPostgresDatabaseCR("dbtesting2")
 
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
 	require.NotNil(t, planner)
