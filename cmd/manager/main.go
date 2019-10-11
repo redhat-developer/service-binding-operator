@@ -28,7 +28,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller"
-	log "github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // Change below variables to serve metrics on different host or port.

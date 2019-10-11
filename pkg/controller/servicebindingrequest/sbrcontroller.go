@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	log "github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // SBRController hold the controller instance and methods for a ServiceBindingRequest.
