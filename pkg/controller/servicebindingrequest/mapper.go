@@ -1,13 +1,13 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var (
-	mapperLogger = logging.Logger("mapper")
+	mapperLog = log.NewLog("mapper")
 )
 
 // SBRRequestMapper is the handler.Mapper interface implementation. It should influence the
@@ -17,7 +17,7 @@ type SBRRequestMapper struct{}
 // Map execute the mapping of a resource with the requests it would produce. Here we inspect the
 // given object trying to identify if this object is part of a SBR, or a actual SBR resource.
 func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
-	log := mapperLogger.WithValues(
+	log := mapperLog.WithValues(
 		"Object.Namespace", obj.Meta.GetNamespace(),
 		"Object.Name", obj.Meta.GetName(),
 	)

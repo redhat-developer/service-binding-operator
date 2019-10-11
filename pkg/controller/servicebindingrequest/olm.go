@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,7 +19,7 @@ import (
 type OLM struct {
 	client dynamic.Interface // kubernetes dynamic client
 	ns     string            // namespace
-	logger *logging.Log      // logger instance
+	logger *log.Log      // logger instance
 }
 
 const (
@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	olmLogger = logging.Logger("olm")
+	olmLog = log.NewLog("olm")
 )
 
 // listCSVs simple list to all CSV objects in the cluster.
@@ -212,6 +212,6 @@ func NewOLM(client dynamic.Interface, ns string) *OLM {
 	return &OLM{
 		client: client,
 		ns:     ns,
-		logger: olmLogger,
+		logger: olmLog,
 	}
 }

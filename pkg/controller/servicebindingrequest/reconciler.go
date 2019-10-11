@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	reconcilerLogger = logging.Logger("reconciler")
+	reconcilerLog = log.NewLog("reconciler")
 )
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
@@ -125,7 +125,7 @@ func (r *Reconciler) onError(
 }
 
 // checkSBR checks the Service Binding Request
-func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *logging.Log) error {
+func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 	// Check if application ResourceRef is present
 	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
 		log.Debug("Spec.ApplicationSelector.ResourceRef not found")
@@ -154,7 +154,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx := context.TODO()
 	objectsToAnnotate := []*unstructured.Unstructured{}
 
-	log := reconcilerLogger.WithValues(
+	log := reconcilerLog.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
 	)

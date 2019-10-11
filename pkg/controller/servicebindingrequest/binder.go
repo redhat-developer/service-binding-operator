@@ -18,7 +18,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 const (
@@ -26,7 +26,7 @@ const (
 )
 
 var (
-	binderLogger = logging.Logger("binder")
+	binderLog = log.NewLog("binder")
 )
 
 // Binder executes the "binding" act of updating different application kinds to use intermediary
@@ -37,7 +37,7 @@ type Binder struct {
 	dynClient  dynamic.Interface               // kubernetes dynamic api client
 	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys []string                        // list of key names used in volume mounts
-	logger     *logging.Log                    // logger instance
+	logger     *log.Log                    // logger instance
 }
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
@@ -340,6 +340,6 @@ func NewBinder(
 		dynClient:  dynClient,
 		sbr:        sbr,
 		volumeKeys: volumeKeys,
-		logger:     binderLogger,
+		logger:     binderLog,
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	annotationsLogger = logging.Logger("annotations")
+	annotationsLog = log.NewLog("annotations")
 )
 
 // extractSBRNamespacedName returns a types.NamespacedName if the required service binding request keys
@@ -52,7 +52,7 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	u := &unstructured.Unstructured{Object: data}
 
 	sbrNamespacedName = extractSBRNamespacedName(u.GetAnnotations())
-	log := annotationsLogger.WithValues(
+	log := annotationsLog.WithValues(
 		"Resource.GVK", u.GroupVersionKind(),
 		"Resource.Namespace", u.GetNamespace(),
 		"Resource.Name", u.GetName(),
@@ -100,7 +100,7 @@ func SetSBRAnnotations(
 		gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 		opts := metav1.UpdateOptions{}
 
-		log := annotationsLogger.WithValues(
+		log := annotationsLog.WithValues(
 			"SBR.Namespace", namespacedName.Namespace,
 			"SBR.Name", namespacedName.Name,
 			"Resource.GVK", gvk,

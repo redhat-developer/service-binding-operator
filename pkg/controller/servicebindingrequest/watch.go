@@ -1,14 +1,14 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 var (
-	watchLogger = logging.Logger("watch")
+	watchLog = log.NewLog("watch")
 )
 
 // CSVToWatcherMapper creates a EventHandler interface to map ClusterServiceVersion objects back to
@@ -26,7 +26,7 @@ func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
 		Name:      obj.Meta.GetName(),
 	}
 
-	log := watchLogger.WithName("CSVToWatcherMapper").WithValues("Obj.NamespacedName", namespacedName)
+	log := watchLog.WithName("CSVToWatcherMapper").WithValues("Obj.NamespacedName", namespacedName)
 
 	gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
 	if err != nil {

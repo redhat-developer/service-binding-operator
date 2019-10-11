@@ -28,7 +28,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // Change below variables to serve metrics on different host or port.
@@ -36,13 +36,13 @@ var (
 	metricsHost               = "0.0.0.0"
 	metricsPort         int32 = 8383
 	operatorMetricsPort int32 = 8686
-	mainLogger                = logging.Logger("main")
+	mainLog                = log.NewLog("main")
 )
 
 func printVersion() {
-	mainLogger.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
-	mainLogger.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
-	mainLogger.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
+	mainLog.Info(fmt.Sprintf("Go Version: %s", runtime.Version()))
+	mainLog.Info(fmt.Sprintf("Go OS/Arch: %s/%s", runtime.GOOS, runtime.GOARCH))
+	mainLog.Info(fmt.Sprintf("Version of operator-sdk: %v", sdkVersion.Version))
 }
 
 // getOperatorName based on environment variable OPERATOR_NAME, or returns the default name for
@@ -64,20 +64,20 @@ func main() {
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 	pflag.Parse()
-	logging.SetLogger(zap.Logger())
+	log.SetLog(zap.Logger())
 
 	printVersion()
 
 	namespace, err := k8sutil.GetWatchNamespace()
 	if err != nil {
-		mainLogger.Error(err, "Failed to get watch namespace")
+		mainLog.Error(err, "Failed to get watch namespace")
 		os.Exit(1)
 	}
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		mainLogger.Error(err, "Failed to acquire a configuration to talk to the API server")
+		mainLog.Error(err, "Failed to acquire a configuration to talk to the API server")
 		os.Exit(1)
 	}
 
@@ -88,11 +88,11 @@ func main() {
 		// Become the leader before proceeding
 		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
 		if err != nil {
-			mainLogger.Error(err, "Failed to become the leader")
+			mainLog.Error(err, "Failed to become the leader")
 			os.Exit(1)
 		}
 	} else {
-		mainLogger.Warning("Leader election is disabled")
+		mainLog.Warning("Leader election is disabled")
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
@@ -102,31 +102,31 @@ func main() {
 		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
 	})
 	if err != nil {
-		mainLogger.Error(err, "Error on creating a new manager instance")
+		mainLog.Error(err, "Error on creating a new manager instance")
 		os.Exit(1)
 	}
 
-	mainLogger.Info("Registering Components.")
+	mainLog.Info("Registering Components.")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		mainLogger.Error(err, "Error adding local operator scheme")
+		mainLog.Error(err, "Error adding local operator scheme")
 		os.Exit(1)
 	}
 
 	if err := osappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		mainLogger.Error(err, "Error on adding OS APIs to scheme")
+		mainLog.Error(err, "Error on adding OS APIs to scheme")
 		os.Exit(1)
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		mainLogger.Error(err, "Failed to setup the controller manager")
+		mainLog.Error(err, "Failed to setup the controller manager")
 		os.Exit(1)
 	}
 
 	if err = serveCRMetrics(cfg); err != nil {
-		mainLogger.Info("Could not generate and serve custom resource metrics", "error", err.Error())
+		mainLog.Info("Could not generate and serve custom resource metrics", "error", err.Error())
 	}
 
 	// Add to the below struct any other metrics ports you want to expose.
@@ -137,7 +137,7 @@ func main() {
 	// Create Service object to expose the metrics port(s).
 	service, err := metrics.CreateMetricsService(ctx, cfg, servicePorts)
 	if err != nil {
-		mainLogger.Info("Could not create metrics Service", "error", err.Error())
+		mainLog.Info("Could not create metrics Service", "error", err.Error())
 	}
 
 	// CreateServiceMonitors will automatically create the prometheus-operator ServiceMonitor resources
@@ -145,19 +145,19 @@ func main() {
 	services := []*v1.Service{service}
 	_, err = metrics.CreateServiceMonitors(cfg, namespace, services)
 	if err != nil {
-		mainLogger.Info("Could not create ServiceMonitor object", "error", err.Error())
+		mainLog.Info("Could not create ServiceMonitor object", "error", err.Error())
 		// If this operator is deployed to a cluster without the prometheus-operator running, it will return
 		// ErrServiceMonitorNotPresent, which can be used to safely skip ServiceMonitor creation.
 		if err == metrics.ErrServiceMonitorNotPresent {
-			mainLogger.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
+			mainLog.Info("Install prometheus-operator in your cluster to create ServiceMonitor objects", "error", err.Error())
 		}
 	}
 
-	mainLogger.Info("Starting the Cmd.")
+	mainLog.Info("Starting the Cmd.")
 
 	// Start the Cmd
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {
-		mainLogger.Error(err, "Manager exited non-zero")
+		mainLog.Error(err, "Manager exited non-zero")
 		os.Exit(1)
 	}
 }

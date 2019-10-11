@@ -15,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // SBRController hold the controller instance and methods for a ServiceBindingRequest.
@@ -23,7 +23,7 @@ type SBRController struct {
 	Controller   controller.Controller            // controller-runtime instance
 	Client       dynamic.Interface                // kubernetes dynamic api client
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
-	logger       *logging.Log                     // logger instance
+	logger       *log.Log                     // logger instance
 }
 
 var (
@@ -40,7 +40,7 @@ var (
 			return !e.DeleteStateUnknown
 		},
 	}
-	sbrControllerLogger = logging.Logger("sbrcontroller")
+	sbrControllerLog = log.NewLog("sbrcontroller")
 )
 
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
@@ -188,6 +188,6 @@ func NewSBRController(
 		Controller:   c,
 		Client:       client,
 		watchingGVKs: make(map[schema.GroupVersionKind]bool),
-		logger:       sbrControllerLogger,
+		logger:       sbrControllerLog,
 	}, nil
 }

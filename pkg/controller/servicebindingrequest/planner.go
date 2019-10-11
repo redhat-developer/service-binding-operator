@@ -11,11 +11,11 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 var (
-	plannerLogger = logging.Logger("planner")
+	plannerLog = log.NewLog("planner")
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
@@ -24,7 +24,7 @@ type Planner struct {
 	ctx    context.Context                 // request context
 	client dynamic.Interface               // kubernetes dynamic api client
 	sbr    *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	logger *logging.Log                    // logger instance
+	logger *log.Log                    // logger instance
 }
 
 // Plan outcome, after executing planner.
@@ -91,6 +91,6 @@ func NewPlanner(
 		ctx:    ctx,
 		client: client,
 		sbr:    sbr,
-		logger: plannerLogger,
+		logger: plannerLog,
 	}
 }

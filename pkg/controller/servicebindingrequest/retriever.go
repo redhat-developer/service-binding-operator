@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/logging"
+	log "github.com/redhat-developer/service-binding-operator/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +17,7 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	logger        *logging.Log                 // logger instance
+	logger        *log.Log                 // logger instance
 	data          map[string][]byte            // data retrieved
 	objects       []*unstructured.Unstructured // list of objects employed
 	client        dynamic.Interface            // Kubernetes API client
@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	retrieverLogger = logging.Logger("retriever")
+	retrieverLog = log.NewLog("retriever")
 )
 
 // getNestedValue retrieve value from dotted key path
@@ -358,7 +358,7 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 // NewRetriever instantiate a new retriever instance.
 func NewRetriever(client dynamic.Interface, plan *Plan, bindingPrefix string) *Retriever {
 	return &Retriever{
-		logger:        retrieverLogger,
+		logger:        retrieverLog,
 		data:          make(map[string][]byte),
 		objects:       []*unstructured.Unstructured{},
 		client:        client,
