@@ -17,7 +17,7 @@ import (
 
 // Retriever reads all data referred in plan instance, and store in a secret.
 type Retriever struct {
-	logger        *log.Log                 // logger instance
+	logger        *log.Log                     // logger instance
 	data          map[string][]byte            // data retrieved
 	objects       []*unstructured.Unstructured // list of objects employed
 	client        dynamic.Interface            // Kubernetes API client

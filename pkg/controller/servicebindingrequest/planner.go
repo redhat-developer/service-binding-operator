@@ -24,7 +24,7 @@ type Planner struct {
 	ctx    context.Context                 // request context
 	client dynamic.Interface               // kubernetes dynamic api client
 	sbr    *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	logger *log.Log                    // logger instance
+	logger *log.Log                        // logger instance
 }
 
 // Plan outcome, after executing planner.

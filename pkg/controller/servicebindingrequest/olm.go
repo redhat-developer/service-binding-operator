@@ -19,7 +19,7 @@ import (
 type OLM struct {
 	client dynamic.Interface // kubernetes dynamic client
 	ns     string            // namespace
-	logger *log.Log      // logger instance
+	logger *log.Log          // logger instance
 }
 
 const (

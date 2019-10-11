@@ -37,7 +37,7 @@ type Binder struct {
 	dynClient  dynamic.Interface               // kubernetes dynamic api client
 	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys []string                        // list of key names used in volume mounts
-	logger     *log.Log                    // logger instance
+	logger     *log.Log                        // logger instance
 }
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
