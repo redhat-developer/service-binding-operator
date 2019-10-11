@@ -52,7 +52,7 @@ func (l *Log) Info(msg string, keysAndValues ...interface{}) {
 // Debug logs the message using go-logr package on a V=1 level as DEBUG
 func (l *Log) Debug(msg string, keysAndValues ...interface{}) {
 	if (*l.log).V(1).Enabled() {
-		(*l.log).V(1).Info(fmt.Sprintf("DEBUG: %s", msg), keysAndValues...)
+		(*l.log).V(1).Info(msg, keysAndValues...)
 	}
 }
 
@@ -90,7 +90,7 @@ func (l *Log) WithValues(keysAndValues ...interface{}) *Log {
 }
 
 // WithName adds a new element to the log's name. Successive calls with WithName continue to append
-//  suffixes to the log's name. It's strongly reccomended that name segments contain only letters,
+// suffixes to the log's name. It's strongly reccomended that name segments contain only letters,
 // digits, and hyphens (see the package documentation for more information).
 func (l *Log) WithName(name string) *Log {
 	lgr := ((*l.log).WithName(name))
