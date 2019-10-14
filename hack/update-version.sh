@@ -1,4 +1,5 @@
 #!/bin/bash
+# Update the operator version from a version 0.0.(n) to a version 0.0.(n+1) at various places across the repository.
 OPERATOR_VERSION="0.0.20"
 MANIFESTS_DIR="./../manifests"
 OPERATOR_VERSION_UPDATE=$1
