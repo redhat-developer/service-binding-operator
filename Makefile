@@ -20,6 +20,8 @@ QUIET_FLAG = --quiet
 V_FLAG =
 S_FLAG = -s
 X_FLAG =
+ZAP_ENCODER_FLAG = --zap-encoder=console
+ZAP_LEVEL_FLAG =
 ifeq ($(VERBOSE),1)
 	Q =
 endif
@@ -30,7 +32,18 @@ ifeq ($(VERBOSE),2)
 	S_FLAG =
 	V_FLAG = -v
 	X_FLAG = -x
+	ZAP_LEVEL_FLAG = --zap-level 1
 endif
+ifeq ($(VERBOSE),3)
+	Q_FLAG =
+	QUIET_FLAG =
+	S_FLAG =
+	V_FLAG = -v
+	X_FLAG = -x
+	ZAP_LEVEL_FLAG = --zap-level 2
+endif
+
+ZAP_FLAGS = $(ZAP_ENCODER_FLAG) $(ZAP_LEVEL_FLAG)
 
 # Create output directory for artifacts and test results. ./out is supposed to
 # be a safe place for all targets to write to while knowing that all content
@@ -191,6 +204,7 @@ test-e2e: e2e-setup
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
 			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
 
 .PHONY: test-unit
@@ -226,6 +240,7 @@ test-e2e-olm-ci:
 	$(Q)operator-sdk --verbose test local ./test/e2e \
 			--no-setup \
 			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
 
 ## -- Build Go binary and OCI image targets --
@@ -292,7 +307,7 @@ push-image: build-image
 .PHONY: local
 ## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds
-	$(Q)operator-sdk --verbose up local
+	$(Q)operator-sdk --verbose up local --operator-flags "$(ZAP_FLAGS)"
 
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
