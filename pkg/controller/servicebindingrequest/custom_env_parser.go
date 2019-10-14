@@ -2,15 +2,18 @@ package servicebindingrequest
 
 import (
 	"bytes"
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"text/template"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
+// CustomEnvParser is responsible to interpolate a given CustomEnvMap containing templates.
 type CustomEnvParser struct {
 	EnvMap []v1alpha1.CustomEnvMap
 	Cache  map[string]interface{}
 }
 
+// NewCustomEnvParser returns a new CustomEnvParser.
 func NewCustomEnvParser(envMap []v1alpha1.CustomEnvMap, cache map[string]interface{}) *CustomEnvParser {
 	return &CustomEnvParser{
 		EnvMap: envMap,
@@ -18,6 +21,7 @@ func NewCustomEnvParser(envMap []v1alpha1.CustomEnvMap, cache map[string]interfa
 	}
 }
 
+// Parse interpolates and caches the templates in EnvMap.
 func (c *CustomEnvParser) Parse() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
