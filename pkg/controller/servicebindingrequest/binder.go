@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,13 +16,17 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 const (
 	lastboundparam = "lastbound"
+)
+
+var (
+	binderLog = log.NewLog("binder")
 )
 
 // Binder executes the "binding" act of updating different application kinds to use intermediary
@@ -34,7 +37,7 @@ type Binder struct {
 	dynClient  dynamic.Interface               // kubernetes dynamic api client
 	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys []string                        // list of key names used in volume mounts
-	logger     logr.Logger                     // logger instance
+	logger     *log.Log                        // logger instance
 }
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
@@ -79,20 +82,19 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 // updateSpecVolumes execute the inspection and update "volumes" entries in informed spec.
 func (b *Binder) updateSpecVolumes(
-	logger logr.Logger,
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
 	volumesPath := []string{"spec", "template", "spec", "volumes"}
-	logger = logger.WithValues("Volumes.NestedPath", volumesPath)
+	log := b.logger.WithValues("Volumes.NestedPath", volumesPath)
 
-	logger.Info("Reading volumes definitions...")
+	log.Debug("Reading volumes definitions...")
 	volumes, _, err := unstructured.NestedSlice(obj.Object, volumesPath...)
 	if err != nil {
 		return nil, err
 	}
-	logger.WithValues("Volumes", len(volumes)).Info("Amount of volumes in spec.")
+	log.Debug("Amount of volumes in spec.", "Volumes", len(volumes))
 
-	volumes, err = b.updateVolumes(logger, volumes)
+	volumes, err = b.updateVolumes(volumes)
 	if err != nil {
 		return nil, err
 	}
@@ -105,14 +107,14 @@ func (b *Binder) updateSpecVolumes(
 
 // updateVolumes inspect informed list assuming as []corev1.Volume, and if binding volume is already
 // defined just return the same list, otherwise, appending the binding volume.
-func (b *Binder) updateVolumes(logger logr.Logger, volumes []interface{}) ([]interface{}, error) {
+func (b *Binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 	name := b.sbr.GetName()
-
-	logger.Info("Checking if binding volume is already defined...")
+	log := b.logger
+	log.Debug("Checking if binding volume is already defined...")
 	for _, v := range volumes {
 		volume := v.(corev1.Volume)
 		if name == volume.Name {
-			logger.Info("Volume is already defined!")
+			log.Debug("Volume is already defined!")
 			return volumes, nil
 		}
 	}
@@ -122,7 +124,7 @@ func (b *Binder) updateVolumes(logger logr.Logger, volumes []interface{}) ([]int
 		items = append(items, corev1.KeyToPath{Key: k, Path: k})
 	}
 
-	logger.WithValues("Items", items).Info("Appending new volume with items.")
+	log.Debug("Appending new volume with items.", "Items", items)
 	bindVolume := corev1.Volume{
 		Name: name,
 		VolumeSource: corev1.VolumeSource{
@@ -143,11 +145,10 @@ func (b *Binder) updateVolumes(logger logr.Logger, volumes []interface{}) ([]int
 
 // updateSpecContainers extract containers from object, and trigger update.
 func (b *Binder) updateSpecContainers(
-	logger logr.Logger,
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
 	containersPath := []string{"spec", "template", "spec", "containers"}
-	logger = logger.WithValues("Containers.NestedPath", containersPath)
+	log := b.logger.WithValues("Containers.NestedPath", containersPath)
 
 	containers, found, err := unstructured.NestedSlice(obj.Object, containersPath...)
 	if err != nil {
@@ -156,11 +157,11 @@ func (b *Binder) updateSpecContainers(
 	if !found {
 		err = fmt.Errorf("unable to find '%#v' in object kind '%s'",
 			containersPath, obj.GetKind())
-		logger.Error(err, "is this definition supported by this operator?")
+		log.Error(err, "is this definition supported by this operator?")
 		return nil, err
 	}
 
-	if containers, err = b.updateContainers(logger, containers); err != nil {
+	if containers, err = b.updateContainers(containers); err != nil {
 		return nil, err
 	}
 	if err = unstructured.SetNestedSlice(obj.Object, containers, containersPath...); err != nil {
@@ -171,18 +172,17 @@ func (b *Binder) updateSpecContainers(
 
 // updateContainers execute the update command per container found.
 func (b *Binder) updateContainers(
-	logger logr.Logger,
 	containers []interface{},
 ) ([]interface{}, error) {
 	var err error
 
 	for i, container := range containers {
-		logger := logger.WithValues("Obj.Container.Number", i)
-		logger.Info("Inspecting container...")
+		log := b.logger.WithValues("Obj.Container.Number", i)
+		log.Debug("Inspecting container...")
 
 		containers[i], err = b.updateContainer(container)
 		if err != nil {
-			logger.Error(err, "during container update.")
+			log.Error(err, "during container update.")
 			return nil, err
 		}
 	}
@@ -214,15 +214,16 @@ func (b *Binder) appendEnvVar(envList []corev1.EnvVar, envParam string, envValue
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
 func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+	log := b.logger
 	for _, env := range envList {
 		if env.SecretRef.Name == secret {
-			b.logger.Info("Directive 'envFrom' is already present!")
+			log.Debug("Directive 'envFrom' is already present!")
 			// secret name is already referenced
 			return envList
 		}
 	}
 
-	b.logger.Info("Adding 'envFrom' directive...")
+	log.Debug("Adding 'envFrom' directive...")
 	return append(envList, corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{
@@ -279,27 +280,27 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 
 	for _, obj := range objs.Items {
 		name := obj.GetName()
-		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
-		logger.Info("Inspecting object...")
+		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
+		log.Debug("Inspecting object...")
 
-		updatedObj, err := b.updateSpecContainers(logger, &obj)
+		updatedObj, err := b.updateSpecContainers(&obj)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(b.volumeKeys) > 0 {
-			updatedObj, err = b.updateSpecVolumes(logger, &obj)
+			updatedObj, err = b.updateSpecVolumes(&obj)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		logger.Info("Updating object...")
+		log.Debug("Updating object...")
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return nil, err
 		}
 
-		logger.Info("Reading back updated object...")
+		log.Debug("Reading back updated object...")
 		// reading object back again, to comply with possible modifications
 		namespacedName := types.NamespacedName{
 			Namespace: updatedObj.GetNamespace(),
@@ -339,6 +340,6 @@ func NewBinder(
 		dynClient:  dynClient,
 		sbr:        sbr,
 		volumeKeys: volumeKeys,
-		logger:     logf.Log.WithName("binder"),
+		logger:     binderLog,
 	}
 }
