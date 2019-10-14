@@ -132,7 +132,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 		}
 		// matching resource version, unless when not informed
 		if crdDescription.Version != "" &&
-			strings.ToLower(gvk.Version) != strings.ToLower(crdDescription.Version) {
+			!strings.EqualFold(strings.ToLower(gvk.Version), strings.ToLower(crdDescription.Version)) {
 			return
 		}
 		log.Debug("CRDDescription object matches selector!")
