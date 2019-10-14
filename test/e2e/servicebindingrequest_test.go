@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	retryInterval  = time.Second * 5
+	retryInterval  = time.Second * 10
 	timeout        = time.Second * 120
 	cleanupTimeout = time.Second * 5
 )
