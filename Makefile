@@ -369,8 +369,10 @@ else
 		-Z > codecov-upload.log
 endif
 
+## -- Target for the operator version update--
+
 NEW-VERSION ?= "0.0.21"
-## Upgrading operator version
+## This target calls script ./hack/update-version.sh and takes new version as argument
 .PHONY: update-version
 update-version:
 	chmod +x ./hack/update-version.sh
