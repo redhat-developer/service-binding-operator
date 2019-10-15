@@ -369,7 +369,8 @@ else
 		-Z > codecov-upload.log
 endif
 
-NEW-VERSION ?= "0.0.23"
+NEW-VERSION ?= "0.0.21"
+## Upgrading operator version
 .PHONY: update-version
 update-version:
 	chmod +x ./hack/update-version.sh
