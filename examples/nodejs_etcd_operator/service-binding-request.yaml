@@ -1,0 +1,21 @@
+apiVersion: apps.openshift.io/v1alpha1
+kind: ServiceBindingRequest
+metadata:
+  name: binding-request
+spec:
+  applicationSelector:
+    matchLabels:
+      connects-to: etcd
+      environment: demo
+    group: apps.openshift.io
+    version: v1
+    resource: deploymentconfigs
+    resourceRef: ""
+  backingServiceSelector:
+    group: etcd.database.coreos.com
+    version: v1beta2
+    kind: EtcdCluster
+    resourceRef: etcd-cluster-example
+  mountPathPrefix: “”
+  customEnvVar: []
+  detectBindingResources: true
