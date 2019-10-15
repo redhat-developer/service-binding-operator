@@ -145,6 +145,7 @@ spec:
   imageName: postgres
   dbName: db-demo
 EOS
+```
 
 Alternatively, you can perform the same task with this make command:
 ``` bash
