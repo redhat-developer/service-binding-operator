@@ -1,7 +1,8 @@
 ## Binding an Imported app to an In-cluster Operator Managed Etcd Database.
 
 1. Install Etcd operator using operator hub.
- ![](https://i.imgur.com/m6nhKaJ.png)
+![](https://i.imgur.com/PrDeJXJ.png)
+
 2. Create a Etcd cluster.
  ```
  apiVersion: "etcd.database.coreos.com/v1beta2"
