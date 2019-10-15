@@ -12,11 +12,11 @@
   size: 5
   version: "3.2.13"
  ```
-4. Deploy application which uses Etcd client lib using openshift 4 devconsole.
+3. Deploy application which uses Etcd client lib using openshift 4 devconsole.
 Test application : https://github.com/akashshinde/node-todo.git
 ![](https://i.imgur.com/WGQZ1nj.png)
 
-6. Create SBR.
+4. Create SBR.
 ```
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
@@ -40,7 +40,7 @@ spec:
   customEnvVar: []
   detectBindingResources: true
 ```
-8. Application should be binded to the Etcd database automatically.
+5. Application should be binded to the Etcd database automatically.
 ![](https://i.imgur.com/JjORDrJ.png)
 
 
