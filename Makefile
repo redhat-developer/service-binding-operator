@@ -368,3 +368,9 @@ else
 		-r $(REPO_OWNER)/$(REPO_NAME) \
 		-Z > codecov-upload.log
 endif
+
+NEW-VERSION ?= "0.0.23"
+.PHONY: update-version
+update-version:
+	chmod +x ./hack/update-version.sh
+	./hack/update-version.sh $(NEW-VERSION)
