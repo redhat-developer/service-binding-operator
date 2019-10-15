@@ -3,16 +3,19 @@ package servicebindingrequest
 import (
 	"context"
 
-	"github.com/go-logr/logr"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
+)
+
+var (
+	plannerLog = log.NewLog("planner")
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
@@ -21,7 +24,7 @@ type Planner struct {
 	ctx    context.Context                 // request context
 	client dynamic.Interface               // kubernetes dynamic api client
 	sbr    *v1alpha1.ServiceBindingRequest // instantiated service binding request
-	logger logr.Logger                     // logger instance
+	logger *log.Log                        // logger instance
 }
 
 // Plan outcome, after executing planner.
@@ -41,8 +44,8 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	opts := metav1.GetOptions{}
 
-	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
-	logger.Info("Searching for CR instance...")
+	log := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
+	log.Debug("Searching for CR instance...")
 
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
 
@@ -51,7 +54,7 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 		return nil, err
 	}
 
-	logger.WithValues("CR.Name", cr.GetName()).Info("Found target CR!")
+	log.Debug("Found target CR!", "CR.Name", cr.GetName())
 	return cr, nil
 }
 
@@ -119,6 +122,6 @@ func NewPlanner(
 		ctx:    ctx,
 		client: client,
 		sbr:    sbr,
-		logger: logf.Log.WithName("plan"),
+		logger: plannerLog,
 	}
 }
