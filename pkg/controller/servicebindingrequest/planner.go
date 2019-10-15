@@ -50,7 +50,7 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
 
 	if err != nil {
-		logger.Info("during reading CR")
+		log.Info("during reading CR")
 		return nil, err
 	}
 

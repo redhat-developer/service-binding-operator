@@ -41,7 +41,6 @@ var (
 
 // getNestedValue retrieve value from dotted key path
 func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, interface{}, error) {
-	logger := r.logger.WithValues("Key", key, "SectionMap", sectionMap)
 	log := r.logger
 	if !strings.Contains(key, ".") {
 		value, exists := sectionMap.(map[string]interface{})[key]
