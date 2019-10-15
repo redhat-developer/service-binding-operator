@@ -3,7 +3,7 @@
 1. Install Etcd operator using operator hub, 
    follow https://operatorhub.io/operator/etcd
 2. Create a Etcd cluster.
- ```
+ ```yaml
  apiVersion: "etcd.database.coreos.com/v1beta2"
  kind: "EtcdCluster"
  metadata:
@@ -17,7 +17,7 @@ Test application : https://github.com/akashshinde/node-todo.git
 ![](https://i.imgur.com/WGQZ1nj.png)
 
 4. Create SBR.
-```
+```yaml
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
 metadata:
