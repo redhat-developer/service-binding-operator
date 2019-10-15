@@ -344,7 +344,7 @@ clean:
 	$(Q)-rm -rf ${V_FLAG} ./out
 
 
-## -- Targets for uploading code coverage reports to Codecov.io--
+## -- Targets for uploading code coverage reports to Codecov.io --
 
 .PHONY: upload-codecov-report
 ## Uploads the test coverage reports to codecov.io.
@@ -369,11 +369,11 @@ else
 		-Z > codecov-upload.log
 endif
 
-## -- Target for the operator version update--
+## -- Target for the operator version update --
 
 NEW-VERSION ?= "0.0.21"
-## This target calls script ./hack/update-version.sh and takes new version as argument
 .PHONY: update-version
+## This target calls script ./hack/update-version.sh and takes new version as argument
 update-version:
 	chmod +x ./hack/update-version.sh
 	./hack/update-version.sh $(NEW-VERSION)
