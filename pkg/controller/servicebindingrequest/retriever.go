@@ -44,14 +44,14 @@ func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, 
 	if !strings.Contains(key, ".") {
 		value, exists := sectionMap.(map[string]interface{})[key]
 		if !exists {
-			return "", sectionMap, fmt.Errorf("Can't find key '%s'", key)
+			return "", sectionMap, nil
 		}
 		return fmt.Sprintf("%v", value), sectionMap, nil
 	}
 	attrs := strings.SplitN(key, ".", 2)
 	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
 	if !exists {
-		return "", newSectionMap, fmt.Errorf("Can't find '%v' section in CR", attrs)
+		return "", newSectionMap, nil
 	}
 	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
 }
