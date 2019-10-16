@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -68,7 +69,9 @@ func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
 	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String(), "Kind", bss.Kind)
 	logger.Info("Searching for CRD instance...")
 
-	crd, err := p.client.Resource(gvr).Get("databases.postgresql.baiju.dev", opts)
+	// TODO: This hack should be removed! Probably the name should be prompted from user through SBR CR.
+	name := strings.ToLower(bss.Kind) + "s." + bss.Group
+	crd, err := p.client.Resource(gvr).Get(name, opts)
 
 	if err != nil {
 		logger.Info("during reading CRD")
