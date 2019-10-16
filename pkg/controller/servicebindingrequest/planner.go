@@ -65,10 +65,10 @@ func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	opts := metav1.GetOptions{}
 
-	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String())
+	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String(), "Kind", bss.Kind)
 	logger.Info("Searching for CRD instance...")
 
-	crd, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.Kind, opts)
+	crd, err := p.client.Resource(gvr).Get("databases.postgresql.baiju.dev", opts)
 
 	if err != nil {
 		logger.Info("during reading CRD")
@@ -83,6 +83,15 @@ func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
 func (p *Planner) Plan() (*Plan, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
+	//logger := p.logger.WithValues("CR.GVK", gvk.String())
+
+	var ann map[string]string
+	// retrieve the CRD based on kind, api-version and name
+	crd, err := p.searchCRD()
+	if err == nil {
+		ann = crd.GetAnnotations()
+	}
+
 	olm := NewOLM(p.client, p.sbr.GetNamespace())
 	crdDescription, err := olm.SelectCRDByGVK(gvk)
 	if err != nil {
@@ -93,13 +102,6 @@ func (p *Planner) Plan() (*Plan, error) {
 	cr, err := p.searchCR(crdDescription.Kind)
 	if err != nil {
 		return nil, err
-	}
-
-	var ann map[string]string
-	// retrieve the CRD based on kind, api-version and name
-	crd, err := p.searchCRD()
-	if err == nil {
-		ann = crd.GetAnnotations()
 	}
 
 	return &Plan{
