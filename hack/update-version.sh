@@ -10,9 +10,6 @@ version=(${version//./$'\n'})  # change the semicolons to white space
 OLD_VERSION_MAJOR="${version[0]}"
 OLD_VERSION_MINOR="${version[1]}"
 OLD_VERSION_PATCH="${version[2]}"
-echo ${OLD_VERSION_MAJOR}
-echo ${OLD_VERSION_MINOR}
-echo ${OLD_VERSION_PATCH}
 NEW_VERSION_MAJOR=$1
 NEW_VERSION_MINOR=$2
 NEW_VERSION_PATCH=$3
