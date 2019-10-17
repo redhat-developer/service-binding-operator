@@ -315,8 +315,8 @@ push-operator: prepare-csv
 ## Push-Image: push container image to upstream, including latest tag.
 push-image: build-image
 	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	podman push "$(OPERATOR_IMAGE):latest"
+	-podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	-podman push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
