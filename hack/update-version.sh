@@ -5,7 +5,7 @@
 MANIFESTS_DIR="./../manifests"
 OPERATOR_VERSION="0.0.20"
 version="${OPERATOR_VERSION}"
-version=(${version//./$'\n'})  # change the semicolons to white space
+version=(${version//./$'\n'})
 
 OLD_VERSION_MAJOR="${version[0]}"
 OLD_VERSION_MINOR="${version[1]}"
