@@ -368,12 +368,3 @@ else
 		-r $(REPO_OWNER)/$(REPO_NAME) \
 		-Z > codecov-upload.log
 endif
-
-## -- Target for the operator version update --
-
-NEW-VERSION ?= "0.0.21"
-.PHONY: update-version
-## This target calls script ./hack/update-version.sh and takes new version as argument
-update-version:
-	chmod +x ./hack/update-version.sh
-	./hack/update-version.sh $(NEW-VERSION)

@@ -1,26 +1,33 @@
 #!/bin/bash
-# Update the operator version from a version 0.0.(n) to a version 0.0.(n+1) at various places across the repository.
-OPERATOR_VERSION="0.0.21"
-MANIFESTS_DIR="manifests"
-OPERATOR_VERSION_UPDATE=$1
+# Update the operator version to a new version at various places across the repository.
+# Refer https://semver.org/
 
-if [ "${OPERATOR_VERSION_UPDATE}" != "${OPERATOR_VERSION}" ] ; then
-    NEW_VERSION="$(echo ${OPERATOR_VERSION_UPDATE} | tr '.' '\n' | tail -1)"
-    OLD_VERSION="$(echo ${OPERATOR_VERSION} | tr '.' '\n' | tail -1)"
-    EXPECTED_VERSION="$(echo ${OLD_VERSION} + 1 | bc )"
-    if [ "${NEW_VERSION}" ==  "${EXPECTED_VERSION}" ] ; then
-        sed -i -e 's/0.0.'${OLD_VERSION}'/0.0.'${NEW_VERSION}'/g' Makefile
-        sed -i -e 's/0.0.'${OLD_VERSION}'/0.0.'${NEW_VERSION}'/g' hack/update-version.sh
-        sed -i -e 's/'${OLD_VERSION}'/'${NEW_VERSION}'/g' ${MANIFESTS_DIR}/service-binding-operator.package.yaml
-        sed -i -e 's/'${OLD_VERSION}'/'${NEW_VERSION}'/g' ${MANIFESTS_DIR}/service-binding-operator.v0.0.${OLD_VERSION}.clusterserviceversion.yaml
-        mv ${MANIFESTS_DIR}/service-binding-operator.v0.0.${OLD_VERSION}.clusterserviceversion.yaml \
-        ${MANIFESTS_DIR}/service-binding-operator.v0.0.${NEW_VERSION}.clusterserviceversion.yaml
-        sed -i -e 's/'${OLD_VERSION}'/'${NEW_VERSION}'/g' openshift-ci/Dockerfile.registry.build
-        echo -e "\n\033[0;32m \xE2\x9C\x94 Operator version upgraded from ${OLD_VERSION} to ${NEW_VERSION} \033[0m\n"
-    else
-        echo -e "\n\e[1;35m Enter a suitable version number as a value for the script argument\e[0m \n"
-        echo -e "\n\e[1;36m If the previous version is 0.0.n then the new version should be 0.0.n+1\e[0m \n"
-    fi
-else
-    echo -e "\n\e[1;35m Enter a suitable version number as a value for the parameter OPERATOR_VERSION_UPDATE\e[0m \n"
-fi
+MANIFESTS_DIR="./../manifests"
+OPERATOR_VERSION="0.0.20"
+version="${OPERATOR_VERSION}"
+version=(${version//./$'\n'})  # change the semicolons to white space
+
+OLD_VERSION_MAJOR="${version[0]}"
+OLD_VERSION_MINOR="${version[1]}"
+OLD_VERSION_PATCH="${version[2]}"
+echo ${OLD_VERSION_MAJOR}
+echo ${OLD_VERSION_MINOR}
+echo ${OLD_VERSION_PATCH}
+NEW_VERSION_MAJOR=$1
+NEW_VERSION_MINOR=$2
+NEW_VERSION_PATCH=$3
+
+function replace {
+    LOCATION=$1
+    sed -i -e 's/'${OLD_VERSION_MAJOR}'.'${OLD_VERSION_MINOR}'.'${OLD_VERSION_PATCH}'/'${NEW_VERSION_MAJOR}'.'${NEW_VERSION_MINOR}'.'${NEW_VERSION_PATCH}'/g' $LOCATION
+}
+replace ../Makefile
+replace ./update-version.sh
+replace ${MANIFESTS_DIR}/service-binding-operator.package.yaml
+replace ${MANIFESTS_DIR}/service-binding-operator.v${OLD_VERSION_MAJOR}.${OLD_VERSION_MINOR}.${OLD_VERSION_PATCH}.clusterserviceversion.yaml
+mv ${MANIFESTS_DIR}/service-binding-operator.v${OLD_VERSION_MAJOR}.${OLD_VERSION_MINOR}.${OLD_VERSION_PATCH}.clusterserviceversion.yaml \
+${MANIFESTS_DIR}/service-binding-operator.v${NEW_VERSION_MAJOR}.${NEW_VERSION_MINOR}.${NEW_VERSION_PATCH}.clusterserviceversion.yaml
+replace ./../openshift-ci/Dockerfile.registry.build
+echo -e "\n\033[0;32m \xE2\x9C\x94 Operator version upgraded from \
+${OLD_VERSION_MAJOR}.${OLD_VERSION_MINOR}.${OLD_VERSION_PATCH} to \
+${NEW_VERSION_MAJOR}.${NEW_VERSION_MINOR}.${NEW_VERSION_PATCH} \033[0m\n"
