@@ -216,7 +216,7 @@ test-unit:
 
 .PHONY: test-e2e-image
 ## Run e2e tests on operator image
-test-e2e-image:
+test-e2e-image: push-image
 	$(info Running e2e test on operator image: $@)
 	$(eval NAMESPACE := test-image-$(shell </dev/urandom tr -dc 'a-z0-9' | head -c 7  ; echo))
 	echo "$(NAMESPACE)"
@@ -316,7 +316,7 @@ push-operator: prepare-csv
 push-image: build-image
 	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
 	podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	-podman push "$(OPERATOR_IMAGE):latest"
+	podman push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
