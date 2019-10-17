@@ -214,6 +214,22 @@ test-unit:
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
 
+.PHONY: test-e2e-image
+## Run e2e tests on operator image
+test-e2e-image:
+	$(info Running e2e test on operator image: $@)
+	$(eval NAMESPACE := test-image-$(shell </dev/urandom tr -dc 'a-z0-9' | head -c 7  ; echo))
+	echo "$(NAMESPACE)"
+	$(Q)kubectl create namespace $(NAMESPACE)
+	$(Q)kubectl --namespace $(NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
+		operator-sdk --verbose test local ./test/e2e \
+			--namespace "$(NAMESPACE)" \
+			--image "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" \
+			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_FLAGS)" \
+			$(OPERATOR_SDK_EXTRA_ARGS)
+
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
 test-unit-with-coverage:
@@ -300,7 +316,7 @@ push-operator: prepare-csv
 push-image: build-image
 	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
 	podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	podman push "$(OPERATOR_IMAGE):latest"
+	-podman push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
