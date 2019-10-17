@@ -30,6 +30,11 @@ type ServiceBindingRequestSpec struct {
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
+
+	// DetectBindingResources is flag used to bind all non-bindable variables from
+	// different subresources owned by backing operator CR.
+	// +optional
+	DetectBindingResources bool `json:"detectBindingResources"`
 }
 
 // CustomEnvMap is a set of Name and Value of an environment variable
