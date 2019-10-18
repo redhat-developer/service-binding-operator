@@ -10,9 +10,12 @@ version=(${version//./$'\n'})
 OLD_VERSION_MAJOR="${version[0]}"
 OLD_VERSION_MINOR="${version[1]}"
 OLD_VERSION_PATCH="${version[2]}"
-NEW_VERSION_MAJOR=$1
-NEW_VERSION_MINOR=$2
-NEW_VERSION_PATCH=$3
+NEW_VERSION=$1
+new_version="${NEW_VERSION}"
+new_version=(${new_version//./$'\n'})
+NEW_VERSION_MAJOR="${new_version[0]}"
+NEW_VERSION_MINOR="${new_version[1]}"
+NEW_VERSION_PATCH="${new_version[2]}"
 
 function replace {
     LOCATION=$1
