@@ -2,7 +2,7 @@
 
 1. Install Etcd operator using operator hub, 
    follow https://operatorhub.io/operator/etcd
-2. Create a Etcd cluster.
+2. Create an Etcd cluster.
  ```yaml
  apiVersion: "etcd.database.coreos.com/v1beta2"
  kind: "EtcdCluster"
