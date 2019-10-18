@@ -316,14 +316,14 @@ deploy-rbac:
 	$(Q)kubectl create -f deploy/role.yaml
 	$(Q)kubectl create -f deploy/role_binding.yaml
 
-.PHONY: deploy-crds consistent-crds
+.PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
-deploy-crds:
+deploy-crds: consistent-crds
 	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 
-.PHONY: deploy-clean consistent-crds
+.PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
-deploy-clean:
+deploy-clean: consistent-crds
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 	$(Q)-kubectl delete -f deploy/operator.yaml

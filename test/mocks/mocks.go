@@ -15,7 +15,8 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	ocv1 "github.com/openshift/api/route/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // resource details employed in mocks
@@ -237,6 +238,23 @@ func DatabaseCRMock(ns, name string) *pgv1alpha1.Database {
 	}
 }
 
+func RouteCRMock(ns, name string) *ocv1.Route {
+	return &ocv1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Route",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: ocv1.RouteSpec{
+			Host: "https://openshift.cluster.com/host_url",
+		},
+		Status: ocv1.RouteStatus{},
+	}
+}
+
 // UnstructuredDatabaseCRMock returns a unstructured version of DatabaseCRMock.
 func UnstructuredDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
 	db := DatabaseCRMock(ns, name)
@@ -287,6 +305,7 @@ func ServiceBindingRequestMock(
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	matchLabels map[string]string,
+	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
 	return &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -295,6 +314,12 @@ func ServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
+			CustomEnvVar: []v1alpha1.CustomEnvMap{
+				{
+					Name:  "IMAGE_PATH",
+					Value: "spec.imagePath",
+				},
+			},
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				Group:       CRDName,
 				Version:     CRDVersion,
@@ -308,12 +333,7 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			CustomEnvVar: []v1alpha1.CustomEnvMap{
-				{
-					Name:  "IMAGE_PATH",
-					Value: "spec.imagePath",
-				},
-			},
+			DetectBindingResources: bindUnannotated,
 		},
 	}
 }
@@ -326,7 +346,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationResourceRef string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err
@@ -450,8 +470,8 @@ func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructur
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
-	ImageName string
-	Image string
+	ImageName   string
+	Image       string
 }
 
 // ConfigMapDatabase ...
@@ -475,8 +495,8 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 		},
 		Spec: ConfigMapDatabaseSpec{
 			DBConfigMap: configMapName,
-			Image: "docker.io/postgres",
-			ImageName: "postgres",
+			Image:       "docker.io/postgres",
+			ImageName:   "postgres",
 		},
 	}
 }
