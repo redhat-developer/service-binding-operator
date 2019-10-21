@@ -255,7 +255,6 @@ func TestCustomEnvParser(t *testing.T) {
 	})
 }
 
-<<<<<<< HEAD
 func TestReadAnnotation(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 	var retriever *Retriever
