@@ -52,7 +52,6 @@ spec:
                 version:
                   type: string
               required:
-                - matchLabels
                 - version
                 - resource
               type: object
