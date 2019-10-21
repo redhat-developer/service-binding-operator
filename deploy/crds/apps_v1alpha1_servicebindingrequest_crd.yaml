@@ -49,10 +49,8 @@ spec:
                 version:
                   type: string
               required:
-              - matchLabels
               - version
               - resource
-              - resourceRef
               type: object
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
