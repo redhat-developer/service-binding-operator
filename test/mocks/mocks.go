@@ -18,7 +18,6 @@ import (
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	ocv1 "github.com/openshift/api/route/v1"
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
