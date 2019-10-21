@@ -41,19 +41,17 @@ var (
 
 // getNestedValue retrieve value from dotted key path
 func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, interface{}, error) {
-	log := r.logger
 	if !strings.Contains(key, ".") {
 		value, exists := sectionMap.(map[string]interface{})[key]
 		if !exists {
-			return "", sectionMap, fmt.Errorf("Can't find key '%s'", key)
+			return "", sectionMap, nil
 		}
 		return fmt.Sprintf("%v", value), sectionMap, nil
 	}
 	attrs := strings.SplitN(key, ".", 2)
 	newSectionMap, exists := sectionMap.(map[string]interface{})[attrs[0]]
-	log.Debug("Section maps :  ")
 	if !exists {
-		return "", newSectionMap, fmt.Errorf("Can't find '%v' section in CR", attrs)
+		return "", newSectionMap, nil
 	}
 	return r.getNestedValue(attrs[1], newSectionMap.(map[string]interface{}))
 }
@@ -415,6 +413,23 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	}
 
 	log.Debug("Final cache values...", "cache", r.cache)
+
+	if r.plan.SBR.Spec.DetectBindingResources {
+		b := NewDetectBindableResources(&r.plan.SBR, r.plan.CR, []schema.GroupVersionResource{
+			// We can add extra gvrs here
+			{Group: "", Version: "v1", Resource: "configmaps"},
+			{Group: "", Version: "v1", Resource: "services"},
+			{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
+		}, r.client)
+
+		vals, err := b.GetBindableVariables()
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range vals {
+			r.store(k, []byte(fmt.Sprintf("%v", v)))
+		}
+	}
 
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
 	values, err := envParser.Parse()

@@ -38,19 +38,21 @@ spec:
               properties:
                 group:
                   type: string
-                name:
-                  type: string
                 matchLabels:
                   additionalProperties:
                     type: string
                   type: object
                 resource:
                   type: string
+                resourceRef:
+                  type: string
                 version:
                   type: string
               required:
+              - matchLabels
               - version
               - resource
+              - resourceRef
               type: object
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
@@ -86,6 +88,10 @@ spec:
                 - value
                 type: object
               type: array
+            detectBindingResources:
+              description: DetectBindingResources is flag used to bind all non-bindable
+                variables from different subresources owned by backing operator CR.
+              type: boolean
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
@@ -93,8 +99,10 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
+          - customEnvVar
           - backingServiceSelector
           - applicationSelector
+          - detectBindingResources
           type: object
         status:
           properties:
