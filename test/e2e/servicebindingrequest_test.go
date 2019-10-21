@@ -151,15 +151,19 @@ func assertSBRSecret(
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_USER"]; !contains {
 		return nil, fmt.Errorf("can't find DATABASE_SECRET_USER in data")
 	}
-	if !bytes.Equal([]byte("user"), sbrSecret.Data["DATABASE_SECRET_USER"]) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_USER is different than expected")
+	actualUser := sbrSecret.Data["DATABASE_SECRET_USER"]
+	expectedUser := []byte("user")
+	if !bytes.Equal(expectedUser, actualUser) {
+		return nil, fmt.Errorf("key DATABASE_SECRET_USER (%s) is different than expected (%s)", actualUser, expectedUser)
 	}
 
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]; !contains {
 		return nil, fmt.Errorf("can't find DATABASE_SECRET_PASSWORD in data")
 	}
-	if !bytes.Equal([]byte("password"), sbrSecret.Data["DATABASE_SECRET_PASSWORD"]) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD is different than expected")
+	actualPassword := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]
+	expectedPassword := []byte("password")
+	if !bytes.Equal(expectedPassword, actualPassword) {
+		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD (%s) is different than expected (%s)", actualPassword, expectedPassword)
 	}
 
 	return sbrSecret, nil
@@ -275,7 +279,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
 
 	// editing intermediary secret in order to trigger update event
 	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
@@ -380,7 +384,7 @@ func preCreateServiceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f 
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
 
 	// editing intermediary secret in order to trigger update event
 	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)

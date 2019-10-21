@@ -205,7 +205,19 @@ test-e2e: e2e-setup
 			--up-local \
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS)
+			$(OPERATOR_SDK_EXTRA_ARGS) \
+			| tee test-e2e.log
+	$(Q)cat test-e2e.log | grep 'Local operator stderr:' | sed -e 's,.*Local operator stderr: \(.*\)}\\n",\1,g' \
+		| sed -e 's,\\a,\a,g' \
+		| sed -e 's,\\b,\b,g' \
+		| sed -e 's,\\\\,\\,g' \
+		| sed -e 's,\\t,\t,g' \
+		| sed -e 's,\\n,\n,g' \
+		| sed -e 's,\\f,\f,g' \
+		| sed -e 's,\\r,\r,g' \
+		| sed -e 's,\\v,\v,g' \
+		| sed -e 's,\\",\",g' \
+		> test-e2e-local-operator.log
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
