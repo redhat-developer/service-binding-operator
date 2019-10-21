@@ -2,14 +2,28 @@
 # Update the operator version to a new version at various places across the repository.
 # Refer https://semver.org/
 
+set -e
+set -u
+
 MANIFESTS_DIR="./../manifests"
-OPERATOR_VERSION="0.0.20"
-OLD_VERSION="${OPERATOR_VERSION}"
 NEW_VERSION=$1
+
+function current_version {
+    filename="../Makefile"
+    OPERATOR_VERSION=$(grep -m 1 OPERATOR_VERSION $filename | sed 's/^.*= //g')
+}
+
+current_version
+OLD_VERSION="${OPERATOR_VERSION}"
 
 function replace {
     LOCATION=$1
-    sed -i -e 's/'${OLD_VERSION}'/'${NEW_VERSION}'/g' $LOCATION
+    if [ -e $LOCATION ] ; then
+        sed -i -e 's/'${OLD_VERSION}'/'${NEW_VERSION}'/g' $LOCATION
+    else
+        echo ERROR: Failed to find $LOCATION
+        exit 1 #terminate and indicate error
+    fi
 }
 replace ../Makefile
 replace ./update-version.sh
