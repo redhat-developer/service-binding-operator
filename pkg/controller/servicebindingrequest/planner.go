@@ -39,7 +39,7 @@ type Plan struct {
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
+func (p *Planner) searchCR() (*unstructured.Unstructured, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
@@ -94,15 +94,26 @@ func (p *Planner) Plan() (*Plan, error) {
 	if err == nil {
 		ann = crd.GetAnnotations()
 	}
+	var isAnnotation bool
 
-	olm := NewOLM(p.client, p.sbr.GetNamespace())
-	crdDescription, err := olm.SelectCRDByGVK(gvk)
-	if err != nil {
-		return nil, err
+	for key := range ann {
+		if strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
+			isAnnotation = true
+			break
+		}
 	}
 
+	var crdDescription *olmv1alpha1.CRDDescription
+	if !isAnnotation {
+		olm := NewOLM(p.client, p.sbr.GetNamespace())
+		crdDescription, err = olm.SelectCRDByGVK(gvk)
+		if err != nil {
+			return nil, err
+		}
+
+	}
 	// retrieve the CR based on kind, api-version and name
-	cr, err := p.searchCR(crdDescription.Kind)
+	cr, err := p.searchCR()
 	if err != nil {
 		return nil, err
 	}

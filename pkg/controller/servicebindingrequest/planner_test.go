@@ -35,7 +35,7 @@ func TestPlannerNew(t *testing.T) {
 	require.NotNil(t, planner)
 
 	t.Run("searchCR", func(t *testing.T) {
-		cr, err := planner.searchCR("Database")
+		cr, err := planner.searchCR()
 
 		assert.Nil(t, err)
 		assert.NotNil(t, cr)
