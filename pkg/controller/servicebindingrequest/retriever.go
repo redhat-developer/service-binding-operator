@@ -68,6 +68,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
+	log.Debug("SectionMap", sectionMap)
 	v, _, err := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
 		if _, ok := r.cache[section]; !ok {

@@ -86,7 +86,7 @@ func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
 func (p *Planner) Plan() (*Plan, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
-	//logger := p.logger.WithValues("CR.GVK", gvk.String())
+	logger := p.logger.WithValues("CR.GVK", gvk.String())
 
 	var ann map[string]string
 	// retrieve the CRD based on kind, api-version and name
@@ -104,7 +104,9 @@ func (p *Planner) Plan() (*Plan, error) {
 	}
 
 	var crdDescription *olmv1alpha1.CRDDescription
+	// Check if annotaion is not present
 	if !isAnnotation {
+		logger.Info("Annotaion is not present. Read from OLM")
 		olm := NewOLM(p.client, p.sbr.GetNamespace())
 		crdDescription, err = olm.SelectCRDByGVK(gvk)
 		if err != nil {
