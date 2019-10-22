@@ -49,10 +49,11 @@ spec:
                   type: object
                 resource:
                   type: string
+                resourceRef:
+                  type: string
                 version:
                   type: string
               required:
-                - matchLabels
                 - version
                 - resource
               type: object

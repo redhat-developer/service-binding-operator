@@ -58,11 +58,13 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		opts = metav1.ListOptions{
 			FieldSelector: fields.Set(fieldName).String(),
 		}
-	} else {
+	} else if b.sbr.Spec.ApplicationSelector.MatchLabels != nil {
 		matchLabels := b.sbr.Spec.ApplicationSelector.MatchLabels
 		opts = metav1.ListOptions{
 			LabelSelector: labels.Set(matchLabels).String(),
 		}
+	} else {
+		return nil, fmt.Errorf("Application ResourceRef or MatchLabel not found.")
 	}
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
