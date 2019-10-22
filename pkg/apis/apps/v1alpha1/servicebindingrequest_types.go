@@ -20,12 +20,31 @@ type ServiceBindingRequestSpec struct {
 	// +optional
 	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
+	// Custom env variables
+	// +optional
+	CustomEnvVar []CustomEnvMap `json:"customEnvVar"`
+
 	// BackingServiceSelector is used to identify the backing service operator.
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
+
+	// DetectBindingResources is flag used to bind all non-bindable variables from
+	// different subresources owned by backing operator CR.
+	// +optional
+	DetectBindingResources bool `json:"detectBindingResources"`
+}
+
+// CustomEnvMap is a set of Name and Value of an environment variable
+// +k8s:openapi-gen=true
+// +optional
+type CustomEnvMap struct {
+	// key of custom env variable
+	Name string `json:"name"`
+	// value template, currently supports expected is go template
+	Value string `json:"value"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
@@ -55,6 +74,7 @@ type ApplicationSelector struct {
 	Group       string            `json:"group,omitempty"`
 	Version     string            `json:"version"`
 	Resource    string            `json:"resource"`
+	ResourceRef string            `json:"resourceRef"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

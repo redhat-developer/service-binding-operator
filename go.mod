@@ -26,7 +26,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	k8s.io/api v0.0.0-20190612125737-db0771252981
 	k8s.io/apimachinery v0.0.0-20190612205821-1799e75a0719
-	k8s.io/client-go v11.0.0+incompatible
+	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.0.0-20181203235156-f8cba74510f3
 	k8s.io/gengo v0.0.0-20190327210449-e17681d19d3a
 	k8s.io/kube-openapi v0.0.0-20190320154901-5e45bb682580
@@ -50,3 +50,5 @@ replace (
 	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.1.10
 	sigs.k8s.io/controller-tools => sigs.k8s.io/controller-tools v0.1.11-0.20190411181648-9d55346c2bde
 )
+
+go 1.13

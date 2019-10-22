@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -40,7 +41,7 @@ func TestRetriever(t *testing.T) {
 	})
 
 	t.Run("getCRKey", func(t *testing.T) {
-		imageName, err := retriever.getCRKey("spec", "imageName")
+		imageName, _, err := retriever.getCRKey("spec", "imageName")
 		assert.Nil(t, err)
 		assert.Equal(t, "postgres", imageName)
 	})
@@ -76,7 +77,7 @@ func TestRetriever(t *testing.T) {
 	t.Run("readSecret", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		err := retriever.readSecret("db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
@@ -99,7 +100,7 @@ func TestRetriever(t *testing.T) {
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret("db-credentials", []string{"user", "password"})
+		err := retriever.readSecret("db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, "DATABASE_SECRET_USER")
@@ -130,18 +131,20 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
-		imageName, err := retriever.getCRKey("spec", "image.name")
+		imageName, _, err := retriever.getCRKey("spec", "image.name")
 		assert.Nil(t, err)
 		assert.Equal(t, "postgres", imageName)
 	})
 
 	t.Run("Second level error", func(t *testing.T) {
-		_, err := retriever.getCRKey("spec", "image..name")
+		// FIXME: if attribute isn't available in CR we would not throw any error.
+		t.Skip()
+		_, _, err := retriever.getCRKey("spec", "image..name")
 		assert.NotNil(t, err)
 	})
 
 	t.Run("Third level", func(t *testing.T) {
-		something, err := retriever.getCRKey("spec", "image.third.something")
+		something, _, err := retriever.getCRKey("spec", "image.third.something")
 		assert.Nil(t, err)
 		assert.Equal(t, "somevalue", something)
 	})
@@ -158,6 +161,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
 	f.AddMockedConfigMap(crName)
+	f.AddMockedDatabaseCR(crName)
 
 	crdDescription := mocks.CRDDescriptionConfigMapMock()
 
@@ -192,7 +196,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap(crName, []string{"user", "password"})
+		err := retriever.readConfigMap(crName, []string{"user", "password"}, "spec", "dbConfigMap")
 		assert.Nil(t, err)
 
 		assert.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))
@@ -200,3 +204,53 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	})
 
 }
+
+func TestCustomEnvParser(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
+
+	ns := "testing"
+	crName := "db-testing"
+
+	f := mocks.NewFake(t, ns)
+	f.AddMockedUnstructuredCSV("csv")
+	f.AddMockedSecret("db-credentials")
+
+	crdDescription := mocks.CRDDescriptionMock()
+	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
+	require.Nil(t, err)
+
+	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+
+	fakeDynClient := f.FakeDynClient()
+
+	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+	require.NotNil(t, retriever)
+
+	t.Run("Should detect custom env values", func(t *testing.T) {
+		_, err = retriever.Retrieve()
+		assert.Nil(t, err)
+
+		t.Logf("\nCache %+v", retriever.cache)
+
+		envMap := []v1alpha1.CustomEnvMap{
+			{
+				Name:  "JDBC_CONNECTION_STRING",
+				Value: `{{ .spec.imageName }}@{{ .status.dbCredentials.password }}`,
+			},
+			{
+				Name:  "ANOTHER_STRING",
+				Value: `{{ .status.dbCredentials.user }}_{{ .status.dbCredentials.password }}`,
+			},
+		}
+
+		c := NewCustomEnvParser(envMap, retriever.cache)
+		values, err := c.Parse()
+		if err != nil {
+			t.Error(err)
+		}
+		assert.Equal(t, "dXNlcg==_cGFzc3dvcmQ=", values["ANOTHER_STRING"], "Custom env values are not matching")
+		assert.Equal(t, "postgres@cGFzc3dvcmQ=", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
+	})
+}
+

@@ -59,25 +59,14 @@ func TestAddSchemesToFramework(t *testing.T) {
 	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
 	t.Run("end-to-end", func(t *testing.T) {
+		// scenario-1
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
-		t.Run("scenario-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
-		})
-		t.Run("scenario-db-sbr-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
-		})
-		t.Run("scenario-app-sbr-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
-		})
+		// scenario-2 (pre create sbr then binding resources
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
 		})
-		t.Run("scenario-sbr-app-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
-		})
-		t.Run("scenario-2 (pre create sbr then binding resources)", PreServiceBindingRequest)
 	})
 
 }
@@ -206,19 +195,6 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
-}
-
-// This would setup testing resources then starts a test,
-// SBR gets created in this test before creation of bindable resource objects
-func PreServiceBindingRequest(t *testing.T) {
-	t.Log("Creating a new test context...")
-	ctx := framework.NewTestCtx(t)
-	defer ctx.Cleanup()
-
-	ns, f := bootstrapNamespace(t, ctx)
-
-	// executing testing steps on operator
-	preCreateServiceBindingRequestTest(t, ctx, f, ns)
 }
 
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
@@ -355,6 +331,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, serviceBindingRequestNamespacedName, resourceRef, matchLabels)
 		}
 	}
+
+	// retrying a few times to identify SBO changes in deployment, this loop is waiting for the
 	// operator reconciliation.
 	t.Log("Inspecting deployment structure...")
 	err := retry(10, 5*time.Second, func() error {
@@ -435,6 +413,7 @@ func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f 
 
 	t.Logf("Reading application deployment '%s'", appName)
 	require.Nil(t, f.Client.Get(todoCtx, namespacedName, &d))
+
 	return d
 }
 
@@ -443,7 +422,7 @@ func CreateServiceBindingRequest(todoCtx context.Context, t *testing.T, ctx *fra
 	ns := namespacedName.Namespace
 	name := namespacedName.Name
 	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, sbr)
 	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))

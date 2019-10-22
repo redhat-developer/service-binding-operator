@@ -15,7 +15,8 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	ocv1 "github.com/openshift/api/route/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // resource details employed in mocks
@@ -33,6 +34,19 @@ var (
 		DisplayName:  "Database Name",
 		Description:  "Database Name",
 		Path:         "dbName",
+		XDescriptors: []string{"binding:env:attribute"},
+	}
+	ImageSpecDesc = olmv1alpha1.SpecDescriptor{
+		Path:         "image",
+		DisplayName:  "Image",
+		Description:  "Image Name",
+		XDescriptors: nil,
+	}
+	// DBNameSpecDesc default spec descriptor to inform the database name.
+	DBNameSpecIp = olmv1alpha1.SpecDescriptor{
+		DisplayName:  "Database IP",
+		Description:  "Database IP",
+		Path:         "dbConnectionIp",
 		XDescriptors: []string{"binding:env:attribute"},
 	}
 	// DBConfigMapSpecDesc spec descriptor to describe a operator that export username and password
@@ -107,7 +121,7 @@ func ClusterServiceVersionListMock(ns, name string) *olmv1alpha1.ClusterServiceV
 // operator setup.
 func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc},
+		[]olmv1alpha1.SpecDescriptor{DBNameSpecDesc, ImageSpecDesc},
 		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
 	)
 }
@@ -116,7 +130,7 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 // spec-descriptor
 func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
 	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc},
+		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc, ImageSpecDesc},
 		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
 	)
 }
@@ -216,10 +230,28 @@ func DatabaseCRMock(ns, name string) *pgv1alpha1.Database {
 		Spec: pgv1alpha1.DatabaseSpec{
 			Image:     "docker.io/postgres:latest",
 			ImageName: "postgres",
+			DBName:    "test-db",
 		},
 		Status: pgv1alpha1.DatabaseStatus{
 			DBCredentials: "db-credentials",
 		},
+	}
+}
+
+func RouteCRMock(ns, name string) *ocv1.Route {
+	return &ocv1.Route{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Route",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: ns,
+		},
+		Spec: ocv1.RouteSpec{
+			Host: "https://openshift.cluster.com/host_url",
+		},
+		Status: ocv1.RouteStatus{},
 	}
 }
 
@@ -270,8 +302,10 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 func ServiceBindingRequestMock(
 	ns string,
 	name string,
-	resourceRef string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
 	matchLabels map[string]string,
+	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
 	return &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -280,18 +314,26 @@ func ServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
+			CustomEnvVar: []v1alpha1.CustomEnvMap{
+				{
+					Name:  "IMAGE_PATH",
+					Value: "spec.imagePath",
+				},
+			},
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				Group:       CRDName,
 				Version:     CRDVersion,
 				Kind:        CRDKind,
-				ResourceRef: resourceRef,
+				ResourceRef: backingServiceResourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				Group:       "apps",
 				Version:     "v1",
 				Resource:    "deployments",
+				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
+			DetectBindingResources: bindUnannotated,
 		},
 	}
 }
@@ -300,10 +342,11 @@ func ServiceBindingRequestMock(
 func UnstructuredServiceBindingRequestMock(
 	ns string,
 	name string,
-	resourceRef string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, resourceRef, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err
@@ -427,6 +470,8 @@ func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructur
 // ConfigMapDatabaseSpec ...
 type ConfigMapDatabaseSpec struct {
 	DBConfigMap string `json:"dbConfigMap"`
+	ImageName   string
+	Image       string
 }
 
 // ConfigMapDatabase ...
@@ -450,6 +495,8 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 		},
 		Spec: ConfigMapDatabaseSpec{
 			DBConfigMap: configMapName,
+			Image:       "docker.io/postgres",
+			ImageName:   "postgres",
 		},
 	}
 }
@@ -458,5 +505,10 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstructured.Unstructured, error) {
 	db := DatabaseConfigMapMock(ns, name, configMapName)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+func ConvertToUnstructured(cr interface{}) (*unstructured.Unstructured, error) {
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	return &ustrv1.Unstructured{Object: data}, err
 }

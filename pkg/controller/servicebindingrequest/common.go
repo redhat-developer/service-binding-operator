@@ -5,11 +5,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-)
-
-var (
-	log = logf.ZapLogger(true).WithName("servicebindingrequest")
 )
 
 // ServiceBindingRequestResource the name of ServiceBindingRequest resource.
