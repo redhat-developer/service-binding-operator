@@ -97,10 +97,8 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
-          - customEnvVar
           - backingServiceSelector
           - applicationSelector
-          - detectBindingResources
           type: object
         status:
           properties:
