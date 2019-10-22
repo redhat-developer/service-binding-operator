@@ -49,10 +49,8 @@ spec:
                 version:
                   type: string
               required:
-              - matchLabels
               - version
               - resource
-              - resourceRef
               type: object
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
@@ -99,10 +97,8 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
           required:
-          - customEnvVar
           - backingServiceSelector
           - applicationSelector
-          - detectBindingResources
           type: object
         status:
           properties:
