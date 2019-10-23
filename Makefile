@@ -214,7 +214,7 @@ test-e2e: e2e-setup
 	$(Q)cat $(LOGS_DIR)/e2e/test-e2e.log | grep 'Local operator stderr:' \
 		| sed -e 's,.*Local operator stderr: \(.*\)}\\n",\1,g' \
 		| sed -e 's,\\a,\a,g;s,\\b,\b,g;s,\\\\,\\,g;s,\\t,\t,g;s,\\n,\n,g;s,\\f,\f,g;s,\\r,\r,g;s,\\v,\v,g;s,\\",\",g' \
-		> $(LOGS_DIR)/e2e/test-e2e-local-operator.log
+		> $(LOGS_DIR)/e2e/local-operator.log
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
