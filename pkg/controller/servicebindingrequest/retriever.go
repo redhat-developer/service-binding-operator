@@ -68,7 +68,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
-	log.Debug("SectionMap", sectionMap)
+	log.Debug("SectionMap", "%#v", sectionMap)
 	v, _, err := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
 		if _, ok := r.cache[section]; !ok {
@@ -171,7 +171,7 @@ func (r *Retriever) readAnnotation(key, value string) error {
 	if len(fullpathslice) > 1 {
 		value = value + ":" + fullpathslice[1]
 	}
-	logger.Debug("Value", value)
+	logger.Debug("Value", "%#v", value)
 	if strings.HasPrefix(value, secretPrefix) {
 		secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(value))
 		if _, ok := r.cache[place].(map[string]interface{})[r.extractSecretItemName(value)]; !ok {
