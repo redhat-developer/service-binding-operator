@@ -2,89 +2,143 @@ package servicebindingrequest
 
 import (
 	"context"
-	"strings"
+	"errors"
+	"fmt"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/resourcepoll"
-
-	osappsv1 "github.com/openshift/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
-	"k8s.io/apimachinery/pkg/labels"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/planner"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	client client.Client   // kubernetes api client
-	scheme *runtime.Scheme // api scheme
+	client    client.Client     // kubernetes api client
+	dynClient dynamic.Interface // kubernetes dynamic api client
+	scheme    *runtime.Scheme   // api scheme
 }
 
-// appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
-// part of the list or appended.
-func (r *Reconciler) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
-	for _, env := range envList {
-		if env.SecretRef.Name == secret {
-			// secret name is already referenced
-			return envList
-		}
-	}
+const (
+	// binding is in progress
+	bindingInProgress = "InProgress"
+	// binding has succeeded
+	bindingSuccess = "Success"
+	// binding has failed
+	bindingFail = "Fail"
+	// time in seconds to wait before requeuing requests
+	requeueAfter int64 = 45
+)
 
-	return append(envList, corev1.EnvFromSource{
-		SecretRef: &corev1.SecretEnvSource{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: secret,
-			},
-		},
-	})
+var (
+	reconcilerLog = log.NewLog("reconciler")
+)
+
+// setSecretName update the CR status field to "in progress", and setting secret name.
+func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
+	sbrStatus.BindingStatus = bindingInProgress
+	sbrStatus.Secret = name
 }
 
-// appendVolumeMounts append volume mounts pointing to volumes created using secret
-func (r *Reconciler) appendVolumeMounts(vmList []corev1.VolumeMount, volumeName, mountPath string) []corev1.VolumeMount {
-	for _, vm := range vmList {
-		if vm.Name == volumeName {
-			// volume name already referenced
-			return vmList
-		}
-	}
-
-	return append(vmList, corev1.VolumeMount{
-		Name:      volumeName,
-		MountPath: mountPath,
-	})
+// setStatus update the CR status field.
+func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string) {
+	sbrStatus.BindingStatus = status
 }
 
-// appendVolumes append volumes
-func (r *Reconciler) appendVolumes(volumeList []corev1.Volume, data map[string][]byte, volumeKeys []string, volumeName, secretName string) []corev1.Volume {
-	for _, vm := range volumeList {
-		if vm.Name == volumeName {
-			// volume name already referenced
-			return volumeList
+// setApplicationObjects set the ApplicationObject status field, and also set the overall status as
+// success, since it was able to bind applications.
+func (r *Reconciler) setApplicationObjects(
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+	objs []*unstructured.Unstructured,
+) {
+	names := []string{}
+	for _, obj := range objs {
+		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
+	}
+	sbrStatus.BindingStatus = bindingSuccess
+	sbrStatus.ApplicationObjects = names
+}
+
+// getServiceBindingRequest retrieve the SBR object based on namespaced-name.
+func (r *Reconciler) getServiceBindingRequest(
+	namespacedName types.NamespacedName,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gr).Namespace(namespacedName.Namespace)
+	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	sbr := &v1alpha1.ServiceBindingRequest{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+	return sbr, nil
+}
+
+// updateStatusServiceBindingRequest update the status field of a ServiceBindingRequest.
+func (r *Reconciler) updateStatusServiceBindingRequest(
+	sbr *v1alpha1.ServiceBindingRequest,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+) error {
+	// coping status over informed object
+	sbr.Status = *sbrStatus
+
+	// converting object into unstructured
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sbr)
+	if err != nil {
+		return err
+	}
+	u := &unstructured.Unstructured{Object: data}
+
+	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
+	_, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
+	return err
+}
+
+// onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
+// informed error to apply a different behavior for not-founds.
+func (r *Reconciler) onError(
+	err error,
+	sbr *v1alpha1.ServiceBindingRequest,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+	objs []*unstructured.Unstructured,
+) (reconcile.Result, error) {
+	// settting overall status to failed
+	r.setStatus(sbrStatus, bindingFail)
+	//
+	if objs != nil {
+		r.setApplicationObjects(sbrStatus, objs)
+	}
+	errStatus := r.updateStatusServiceBindingRequest(sbr, sbrStatus)
+	if errStatus != nil {
+		return RequeueError(errStatus)
+	}
+	return RequeueOnNotFound(err, requeueAfter)
+}
+
+// checkSBR checks the Service Binding Request
+func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
+	// Check if application ResourceRef is present
+	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
+		log.Debug("Spec.ApplicationSelector.ResourceRef not found")
+
+		// Check if MatchLabels is present
+		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
+
+			err := errors.New("NotFoundError")
+			log.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
+			return err
 		}
 	}
-
-	items := []corev1.KeyToPath{}
-	for _, k := range volumeKeys {
-		items = append(items, corev1.KeyToPath{
-			Key:  k,
-			Path: k,
-		})
-	}
-
-	return append(volumeList, corev1.Volume{
-		Name: volumeName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: secretName,
-				Items:      items,
-			},
-		},
-	})
+	return nil
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:
@@ -93,257 +147,103 @@ func (r *Reconciler) appendVolumes(volumeList []corev1.Volume, data map[string][
 // 2. Using OperatorLifecycleManager standards, identifying which items are intersting for binding
 //    by parsing CustomResourceDefinitionDescripton object;
 // 3. Search and read contents identified in previous step, creating an intermediary secret to hold
-//    data formatted as environment variables key/value.
+//    data formatted as environment variables key/value;
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
-//    Deployment (and other kinds) will be updated in PodTeamplate level updating `envFrom` entry
-// 	  to load intermediary secret;
+//    Deployment (and other kinds) will be updated in "spec" level.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx := context.TODO()
-	logger := logf.Log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	logger.Info("Reconciling ServiceBindingRequest")
+	objectsToAnnotate := []*unstructured.Unstructured{}
 
-	// Fetch the ServiceBindingRequest instance
-	instance := &v1alpha1.ServiceBindingRequest{}
-	err := r.client.Get(ctx, request.NamespacedName, instance)
+	log := reconcilerLog.WithValues(
+		"Request.Namespace", request.Namespace,
+		"Request.Name", request.Name,
+	)
+	log.Info("Reconciling ServiceBindingRequest...")
+
+	// fetch the ServiceBindingRequest instance
+	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		// Update Status
-		r.setBindingInProgressStatus(instance)
-		err = r.client.Status().Update(context.TODO(), instance)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		return RequeueOnNotFound(err)
+		log.Error(err, "On retrieving service-binding-request instance.")
+		return RequeueError(err)
 	}
 
-	logger.WithValues("ServiceBindingRequest.Name", instance.Name).
-		Info("Found service binding request to inspect")
+	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
+	log.Debug("Found service binding request to inspect")
 
-	// Set secret name
-	r.setSecretStatus(instance)
-	err = r.client.Status().Update(context.TODO(), instance)
+	// splitting instance from it's status
+	sbrStatus := sbr.Status
+
+	// Check Service Binding Request
+	err = checkSBR(sbr, log)
 	if err != nil {
-		return reconcile.Result{}, err
+		log.Error(err, "")
+		return RequeueError(err)
 	}
 
-	plnr := planner.NewPlanner(ctx, r.client, request.Namespace, instance)
-	plan, err := plnr.Plan()
+	//
+	// Planing changes
+	//
+
+	log.Debug("Creating a plan based on OLM and CRD.")
+	planner := NewPlanner(ctx, r.dynClient, sbr)
+	plan, err := planner.Plan()
 	if err != nil {
-		// Update Status
-		r.setBindingInProgressStatus(instance)
-		err = r.client.Status().Update(context.TODO(), instance)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		return RequeueOnNotFound(err)
+		log.Error(err, "On creating a plan to bind applications.")
+		return r.onError(err, sbr, &sbrStatus, nil)
 	}
 
-	retriever := NewRetriever(ctx, r.client, plan, instance.Spec.EnvVarPrefix)
-	if err = retriever.Retrieve(); err != nil {
-		// Update Status
-		r.setBindingInProgressStatus(instance)
-		err = r.client.Status().Update(context.TODO(), instance)
-		if err != nil {
-			return reconcile.Result{}, err
-		}
-		return RequeueOnNotFound(err)
+	// storing CR in objects to annotate
+	objectsToAnnotate = append(objectsToAnnotate, plan.CR)
+
+	//
+	// Retrieving data
+	//
+
+	log.Debug("Retrieving data to create intermediate secret.")
+	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
+	retrievedObjects, err := retriever.Retrieve()
+	if err != nil {
+		log.Error(err, "On retrieving binding data.")
+		return r.onError(err, sbr, &sbrStatus, nil)
 	}
+
+	r.setSecretName(&sbrStatus, plan.Name)
+
+	// storing objects used in Retriever
+	objectsToAnnotate = append(objectsToAnnotate, retrievedObjects...)
 
 	//
 	// Updating applications to use intermediary secret
 	//
 
-	// TODO: very long block that needs to be extracted;
-	logger = logger.WithValues("MatchLabels", instance.Spec.ApplicationSelector.MatchLabels)
-	logger.Info("Searching applications to receive intermediary secret bind...")
-
-	resourceKind := strings.ToLower(instance.Spec.ApplicationSelector.Kind)
-	searchByLabelsOpts := client.ListOptions{
-		Namespace:     request.Namespace,
-		LabelSelector: labels.SelectorFromSet(instance.Spec.ApplicationSelector.MatchLabels),
-	}
-
-	// FIXME: find a way to DRY this block, and then add statefulsets and other kinds back again;
-	switch resourceKind {
-	case "deploymentconfig":
-		logger.Info("Searching DeploymentConfig objects matching labels")
-
-		deploymentConfigListObj := &osappsv1.DeploymentConfigList{}
-		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentConfigListObj)
-		if err != nil {
-			return RequeueOnNotFound(err)
-		}
-		err = r.client.List(ctx, &searchByLabelsOpts, deploymentConfigListObj)
-		if err != nil {
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return RequeueOnNotFound(err)
-		}
-
-		if len(deploymentConfigListObj.Items) == 0 {
-			logger.Info("No DeploymentConfig objects found, requeueing request!")
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return Requeue()
-		}
-
-		for _, deploymentConfigObj := range deploymentConfigListObj.Items {
-			logger.WithValues("DeploymentConfig.Name", deploymentConfigObj.GetName()).
-				Info("Inspecting DeploymentConfig object...")
-
-			// Update ApplicationObjects Status
-			if len(instance.Status.ApplicationObjects) >= 1 {
-				for _, v := range instance.Status.ApplicationObjects {
-					if v == deploymentConfigObj.GetName() {
-						break
-					}
-					r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
-					err = r.client.Status().Update(context.TODO(), instance)
-					if err != nil {
-						return reconcile.Result{}, err
-					}
-				}
-			} else {
-				r.setApplicationObjectsStatus(instance, deploymentConfigObj.GetName())
-				err = r.client.Status().Update(context.TODO(), instance)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-			}
-			for i, c := range deploymentConfigObj.Spec.Template.Spec.Containers {
-				if len(retriever.data) > 0 {
-					logger.Info("Adding EnvFrom to container")
-					deploymentConfigObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
-						c.EnvFrom, instance.GetName())
-				}
-				if len(retriever.volumeKeys) > 0 {
-					logger.Info("Adding VolumeMounts to container")
-					mountPath := "/var/data"
-					if instance.Spec.MountPathPrefix != "" {
-						mountPath = instance.Spec.MountPathPrefix
-					}
-					deploymentConfigObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
-						c.VolumeMounts, instance.GetName(), mountPath)
-					logger.Info("Adding Volumes to pod")
-					deploymentConfigObj.Spec.Template.Spec.Volumes = r.appendVolumes(
-						deploymentConfigObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
-				}
-			}
-			logger.Info("Updating DeploymentConfig object")
-			err = r.client.Update(ctx, &deploymentConfigObj)
-			if err != nil {
-				logger.Error(err, "Error on updating object!")
-				// Update Status
-				r.setBindingFailStatus(instance)
-				err = r.client.Status().Update(context.TODO(), instance)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				return reconcile.Result{}, err
-			}
-		}
-	default:
-		logger.Info("Searching Deployment objects matching labels")
-
-		deploymentListObj := &extv1beta1.DeploymentList{}
-		err = resourcepoll.WaitUntilResourcesFound(r.client, &searchByLabelsOpts, deploymentListObj)
-		if err != nil {
-			return RequeueOnNotFound(err)
-		}
-		err = r.client.List(ctx, &searchByLabelsOpts, deploymentListObj)
-		if err != nil {
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return RequeueOnNotFound(err)
-		}
-
-		if len(deploymentListObj.Items) == 0 {
-			logger.Info("No Deployment objects found, requeueing request!")
-			// Update Status
-			r.setBindingInProgressStatus(instance)
-			err = r.client.Status().Update(context.TODO(), instance)
-			if err != nil {
-				return reconcile.Result{}, err
-			}
-			return Requeue()
-		}
-
-		for _, deploymentObj := range deploymentListObj.Items {
-			logger = logger.WithValues("Deployment.Name", deploymentObj.GetName())
-			logger.Info("Inspecting Deploymen object...")
-
-			// Update ApplicationObjects Status
-			if len(instance.Status.ApplicationObjects) >= 1 {
-				for _, v := range instance.Status.ApplicationObjects {
-					if v == deploymentObj.GetName() {
-						break
-					}
-					r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
-					err = r.client.Status().Update(context.TODO(), instance)
-					if err != nil {
-						return reconcile.Result{}, err
-					}
-				}
-			} else {
-				r.setApplicationObjectsStatus(instance, deploymentObj.GetName())
-				err = r.client.Status().Update(context.TODO(), instance)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-			}
-			for i, c := range deploymentObj.Spec.Template.Spec.Containers {
-				if len(retriever.data) > 0 {
-					logger.Info("Adding EnvFrom to container")
-					deploymentObj.Spec.Template.Spec.Containers[i].EnvFrom = r.appendEnvFrom(
-						c.EnvFrom, instance.GetName())
-				}
-				if len(retriever.volumeKeys) > 0 {
-					logger.Info("Adding VolumeMounts to container")
-					mountPath := "/var/data"
-					if instance.Spec.MountPathPrefix != "" {
-						mountPath = instance.Spec.MountPathPrefix
-					}
-					deploymentObj.Spec.Template.Spec.Containers[i].VolumeMounts = r.appendVolumeMounts(
-						c.VolumeMounts, instance.GetName(), mountPath)
-					logger.Info("Adding Volumes to pod")
-					deploymentObj.Spec.Template.Spec.Volumes = r.appendVolumes(
-						deploymentObj.Spec.Template.Spec.Volumes, retriever.data, retriever.volumeKeys, instance.GetName(), instance.GetName())
-				}
-
-			}
-
-			logger.Info("Updating Deployment object")
-			err = r.client.Update(ctx, &deploymentObj)
-			if err != nil {
-				// Update Status
-				r.setBindingFailStatus(instance)
-				err = r.client.Status().Update(context.TODO(), instance)
-				if err != nil {
-					return reconcile.Result{}, err
-				}
-				logger.Error(err, "Error on updating object!")
-				return reconcile.Result{}, err
-			}
-		}
-	}
-
-	// Update Status
-	r.setBindingSuccessStatus(instance)
-	err = r.client.Status().Update(context.TODO(), instance)
+	log.Info("Binding applications with intermediary secret.")
+	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
+	updatedObjects, err := binder.Bind()
 	if err != nil {
-		return reconcile.Result{}, err
+		log.Error(err, "On binding application.")
+		return r.onError(err, sbr, &sbrStatus, updatedObjects)
 	}
-	logger.Info("All done!")
+
+	// saving on status the list of objects that have been touched
+	r.setApplicationObjects(&sbrStatus, updatedObjects)
+	// storing objects used in Binder
+	objectsToAnnotate = append(objectsToAnnotate, updatedObjects...)
+
+	//
+	// Annotating objects related to binding
+	//
+
+	if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
+		log.Error(err, "On setting annotations in related objects.")
+		return r.onError(err, sbr, &sbrStatus, updatedObjects)
+	}
+
+	// updating status of request instance
+	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
+		log.Error(err, "On updating status of ServiceBindingRequest.")
+		return RequeueError(err)
+	}
+
+	log.Info("All done!")
 	return Done()
 }

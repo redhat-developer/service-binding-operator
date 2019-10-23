@@ -31,7 +31,8 @@ coverage:
 # See http://docs.codecov.io/docs/pull-request-comments-1
 comment:
   layout: "diff, files"
-  behavior: # default = posts once then update, posts new if delete
+  behavior: ""
+            # default = posts once then update, posts new if delete
             # once = post once then updates
             # new = delete old, post new
             # spammy = post new

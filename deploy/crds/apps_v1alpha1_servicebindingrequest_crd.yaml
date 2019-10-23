@@ -8,6 +8,9 @@ spec:
     kind: ServiceBindingRequest
     listKind: ServiceBindingRequestList
     plural: servicebindingrequests
+    shortNames:
+    - sbr
+    - sbrs
     singular: servicebindingrequest
   scope: Namespaced
   subresources:
@@ -30,38 +33,28 @@ spec:
         spec:
           properties:
             applicationSelector:
-              description: "ApplicationSelector is used to identify the application
-                connecting to the backing service operator. Example 1: \tapplicationSelector:
-                \t\tmatchLabels: \t\t\tconnects-to: postgres \t\t\tenvironment: stage
-                \t\tresourceKind: Deployment Example 2: \tapplicationSelector: \t\tmatchLabels:
-                \t\t\tconnects-to: postgres \t\t\tenvironment: stage"
+              description: ApplicationSelector is used to identify the application
+                connecting to the backing service operator.
               properties:
                 group:
-                  type: string
-                kind:
                   type: string
                 matchLabels:
                   additionalProperties:
                     type: string
                   type: object
+                resource:
+                  type: string
+                resourceRef:
+                  type: string
                 version:
                   type: string
               required:
-              - matchLabels
               - version
-              - kind
+              - resource
               type: object
             backingServiceSelector:
-              description: "BackingServiceSelector is used to identify the backing
-                service operator.  Refer: https://12factor.net/backing-services A
-                backing service is any service the app consumes over the network as
-                part of its normal operation. Examples include datastores (such as
-                MySQL or CouchDB), messaging/queueing systems (such as RabbitMQ or
-                Beanstalkd), SMTP services for outbound email (such as Postfix), and
-                caching systems (such as Memcached).  Example 1: \tbackingServiceSelector:
-                \t\tresourceKind: databases.example.org      resourceRef: mysql-database
-                Example 2: \tbackingServiceSelector: \t\tresourceKind: databases.example.org
-                \t\tresourceVersion: v1alpha1      resourceRef: mysql-database"
+              description: BackingServiceSelector is used to identify the backing
+                service operator.
               properties:
                 group:
                   type: string
@@ -72,10 +65,31 @@ spec:
                 version:
                   type: string
               required:
+              - group
               - version
               - kind
               - resourceRef
               type: object
+            customEnvVar:
+              description: Custom env variables
+              items:
+                properties:
+                  name:
+                    description: key of custom env variable
+                    type: string
+                  value:
+                    description: value template, currently supports expected is go
+                      template
+                    type: string
+                required:
+                - name
+                - value
+                type: object
+              type: array
+            detectBindingResources:
+              description: DetectBindingResources is flag used to bind all non-bindable
+                variables from different subresources owned by backing operator CR.
+              type: boolean
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
@@ -96,7 +110,6 @@ spec:
               type: array
             bindingStatus:
               description: BindingStatus is the status of the service binding request.
-                Possible values are Success, Failure, InProgress.
               type: string
             secret:
               description: Secret is the name of the intermediate secret

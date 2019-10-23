@@ -20,6 +20,8 @@ QUIET_FLAG = --quiet
 V_FLAG =
 S_FLAG = -s
 X_FLAG =
+ZAP_ENCODER_FLAG = --zap-encoder=console
+ZAP_LEVEL_FLAG =
 ifeq ($(VERBOSE),1)
 	Q =
 endif
@@ -30,7 +32,18 @@ ifeq ($(VERBOSE),2)
 	S_FLAG =
 	V_FLAG = -v
 	X_FLAG = -x
+	ZAP_LEVEL_FLAG = --zap-level 1
 endif
+ifeq ($(VERBOSE),3)
+	Q_FLAG =
+	QUIET_FLAG =
+	S_FLAG =
+	V_FLAG = -v
+	X_FLAG = -x
+	ZAP_LEVEL_FLAG = --zap-level 2
+endif
+
+ZAP_FLAGS = $(ZAP_ENCODER_FLAG) $(ZAP_LEVEL_FLAG)
 
 # Create output directory for artifacts and test results. ./out is supposed to
 # be a safe place for all targets to write to while knowing that all content
@@ -100,11 +113,13 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.0.16
+OPERATOR_VERSION ?= 0.0.20
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
+OPERATOR_IMAGE_BUILDER ?= buildah
+OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
 
 QUAY_TOKEN ?= ""
 
@@ -144,7 +159,7 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
-	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.17.1
+	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
 
 .PHONY: courier
 ## Validate manifests using operator-courier
@@ -186,10 +201,11 @@ test-e2e: e2e-setup
 	$(info Running E2E test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
-			--debug \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m"
+			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_FLAGS)" \
+			$(OPERATOR_SDK_EXTRA_ARGS)
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -197,6 +213,22 @@ test-unit:
 	$(info Running unit test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+
+.PHONY: test-e2e-image
+## Run e2e tests on operator image
+test-e2e-image: push-image
+	$(info Running e2e test on operator image: $@)
+	$(eval NAMESPACE := test-image-$(shell </dev/urandom tr -dc 'a-z0-9' | head -c 7  ; echo))
+	echo "$(NAMESPACE)"
+	$(Q)kubectl create namespace $(NAMESPACE)
+	$(Q)kubectl --namespace $(NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
+		operator-sdk --verbose test local ./test/e2e \
+			--namespace "$(NAMESPACE)" \
+			--image "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" \
+			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_FLAGS)" \
+			$(OPERATOR_SDK_EXTRA_ARGS)
 
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
@@ -221,7 +253,11 @@ test-e2e-olm-ci:
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
 	$(Q)./hack/check-crds.sh
-	$(Q)operator-sdk --verbose test local ./test/e2e --no-setup --go-test-flags "-timeout=15m"
+	$(Q)operator-sdk --verbose test local ./test/e2e \
+			--no-setup \
+			--go-test-flags "-timeout=15m" \
+			--local-operator-flags "$(ZAP_FLAGS)" \
+			$(OPERATOR_SDK_EXTRA_ARGS)
 
 ## -- Build Go binary and OCI image targets --
 
@@ -234,7 +270,9 @@ out/operator:
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)operator-sdk build --image-builder=buildah "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	$(Q)operator-sdk build \
+		--image-builder=$(OPERATOR_IMAGE_BUILDER) \
+		"$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
@@ -277,15 +315,15 @@ push-operator: prepare-csv
 ## Push-Image: push container image to upstream, including latest tag.
 push-image: build-image
 	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	podman push "$(OPERATOR_IMAGE):latest"
+	-podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	-podman push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
 .PHONY: local
 ## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds
-	$(Q)operator-sdk up local
+	$(Q)operator-sdk --verbose up local --operator-flags "$(ZAP_FLAGS)"
 
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
