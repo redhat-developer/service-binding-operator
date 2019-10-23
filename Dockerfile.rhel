@@ -6,6 +6,7 @@ FROM openshift/origin-release:golang-1.13 AS builder
 ENV LANG=en_US.utf8
 ENV GIT_COMMITTER_NAME devtools
 ENV GIT_COMMITTER_EMAIL devtools@redhat.com
+LABEL com.redhat.delivery.appregistry=true
 
 WORKDIR /go/src/github.com/redhat-developer/service-binding-operator
 
