@@ -7,7 +7,7 @@ metadata:
     containerImage: quay.io/redhat-developer/app-binding-operator:v0.0.20
     description: An operator to support binding capabilities between imported
       apps and operator backed services
-  name: service-binding-operator.v0.0.20
+  name: service-binding-operator.v4.3.0
   namespace: placeholder
 spec:
   links:
@@ -132,4 +132,4 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat, Inc.
-  version: 0.0.20
+  version: 4.3.0
