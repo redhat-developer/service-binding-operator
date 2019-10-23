@@ -159,14 +159,19 @@ func (r *Retriever) readAnnotation(key, value string) error {
 	}
 
 	fullpath := strings.Split(key, "servicebindingoperator.redhat.io/")[1]
-	fullpathslice := strings.SplitN(fullpath, ".", 2)
-	place := fullpathslice[0]
-	path := fullpathslice[1]
+	fullpathslice := strings.SplitN(fullpath, "-", 2)
+	placepath := strings.SplitN(fullpathslice[0], ".", 2)
+	place := placepath[0]
+	path := placepath[1]
 
 	pathValue, _, _ := r.getCRKey(place, path)
 	if _, ok := r.cache[place].(map[string]interface{}); !ok {
 		r.cache[place] = make(map[string]interface{})
 	}
+	if len(fullpathslice) > 1 {
+		value = value + ":" + fullpathslice[1]
+	}
+	logger.Debug("Value", value)
 	if strings.HasPrefix(value, secretPrefix) {
 		secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(value))
 		if _, ok := r.cache[place].(map[string]interface{})[r.extractSecretItemName(value)]; !ok {
