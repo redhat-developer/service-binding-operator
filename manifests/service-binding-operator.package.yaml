@@ -1,7 +1,4 @@
 channels:
-- currentCSV: service-binding-operator.v0.0.20
-  name: dev
-- currentCSV: service-binding-operator.v0.0.20
-  name: stable
-defaultChannel: dev
+  - currentCSV: service-binding-operator.v4.3.0
+    name: "4.3"
 packageName: service-binding-operator
