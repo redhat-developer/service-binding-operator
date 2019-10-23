@@ -125,8 +125,10 @@ QUAY_TOKEN ?= ""
 
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
+OUTPUT_DIR ?= ./out
+LOGS_DIR ?= $(OUTPUT_DIR)/logs
 
-GOLANGCI_LINT_BIN=./out/golangci-lint
+GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
 
 # -- Variables for uploading code coverage reports to Codecov.io --
 # This default path is set by the OpenShift CI
@@ -148,15 +150,15 @@ YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" 
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
 lint-yaml: ${YAML_FILES}
-	$(Q)./out/venv3/bin/pip install yamllint
-	$(Q)./out/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint
+	$(Q)$(OUTPUT_DIR)/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
 ## Checks the code with golangci-lint
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
@@ -164,32 +166,33 @@ $(GOLANGCI_LINT_BIN):
 .PHONY: courier
 ## Validate manifests using operator-courier
 courier:
-	$(Q)./out/venv3/bin/pip install operator-courier
-	$(Q)./out/venv3/bin/operator-courier flatten ./manifests ./out/manifests
-	$(Q)./out/venv3/bin/operator-courier verify ./out/manifests
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier flatten ./manifests $(OUTPUT_DIR)/manifests
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(OUTPUT_DIR)/manifests
 
 .PHONY: setup-venv
 ## Setup virtual environment
 setup-venv:
-	$(Q)python3 -m venv ./out/venv3
-	$(Q)./out/venv3/bin/pip install --upgrade setuptools
-	$(Q)./out/venv3/bin/pip install --upgrade pip
+	$(Q)python3 -m venv $(OUTPUT_DIR)/venv3
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
 
 ## -- Test targets --
 
 # Generate namespace name for test
 out/test-namespace:
-	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > ./out/test-namespace
+	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > $(OUTPUT_DIR)/test-namespace
 
 .PHONY: get-test-namespace
 get-test-namespace: out/test-namespace
-	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
+	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
 
 # E2E test
 .PHONY: e2e-setup
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+	$(Q)mkdir -p $(LOGS_DIR)/e2e
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
@@ -206,18 +209,12 @@ test-e2e: e2e-setup
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS) \
-			| tee test-e2e.log
-	$(Q)cat test-e2e.log | grep 'Local operator stderr:' | sed -e 's,.*Local operator stderr: \(.*\)}\\n",\1,g' \
-		| sed -e 's,\\a,\a,g' \
-		| sed -e 's,\\b,\b,g' \
-		| sed -e 's,\\\\,\\,g' \
-		| sed -e 's,\\t,\t,g' \
-		| sed -e 's,\\n,\n,g' \
-		| sed -e 's,\\f,\f,g' \
-		| sed -e 's,\\r,\r,g' \
-		| sed -e 's,\\v,\v,g' \
-		| sed -e 's,\\",\",g' \
-		> test-e2e-local-operator.log
+			| tee $(LOGS_DIR)/e2e/test-e2e.log
+	#Extract the local operator log and replace the escape sequences by the actual whitespaces
+	$(Q)cat $(LOGS_DIR)/e2e/test-e2e.log | grep 'Local operator stderr:' \
+		| sed -e 's,.*Local operator stderr: \(.*\)}\\n",\1,g' \
+		| sed -e 's,\\a,\a,g;s,\\b,\b,g;s,\\\\,\\,g;s,\\t,\t,g;s,\\n,\n,g;s,\\f,\f,g;s,\\r,\r,g;s,\\v,\v,g;s,\\",\",g' \
+		> $(LOGS_DIR)/e2e/test-e2e-local-operator.log
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -278,7 +275,7 @@ test-e2e-olm-ci:
 build: out/operator
 
 out/operator:
-	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
@@ -369,7 +366,7 @@ deploy: deploy-rbac deploy-crds
 .PHONY: clean
 ## Removes temp directories
 clean:
-	$(Q)-rm -rf ${V_FLAG} ./out
+	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
 
 
 ## -- Targets for uploading code coverage reports to Codecov.io--
