@@ -236,22 +236,22 @@ func assertSBRSecret(
 		return nil, err
 	}
 
-	expected := "user"
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_USER"]; !contains {
 		return nil, fmt.Errorf("can't find DATABASE_SECRET_USER in data")
 	}
-	actual := sbrSecret.Data["DATABASE_SECRET_USER"]
-	if !bytes.Equal([]byte(expected), actual) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_USER is different (%s) than expected (%s)", actual, expected)
+	actualUser := sbrSecret.Data["DATABASE_SECRET_USER"]
+	expectedUser := []byte("user")
+	if !bytes.Equal(expectedUser, actualUser) {
+		return nil, fmt.Errorf("key DATABASE_SECRET_USER (%s) is different than expected (%s)", actualUser, expectedUser)
 	}
 
-	expected = "password"
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]; !contains {
 		return nil, fmt.Errorf("can't find DATABASE_SECRET_PASSWORD in data")
 	}
-	actual = sbrSecret.Data["DATABASE_SECRET_PASSWORD"]
-	if !bytes.Equal([]byte(expected), actual) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD is different (%s) than expected (%s)", actual, expected)
+	actualPassword := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]
+	expectedPassword := []byte("password")
+	if !bytes.Equal(expectedPassword, actualPassword) {
+		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD (%s) is different than expected (%s)", actualPassword, expectedPassword)
 	}
 
 	return sbrSecret, nil
@@ -349,7 +349,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
-	assert.NoError(t, err)
+	assert.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
 
 	// editing intermediary secret in order to trigger update event
 	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
