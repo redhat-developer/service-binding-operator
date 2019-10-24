@@ -125,6 +125,7 @@ QUAY_TOKEN ?= ""
 
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
+HACK_DIR ?= ./hack
 OUTPUT_DIR ?= ./out
 LOGS_DIR ?= $(OUTPUT_DIR)/logs
 
@@ -211,10 +212,7 @@ test-e2e: e2e-setup
 			$(OPERATOR_SDK_EXTRA_ARGS) \
 			| tee $(LOGS_DIR)/e2e/test-e2e.log
 	#Extract the local operator log and replace the escape sequences by the actual whitespaces
-	$(Q)cat $(LOGS_DIR)/e2e/test-e2e.log | grep 'Local operator stderr:' \
-		| sed -e 's,.*Local operator stderr: \(.*\)}\\n",\1,g' \
-		| sed -e 's,\\a,\a,g;s,\\b,\b,g;s,\\\\,\\,g;s,\\t,\t,g;s,\\n,\n,g;s,\\f,\f,g;s,\\r,\r,g;s,\\v,\v,g;s,\\",\",g' \
-		> $(LOGS_DIR)/e2e/local-operator.log
+	$(Q)$(HACK_DIR)/e2e-log-parser.sh $(LOGS_DIR)/e2e/test-e2e.log > $(LOGS_DIR)/e2e/local-operator.log
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -261,7 +259,7 @@ test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
-	$(Q)./hack/check-crds.sh
+	$(Q)$(HACK_DIR)/check-crds.sh
 	$(Q)operator-sdk --verbose test local ./test/e2e \
 			--no-setup \
 			--go-test-flags "-timeout=15m" \
