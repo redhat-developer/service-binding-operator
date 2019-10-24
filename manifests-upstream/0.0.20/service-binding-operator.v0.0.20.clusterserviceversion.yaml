@@ -111,6 +111,7 @@ spec:
                 - "get"
                 - "list"
                 - "watch"
+                - "update"
             - verbs:
                 - "*"
               apiGroups:
