@@ -41,6 +41,24 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binder)
 
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", make(map[string]string))
+
+	binderForSBRWithResourceRef := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbrWithResourceRef,
+		[]string{},
+	)
+
+	require.NotNil(t, binderForSBRWithResourceRef)
+
+	t.Run("search target object by resource name", func(t *testing.T) {
+		list, err := binderForSBRWithResourceRef.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list.Items))
+	})
+
 	t.Run("search", func(t *testing.T) {
 		list, err := binder.search()
 		assert.Nil(t, err)
