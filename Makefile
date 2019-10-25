@@ -203,16 +203,15 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
-		operator-sdk --verbose test local ./test/e2e \
-			--namespace $(TEST_NAMESPACE) \
-			--up-local \
-			--go-test-flags "-timeout=15m" \
-			--local-operator-flags "$(ZAP_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS) \
-			| tee $(LOGS_DIR)/e2e/test-e2e.log
-	#Extract the local operator log and replace the escape sequences by the actual whitespaces
-	$(Q)$(HACK_DIR)/e2e-log-parser.sh $(LOGS_DIR)/e2e/test-e2e.log > $(LOGS_DIR)/e2e/local-operator.log
+	$(Q)GO111MODULE=$(GO111MODULE) \
+		GOCACHE=$(GOCACHE) \
+		SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
+		TEST_NAMESPACE=$(TEST_NAMESPACE) \
+		ZAP_FLAGS="$(ZAP_FLAGS)" \
+		OPERATOR_SDK_EXTRA_ARGS="$(OPERATOR_SDK_EXTRA_ARGS)" \
+		LOGS_DIR=$(LOGS_DIR) \
+		HACK_DIR=$(HACK_DIR) \
+		$(HACK_DIR)/test-e2e.sh
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
