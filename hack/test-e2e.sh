@@ -23,7 +23,6 @@ operator-sdk --verbose test local ./test/e2e \
 TEST_RTN_CODE=${PIPESTATUS[0]}
 
 #Extract the local operator log and replace the escape sequences by the actual whitespaces
-cat ${LOGS_DIR}/e2e/test-e2e.log
 ${HACK_DIR}/e2e-log-parser.sh ${LOGS_DIR}/e2e/test-e2e.log > ${LOGS_DIR}/e2e/local-operator.log
 
 #Exit with the tests' exit code
