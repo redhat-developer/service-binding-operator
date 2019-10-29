@@ -215,8 +215,7 @@ That causes the application to be re-deployed.
 
 Once the new version is up, go to the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information as specified in the OLM descriptor below, into the
-application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
+When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
 
 ``` yaml
 spec:
