@@ -7,5 +7,5 @@
 set -e
 
 grep 'msg="Local operator stderr' $1 \
-    |sed 's/^time.*err: //g' \
+    |sed 's/^time.*err: //g;s/\\n\"/\\n/g' \
     |eval 'in=$(cat); echo -en "$in"'
