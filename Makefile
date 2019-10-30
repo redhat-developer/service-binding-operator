@@ -125,8 +125,11 @@ QUAY_TOKEN ?= ""
 
 MANIFESTS_DIR ?= ./manifests
 MANIFESTS_TMP ?= ./tmp/manifests
+HACK_DIR ?= ./hack
+OUTPUT_DIR ?= ./out
+LOGS_DIR ?= $(OUTPUT_DIR)/logs
 
-GOLANGCI_LINT_BIN=./out/golangci-lint
+GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
 
 # -- Variables for uploading code coverage reports to Codecov.io --
 # This default path is set by the OpenShift CI
@@ -148,15 +151,15 @@ YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" 
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
 lint-yaml: ${YAML_FILES}
-	$(Q)./out/venv3/bin/pip install yamllint
-	$(Q)./out/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint
+	$(Q)$(OUTPUT_DIR)/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
 ## Checks the code with golangci-lint
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)GOCACHE=$(GOCACHE) ./out/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
@@ -164,32 +167,33 @@ $(GOLANGCI_LINT_BIN):
 .PHONY: courier
 ## Validate manifests using operator-courier
 courier:
-	$(Q)./out/venv3/bin/pip install operator-courier
-	$(Q)./out/venv3/bin/operator-courier flatten ./manifests ./out/manifests
-	$(Q)./out/venv3/bin/operator-courier verify ./out/manifests
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier flatten ./manifests $(OUTPUT_DIR)/manifests
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(OUTPUT_DIR)/manifests
 
 .PHONY: setup-venv
 ## Setup virtual environment
 setup-venv:
-	$(Q)python3 -m venv ./out/venv3
-	$(Q)./out/venv3/bin/pip install --upgrade setuptools
-	$(Q)./out/venv3/bin/pip install --upgrade pip
+	$(Q)python3 -m venv $(OUTPUT_DIR)/venv3
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
 
 ## -- Test targets --
 
 # Generate namespace name for test
 out/test-namespace:
-	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > ./out/test-namespace
+	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > $(OUTPUT_DIR)/test-namespace
 
 .PHONY: get-test-namespace
 get-test-namespace: out/test-namespace
-	$(eval TEST_NAMESPACE := $(shell cat ./out/test-namespace))
+	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
 
 # E2E test
 .PHONY: e2e-setup
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+	$(Q)mkdir -p $(LOGS_DIR)/e2e
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
@@ -199,13 +203,19 @@ e2e-cleanup: get-test-namespace
 ## Runs the e2e tests locally from test/e2e dir
 test-e2e: e2e-setup
 	$(info Running E2E test: $@)
-	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
+	$(Q)set -o pipefail; GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS)
+			$(OPERATOR_SDK_EXTRA_ARGS) \
+			| tee $(LOGS_DIR)/e2e/test-e2e.log
+
+.PHONY: parse-test-e2e-operator-log
+## Extract the local operator log from the logs of the last e2e tests run
+parse-test-e2e-operator-log:
+	${HACK_DIR}/e2e-log-parser.sh ${LOGS_DIR}/e2e/test-e2e.log > ${LOGS_DIR}/e2e/local-operator.log
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -252,7 +262,7 @@ test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval DEPLOYED_NAMESPACE := openshift-operators)
-	$(Q)./hack/check-crds.sh
+	$(Q)$(HACK_DIR)/check-crds.sh
 	$(Q)operator-sdk --verbose test local ./test/e2e \
 			--no-setup \
 			--go-test-flags "-timeout=15m" \
@@ -266,7 +276,7 @@ test-e2e-olm-ci:
 build: out/operator
 
 out/operator:
-	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o ./out/operator cmd/manager/main.go
+	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
@@ -357,7 +367,7 @@ deploy: deploy-rbac deploy-crds
 .PHONY: clean
 ## Removes temp directories
 clean:
-	$(Q)-rm -rf ${V_FLAG} ./out
+	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
 
 
 ## -- Targets for uploading code coverage reports to Codecov.io--

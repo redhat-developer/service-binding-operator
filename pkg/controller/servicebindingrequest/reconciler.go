@@ -227,8 +227,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// saving on status the list of objects that have been touched
 	r.setApplicationObjects(&sbrStatus, updatedObjects)
-	// storing objects used in Binder
-	objectsToAnnotate = append(objectsToAnnotate, updatedObjects...)
 
 	//
 	// Annotating objects related to binding
