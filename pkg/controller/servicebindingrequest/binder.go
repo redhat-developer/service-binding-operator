@@ -54,7 +54,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
 		fieldName := make(map[string]string)
-		fieldName["name"] = b.sbr.Spec.ApplicationSelector.ResourceRef
+		fieldName["metadata.name"] = b.sbr.Spec.ApplicationSelector.ResourceRef
 		opts = metav1.ListOptions{
 			FieldSelector: fields.Set(fieldName).String(),
 		}
