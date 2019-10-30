@@ -400,7 +400,7 @@ endif
 .PHONY: consistent-crds
 ## Copy crd from manifests/ and cr from examples/nodejs_postgresql to deploy/crds/
 consistent-crds:
-	@cd ./deploy/crds/ && ln -sf ../../manifests/service-binding-operator.servicebindingrequests.crd.yaml \
+	@cd ./deploy/crds/ && ln -srf ../../manifests-upstream/${OPERATOR_VERSION}/servicebindingrequests.apps.openshift.io.crd.yaml \
 	apps_v1alpha1_servicebindingrequest_crd.yaml
-	@cd ./deploy/crds && ln -sf ../../examples/nodejs_postgresql/service-binding-request.yaml \
+	@cd ./deploy/crds && ln -srf ../../examples/nodejs_postgresql/service-binding-request.yaml \
 	apps_v1alpha1_servicebindingrequest_cr.yaml
