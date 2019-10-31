@@ -23,7 +23,7 @@ type SBRController struct {
 	Controller   controller.Controller            // controller-runtime instance
 	Client       dynamic.Interface                // kubernetes dynamic api client
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
-	logger       *log.Log                     // logger instance
+	logger       *log.Log                         // logger instance
 }
 
 var (
@@ -32,6 +32,9 @@ var (
 	// defaultPredicate default predicate functions
 	defaultPredicate = predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+			if e.ObjectNew.GetObjectKind().GroupVersionKind().Kind == "secret" {
+				return true
+			}
 			// ignore updates to CR status in which case metadata.Generation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
 		},
