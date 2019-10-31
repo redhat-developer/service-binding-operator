@@ -118,7 +118,7 @@ In the OpenShift Console switch to the Developer perspective. (Make sure you hav
 * `Git Repo URL` = `https://github.com/pmacik/nodejs-rest-http-crud`
 * `Project` = `service-binding-demo`
 * `Application`->`Create New Application` = `NodeJSApp`
-* `Name` = `nodejs-app`
+* `Name` = `nodejs-rest-http-crud`
 * `Builder Image` = `Node.js`
 * `Create a route to the application` = checked
 
