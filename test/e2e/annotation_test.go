@@ -12,6 +12,8 @@ import (
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 )
@@ -71,5 +73,11 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	sbrSecret := &corev1.Secret{}
+	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
+	if err = f.Client.Get(context.TODO(), namespacedName, sbrSecret); err != nil {
+		t.Error(err)
 	}
 }
