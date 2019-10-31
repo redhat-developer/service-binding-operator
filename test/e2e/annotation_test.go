@@ -62,7 +62,7 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	}
 
 	dp := mocks.DeploymentMock(namespace, "example1", matchLabels)
-	err = f.Client.Create(context.TODO(), dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
+	err = f.Client.Create(context.TODO(), &dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	if err != nil {
 		t.Fatal(err)
 	}
