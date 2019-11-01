@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"os"
+	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -29,12 +30,10 @@ type SBRController struct {
 var (
 	// controllerName common name of this controller
 	controllerName = "servicebindingrequest-controller"
-	// Secret Kind
-	secretKind = "Secret"
 	// defaultPredicate default predicate functions
 	defaultPredicate = predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			if e.ObjectNew.GetObjectKind().GroupVersionKind().Kind == secretKind {
+			if strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "secret") {
 				return true
 			}
 			// ignore updates to CR status in which case metadata.Generation does not change
