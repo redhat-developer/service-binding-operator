@@ -33,7 +33,7 @@ var (
 	// defaultPredicate default predicate functions
 	defaultPredicate = predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			if strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "Secret") {
+			if strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "Secret") || strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "ConfigMap") {
 				return true
 			}
 			// ignore updates to CR status in which case metadata.Generation does not change
