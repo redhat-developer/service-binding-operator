@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"os"
+	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,7 +24,7 @@ type SBRController struct {
 	Controller   controller.Controller            // controller-runtime instance
 	Client       dynamic.Interface                // kubernetes dynamic api client
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
-	logger       *log.Log                     // logger instance
+	logger       *log.Log                         // logger instance
 }
 
 var (
@@ -32,6 +33,9 @@ var (
 	// defaultPredicate default predicate functions
 	defaultPredicate = predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
+			if strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "Secret") || strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "ConfigMap") {
+				return true
+			}
 			// ignore updates to CR status in which case metadata.Generation does not change
 			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
 		},
