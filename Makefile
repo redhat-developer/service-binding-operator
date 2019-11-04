@@ -300,14 +300,14 @@ vendor: go.mod go.sum
 generate-csv:
 	operator-sdk olm-catalog gen-csv --csv-version=$(OPERATOR_VERSION) --verbose
 
-generate-olm: consistent-crds
+generate-olm:
 	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 
 ## -- Publish image and manifests targets --
 
 ## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
-prepare-csv: build-image consistent-crds
+prepare-csv: build-image
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}
@@ -344,12 +344,12 @@ deploy-rbac:
 
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
-deploy-crds: consistent-crds
+deploy-crds:
 	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
-deploy-clean: consistent-crds
+deploy-clean:
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 	$(Q)-kubectl delete -f deploy/operator.yaml
@@ -397,10 +397,14 @@ endif
 
 ## -- Target for maintaining consistent crd copies --
 
-.PHONY: consistent-crds
-## Copy crd from manifests/ and cr from examples/nodejs_postgresql to deploy/crds/
-consistent-crds:
-	$(Q)cd ./deploy/crds/ && ln -srf ../../manifests-upstream/${OPERATOR_VERSION}/servicebindingrequests.apps.openshift.io.crd.yaml \
-	apps_v1alpha1_servicebindingrequest_crd.yaml
-	$(Q)cd ./deploy/crds && ln -srf ../../examples/nodejs_postgresql/service-binding-request.yaml \
-	apps_v1alpha1_servicebindingrequest_cr.yaml
+.PHONY: consistent-crds-manifests-upstream
+## Copy crd from deploy/crds to manifests-upstream/
+consistent-crds-manifests-upstream:
+	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
+	servicebindingrequests.apps.openshift.io.crd.yaml
+
+.PHONY: consistent-crds-manifests
+## Copy crd from deploy/crds to manifests/
+consistent-crds-manifests:
+	$(Q)cd ./manifests/4.3.0/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
+	servicebindingrequests.apps.openshift.io.crd.yaml
