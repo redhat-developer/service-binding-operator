@@ -51,7 +51,8 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	// get global framework variables
 	f := framework.Global
 
-	db := mocks.DatabaseCRMock(namespace, "psql")
+	resourceRef := "e2e-db-testing"
+	db := mocks.DatabaseCRMock(namespace, resourceRef)
 
 	err = f.Client.Create(context.TODO(), db, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	if err != nil {
@@ -60,28 +61,33 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 
 	// create service binding request custom resource
 	name := "e2e-service-binding-request"
-	resourceRef := "e2e-db-testing"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "e2e",
 	}
-
-	dp := mocks.DeploymentMock(namespace, "example1", matchLabels)
+	appResourceRef := "example1"
+	dp := mocks.DeploymentMock(namespace, appResourceRef, matchLabels)
 	err = f.Client.Create(context.TODO(), &dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, "", matchLabels, false)
+	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false)
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	time.Sleep(5 * time.Minute)
+	time.Sleep(3 * time.Minute)
+
+	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
+	sbr2 := &v1alpha1.ServiceBindingRequest{}
+
+	if err = f.Client.Get(context.TODO(), namespacedName, sbr2); err != nil {
+		t.Error("SBR Not found", err)
+	}
 
 	sbrSecret := &corev1.Secret{}
-	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
 	if err = f.Client.Get(context.TODO(), namespacedName, sbrSecret); err != nil {
 		t.Error(err)
 	}

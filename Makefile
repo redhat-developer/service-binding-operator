@@ -345,7 +345,7 @@ deploy-rbac:
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
-	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
