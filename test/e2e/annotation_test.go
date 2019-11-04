@@ -10,6 +10,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,7 +79,7 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	time.Sleep(3 * time.Minute)
+	time.Sleep(1 * time.Minute)
 
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
 	sbr2 := &v1alpha1.ServiceBindingRequest{}
@@ -91,4 +92,5 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	if err = f.Client.Get(context.TODO(), namespacedName, sbrSecret); err != nil {
 		t.Error(err)
 	}
+	assert.Equal(t, []byte("test-db"), sbrSecret.Data["DATABASE_DBNAME"], "Name not equal")
 }
