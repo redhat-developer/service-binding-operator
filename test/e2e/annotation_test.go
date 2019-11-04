@@ -31,6 +31,9 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	dpList := appsv1.DeploymentList{}
 	require.Nil(t, framework.AddToFrameworkScheme(appsv1.AddToScheme, &dpList))
 
+	secList := corev1.SecretList{}
+	require.Nil(t, framework.AddToFrameworkScheme(corev1.AddToScheme, &secList))
+
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 
@@ -55,7 +58,7 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create memcached custom resource
+	// create service binding request custom resource
 	name := "e2e-service-binding-request"
 	resourceRef := "e2e-db-testing"
 	matchLabels := map[string]string{
@@ -74,6 +77,8 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	time.Sleep(5 * time.Minute)
 
 	sbrSecret := &corev1.Secret{}
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
