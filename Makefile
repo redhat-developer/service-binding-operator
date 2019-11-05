@@ -403,8 +403,3 @@ consistent-crds-manifests-upstream:
 	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
 	servicebindingrequests.apps.openshift.io.crd.yaml
 
-.PHONY: consistent-crds-manifests
-## Copy crd from deploy/crds to manifests/
-consistent-crds-manifests:
-	$(Q)cd ./manifests/4.3.0/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
-	servicebindingrequests.apps.openshift.io.crd.yaml
