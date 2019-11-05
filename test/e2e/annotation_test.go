@@ -13,7 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 )
@@ -72,7 +74,16 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
 	sbr2 := &v1alpha1.ServiceBindingRequest{}
 
-	require.NoError(t, f.Client.Get(context.TODO(), namespacedName, sbr2), "SBR Not found")
+	err = wait.Poll(2*time.Second, 30*time.Second, func() (done bool, err error) {
+		if err = f.Client.Get(context.TODO(), namespacedName, sbr2); err != nil {
+			if errors.IsNotFound(err) {
+				return false, nil
+			}
+			return true, err
+		}
+		return true, nil
+	})
+	require.NoError(t, err)
 
 	sbrSecret := &corev1.Secret{}
 	require.NoError(t, f.Client.Get(context.TODO(), namespacedName, sbrSecret))
