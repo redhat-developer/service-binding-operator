@@ -370,7 +370,7 @@ clean:
 	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
 
 
-## -- Targets for uploading code coverage reports to Codecov.io--
+## -- Targets for uploading code coverage reports to Codecov.io --
 
 .PHONY: upload-codecov-report
 ## Uploads the test coverage reports to codecov.io.
