@@ -8,7 +8,7 @@ metadata:
     description:
       An operator to support binding capabilities between imported apps
       and operator backed services
-  name: service-binding-operator.v0.4.3
+  name: service-binding-operator.v4.3.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
