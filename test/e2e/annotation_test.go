@@ -93,4 +93,11 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 		t.Error(err)
 	}
 	assert.Equal(t, []byte("test-db"), sbrSecret.Data["DATABASE_DBNAME"], "Name not equal")
+
+	dep := &appsv1.Deployment{}
+	namespacedName2 := types.NamespacedName{Namespace: namespace, Name: appResourceRef}
+	if err = f.Client.Get(context.TODO(), namespacedName2, dep); err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, name, dep.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.LocalObjectReference.Name, "secret reference doesn't match")
 }
