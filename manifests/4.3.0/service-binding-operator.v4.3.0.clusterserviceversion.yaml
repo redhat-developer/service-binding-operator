@@ -8,7 +8,7 @@ metadata:
     description:
       An operator to support binding capabilities between imported apps
       and operator backed services
-  name: service-binding-operator.v0.0.23
+  name: service-binding-operator.v0.4.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -133,3 +133,4 @@ spec:
   provider:
     name: Red Hat, Inc.
   version: 0.0.23
+  replaces: 0.0.20
