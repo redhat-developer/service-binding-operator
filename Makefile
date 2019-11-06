@@ -370,11 +370,11 @@ clean:
 	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
 
 
-## -- Targets for uploading code coverage reports to Codecov.io--
+## -- Targets for uploading code coverage reports to Codecov.io --
 
 .PHONY: upload-codecov-report
-# Uploads the test coverage reports to codecov.io.
-# DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
+## Uploads the test coverage reports to codecov.io.
+## DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
 upload-codecov-report:
 ifneq ($(PR_COMMIT), null)
 	@echo "uploading test coverage report for pull-request #$(PULL_NUMBER)..."
@@ -394,3 +394,12 @@ else
 		-r $(REPO_OWNER)/$(REPO_NAME) \
 		-Z > codecov-upload.log
 endif
+
+## -- Target for maintaining consistent crd copies --
+
+.PHONY: consistent-crds-manifests-upstream
+## Copy crd from deploy/crds to manifests-upstream/
+consistent-crds-manifests-upstream:
+	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
+	servicebindingrequests.apps.openshift.io.crd.yaml
+
