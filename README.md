@@ -26,7 +26,7 @@ information that is “interesting” to applications.
 
 There are multiple methods for making operator managed backing services
 bindable, including the backing operator providing metadata in CRD
-annotations. Details on the methods for making backing services bindble
+annotations. Details on the methods for making backing services bindable
 are available in the [Operator Best Practices Guide](docs/OperatorBestPractices.md)
 
 In order to make an imported application (for example, a NodeJS application)
