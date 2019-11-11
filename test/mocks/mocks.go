@@ -15,8 +15,10 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+
 	ocv1 "github.com/openshift/api/route/v1"
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // resource details employed in mocks
@@ -88,6 +90,78 @@ var (
 		},
 	}
 )
+
+func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
+	CRDPlural := "databases"
+	FullCRDName := CRDPlural + "." + CRDName
+	annotations := map[string]string{
+		"servicebindingoperator.redhat.io/status.dbConfigMap.password": "binding:env:object:configmap",
+	}
+
+	crd := apiextensionv1beta1.CustomResourceDefinition{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "CustomResourceDefinition",
+			APIVersion: "apiextensions.k8s.io/v1beta1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:   ns,
+			Name:        FullCRDName,
+			Annotations: annotations,
+		},
+		Spec: apiextensionv1beta1.CustomResourceDefinitionSpec{
+			Group:   CRDName,
+			Version: CRDVersion,
+			Scope:   apiextensionv1beta1.NamespaceScoped,
+			Names: apiextensionv1beta1.CustomResourceDefinitionNames{
+				Plural: CRDPlural,
+				Kind:   CRDKind,
+			},
+		},
+	}
+
+	return crd
+}
+
+func UnstructuredDatabaseCRDMock(ns string) (*ustrv1.Unstructured, error) {
+	c := DatabaseCRDMock(ns)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+type PostgresDatabaseSpec struct {
+	Username string `json:"username"`
+}
+
+type PostgresDatabase struct {
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec PostgresDatabaseSpec `json:"spec,omitempty"`
+}
+
+func PostgresDatabaseCRMock(ns, name string) PostgresDatabase {
+	return PostgresDatabase{
+		// usually TypeMeta should not be explicitly defined in mocked objects, however, on using
+		// it via *unstructured.Unstructured it could not find this CR without it.
+		TypeMeta: metav1.TypeMeta{
+			Kind:       CRDKind,
+			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: PostgresDatabaseSpec{
+			Username: "redhatdeveloper",
+		},
+	}
+}
+
+func UnstructuredPostgresDatabaseCRMock(ns, name string) (*ustrv1.Unstructured, error) {
+	c := PostgresDatabaseCRMock(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
+	return &ustrv1.Unstructured{Object: data}, err
+}
 
 //
 // Usage of TypeMeta in Mocks
@@ -524,4 +598,33 @@ func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstruc
 func ConvertToUnstructured(cr interface{}) (*unstructured.Unstructured, error) {
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
 	return &ustrv1.Unstructured{Object: data}, err
+}
+
+// DatabaseCRMockWithAnnotation based on PostgreSQL operator, returning a instantiated object.
+func DatabaseCRMockWithAnnotation(ns, name string) *pgv1alpha1.Database {
+	return &pgv1alpha1.Database{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       CRDKind,
+			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: pgv1alpha1.DatabaseSpec{
+			Image:     "docker.io/postgres:latest",
+			ImageName: "postgres",
+			DBName:    "test-db",
+		},
+		Status: pgv1alpha1.DatabaseStatus{
+			DBCredentials: "db-credentials",
+		},
+	}
+}
+
+// UnstructuredDatabaseCRMockWithAnnotation returns a unstructured version of DatabaseCRMockWithAnnotation.
+func UnstructuredDatabaseCRMockWithAnnotation(ns, name string) (*unstructured.Unstructured, error) {
+	db := DatabaseCRMockWithAnnotation(ns, name)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(db)
+	return &unstructured.Unstructured{Object: data}, err
 }

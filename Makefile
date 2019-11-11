@@ -20,7 +20,7 @@ QUIET_FLAG = --quiet
 V_FLAG =
 S_FLAG = -s
 X_FLAG =
-ZAP_ENCODER_FLAG = --zap-encoder=console
+ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 ZAP_LEVEL_FLAG =
 ifeq ($(VERBOSE),1)
 	Q =
@@ -201,7 +201,7 @@ e2e-cleanup: get-test-namespace
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
-test-e2e: e2e-setup
+test-e2e: e2e-setup deploy-crds
 	$(info Running E2E test: $@)
 	$(Q)set -o pipefail; GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
 		operator-sdk --verbose test local ./test/e2e \
@@ -345,7 +345,7 @@ deploy-rbac:
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
-	$(Q)kubectl create -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
@@ -370,11 +370,11 @@ clean:
 	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
 
 
-## -- Targets for uploading code coverage reports to Codecov.io--
+## -- Targets for uploading code coverage reports to Codecov.io --
 
 .PHONY: upload-codecov-report
-# Uploads the test coverage reports to codecov.io.
-# DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
+## Uploads the test coverage reports to codecov.io.
+## DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
 upload-codecov-report:
 ifneq ($(PR_COMMIT), null)
 	@echo "uploading test coverage report for pull-request #$(PULL_NUMBER)..."
@@ -394,3 +394,12 @@ else
 		-r $(REPO_OWNER)/$(REPO_NAME) \
 		-Z > codecov-upload.log
 endif
+
+## -- Target for maintaining consistent crd copies --
+
+.PHONY: consistent-crds-manifests-upstream
+## Copy crd from deploy/crds to manifests-upstream/
+consistent-crds-manifests-upstream:
+	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
+	servicebindingrequests.apps.openshift.io.crd.yaml
+

@@ -64,7 +64,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 			LabelSelector: labels.Set(matchLabels).String(),
 		}
 	} else {
-		return nil, fmt.Errorf("Application ResourceRef or MatchLabel not found.")
+		return nil, fmt.Errorf("application ResourceRef or MatchLabel not found")
 	}
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)

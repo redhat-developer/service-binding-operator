@@ -68,6 +68,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
+	log.WithValues("SectionMap", sectionMap).Debug("Getting values from sectionmap")
 	v, _, err := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
 		if _, ok := r.cache[section]; !ok {
@@ -139,6 +140,72 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (r *Retriever) readAnnotation(key, value string) error {
+	logger := r.logger.WithValues("key", key)
+	// holds the secret name and items
+	secrets := make(map[string][]string)
+
+	// holds the configMap name and items
+	configMaps := make(map[string][]string)
+
+	// eg:- `servicebindingoperator.redhat.io/status.dbConfigMap.password: 'volume:configmap'`
+
+	if !strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
+		// FIXME: Error?
+		return nil
+	}
+
+	fullpath := strings.Split(key, "servicebindingoperator.redhat.io/")[1]
+	fullpathslice := strings.SplitN(fullpath, "-", 2)
+	placepath := strings.SplitN(fullpathslice[0], ".", 2)
+	place := placepath[0]
+	path := placepath[1]
+
+	pathValue, _, _ := r.getCRKey(place, path)
+	if _, ok := r.cache[place].(map[string]interface{}); !ok {
+		r.cache[place] = make(map[string]interface{})
+	}
+	if len(fullpathslice) > 1 {
+		value = value + ":" + fullpathslice[1]
+	}
+	logger.WithValues("Value", value).Debug("Checking value prefix")
+	if strings.HasPrefix(value, secretPrefix) {
+		secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(value))
+		if _, ok := r.cache[place].(map[string]interface{})[r.extractSecretItemName(value)]; !ok {
+			r.markVisitedPaths(r.extractSecretItemName(value), pathValue, place)
+			r.cache[place].(map[string]interface{})[r.extractSecretItemName(value)] = make(map[string]interface{})
+		}
+	} else if strings.HasPrefix(value, configMapPrefix) {
+		configMaps[pathValue] = append(configMaps[pathValue], r.extractConfigMapItemName(value))
+		r.markVisitedPaths(r.extractConfigMapItemName(value), pathValue, place)
+	} else if strings.HasPrefix(value, volumeMountSecretPrefix) {
+		secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(value))
+		r.markVisitedPaths(r.extractSecretItemName(value), pathValue, place)
+		r.volumeKeys = append(r.volumeKeys, pathValue)
+	} else if strings.HasPrefix(value, attributePrefix) {
+		r.store(path, []byte(pathValue))
+	} else {
+		logger.Info("Defaulting....")
+	}
+
+	for name, items := range secrets {
+		// loading secret items all-at-once
+		err := r.readSecret(name, items, place, path)
+		if err != nil {
+			return err
+		}
+	}
+	for name, items := range configMaps {
+		// add the function readConfigMap
+		err := r.readConfigMap(name, items, place, path)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -321,17 +388,33 @@ func (r *Retriever) saveDataOnSecret() error {
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
 	log := r.logger
-	log.Debug("Looking for spec-descriptors in 'spec'...")
-	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
-		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
-			return nil, err
+	var isAnnotation bool
+	for key := range r.plan.Annotations {
+		if strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
+			isAnnotation = true
+			break
 		}
 	}
 
-	log.Debug("Looking for status-descriptors in 'status'...")
-	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
-		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
-			return nil, err
+	if isAnnotation {
+		for key, value := range r.plan.Annotations {
+			if err = r.readAnnotation(key, value); err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		r.logger.Info("Looking for spec-descriptors in 'spec'...")
+		for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
+			if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+				return nil, err
+			}
+		}
+
+		r.logger.Info("Looking for status-descriptors in 'status'...")
+		for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
+			if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+				return nil, err
+			}
 		}
 	}
 

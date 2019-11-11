@@ -1,8 +1,9 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"testing"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -252,4 +253,45 @@ func TestCustomEnvParser(t *testing.T) {
 		assert.Equal(t, "dXNlcg==_cGFzc3dvcmQ=", values["ANOTHER_STRING"], "Custom env values are not matching")
 		assert.Equal(t, "postgres@cGFzc3dvcmQ=", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
+}
+
+func TestReadAnnotation(t *testing.T) {
+	logf.SetLogger(logf.ZapLogger(true))
+	var retriever *Retriever
+
+	ns := "testing"
+	crName := "db-testing"
+
+	f := mocks.NewFake(t, ns)
+
+	cr, err := mocks.UnstructuredPostgresDatabaseCRMock(ns, crName)
+	require.Nil(t, err)
+
+	ann := map[string]string{"servicebindingoperator.redhat.io/status.username": "binding:env:attribute"}
+
+	plan := &Plan{Ns: ns, Name: "retriever", CR: cr, Annotations: ann}
+
+	fakeDynClient := f.FakeDynClient()
+
+	t.Run("retrieve", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+		require.NotNil(t, retriever)
+		objs, err := retriever.Retrieve()
+		assert.Nil(t, err)
+		assert.NotEmpty(t, retriever.data)
+		assert.True(t, len(objs) > 0)
+	})
+
+	t.Run("read annotation", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+		require.NotNil(t, retriever)
+		// reading from secret, from status attribute
+		err := retriever.readAnnotation("servicebindingoperator.redhat.io/status.username", "binding:env:attribute")
+		assert.Nil(t, err)
+
+		t.Logf("retriever.data '%#v'", retriever.data)
+		assert.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_USERNAME")
+
+	})
+
 }

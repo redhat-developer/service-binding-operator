@@ -26,7 +26,7 @@ information that is “interesting” to applications.
 
 There are multiple methods for making operator managed backing services
 bindable, including the backing operator providing metadata in CRD
-annotations. Details on the methods for making backing services bindble
+annotations. Details on the methods for making backing services bindable
 are available in the [Operator Best Practices Guide](docs/OperatorBestPractices.md)
 
 In order to make an imported application (for example, a NodeJS application)
@@ -42,8 +42,8 @@ connect to a backing services (for example, a database):
   * Reads backing service operator CRD annotations to discover the
     binding attributes
   * Creates a binding secret for the backing service, example, an operator-managed database;
-  * Injects environment variables into the applications's `DeploymentConfig`, `Deployment` or
-    `Replicaset`;
+  * Injects environment variables into the applications's `Deployment`, `DeploymentConfig`,
+    `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
 
 ## Quick Start
 
@@ -89,3 +89,6 @@ The following example scenarios are available:
 [Binding an Imported Java Spring Boot app with an In-cluster Operator Managed PostgreSQL Database](examples/java_postgresql_customvar/README.md)
 
 [Binding an Imported Quarkus app deployed as Knative service with an In-cluster Operator Managed PostgreSQL Database](examples/knative_postgresql_customvar/README.md)
+
+[Binding an Imported app with an In-cluster Operator Managed ETCD Database](examples/nodejs_etcd_operator/README.md)
+
