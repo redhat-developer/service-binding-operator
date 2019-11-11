@@ -21,6 +21,8 @@ import (
 
 // resource details employed in mocks
 const (
+	// Fixme(Akash): This values are tightly coupled with postgresql operator.
+	// Need to make it more dynamic.
 	CRDName            = "postgresql.baiju.dev"
 	CRDVersion         = "v1alpha1"
 	CRDKind            = "Database"
@@ -306,8 +308,9 @@ func ServiceBindingRequestMock(
 	applicationResourceRef string,
 	matchLabels map[string]string,
 	bindUnannotated bool,
+	backendGvk *metav1.GroupVersionKind,
 ) *v1alpha1.ServiceBindingRequest {
-	return &v1alpha1.ServiceBindingRequest{
+	sbr := &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -320,12 +323,6 @@ func ServiceBindingRequestMock(
 					Value: "spec.imagePath",
 				},
 			},
-			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				Group:       CRDName,
-				Version:     CRDVersion,
-				Kind:        CRDKind,
-				ResourceRef: backingServiceResourceRef,
-			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				Group:       "apps",
 				Version:     "v1",
@@ -336,6 +333,22 @@ func ServiceBindingRequestMock(
 			DetectBindingResources: bindUnannotated,
 		},
 	}
+	if backendGvk != nil {
+		sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+			Group:       backendGvk.Group,
+			Version:     backendGvk.Version,
+			Kind:        backendGvk.Kind,
+			ResourceRef: backingServiceResourceRef,
+		}
+	} else {
+		sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+			Group:       CRDName,
+			Version:     CRDVersion,
+			Kind:        CRDKind,
+			ResourceRef: backingServiceResourceRef,
+		}
+	}
+	return sbr
 }
 
 // UnstructuredServiceBindingRequestMock returns a unstructured version of SBR.
@@ -346,7 +359,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationResourceRef string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false, nil)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err

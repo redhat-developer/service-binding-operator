@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"strings"
 	"testing"
 	"time"
@@ -30,9 +32,11 @@ import (
 type Step string
 
 const (
-	DBStep  Step = "create-db"
-	AppStep Step = "create-app"
-	SBRStep Step = "create-sbr"
+	DBStep      Step = "create-db"
+	AppStep     Step = "create-app"
+	SBRStep     Step = "create-sbr"
+	SBREtcdStep Step = "create-etcd-sbr"
+	EtcdClusterStep Step = "create-etcd-cluster"
 )
 
 var (
@@ -58,14 +62,22 @@ func TestAddSchemesToFramework(t *testing.T) {
 	dbList := pgv1alpha1.DatabaseList{}
 	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
+	//t.Log("Adding EtcdClusterList scheme to cluster...")
+	//etcdClusterList := v1beta2.EtcdClusterList{}
+	//require.Nil(t, framework.AddToFrameworkScheme(v1beta2.AddToScheme, &etcdClusterList))
+
 	t.Run("end-to-end", func(t *testing.T) {
 		// scenario-1
-		t.Run("scenario-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		})
-		// scenario-2 (pre create sbr then binding resources
-		t.Run("scenario-sbr-db-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		//t.Run("scenario-db-app-sbr", func(t *testing.T) {
+		//	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		//})
+		//// scenario-2 (pre create sbr then binding resources
+		//t.Run("scenario-sbr-db-app", func(t *testing.T) {
+		//	ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		//})
+		// scenario-3 (connect etcd operator with app using SBR)
+		t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequestSetup(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
 		})
 	})
 
@@ -195,6 +207,26 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
+}
+
+func assertAppDeployed(
+	ctx context.Context,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+	) (*appsv1.Deployment, error) {
+	d := &appsv1.Deployment{}
+	if err := f.Client.Get(ctx, namespacedName, d); err != nil {
+		return nil, err
+	}
+
+	containers := d.Spec.Template.Spec.Containers
+	if len(containers) != 1 {
+		return nil, fmt.Errorf("can't find a container in deployment-spec")
+	}
+	if len(containers[0].EnvFrom) != 1 {
+		return nil, fmt.Errorf("can't find envFrom in first container")
+	}
+	return d, nil
 }
 
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
@@ -328,7 +360,23 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 			d = CreateApp(todoCtx, t, ctx, f, deploymentNamespacedName, matchLabels)
 		case SBRStep:
 			// creating service-binding-request, which will trigger actions in the controller
-			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, serviceBindingRequestNamespacedName, resourceRef, matchLabels)
+			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, serviceBindingRequestNamespacedName, resourceRef, matchLabels, nil, false)
+		case SBREtcdStep:
+			sbr = CreateServiceBindingRequest(
+				todoCtx,
+				t,
+				ctx,
+				f,
+				serviceBindingRequestNamespacedName,
+				resourceRef,
+				matchLabels,
+				&v1.GroupVersionKind{
+					Group:   "etcd.database.coreos.com",
+					Version: "v1beta2",
+					Kind:    "EtcdCluster",
+				},
+				true,
+			)
 		}
 	}
 
@@ -417,12 +465,38 @@ func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f 
 	return d
 }
 
+func CreateEtcdCluster(
+	todoCtx context.Context,
+	t *testing.T,
+	ctx *framework.TestCtx,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) (*v1beta2.EtcdCluster, *corev1.Service) {
+	ns := namespacedName.Namespace
+	name := namespacedName.Name
+	t.Log("Create etcd cluster")
+	etcd, etcdSvc := mocks.CreateEtcdClusterMock(ns, name)
+	require.Nil(t, f.Client.Create(todoCtx, etcd, cleanUpOptions(ctx)))
+	require.Nil(t, f.Client.Create(todoCtx, etcdSvc, cleanUpOptions(ctx)))
+	return etcd, etcdSvc
+}
+
 // CreateServiceBindingRequest implements end-to-end step for creating a Service Binding Request to bind the Backing Service and the Application
-func CreateServiceBindingRequest(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, resourceRef string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
+func CreateServiceBindingRequest(
+	todoCtx context.Context,
+	t *testing.T,
+	ctx *framework.TestCtx,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+	resourceRef string,
+	matchLabels map[string]string,
+	backendGvk *v1.GroupVersionKind,
+	bindUnannotated bool,
+) *v1alpha1.ServiceBindingRequest {
 	ns := namespacedName.Namespace
 	name := namespacedName.Name
 	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, bindUnannotated, backendGvk)
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, sbr)
 	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))

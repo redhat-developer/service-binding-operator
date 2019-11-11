@@ -349,8 +349,8 @@ func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 		if err != nil {
 			return nil, err
 		}
-		for k,v := range vals {
-			r.store(k,[]byte(fmt.Sprintf("%v", v)))
+		for k, v := range vals {
+			r.store(k, []byte(fmt.Sprintf("%v", v)))
 		}
 	}
 
