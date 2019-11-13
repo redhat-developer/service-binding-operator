@@ -349,7 +349,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
-	assert.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
+	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
+	require.NotNil(t, sbrSecret)
 
 	// editing intermediary secret in order to trigger update event
 	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
