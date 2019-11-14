@@ -4,6 +4,11 @@
 SHELL := /bin/bash
 
 #-----------------------------------------------------------------------------
+# Examples Commons
+#-----------------------------------------------------------------------------
+EC=$(SHELL) -c '. ./hack/examples-commons.sh && $$1' EC
+
+#-----------------------------------------------------------------------------
 # VERBOSE target
 #-----------------------------------------------------------------------------
 
@@ -244,6 +249,22 @@ test-e2e-image: push-image
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
+
+
+NAMESPACE = service-binding-demo
+.PHONY: test-knative-service
+## test knative service
+test-knative-service: knative-setup
+
+.PHONY: knative-setup
+## Setup knative env
+knative-setup:
+	echo "$(NAMESPACE)"
+	$(Q)kubectl create namespace $(NAMESPACE)
+	${Q}${EC} install_service_mesh_operator_subscription
+	${Q}${EC} install_serverless_operator_subscription
+	${Q}${EC} install_knative_serving
+
 
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
