@@ -537,6 +537,17 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 	}
 }
 
+// KnativeServiceListMock returns a list of KnativeServiceMock.
+func KnativeServiceListMock(ns, name string, matchLabels map[string]string) knativev1.ServiceList {
+	return knativev1.ServiceList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceList",
+			APIVersion: "serving.knative.dev/v1",
+		},
+		Items: []knativev1.Service{KnativeServiceMock(ns, name, matchLabels)},
+	}
+}
+
 // UnstructuredKnativeServiceMock converts the KnativeServiceMock to unstructured.
 func UnstructuredKnativeServiceMock(
 	ns,
@@ -553,7 +564,7 @@ func KnativeServiceMock(ns, name string, matchLabels map[string]string) knativev
 	return knativev1.Service{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Service",
-			APIVersion: "serving.knative.dev/v1alpha1",
+			APIVersion: "serving.knative.dev/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
