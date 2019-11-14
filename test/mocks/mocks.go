@@ -563,11 +563,6 @@ func KnativeServiceMock(ns, name string, matchLabels map[string]string) knativev
 		Spec: knativev1.ServiceSpec{
 			ConfigurationSpec: knativev1.ConfigurationSpec{
 				Template: knativev1.RevisionTemplateSpec{
-					ObjectMeta: metav1.ObjectMeta{
-						Namespace: ns,
-						Name:      name,
-						Labels:    matchLabels,
-					},
 					Spec: knativev1.RevisionSpec{
 						PodSpec: corev1.PodSpec{
 							Containers: []corev1.Container{{
