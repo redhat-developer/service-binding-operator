@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -33,6 +34,7 @@ const (
 	DBStep  Step = "create-db"
 	AppStep Step = "create-app"
 	SBRStep Step = "create-sbr"
+	CSVStep Step = "create-csv"
 )
 
 var (
@@ -60,29 +62,20 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		// scenario-1
-		t.Run("scenario-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		})
-
-		t.Run("scenario-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
-		})
-
-		t.Run("scenario-db-sbr-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
-		})
-
-		t.Run("scenario-app-sbr-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
-		})
-
+		// t.Run("scenario-db-app-sbr", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		// })
 		// scenario-2 (pre create sbr then binding resources
-		t.Run("scenario-sbr-db-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		// t.Run("scenario-sbr-db-app", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		// })
+		// scenario-3
+		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
 		})
-
-		t.Run("scenario-sbr-app-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
+		// scenario-4
+		t.Run("scenario-csv-sbr-db-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
 		})
 	})
 
@@ -310,11 +303,29 @@ func retry(attempts int, sleep time.Duration, fn func() error) error {
 	return err
 }
 
+func CreateCSV(ctx context.Context, t *testing.T, testCtx *framework.TestCtx, f *framework.Framework, namespace, name string) {
+	t.Log("Creating ClusterServiceVersion mock object...")
+	csv := mocks.ClusterServiceVersionMock(namespace, name)
+	require.Nil(t, f.Client.Create(ctx, &csv, cleanUpOptions(testCtx)))
+	err := wait.Poll(2*time.Second, 10*time.Second, func() (done bool, err error) {
+		if err = f.Client.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, &csv); err != nil {
+			if errors.IsNotFound(err) {
+				t.Log("ClusterServiceVersion not available yet")
+				return false, nil
+			}
+			return true, err
+		}
+		return true, nil
+	})
+	require.NoError(t, err)
+}
+
 // serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
 // expecting for changes caused by the operator.
 func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, steps []Step) {
 	todoCtx := context.TODO()
 
+	csvName := "cluster-service-version"
 	name := "e2e-service-binding-request"
 	resourceRef := "e2e-db-testing"
 	secretName := "e2e-db-credentials"
@@ -326,10 +337,6 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	t.Log("Starting end-to-end tests for operator!")
 
-	t.Log("Creating ClusterServiceVersion mock object...")
-	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
-	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
-
 	resourceRefNamespacedName := types.NamespacedName{Namespace: ns, Name: resourceRef}
 	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
 	serviceBindingRequestNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
@@ -339,6 +346,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 
 	for _, step := range steps {
 		switch step {
+		case CSVStep:
+			CreateCSV(todoCtx, t, ctx, f, ns, csvName)
 		case DBStep:
 			CreateDB(todoCtx, t, ctx, f, resourceRefNamespacedName, secretName)
 		case AppStep:
@@ -390,7 +399,9 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// cleaning up
 	t.Log("Cleaning all up!")
 	_ = f.Client.Delete(todoCtx, sbr)
-	_ = f.Client.Delete(todoCtx, sbrSecret)
+	if sbrSecret != nil {
+		_ = f.Client.Delete(todoCtx, sbrSecret)
+	}
 	_ = f.Client.Delete(todoCtx, &d)
 }
 
