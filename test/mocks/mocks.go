@@ -17,6 +17,7 @@ import (
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
+	ocav1 "github.com/openshift/api/apps/v1"
 	ocv1 "github.com/openshift/api/route/v1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
@@ -428,6 +429,60 @@ func UnstructuredServiceBindingRequestMock(
 	u := &ustrv1.Unstructured{Object: data}
 	u.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 	return u, nil
+}
+
+// DeploymentConfigListMock returns a list of DeploymentMock.
+func DeploymentConfigListMock(ns, name string, matchLabels map[string]string) ocav1.DeploymentConfigList {
+	return ocav1.DeploymentConfigList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DeploymentConfigList",
+			APIVersion: "apps/v1",
+		},
+		Items: []ocav1.DeploymentConfig{DeploymentConfigMock(ns, name, matchLabels)},
+	}
+}
+
+// UnstructuredDeploymentConfigMock converts the DeploymentMock to unstructured.
+func UnstructuredDeploymentConfigMock(
+	ns,
+	name string,
+	matchLabels map[string]string,
+) (*ustrv1.Unstructured, error) {
+	d := DeploymentConfigMock(ns, name, matchLabels)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+// DeploymentConfigMock creates a mocked Deployment object of busybox.
+func DeploymentConfigMock(ns, name string, matchLabels map[string]string) ocav1.DeploymentConfig {
+	return ocav1.DeploymentConfig{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DeploymentConfig",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+			Labels:    matchLabels,
+		},
+		Spec: ocav1.DeploymentConfigSpec{
+			Selector: matchLabels,
+			Template: &corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: ns,
+					Name:      name,
+					Labels:    matchLabels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:    "busybox",
+						Image:   "busybox:latest",
+						Command: []string{"sleep", "3600"},
+					}},
+				},
+			},
+		},
+	}
 }
 
 // DeploymentListMock returns a list of DeploymentMock.
