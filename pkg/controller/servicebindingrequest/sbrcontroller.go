@@ -47,6 +47,27 @@ var (
 	sbrControllerLog = log.NewLog("sbrcontroller")
 )
 
+// compareObjectFields compares a nested field of two given objects.
+func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (bool, error) {
+	var (
+		mapNew map[string]interface{}
+		mapOld map[string]interface{}
+		err    error
+	)
+
+	if mapNew, err = runtime.DefaultUnstructuredConverter.ToUnstructured(objNew); err != nil {
+		return false, err
+	}
+	if mapOld, err = runtime.DefaultUnstructuredConverter.ToUnstructured(objOld); err != nil {
+		return false, err
+	}
+
+	return nestedMapComparison(
+		&unstructured.Unstructured{Object: mapNew},
+		&unstructured.Unstructured{Object: mapOld},
+		fields...)
+}
+
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
 // ServiceBindingRequest if it contains the required configuration.
 func (s *SBRController) newEnqueueRequestsForSBR() handler.EventHandler {

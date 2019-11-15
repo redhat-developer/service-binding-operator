@@ -3,8 +3,8 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -274,6 +274,32 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	})
 }
 
+// nestedMapComparison compares a nested field from two objects.
+func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
+	var (
+		aMap map[string]interface{}
+		bMap map[string]interface{}
+		ok   bool
+		err  error
+	)
+
+	if aMap, ok, err = unstructured.NestedMap(a.Object, fields...); err != nil {
+		return false, err
+	} else if !ok {
+		return false, fmt.Errorf("original object doesn't have a 'spec' field")
+	}
+
+	if bMap, ok, err = unstructured.NestedMap(b.Object, fields...); err != nil {
+		return false, err
+	} else if !ok {
+		return false, fmt.Errorf("original object doesn't have a 'spec' field")
+	}
+
+	result := cmp.DeepEqual(aMap, bMap)()
+
+	return result.Success(), nil
+}
+
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
@@ -281,6 +307,8 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 	updatedObjs := []*unstructured.Unstructured{}
 
 	for _, obj := range objs.Items {
+		// store a copy of the original object to later be used in a comparison
+		originalObj := obj.DeepCopy()
 		name := obj.GetName()
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		log.Debug("Inspecting object...")
@@ -295,6 +323,13 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			if err != nil {
 				return nil, err
 			}
+		}
+
+		if specsAreEqual, err := nestedMapComparison(originalObj, updatedObj, "spec"); err != nil {
+			log.Error(err, "")
+			continue
+		} else if specsAreEqual {
+			continue
 		}
 
 		log.Debug("Updating object...")
