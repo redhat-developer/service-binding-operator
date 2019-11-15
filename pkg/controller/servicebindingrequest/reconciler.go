@@ -141,7 +141,6 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 
 		// Check if MatchLabels is present
 		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
-
 			err := errors.New("NotFoundError")
 			log.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
 			return err
@@ -168,6 +167,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
 	)
+
 	log.Info("Reconciling ServiceBindingRequest...")
 
 	// fetch the ServiceBindingRequest instance

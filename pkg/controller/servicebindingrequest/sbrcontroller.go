@@ -6,6 +6,7 @@ import (
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -29,21 +30,7 @@ type SBRController struct {
 
 var (
 	// controllerName common name of this controller
-	controllerName = "servicebindingrequest-controller"
-	// defaultPredicate default predicate functions
-	defaultPredicate = predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			if strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "Secret") || strings.EqualFold(e.ObjectNew.GetObjectKind().GroupVersionKind().Kind, "ConfigMap") {
-				return true
-			}
-			// ignore updates to CR status in which case metadata.Generation does not change
-			return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			// evaluates to false if the object has been confirmed deleted
-			return !e.DeleteStateUnknown
-		},
-	}
+	controllerName   = "servicebindingrequest-controller"
 	sbrControllerLog = log.NewLog("sbrcontroller")
 )
 
@@ -105,21 +92,63 @@ func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 	return append(gvks, olmGVKs...), nil
 }
 
+func createUpdateFuncWithLog(l *log.Log) func(updateEvent event.UpdateEvent) bool {
+	return func(e event.UpdateEvent) bool {
+		isSecret := isOfKind(e.ObjectNew, "Secret")
+		isConfigMap := isOfKind(e.ObjectNew, "ConfigMap")
+
+		if isSecret || isConfigMap {
+			var (
+				dataFieldsAreEqual bool
+				err                error
+			)
+
+			if dataFieldsAreEqual, err = compareObjectFields(e.ObjectNew, e.ObjectOld, "data"); err != nil {
+				l.Error(err, "")
+				return false
+			}
+
+			shouldReconcile := !dataFieldsAreEqual
+
+			l.Debug("Predicate evaluated", "ShouldReconcile", shouldReconcile)
+			return shouldReconcile
+		}
+
+		// ignore updates to CR status in which case metadata.Generation does not change
+		return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+	}
+}
+
+func newGVKPredicate(l *log.Log) predicate.Funcs {
+	return predicate.Funcs{
+		UpdateFunc: createUpdateFuncWithLog(l),
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// evaluates to false if the object has been confirmed deleted
+			return !e.DeleteStateUnknown
+		},
+	}
+}
+
 // AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
 func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
-	log := s.logger.WithValues("GVK", gvk)
-	log.Debug("Adding watch for GVK...")
+	l := s.logger.WithValues("GVK", gvk)
+	l.Debug("Adding watch for GVK...")
 	if _, exists := s.watchingGVKs[gvk]; exists {
-		log.Debug("Skipping watch on GVK twice, it's already under watch!")
+		l.Debug("Skipping watch on GVK twice, it's already under watch!")
 		return nil
 	}
 
 	// saving GVK in cache
 	s.watchingGVKs[gvk] = true
 
-	log.Debug("Creating watch on GVK")
-	source := s.createSourceForGVK(gvk)
-	return s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
+	l.Debug("Creating watch on GVK")
+	src := s.createSourceForGVK(gvk)
+	return s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), newGVKPredicate(l.WithName("gvk-predicate-log")))
+}
+
+// isOfKind evaluates whether the given object has a specific kind.
+func isOfKind(obj runtime.Object, kind string) bool {
+	return strings.EqualFold(obj.GetObjectKind().GroupVersionKind().Kind, kind)
 }
 
 // addCSVWatch creates a watch on ClusterServiceVersion.
@@ -127,7 +156,7 @@ func (s *SBRController) addCSVWatch() error {
 	log := s.logger
 	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind(ClusterServiceVersionKind)
 	source := s.createSourceForGVK(csvGVK)
-	err := s.Controller.Watch(source, NewCreateWatchEventHandler(s), defaultPredicate)
+	err := s.Controller.Watch(source, NewCreateWatchEventHandler(s))
 	if err != nil {
 		return err
 	}
@@ -136,17 +165,46 @@ func (s *SBRController) addCSVWatch() error {
 	return nil
 }
 
+func newSBRPredicate(l *log.Log) predicate.Funcs {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			l.WithName("sbr-create-log").Debug("Predicate evaluated", "ShouldReconcile", true)
+			return true
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			specsAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "spec")
+			if err != nil {
+				l.Error(err, "")
+			}
+
+			shouldReconcile := !specsAreEqual
+
+			l.Debug(
+				"Predicate evaluated",
+				"Object.New", e.ObjectNew,
+				"Object.Old", e.ObjectOld,
+				"ShouldReconcile", shouldReconcile)
+
+			return shouldReconcile
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			// evaluates to false if the object has been confirmed deleted
+			return !e.DeleteStateUnknown
+		},
+	}
+}
+
 // addSBRWatch creates a watchon ServiceBindingRequest GVK.
 func (s *SBRController) addSBRWatch() error {
 	gvk := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
-	log := s.logger.WithValues("GKV", gvk)
-	source := s.createSourceForGVK(gvk)
-	err := s.Controller.Watch(source, s.newEnqueueRequestsForSBR(), defaultPredicate)
+	l := s.logger.WithValues("GKV", gvk)
+	src := s.createSourceForGVK(gvk)
+	err := s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), newSBRPredicate(l))
 	if err != nil {
-		log.Error(err, "on creating watch for ServiceBindingRequest")
+		l.Error(err, "on creating watch for ServiceBindingRequest")
 		return err
 	}
-	log.Debug("Watch added for ServiceBindingRequest")
+	l.Debug("Watch added for ServiceBindingRequest")
 
 	return nil
 }
