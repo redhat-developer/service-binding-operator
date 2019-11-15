@@ -63,9 +63,26 @@ func TestAddSchemesToFramework(t *testing.T) {
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
+
+		t.Run("scenario-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+		})
+
+		t.Run("scenario-db-sbr-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
+		})
+
+		t.Run("scenario-app-sbr-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
+		})
+
 		// scenario-2 (pre create sbr then binding resources
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		})
+
+		t.Run("scenario-sbr-app-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
 	})
 
