@@ -46,8 +46,9 @@ func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStat
 }
 
 // setStatus update the CR status field.
-func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string) {
+func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string, errorMessage string) {
 	sbrStatus.BindingStatus = status
+	sbrStatus.Reason = errorMessage
 }
 
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
@@ -112,7 +113,7 @@ func (r *Reconciler) onError(
 	objs []*unstructured.Unstructured,
 ) (reconcile.Result, error) {
 	// settting overall status to failed
-	r.setStatus(sbrStatus, bindingFail)
+	r.setStatus(sbrStatus, bindingFail, err.Error())
 	//
 	if objs != nil {
 		r.setApplicationObjects(sbrStatus, objs)

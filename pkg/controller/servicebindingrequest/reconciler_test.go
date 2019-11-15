@@ -50,6 +50,15 @@ func TestReconcilerReconcileError(t *testing.T) {
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 	assert.Error(t, err)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, sbrError := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, sbrError)
+
+	require.Equal(t, "Fail", sbrOutput.Status.BindingStatus)
+	require.Equal(t, err.Error(), sbrOutput.Status.Reason)
+	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
+
 	assert.True(t, res.Requeue)
 }
 

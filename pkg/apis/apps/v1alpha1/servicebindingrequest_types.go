@@ -52,6 +52,8 @@ type CustomEnvMap struct {
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request.
 	BindingStatus string `json:"bindingStatus,omitempty"`
+	// Reason indicates the reason for any failures
+	Reason string `json:"reason,omitempty"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
