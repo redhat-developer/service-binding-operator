@@ -112,7 +112,7 @@ func (o *OLM) loopCRDDescriptions(
 }
 
 // SelectCRDByGVK return a single CRD based on a given GVK.
-func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescription, error) {
+func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	log := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
@@ -120,7 +120,20 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 		return nil, err
 	}
 
+	// CRDDescription is both used by OLM to configure OLM descriptors in manifests existing in the
+	// cluster but is also built from annotations present in the CRD
+	crdDescription, err := buildCRDDescriptionFromCRDAnnotations(crd)
+	if err != nil {
+		return nil, err
+	}
+
+	// add the CRDDescription built from CRD annotations if one could be built
+	if crdDescription != nil {
+		ownedCRDs = append([]unstructured.Unstructured{*crdDescription}, ownedCRDs...)
+	}
+
 	crdDescriptions := []*olmv1alpha1.CRDDescription{}
+
 	err = o.loopCRDDescriptions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		log = o.logger.WithValues(
 			"CRDDescription.Name", crdDescription.Name,
@@ -149,6 +162,103 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 		return nil, fmt.Errorf("no crd could be found for gvk")
 	}
 	return crdDescriptions[0], nil
+}
+
+// buildCRDDescriptionFromCRDAnnotations builds a CRDDescription from annotations present in the CRD.
+func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+	specDescriptors := []olmv1alpha1.SpecDescriptor{}
+	statusDescriptors := []olmv1alpha1.StatusDescriptor{}
+
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+
+	kind, ok, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	version, ok, err := unstructured.NestedString(crd.Object, "spec", "version")
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	crdDescription := olmv1alpha1.CRDDescription{
+		Name:              crd.GetName(),
+		Version:           version,
+		Kind:              kind,
+		SpecDescriptors:   specDescriptors,
+		StatusDescriptors: statusDescriptors,
+	}
+
+	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&crdDescription)
+	if err != nil {
+		return nil, err
+	}
+	return &unstructured.Unstructured{Object: uObj}, nil
+}
+
+func buildDescriptorsFromAnnotations(annotations map[string]string) ([]olmv1alpha1.SpecDescriptor, []olmv1alpha1.StatusDescriptor, error) {
+	var (
+		collectedSpecDescriptors   []olmv1alpha1.SpecDescriptor
+		collectedStatusDescriptors []olmv1alpha1.StatusDescriptor
+	)
+
+	for n, v := range annotations {
+		mappedSpecDescriptors, mappedStatusDescriptors, err := mapSBRAnnotationToXDescriptors(n, v)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		collectedSpecDescriptors = append(collectedSpecDescriptors, mappedSpecDescriptors...)
+		collectedStatusDescriptors = append(collectedStatusDescriptors, mappedStatusDescriptors...)
+	}
+	return collectedSpecDescriptors, collectedStatusDescriptors, nil
+}
+
+const ServiceBindingOperatorAnnotationPrefix = "servicebindingoperator.redhat.io/"
+
+func splitBindingInfo(s string) (string, string, error) {
+	parts := strings.SplitN(s, "-", 2)
+
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("should have two parts")
+	}
+
+	return parts[0], parts[1], nil
+}
+
+func mapSBRAnnotationToXDescriptors(key string, value string) ([]olmv1alpha1.SpecDescriptor, []olmv1alpha1.StatusDescriptor, error) {
+	// key: 	'servicebindingoperator.redhat.io/status.dbConfigMap-db.host'
+	// value: 	'binding:env:object:configmap'
+	if !strings.HasPrefix(key, ServiceBindingOperatorAnnotationPrefix) {
+		return nil, nil, nil
+	}
+
+	// bindingInfo: `status.dbConfigMap-db.host`
+	bindingInfo := strings.Replace(key, ServiceBindingOperatorAnnotationPrefix, "", 1)
+
+	// path: status.dbConfigMap
+	// fieldPath: db.host
+	path, fieldPath, err := splitBindingInfo(bindingInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// path: dbConfigMap
+	path = strings.TrimPrefix(path, "status.")
+
+	// xDescriptor: binding:env:object:configmap:db.host
+	xDescriptor := strings.Join([]string{value, fieldPath}, ":")
+
+	statusDescriptor := olmv1alpha1.StatusDescriptor{
+		Path:         path,
+		XDescriptors: []string{xDescriptor},
+	}
+
+	return nil, []olmv1alpha1.StatusDescriptor{statusDescriptor}, nil
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.

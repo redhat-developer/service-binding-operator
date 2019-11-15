@@ -87,7 +87,14 @@ func (p *Planner) Plan() (*Plan, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
 	olm := NewOLM(p.client, p.sbr.GetNamespace())
-	crdDescription, err := olm.SelectCRDByGVK(gvk)
+	crd, err := p.searchCRD()
+	if err != nil {
+		return nil, err
+	}
+
+	p.logger.Debug("After search crd", "CRD", crd)
+
+	crdDescription, err := olm.SelectCRDByGVK(gvk, crd)
 	if err != nil {
 		return nil, err
 	}

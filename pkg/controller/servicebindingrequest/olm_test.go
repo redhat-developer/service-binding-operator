@@ -52,7 +52,7 @@ func TestOLMNew(t *testing.T) {
 			Group:   mocks.CRDName,
 			Version: mocks.CRDVersion,
 			Kind:    mocks.CRDKind,
-		})
+		}, nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, crd)
 		expectedCRDName := strings.ToLower(fmt.Sprintf("%s.%s", mocks.CRDKind, mocks.CRDName))
