@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"gotest.tools/assert/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -89,6 +90,12 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 ) error {
+	// do not update if both statuses are equal
+	result := cmp.DeepEqual(sbr.Status, sbrStatus)()
+	if result.Success() {
+		return nil
+	}
+
 	// coping status over informed object
 	sbr.Status = *sbrStatus
 
