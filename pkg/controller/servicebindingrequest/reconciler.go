@@ -165,7 +165,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
 		log.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueError(err)
+		// errors at this point should not trigger a requeue, probably should narrow this down to
+		// NotFound errors only.
+		return Done()
 	}
 
 	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
