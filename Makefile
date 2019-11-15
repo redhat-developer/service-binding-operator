@@ -188,6 +188,10 @@ out/test-namespace:
 get-test-namespace: out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
 
+.PHONY: deploy-e2e-crds
+deploy-e2e-crds:
+	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+
 # E2E test
 .PHONY: e2e-setup
 e2e-setup: e2e-cleanup
