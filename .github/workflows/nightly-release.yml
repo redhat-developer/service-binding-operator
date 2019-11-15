@@ -1,0 +1,16 @@
+name: Nightly Release
+
+on:
+  push:
+    branches:
+      - testing
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create release and push to Quay
+        run: |
+          echo "This line should be replaced with makefile target"
