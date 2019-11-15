@@ -5,13 +5,15 @@ import (
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // OLM represents the actions this operator needs to take upon Operator-Lifecycle-Manager resources,
@@ -191,6 +193,10 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
+		// the CSV might have disappeared between discovery and check, so not found is not an error
+		if errors.IsNotFound(err) {
+			return []schema.GroupVersionKind{}, nil
+		}
 		log.Error(err, "on reading CSV object")
 		return []schema.GroupVersionKind{}, err
 	}
