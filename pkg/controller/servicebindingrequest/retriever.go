@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // Retriever reads all data referred in plan instance, and store in a secret.
@@ -388,33 +389,17 @@ func (r *Retriever) saveDataOnSecret() error {
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
 	log := r.logger
-	var isAnnotation bool
-	for key := range r.plan.Annotations {
-		if strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
-			isAnnotation = true
-			break
+	r.logger.Info("Looking for spec-descriptors in 'spec'...")
+	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
+		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+			return nil, err
 		}
 	}
 
-	if isAnnotation {
-		for key, value := range r.plan.Annotations {
-			if err = r.readAnnotation(key, value); err != nil {
-				return nil, err
-			}
-		}
-	} else {
-		r.logger.Info("Looking for spec-descriptors in 'spec'...")
-		for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
-			if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
-				return nil, err
-			}
-		}
-
-		r.logger.Info("Looking for status-descriptors in 'status'...")
-		for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
-			if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
-				return nil, err
-			}
+	r.logger.Info("Looking for status-descriptors in 'status'...")
+	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
+		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+			return nil, err
 		}
 	}
 

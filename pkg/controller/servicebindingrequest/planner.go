@@ -86,34 +86,12 @@ func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
 func (p *Planner) Plan() (*Plan, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
-	logger := p.logger.WithValues("CR.GVK", gvk.String())
-
-	var ann map[string]string
-	// retrieve the CRD based on kind, api-version and name
-	crd, err := p.searchCRD()
-	if err == nil {
-		ann = crd.GetAnnotations()
-	}
-	var isAnnotation bool
-
-	for key := range ann {
-		if strings.HasPrefix(key, "servicebindingoperator.redhat.io/") {
-			isAnnotation = true
-			break
-		}
+	olm := NewOLM(p.client, p.sbr.GetNamespace())
+	crdDescription, err := olm.SelectCRDByGVK(gvk)
+	if err != nil {
+		return nil, err
 	}
 
-	var crdDescription *olmv1alpha1.CRDDescription
-	// Check if annotaion is not present
-	if !isAnnotation {
-		logger.Info("Annotaion is not present. Read from OLM")
-		olm := NewOLM(p.client, p.sbr.GetNamespace())
-		crdDescription, err = olm.SelectCRDByGVK(gvk)
-		if err != nil {
-			return nil, err
-		}
-
-	}
 	// retrieve the CR based on kind, api-version and name
 	cr, err := p.searchCR()
 	if err != nil {
@@ -126,7 +104,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		CRDDescription: crdDescription,
 		CR:             cr,
 		SBR:            *p.sbr,
-		Annotations:    ann,
+		Annotations:    map[string]string{},
 	}, nil
 }
 
