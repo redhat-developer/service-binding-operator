@@ -4,7 +4,7 @@ kind: CustomResourceDefinition
 metadata:
   name: databases.postgresql.baiju.dev
   annotations:
-    servicebindingoperator.redhat.io/spec.dbName: 'binding:env:attribute'
+    servicebindingoperator.redhat.io/status.dbCredentials-data.user: 'binding:env:object:secret'
 spec:
   group: postgresql.baiju.dev
   names:
