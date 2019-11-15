@@ -245,7 +245,7 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 	}
 	// effectively binding the application with intermediary secret
 	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
-	c.Env = b.appendEnvVar(c.Env, lastboundparam, time.Now().Format(time.RFC3339))
+	// c.Env = b.appendEnvVar(c.Env, lastboundparam, time.Now().Format(time.RFC3339))
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries
 		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts)
