@@ -22,7 +22,7 @@ func TestCsvRole(t *testing.T) {
 
 	var mapCSV interface{}
 	var mapRoles interface{}
-	filenameCSV, _ := filepath.Rel(rootdir, csv)
+	filenameCSV, _ := filepath.Abs(csv)
 	yamlFileCSV, err := ioutil.ReadFile(filenameCSV)
 	check(err)
 	map1 := make(map[interface{}]interface{})
@@ -47,7 +47,7 @@ func TestCsvRole(t *testing.T) {
 		}
 	}
 
-	filenameRoles, _ := filepath.Rel(rootdir, roles)
+	filenameRoles, _ := filepath.Abs(roles)
 	yamlFileRoles, err := ioutil.ReadFile(filenameRoles)
 	check(err)
 	map2 := make(map[interface{}]interface{})
