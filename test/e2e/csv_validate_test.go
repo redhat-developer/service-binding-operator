@@ -28,12 +28,10 @@ func TestCsvRole(t *testing.T) {
 	map1 := make(map[interface{}]interface{})
 	err = yaml.Unmarshal(yamlFileCSV, &map1)
 	check(err)
-	spec := make(map[interface{}]interface{})
-	ok := false
 
-	if spec, ok = map1["spec"].(map[interface{}]interface{}); ok {
+	if spec, ok := map1["spec"].(map[interface{}]interface{}); ok {
 		if install, ok := spec["install"].(map[interface{}]interface{}); ok {
-			if spec, ok = install["spec"].(map[interface{}]interface{}); ok {
+			if spec, ok := install["spec"].(map[interface{}]interface{}); ok {
 				if permissions, ok := spec["permissions"].([]interface{}); ok {
 					if rules, ok := permissions[0].(map[interface{}]interface{}); ok {
 						for i, j := range rules {
