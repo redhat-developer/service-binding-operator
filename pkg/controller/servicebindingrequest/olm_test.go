@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -20,9 +20,9 @@ func init() {
 func assertGVKs(t *testing.T, gvks []schema.GroupVersionKind) {
 	for _, gvk := range gvks {
 		t.Logf("Inspecting GVK: '%s'", gvk)
-		assert.NotEmpty(t, gvk.Group)
-		assert.NotEmpty(t, gvk.Version)
-		assert.NotEmpty(t, gvk.Kind)
+		require.NotEmpty(t, gvk.Group)
+		require.NotEmpty(t, gvk.Version)
+		require.NotEmpty(t, gvk.Kind)
 	}
 }
 
@@ -37,14 +37,14 @@ func TestOLMNew(t *testing.T) {
 
 	t.Run("listCSVs", func(t *testing.T) {
 		csvs, err := olm.listCSVs()
-		assert.NoError(t, err)
-		assert.Len(t, csvs, 1)
+		require.NoError(t, err)
+		require.Len(t, csvs, 1)
 	})
 
 	t.Run("ListCSVOwnedCRDs", func(t *testing.T) {
 		crds, err := olm.ListCSVOwnedCRDs()
-		assert.NoError(t, err)
-		assert.Len(t, crds, 1)
+		require.NoError(t, err)
+		require.Len(t, crds, 1)
 	})
 
 	t.Run("SelectCRDByGVK", func(t *testing.T) {
@@ -54,24 +54,24 @@ func TestOLMNew(t *testing.T) {
 			Version: mocks.CRDVersion,
 			Kind:    mocks.CRDKind,
 		}, nil)
-		assert.NoError(t, err)
-		assert.NotNil(t, crd)
+		require.NoError(t, err)
+		require.NotNil(t, crd)
 		expectedCRDName := strings.ToLower(fmt.Sprintf("%s.%s", mocks.CRDKind, mocks.CRDName))
-		assert.Equal(t, expectedCRDName, crd.Name)
+		require.Equal(t, expectedCRDName, crd.Name)
 	})
 
 	t.Run("ListCSVOwnedCRDsAsGVKs", func(t *testing.T) {
 		gvks, err := olm.ListCSVOwnedCRDsAsGVKs()
-		assert.NoError(t, err)
-		assert.Len(t, gvks, 1)
+		require.NoError(t, err)
+		require.Len(t, gvks, 1)
 		assertGVKs(t, gvks)
 	})
 
 	t.Run("ListGVKsFromCSVNamespacedName", func(t *testing.T) {
 		namespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
 		gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
-		assert.NoError(t, err)
-		assert.Len(t, gvks, 1)
+		require.NoError(t, err)
+		require.Len(t, gvks, 1)
 		assertGVKs(t, gvks)
 	})
 }

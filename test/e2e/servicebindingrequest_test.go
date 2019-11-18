@@ -13,7 +13,6 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -400,7 +399,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 		return err
 	})
 	t.Logf("Deployment: Result after attempts, error: '%#v'", err)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
@@ -424,7 +423,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 		return err
 	})
 	t.Logf("Intermediary-Secret: Result after attempts, error: '%#v'", err)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// cleaning up
 	t.Log("Cleaning all up!")
