@@ -50,15 +50,15 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Log("Adding ServiceBindingRequestList scheme to cluster...")
 	sbrlist := v1alpha1.ServiceBindingRequestList{}
-	require.Nil(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist))
+	require.NoError(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist))
 
 	t.Log("Adding ClusterServiceVersionList scheme to cluster...")
 	csvList := olmv1alpha1.ClusterServiceVersionList{}
-	require.Nil(t, framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, &csvList))
+	require.NoError(t, framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, &csvList))
 
 	t.Log("Adding DatabaseList scheme to cluster...")
 	dbList := pgv1alpha1.DatabaseList{}
-	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
+	require.NoError(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
 	t.Run("end-to-end", func(t *testing.T) {
 		// scenario-1
@@ -120,14 +120,14 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx, clean bool) (strin
 
 	// namespace name is informed on command-line or defined dinamically
 	ns, err := ctx.GetNamespace()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	t.Logf("Using namespace '%s' for testing...", ns)
 
 	f := framework.Global
 
 	if clean {
 		err := cleanNamespace(t, ctx, f, ns)
-		require.Nil(t, err)
+		require.NoError(t, err)
 	}
 	return ns, f
 }
@@ -154,7 +154,7 @@ func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework
 		t.Logf("\t\t%s...", resource.GetName())
 		err := f.Client.Delete(todoCtx, &resource)
 		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 
@@ -166,7 +166,7 @@ func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework
 		t.Logf("\t\t%s...", resource.GetName())
 		err := f.Client.Delete(todoCtx, &resource)
 		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 
@@ -178,7 +178,7 @@ func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework
 		t.Logf("\t\t%s...", resource.GetName())
 		err := f.Client.Delete(todoCtx, &resource)
 		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 
@@ -190,7 +190,7 @@ func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework
 		t.Logf("\t\t%s...", resource.GetName())
 		err := f.Client.Delete(todoCtx, &resource)
 		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 
@@ -205,7 +205,7 @@ func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework
 		t.Logf("\t\t%s...", resource.GetName())
 		err := f.Client.Delete(todoCtx, &resource)
 		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
+			require.NoError(t, err)
 		}
 	}
 
@@ -293,7 +293,7 @@ func updateSecret(
 	namespacedName types.NamespacedName,
 ) {
 	sbrSecret := &corev1.Secret{}
-	require.Nil(t, f.Client.Get(ctx, namespacedName, sbrSecret))
+	require.NoError(t, f.Client.Get(ctx, namespacedName, sbrSecret))
 
 	// intentionally bumping the object generation, so the operator will reconcile;
 	generation := sbrSecret.GetGeneration()
@@ -305,7 +305,7 @@ func updateSecret(
 		sbrSecret.Data[k] = []byte("bogus")
 	}
 
-	require.Nil(t, f.Client.Update(ctx, sbrSecret))
+	require.NoError(t, f.Client.Update(ctx, sbrSecret))
 }
 
 // retry the informed method a few times, with sleep between attempts.
@@ -324,7 +324,7 @@ func retry(attempts int, sleep time.Duration, fn func() error) error {
 func CreateCSV(ctx context.Context, t *testing.T, testCtx *framework.TestCtx, f *framework.Framework, namespace, name string) {
 	t.Log("Creating ClusterServiceVersion mock object...")
 	csv := mocks.ClusterServiceVersionMock(namespace, name)
-	require.Nil(t, f.Client.Create(ctx, &csv, cleanUpOptions(testCtx)))
+	require.NoError(t, f.Client.Create(ctx, &csv, cleanUpOptions(testCtx)))
 	err := wait.Poll(2*time.Second, 10*time.Second, func() (done bool, err error) {
 		if err = f.Client.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, &csv); err != nil {
 			if errors.IsNotFound(err) {
@@ -430,16 +430,16 @@ func CreateDB(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *
 	resourceRef := namespacedName.Name
 	t.Log("Creating Database mock object...")
 	db := mocks.DatabaseCRMock(ns, resourceRef)
-	require.Nil(t, f.Client.Create(todoCtx, db, cleanUpOptions(ctx)))
+	require.NoError(t, f.Client.Create(todoCtx, db, cleanUpOptions(ctx)))
 
 	t.Log("Updating Database status, adding 'DBCredentials'")
-	require.Nil(t, f.Client.Get(todoCtx, namespacedName, db))
+	require.NoError(t, f.Client.Get(todoCtx, namespacedName, db))
 	db.Status.DBCredentials = secretName
-	require.Nil(t, f.Client.Status().Update(todoCtx, db))
+	require.NoError(t, f.Client.Status().Update(todoCtx, db))
 
 	t.Log("Creating Database credentials secret mock object...")
 	dbSecret := mocks.SecretMock(ns, secretName)
-	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
+	require.NoError(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
 
 	return db
 }
@@ -450,16 +450,16 @@ func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f 
 	appName := namespacedName.Name
 	t.Log("Creating Deployment mock object...")
 	d := mocks.DeploymentMock(ns, appName, matchLabels)
-	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
+	require.NoError(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
 
 	// waiting for application deployment to reach one replica
 	t.Log("Waiting for application deployment reach one replica...")
-	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+	require.NoError(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
 
 	// retrieveing deployment, to inspect its contents
 
 	t.Logf("Reading application deployment '%s'", appName)
-	require.Nil(t, f.Client.Get(todoCtx, namespacedName, &d))
+	require.NoError(t, f.Client.Get(todoCtx, namespacedName, &d))
 
 	return d
 }
@@ -472,6 +472,6 @@ func CreateServiceBindingRequest(todoCtx context.Context, t *testing.T, ctx *fra
 	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(todoCtx, sbr)
-	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+	require.NoError(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
 	return sbr
 }
