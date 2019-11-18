@@ -16,13 +16,13 @@ import (
 func TestCsvRole(t *testing.T) {
 	curdir, err := os.Getwd()
 	require.NoError(t, err)
-	// curDir is service-binding-operator
-	csv := filepath.Join(curdir, "manifests-upstream", "0.0.20", "service-binding-operator.v0.0.20.clusterserviceversion.yaml")
-	roles := filepath.Join(curdir, "deploy", "role.yaml")
+	rootdir := filepath.Dir(filepath.Dir(curdir))
+	csv := filepath.Join(rootdir, "manifests-upstream", "0.0.20", "service-binding-operator.v0.0.20.clusterserviceversion.yaml")
+	roles := filepath.Join(rootdir, "deploy", "role.yaml")
 
 	var mapCSV interface{}
 	var mapRoles interface{}
-	filenameCSV, _ := filepath.Rel(curdir, csv)
+	filenameCSV, _ := filepath.Rel(rootdir, csv)
 	yamlFileCSV, err := ioutil.ReadFile(filenameCSV)
 	check(err)
 	map1 := make(map[interface{}]interface{})
@@ -47,7 +47,7 @@ func TestCsvRole(t *testing.T) {
 		}
 	}
 
-	filenameRoles, _ := filepath.Rel(curdir, roles)
+	filenameRoles, _ := filepath.Rel(rootdir, roles)
 	yamlFileRoles, err := ioutil.ReadFile(filenameRoles)
 	check(err)
 	map2 := make(map[interface{}]interface{})
