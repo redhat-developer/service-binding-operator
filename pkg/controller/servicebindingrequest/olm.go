@@ -166,10 +166,13 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 
 // buildCRDDescriptionFromCRDAnnotations builds a CRDDescription from annotations present in the CRD.
 func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-	specDescriptors := []olmv1alpha1.SpecDescriptor{}
-	statusDescriptors := []olmv1alpha1.StatusDescriptor{}
+	var specDescriptors []olmv1alpha1.SpecDescriptor
+	var statusDescriptors []olmv1alpha1.StatusDescriptor
 
 	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+	if err != nil {
+		return nil, err
+	}
 
 	kind, ok, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
 	if err != nil {

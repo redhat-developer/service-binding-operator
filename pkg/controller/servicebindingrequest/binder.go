@@ -21,10 +21,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-const (
-	lastboundparam = "lastbound"
-)
-
 var (
 	binderLog = log.NewLog("binder")
 )
