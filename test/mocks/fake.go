@@ -38,9 +38,14 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
+	groupVersionResource string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+<<<<<<< HEAD
 	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+=======
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false, groupVersionResource)
+>>>>>>> 31f32bb... Add knative service test
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -52,9 +57,14 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
+	groupVersionResource string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+<<<<<<< HEAD
 	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+=======
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, true, groupVersionResource)
+>>>>>>> 31f32bb... Add knative service test
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -65,10 +75,16 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
+	groupVersionResource string,
 ) *unstructured.Unstructured {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+<<<<<<< HEAD
 	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	require.NoError(f.t, err)
+=======
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, groupVersionResource)
+	require.Nil(f.t, err)
+>>>>>>> 31f32bb... Add knative service test
 	f.objs = append(f.objs, sbr)
 	return sbr
 }

@@ -382,8 +382,16 @@ func ServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
+<<<<<<< HEAD
 ) *v1alpha1.ServiceBindingRequest {
 	sbr := &v1alpha1.ServiceBindingRequest{
+=======
+	bindUnannotated bool,
+	groupVersionResource string,
+) *v1alpha1.ServiceBindingRequest {
+	GVR := strings.Split(groupVersionResource, "/")
+	return &v1alpha1.ServiceBindingRequest{
+>>>>>>> 31f32bb... Add knative service test
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -397,9 +405,15 @@ func ServiceBindingRequestMock(
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
+<<<<<<< HEAD
 				Group:       applicationGVR.Group,
 				Version:     applicationGVR.Version,
 				Resource:    applicationGVR.Resource,
+=======
+				Group:       GVR[0],
+				Version:     GVR[1],
+				Resource:    GVR[2],
+>>>>>>> 31f32bb... Add knative service test
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
@@ -423,7 +437,9 @@ func UnstructuredServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
+	groupVersionResource string,
 ) (*unstructured.Unstructured, error) {
+<<<<<<< HEAD
 	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
@@ -479,6 +495,12 @@ func DeploymentConfigMock(ns, name string, matchLabels map[string]string) ocav1.
 				},
 			},
 		},
+=======
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false, groupVersionResource)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
+	if err != nil {
+		return nil, err
+>>>>>>> 31f32bb... Add knative service test
 	}
 }
 
