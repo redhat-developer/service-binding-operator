@@ -120,16 +120,15 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 		return nil, err
 	}
 
+	var crdDescription *olmv1alpha1.CRDDescription
+
 	// CRDDescription is both used by OLM to configure OLM descriptors in manifests existing in the
 	// cluster but is also built from annotations present in the CRD
-	crdDescription, err := buildCRDDescriptionFromCRDAnnotations(crd)
-	if err != nil {
-		return nil, err
-	}
-
-	// add the CRDDescription built from CRD annotations if one could be built
-	if crdDescription != nil {
-		ownedCRDs = append([]unstructured.Unstructured{*crdDescription}, ownedCRDs...)
+	if crd != nil {
+		crdDescription, err = buildCRDDescriptionFromCRDAnnotations(crd)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	crdDescriptions := []*olmv1alpha1.CRDDescription{}
@@ -157,15 +156,19 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 		return nil, err
 	}
 
-	if len(crdDescriptions) == 0 {
+	if len(crdDescriptions) == 0 && crdDescription == nil {
 		log.Debug("No CRD could be found for GVK.")
 		return nil, fmt.Errorf("no crd could be found for gvk")
+	} else if len(crdDescriptions) == 0 {
+		// use the crdDescription built from CRD annotations as fallback
+		return crdDescription, nil
 	}
+
 	return crdDescriptions[0], nil
 }
 
 // buildCRDDescriptionFromCRDAnnotations builds a CRDDescription from annotations present in the CRD.
-func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	var specDescriptors []olmv1alpha1.SpecDescriptor
 	var statusDescriptors []olmv1alpha1.StatusDescriptor
 
@@ -196,11 +199,7 @@ func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*uns
 		StatusDescriptors: statusDescriptors,
 	}
 
-	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&crdDescription)
-	if err != nil {
-		return nil, err
-	}
-	return &unstructured.Unstructured{Object: uObj}, nil
+	return &crdDescription, nil
 }
 
 func buildDescriptorsFromAnnotations(annotations map[string]string) ([]olmv1alpha1.SpecDescriptor, []olmv1alpha1.StatusDescriptor, error) {
