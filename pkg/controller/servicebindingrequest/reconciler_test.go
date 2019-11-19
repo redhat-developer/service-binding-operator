@@ -50,6 +50,7 @@ func TestReconcilerReconcileError(t *testing.T) {
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 
+	// FIXME: decide this test's fate
 	// I'm not very sure what this test was about, but in the case the SBR definition contains
 	// references to objects that do not exist, the reconciliation process is supposed to be
 	// successful. Commented below was the original test.

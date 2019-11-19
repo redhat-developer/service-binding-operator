@@ -48,6 +48,7 @@ func TestOLMNew(t *testing.T) {
 	})
 
 	t.Run("SelectCRDByGVK", func(t *testing.T) {
+		// FIXME: include test for populated CRD
 		crd, err := olm.SelectCRDByGVK(schema.GroupVersionKind{
 			Group:   mocks.CRDName,
 			Version: mocks.CRDVersion,
