@@ -35,7 +35,6 @@ type Plan struct {
 	CRDDescription *olmv1alpha1.CRDDescription    // custom resource definition description
 	CR             *unstructured.Unstructured     // custom resource object
 	SBR            v1alpha1.ServiceBindingRequest // service binding request
-	Annotations    map[string]string              // annotations in the backing service CRD
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
@@ -111,7 +110,6 @@ func (p *Planner) Plan() (*Plan, error) {
 		CRDDescription: crdDescription,
 		CR:             cr,
 		SBR:            *p.sbr,
-		Annotations:    map[string]string{},
 	}, nil
 }
 
