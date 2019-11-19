@@ -61,7 +61,6 @@ func TestAddSchemesToFramework(t *testing.T) {
 	require.NoError(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
 	t.Run("end-to-end", func(t *testing.T) {
-		// scenario-1
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
@@ -78,7 +77,6 @@ func TestAddSchemesToFramework(t *testing.T) {
 			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
 		})
 
-		// scenario-2 (pre create sbr then binding resources
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
 		})
@@ -87,16 +85,30 @@ func TestAddSchemesToFramework(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
 
-		// scenario-3
 		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
-		// scenario-4
+
+		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
+		})
+
+		t.Run("scenario-csv-db-sbr-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, DBStep, SBRStep, AppStep})
+		})
+
+		t.Run("scenario-csv-app-sbr-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, AppStep, SBRStep, DBStep})
+		})
+
 		t.Run("scenario-csv-sbr-db-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
+			ServiceBindingRequest(t, []Step{CSVStep, SBRStep, DBStep, AppStep})
+		})
+
+		t.Run("scenario-csv-sbr-app-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, SBRStep, AppStep, DBStep})
 		})
 	})
-
 }
 
 // cleanUpOptions using global variables to create the object.
