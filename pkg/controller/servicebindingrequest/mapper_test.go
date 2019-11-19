@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -34,7 +33,7 @@ func TestSBRRequestMapperMap(t *testing.T) {
 	mapObj = handler.MapObject{Meta: u, Object: u.DeepCopyObject()}
 	mappedRequests = mapper.Map(mapObj)
 	require.Equal(t, 1, len(mappedRequests))
-	assert.Equal(t, request, mappedRequests[0])
+	require.Equal(t, request, mappedRequests[0])
 
 	// it should also understand a actual SBR as well, so return not empty
 	sbr := &unstructured.Unstructured{}
@@ -44,5 +43,5 @@ func TestSBRRequestMapperMap(t *testing.T) {
 	mapObj = handler.MapObject{Meta: u, Object: sbr.DeepCopyObject()}
 	mappedRequests = mapper.Map(mapObj)
 	require.Equal(t, 1, len(mappedRequests))
-	assert.Equal(t, request, mappedRequests[0])
+	require.Equal(t, request, mappedRequests[0])
 }

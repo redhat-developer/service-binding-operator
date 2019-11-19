@@ -3,7 +3,7 @@ package servicebindingrequest
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -12,10 +12,10 @@ import (
 )
 
 func TestAnnotationsExtractNamespacedName(t *testing.T) {
-	assert.Equal(t, types.NamespacedName{}, extractSBRNamespacedName(map[string]string{}))
+	require.Equal(t, types.NamespacedName{}, extractSBRNamespacedName(map[string]string{}))
 
 	data := map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"}
-	assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, extractSBRNamespacedName(data))
+	require.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, extractSBRNamespacedName(data))
 }
 
 func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
@@ -25,16 +25,16 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// not containing annotations, should return empty
 	t.Run("returns-empty", func(t *testing.T) {
 		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
-		assert.Nil(t, err)
-		assert.Equal(t, types.NamespacedName{}, namespacedName)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
 
 	// with annotations in place it should return the actual values
 	t.Run("from-annotations", func(t *testing.T) {
 		u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"})
 		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
-		assert.Nil(t, err)
-		assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
 	})
 
 	// it should also understand a actual SBR as well, so return not empty
@@ -44,7 +44,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 		sbr.SetNamespace("ns")
 		sbr.SetName("name")
 		namespacedName, err := GetSBRNamespacedNameFromObject(sbr.DeepCopyObject())
-		assert.Nil(t, err)
-		assert.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
 	})
 }
