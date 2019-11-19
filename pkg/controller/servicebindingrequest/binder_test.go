@@ -3,11 +3,13 @@ package servicebindingrequest
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -95,20 +97,31 @@ func TestBinderNew(t *testing.T) {
 		assert.True(t, found)
 		assert.Len(t, containers, 1)
 
-		// I believe the test subject here is the environment variable which was being populated by
-		// the operator, but since I haven't found why this is required, the tests below are
-		// commented.
-		//
-		// c := corev1.Container{}
-		// u := containers[0].(map[string]interface{})
-		// err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
-		// assert.NoError(t, err)
-		// assert.NotEmpty(t, c.Env[0].Value)
-		//
-		// parsedTime, err := time.Parse(time.RFC3339, c.Env[0].Value)
-		// assert.NoError(t, err)
-		// assert.True(t, parsedTime.Before(time.Now()))
+		c := corev1.Container{}
+		u := containers[0].(map[string]interface{})
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+		assert.NoError(t, err)
+
+		// ServiceBindingOperatorChangeTriggerEnvVar should exist to trigger a side effect such as Pod restart when the
+		// intermediate secret has been modified
+		envVar := getEnvVar(c.Env, ServiceBindingOperatorChangeTriggerEnvVar)
+		assert.NotNil(t, envVar)
+		assert.NotEmpty(t, envVar.Value)
+
+		parsedTime, err := time.Parse(time.RFC3339, envVar.Value)
+		assert.NoError(t, err)
+		assert.True(t, parsedTime.Before(time.Now()))
 	})
+}
+
+// getEnvVar returns an EnvVar with given name if exists in the given envVars.
+func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
+	for _, v := range envVars {
+		if v.Name == name {
+			return &v
+		}
+	}
+	return nil
 }
 
 func TestAppendEnvVar(t *testing.T) {

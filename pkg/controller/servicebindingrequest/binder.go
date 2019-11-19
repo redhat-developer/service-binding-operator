@@ -3,6 +3,7 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -24,6 +25,8 @@ import (
 var (
 	binderLog = log.NewLog("binder")
 )
+
+const ServiceBindingOperatorChangeTriggerEnvVar = "ServiceBindingOperatorChangeTriggerEnvVar"
 
 // Binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
@@ -241,7 +244,12 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 	}
 	// effectively binding the application with intermediary secret
 	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
-	// c.Env = b.appendEnvVar(c.Env, lastboundparam, time.Now().Format(time.RFC3339))
+
+	// add a special environment variable that is only used to trigger a change in the declaration,
+	// attempting to force a side effect (in case of a Deployment, it would result in its Pods to be
+	// restarted)
+	c.Env = b.appendEnvVar(c.Env, ServiceBindingOperatorChangeTriggerEnvVar, time.Now().Format(time.RFC3339))
+
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries
 		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts)
