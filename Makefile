@@ -403,3 +403,16 @@ consistent-crds-manifests-upstream:
 	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
 	servicebindingrequests.apps.openshift.io.crd.yaml
 
+## -- Target for merge to master dev release --
+
+.PHONY: build-image push-image
+## Make a dev release on every merge to master
+merge-to-master-release: 
+ 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
+	$(Q)operator-sdk build \
+	--image-builder=$(OPERATOR_IMAGE_BUILDER) \
+	"$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	podman login -u="redhat-developer+travis" -p=${QUAY_TOKEN}
+ 	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
+	-podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	-podman push "$(OPERATOR_IMAGE):latest"
