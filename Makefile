@@ -193,6 +193,7 @@ get-test-namespace: out/test-namespace
 e2e-setup: e2e-cleanup
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/etcd_v1beta1_etcdcluster_crd.yaml
 	$(Q)mkdir -p $(LOGS_DIR)/e2e
 
 .PHONY: e2e-cleanup

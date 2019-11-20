@@ -32,10 +32,10 @@ import (
 type Step string
 
 const (
-	DBStep      Step = "create-db"
-	AppStep     Step = "create-app"
-	SBRStep     Step = "create-sbr"
-	SBREtcdStep Step = "create-etcd-sbr"
+	DBStep          Step = "create-db"
+	AppStep         Step = "create-app"
+	SBRStep         Step = "create-sbr"
+	SBREtcdStep     Step = "create-etcd-sbr"
 	EtcdClusterStep Step = "create-etcd-cluster"
 )
 
@@ -85,6 +85,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 // cleanUpOptions using global variables to create the object.
 func cleanUpOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
+	return nil
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
 		Timeout:       cleanupTimeout,
@@ -213,7 +214,7 @@ func assertAppDeployed(
 	ctx context.Context,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
-	) (*appsv1.Deployment, error) {
+) (*appsv1.Deployment, error) {
 	d := &appsv1.Deployment{}
 	if err := f.Client.Get(ctx, namespacedName, d); err != nil {
 		return nil, err
@@ -255,6 +256,20 @@ func assertDeploymentEnvFrom(
 	}
 
 	return d, nil
+}
+
+func sbrSecretAsserter(
+	ctx context.Context,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+	assert func(sec *corev1.Secret),
+	)  error {
+	sbrSecret := &corev1.Secret{}
+	if err := f.Client.Get(ctx, namespacedName, sbrSecret); err != nil {
+		return err
+	}
+	assert(sbrSecret)
+	return nil
 }
 
 // assertSBRSecret execute the inspection in a secret created by the operator.
@@ -360,7 +375,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 			d = CreateApp(todoCtx, t, ctx, f, deploymentNamespacedName, matchLabels)
 		case SBRStep:
 			// creating service-binding-request, which will trigger actions in the controller
-			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, serviceBindingRequestNamespacedName, resourceRef, matchLabels, nil, false)
+			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, serviceBindingRequestNamespacedName, resourceRef,appName, matchLabels, nil, false)
 		case SBREtcdStep:
 			sbr = CreateServiceBindingRequest(
 				todoCtx,
@@ -369,6 +384,7 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 				f,
 				serviceBindingRequestNamespacedName,
 				resourceRef,
+				appName,
 				matchLabels,
 				&v1.GroupVersionKind{
 					Group:   "etcd.database.coreos.com",
@@ -475,8 +491,22 @@ func CreateEtcdCluster(
 	ns := namespacedName.Namespace
 	name := namespacedName.Name
 	t.Log("Create etcd cluster")
-	etcd, etcdSvc := mocks.CreateEtcdClusterMock(ns, name)
+	etcd, etcdSvc := mocks.CreateEtcdClusterMock(ns, name,f)
+	t.Logf("ETCD Cluster mock %+v", etcd)
+	trueBool := true
+	falseBool := false
 	require.Nil(t, f.Client.Create(todoCtx, etcd, cleanUpOptions(ctx)))
+	etcdSvc.SetOwnerReferences([]v1.OwnerReference{
+		{
+			APIVersion:         v1beta2.SchemeGroupVersion.Version,
+			Kind:               v1beta2.EtcdClusterResourceKind,
+			Name:               etcd.Name,
+			UID:                etcd.UID,
+			Controller:         &trueBool,
+			BlockOwnerDeletion: &falseBool,
+		},
+	})
+	t.Logf("ETCD SVC: %+v", etcdSvc)
 	require.Nil(t, f.Client.Create(todoCtx, etcdSvc, cleanUpOptions(ctx)))
 	return etcd, etcdSvc
 }
@@ -488,6 +518,7 @@ func CreateServiceBindingRequest(
 	ctx *framework.TestCtx,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
+	backendResourceRef string,
 	resourceRef string,
 	matchLabels map[string]string,
 	backendGvk *v1.GroupVersionKind,
@@ -496,9 +527,10 @@ func CreateServiceBindingRequest(
 	ns := namespacedName.Namespace
 	name := namespacedName.Name
 	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, bindUnannotated, backendGvk)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, backendResourceRef,resourceRef, matchLabels, bindUnannotated, backendGvk)
 	// making sure object does not exist before testing
-	_ = f.Client.Delete(todoCtx, sbr)
+	//_ = f.Client.Delete(todoCtx, sbr)
 	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
+	t.Log("SBR Created ", sbr)
 	return sbr
 }

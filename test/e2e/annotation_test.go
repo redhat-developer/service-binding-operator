@@ -21,7 +21,7 @@ import (
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 )
 
-func TestAnnoationBasedMetadata(t *testing.T) {
+func TestAnnotationBasedMetadata(t *testing.T) {
 	sbrlist := v1alpha1.ServiceBindingRequestList{}
 	require.NoError(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist), "failed to add custom resource scheme to framework")
 
@@ -66,7 +66,7 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	err = f.Client.Create(context.TODO(), &dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
 
-	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false)
+	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false, nil)
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
 
@@ -96,7 +96,7 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	require.Equal(t, name, dep.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.LocalObjectReference.Name, "secret reference doesn't match")
 }
 
-func TestAnnoationAndCSVBasedMetadata(t *testing.T) {
+func TestAnnotationAndCSVBasedMetadata(t *testing.T) {
 	sbrlist := v1alpha1.ServiceBindingRequestList{}
 	require.NoError(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist), "failed to add custom resource scheme to framework")
 
@@ -148,7 +148,7 @@ func TestAnnoationAndCSVBasedMetadata(t *testing.T) {
 	err = f.Client.Create(context.TODO(), &dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
 
-	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false)
+	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false, nil)
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
 

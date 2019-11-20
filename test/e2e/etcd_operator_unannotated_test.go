@@ -2,8 +2,11 @@ package e2e
 
 import (
 	"context"
+	"github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	v12 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"testing"
@@ -38,6 +41,9 @@ func serviceBindingRequestTestSetup(t *testing.T, ctx *framework.TestCtx, f *fra
 	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
 	serviceBindingRequestNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 
+	etcdC := v1beta2.EtcdCluster{}
+	require.NoError(t, framework.AddToFrameworkScheme(v1beta2.AddToScheme, &etcdC))
+
 	for _, step := range steps {
 		switch step {
 		case AppStep:
@@ -50,6 +56,7 @@ func serviceBindingRequestTestSetup(t *testing.T, ctx *framework.TestCtx, f *fra
 				f,
 				serviceBindingRequestNamespacedName,
 				resourceRef,
+				appName,
 				matchLabels,
 				&v1.GroupVersionKind{
 					Group:   "etcd.database.coreos.com",
@@ -73,5 +80,11 @@ func serviceBindingRequestTestSetup(t *testing.T, ctx *framework.TestCtx, f *fra
 	})
 	t.Logf("Deployment: Result after attempts, error: '%#v'", err)
 	assert.NoError(t, err)
+
+	sbrSecretAsserter(todoCtx, f, serviceBindingRequestNamespacedName ,func(s *v12.Secret) {
+		val, ok := s.Data["ETCDCLUSTER_CLUSTERIP"]
+		assert.True(t, ok, "CLUSTERIP field does not exist in intermediate secret.")
+		assert.Equal(t, []byte("172.30.255.254"), val, "Ip is not matching")
+	})
 
 }

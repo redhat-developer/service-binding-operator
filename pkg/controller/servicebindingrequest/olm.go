@@ -1,7 +1,6 @@
 package servicebindingrequest
 
 import (
-	"fmt"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -144,7 +143,9 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 
 	if len(crdDescriptions) == 0 {
 		log.Debug("No CRD could be found for GVK.")
-		return nil, fmt.Errorf("no crd could be found for gvk")
+		// Akash: Not throwing error since OLM support is optional
+		// and we don't want to reconcile by throwing an error here.
+		return &olmv1alpha1.CRDDescription{}, nil
 	}
 	return crdDescriptions[0], nil
 }
