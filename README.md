@@ -30,7 +30,7 @@ annotations. Details on the methods for making backing services bindable
 are available in the [Operator Best Practices Guide](docs/OperatorBestPractices.md)
 
 In order to make an imported application (for example, a NodeJS application)
-connect to a backing services (for example, a database):
+connect to a backing service (for example, a database):
 
 * The app author (developer) creates a `ServiceBindingRequest` and specifies:
   * The resource that needs the binding information. The resource can be

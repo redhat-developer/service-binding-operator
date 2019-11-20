@@ -68,16 +68,32 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		// scenario-1
-		//t.Run("scenario-db-app-sbr", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		//})
-		//// scenario-2 (pre create sbr then binding resources
-		//t.Run("scenario-sbr-db-app", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
-		//})
-		// scenario-3 (connect etcd operator with app using SBR)
+
 		t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
 			ServiceBindingRequestSetup(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
+		t.Run("scenario-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		})
+
+		t.Run("scenario-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+		})
+
+		t.Run("scenario-db-sbr-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
+		})
+
+		t.Run("scenario-app-sbr-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
+		})
+
+		// scenario-2 (pre create sbr then binding resources
+		t.Run("scenario-sbr-db-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		})
+
+		t.Run("scenario-sbr-app-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
 	})
 
@@ -413,7 +429,8 @@ func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framewor
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
-	assert.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
+	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
+	require.NotNil(t, sbrSecret)
 
 	// editing intermediary secret in order to trigger update event
 	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
