@@ -4,7 +4,7 @@ dist: xenial
 language: go
 
 go:
-- 1.12.x
+- 1.13.x
 
 env:
   global:
@@ -45,3 +45,6 @@ script:
 - go test -mod vendor $(go list ./...|grep -v e2e) -v
 # Run e2e tests
 - operator-sdk test local ./test/e2e --namespace=operator-test --up-local --go-test-flags "-v"
+# Run merge-to-master-release
+- if [ "$TRAVIS_BRANCH" = "testing-quay" ]; then
+  make merge-to-master-release; fi

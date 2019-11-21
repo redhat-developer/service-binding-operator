@@ -404,11 +404,11 @@ consistent-crds-manifests-upstream:
 	servicebindingrequests.apps.openshift.io.crd.yaml
 
 ## -- Target for merge to master dev release --
-
-.PHONY: build-image push-image
+.PHONY: merge-to-master-release
 ## Make a dev release on every merge to master
 merge-to-master-release: 
- 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
+	echo "${QUAY_TOKEN}" | podman login -u "redhat-developer+travis" --password-stdin quay.io
+	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
 	$(Q)operator-sdk build \
 	--image-builder=$(OPERATOR_IMAGE_BUILDER) \
 	"$(OPERATOR_IMAGE)-$(COMMIT_COUNT)-$(OPERATOR_TAG_LONG)"
