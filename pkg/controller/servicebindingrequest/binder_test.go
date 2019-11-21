@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -91,7 +91,7 @@ func TestBinderNew(t *testing.T) {
 		require.Len(t, updatedObjects, 1)
 
 		containersPath := []string{"spec", "template", "spec", "containers"}
-		containers, found, err := ustrv1.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -103,7 +103,7 @@ func TestBinderNew(t *testing.T) {
 
 		// ServiceBindingOperatorChangeTriggerEnvVar should exist to trigger a side effect such as Pod restart when the
 		// intermediate secret has been modified
-		envVar := getEnvVar(c.Env, ServiceBindingOperatorChangeTriggerEnvVar)
+		envVar := getEnvVar(c.Env, ChangeTriggerEnv)
 		require.NotNil(t, envVar)
 		require.NotEmpty(t, envVar.Value)
 

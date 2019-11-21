@@ -14,9 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -36,6 +35,7 @@ const (
 	bindingFail = "Fail"
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
+	sbrFinalizer       = "finalizer.servicebindingrequest.openshift.io"
 )
 
 var (
@@ -91,8 +91,7 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 ) error {
 	// do not update if both statuses are equal
-	result := cmp.DeepEqual(sbr.Status, sbrStatus)()
-	if result.Success() {
+	if result := cmp.DeepEqual(sbr.Status, sbrStatus)(); result.Success() {
 		return nil
 	}
 
@@ -100,15 +99,27 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 	sbr.Status = *sbrStatus
 
 	// converting object into unstructured
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sbr)
+	u, err := converter.ToUnstructured(sbr)
 	if err != nil {
 		return err
 	}
-	u := &unstructured.Unstructured{Object: data}
 
 	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
 	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
 	_, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
+	return err
+}
+
+func (r *Reconciler) updateServiceBindingRequest(
+	sbr *v1alpha1.ServiceBindingRequest,
+) error {
+	u, err := converter.ToUnstructured(sbr)
+	if err != nil {
+		return err
+	}
+	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
+	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
 	return err
 }
 
@@ -159,7 +170,6 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
 //    Deployment (and other kinds) will be updated in "spec" level.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-
 	ctx := context.TODO()
 	objectsToAnnotate := []*unstructured.Unstructured{}
 
@@ -174,9 +184,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
 		log.Error(err, "On retrieving service-binding-request instance.")
-		// errors at this point should not trigger a requeue, probably should narrow this down to
-		// NotFound errors only.
-		return Done()
+		return DoneOnNotFound(err)
 	}
 
 	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
@@ -185,10 +193,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// splitting instance from it's status
 	sbrStatus := sbr.Status
 
-	// Check Service Binding Request
-	err = checkSBR(sbr, log)
-	if err != nil {
-		log.Error(err, "")
+	// check Service Binding Request
+	if err = checkSBR(sbr, log); err != nil {
 		return RequeueError(err)
 	}
 
@@ -225,37 +231,65 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	objectsToAnnotate = append(objectsToAnnotate, retrievedObjects...)
 
 	//
-	// Updating applications to use intermediary secret
+	// Binding and unbind intermediary secret
 	//
 
-	log.Info("Binding applications with intermediary secret.")
 	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
-	updatedObjects, err := binder.Bind()
-	if err != nil {
-		log.Error(err, "On binding application.")
-		return r.onError(err, sbr, &sbrStatus, updatedObjects)
-	}
 
-	// saving on status the list of objects that have been touched
-	r.setApplicationObjects(&sbrStatus, updatedObjects)
+	if sbr.GetDeletionTimestamp() != nil {
+		log.Info("Resource is marked for deletion.")
 
-	//
-	// Annotating objects related to binding
-	//
+		// when finalizer is not found anymore, it can be safely removed
+		if result := cmp.Contains(sbr.GetFinalizers(), sbr.Finalizers)(); !result.Success() {
+			log.Info("Resource can be safely deleted!")
+			return Done()
+		}
 
-	if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
-		log.Error(err, "On setting annotations in related objects.")
-		return r.onError(err, sbr, &sbrStatus, updatedObjects)
-	}
-
-	// updating status of request instance
-	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
-		// requeue only in case of conflict
-		if k8serrors.IsConflict(err) {
+		log.Info("Executing unbind steps...")
+		err = binder.Unbind()
+		if err != nil {
+			log.Error(err, "On unbinding application.")
 			return RequeueError(err)
 		}
-		log.Error(err, "On updating ServiceBindingRequest status")
-		return Done()
+
+		log.Info("Cleaning related object from operator's annotations...")
+		if err = RemoveSBRAnnotations(r.dynClient, objectsToAnnotate); err != nil {
+			log.Error(err, "On removing annotations from related objects.")
+			return RequeueError(err)
+		}
+
+		// executing the action of removing finalizer
+		sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), sbrFinalizer))
+		if err = r.updateServiceBindingRequest(sbr); err != nil {
+			return NoRequeue(err)
+		}
+	} else {
+		log.Info("Binding applications with intermediary secret.")
+		updatedObjects, err := binder.Bind()
+		if err != nil {
+			log.Error(err, "On binding application.")
+			return r.onError(err, sbr, &sbrStatus, updatedObjects)
+		}
+
+		// saving on status the list of objects that have been touched
+		r.setApplicationObjects(&sbrStatus, updatedObjects)
+
+		// annotating objects related to binding
+		if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
+			log.Error(err, "On setting annotations in related objects.")
+			return r.onError(err, sbr, &sbrStatus, updatedObjects)
+		}
+
+		// updating status of request instance
+		if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
+			return RequeueOnConflict(err)
+		}
+
+		// appending finalizer
+		sbr.SetFinalizers(append(sbr.GetFinalizers(), sbrFinalizer))
+		if err = r.updateServiceBindingRequest(sbr); err != nil {
+			return NoRequeue(err)
+		}
 	}
 
 	log.Info("All done!")

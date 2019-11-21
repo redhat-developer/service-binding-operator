@@ -79,6 +79,30 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	return sbrNamespacedName, nil
 }
 
+func updateUnstructuredObj(
+	client dynamic.Interface,
+	obj *unstructured.Unstructured,
+) error {
+	gvk := obj.GroupVersionKind()
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+	opts := metav1.UpdateOptions{}
+
+	log := annotationsLog.WithValues(
+		"SBR.Namespace", obj.GetNamespace(),
+		"SBR.Name", obj.GetName(),
+		"Resource.GVK", gvk,
+		"Resource.Namespace", obj.GetNamespace(),
+		"Resource.Name", obj.GetName(),
+	)
+	log.Debug("Updating resource annotations...")
+
+	_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
+	if err != nil {
+		log.Error(err, "unable to set/update annotations in object")
+	}
+	return err
+}
+
 // SetSBRAnnotations update existing annotations to include operator's. The annotations added are
 // referring to a existing SBR namespaced name.
 func SetSBRAnnotations(
@@ -96,21 +120,31 @@ func SetSBRAnnotations(
 		annotations[sbrNameAnnotation] = namespacedName.Name
 		obj.SetAnnotations(annotations)
 
-		gvk := obj.GroupVersionKind()
-		gvr, _ := meta.UnsafeGuessKindToResource(gvk)
-		opts := metav1.UpdateOptions{}
+		if err := updateUnstructuredObj(client, obj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-		log := annotationsLog.WithValues(
-			"SBR.Namespace", namespacedName.Namespace,
-			"SBR.Name", namespacedName.Name,
-			"Resource.GVK", gvk,
-			"Resource.Namespace", obj.GetNamespace(),
-			"Resource.Name", obj.GetName(),
-		)
-		log.Debug("Updating resource annotations...")
-		_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
-		if err != nil {
-			log.Error(err, "unable to set/update annotations in object")
+func RemoveSBRAnnotations(
+	client dynamic.Interface,
+	objs []*unstructured.Unstructured,
+) error {
+	for _, obj := range objs {
+		annotations := obj.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		cleanAnnotations := make(map[string]string)
+		for k, v := range annotations {
+			if k != sbrNamespaceAnnotation && k != sbrNameAnnotation {
+				cleanAnnotations[k] = v
+			}
+		}
+
+		if err := updateUnstructuredObj(client, obj); err != nil {
 			return err
 		}
 	}
