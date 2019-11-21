@@ -31,7 +31,7 @@ const (
 	// binding is in progress
 	bindingInProgress = "InProgress"
 	// binding has succeeded
-	bindingSuccess = "Success"
+	BindingSuccess = "Success"
 	// binding has failed
 	bindingFail = "Fail"
 	// time in seconds to wait before requeuing requests
@@ -63,7 +63,7 @@ func (r *Reconciler) setApplicationObjects(
 	for _, obj := range objs {
 		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
 	}
-	sbrStatus.BindingStatus = bindingSuccess
+	sbrStatus.BindingStatus = BindingSuccess
 	sbrStatus.ApplicationObjects = names
 }
 
