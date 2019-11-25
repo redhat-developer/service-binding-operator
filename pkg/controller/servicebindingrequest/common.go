@@ -7,17 +7,20 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// ServiceBindingRequestResource the name of ServiceBindingRequest resource.
-const ServiceBindingRequestResource = "servicebindingrequests"
-
-// ServiceBindingRequestKind defines the name of the CRD kind.
-const ServiceBindingRequestKind = "ServiceBindingRequest"
-
-// DeploymentConfigKind defines the name of DeploymentConfig kind.
-const DeploymentConfigKind = "DeploymentConfig"
-
-// ClusterServiceVersionKind the name of ClusterServiceVersion kind.
-const ClusterServiceVersionKind = "ClusterServiceVersion"
+const (
+	// ServiceBindingRequestResource the name of ServiceBindingRequest resource.
+	ServiceBindingRequestResource = "servicebindingrequests"
+	// ServiceBindingRequestKind defines the name of the CRD kind.
+	ServiceBindingRequestKind = "ServiceBindingRequest"
+	// DeploymentConfigKind defines the name of DeploymentConfig kind.
+	DeploymentConfigKind = "DeploymentConfig"
+	// ClusterServiceVersionKind the name of ClusterServiceVersion kind.
+	ClusterServiceVersionKind = "ClusterServiceVersion"
+	// SecretResource defines the resource name for Secrets.
+	SecretResource = "secrets"
+	// SecretKind defines the name of Secret kind.
+	SecretKind = "Secret"
+)
 
 // RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
@@ -62,6 +65,15 @@ func DoneOnNotFound(err error) (reconcile.Result, error) {
 
 func NoRequeue(err error) (reconcile.Result, error) {
 	return reconcile.Result{}, err
+}
+
+func containsStringSlice(slice []string, str string) bool {
+	for _, s := range slice {
+		if s == str {
+			return true
+		}
+	}
+	return false
 }
 
 func removeStringSlice(slice []string, str string) []string {

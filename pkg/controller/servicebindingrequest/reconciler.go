@@ -89,10 +89,10 @@ func (r *Reconciler) getServiceBindingRequest(
 func (r *Reconciler) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
-) error {
+) (*v1alpha1.ServiceBindingRequest, error) {
 	// do not update if both statuses are equal
 	if result := cmp.DeepEqual(sbr.Status, sbrStatus)(); result.Success() {
-		return nil
+		return sbr, nil
 	}
 
 	// coping status over informed object
@@ -101,26 +101,42 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 	// converting object into unstructured
 	u, err := converter.ToUnstructured(sbr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
 	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	_, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
-	return err
+	u, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+	return sbr, nil
 }
 
 func (r *Reconciler) updateServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
-) error {
+) (*v1alpha1.ServiceBindingRequest, error) {
 	u, err := converter.ToUnstructured(sbr)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
 	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
-	return err
+	u, err = resourceClient.Update(u, metav1.UpdateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+	return sbr, nil
 }
 
 // onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
@@ -137,7 +153,7 @@ func (r *Reconciler) onError(
 	if objs != nil {
 		r.setApplicationObjects(sbrStatus, objs)
 	}
-	errStatus := r.updateStatusServiceBindingRequest(sbr, sbrStatus)
+	_, errStatus := r.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
 	}
@@ -160,6 +176,115 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 	return nil
 }
 
+func (r *Reconciler) unbind(
+	logger *log.Log,
+	binder *Binder,
+	secret *Secret,
+	sbr *v1alpha1.ServiceBindingRequest,
+	objectsToAnnotate []*unstructured.Unstructured,
+) (reconcile.Result, error) {
+	logger = logger.WithName("unbind")
+
+	// when finalizer is not found anymore, it can be safely removed
+	if !containsStringSlice(sbr.GetFinalizers(), sbrFinalizer) {
+		logger.Info("Resource can be safely deleted!")
+		return Done()
+	}
+
+	logger.Debug("Reading intermediary secret before deletion.")
+	secretObj, err := secret.Get()
+	if err != nil {
+		logger.Error(err, "On reading intermediary secret.")
+		return RequeueError(err)
+	}
+
+	// adding secret on list of objects, to remove annotations from secret before deletion
+	objectsToAnnotate = append(objectsToAnnotate, secretObj)
+
+	logger.Info("Cleaning related objects from operator's annotations...")
+	if err = RemoveSBRAnnotations(r.dynClient, objectsToAnnotate); err != nil {
+		logger.Error(err, "On removing annotations from related objects.")
+		return RequeueError(err)
+	}
+
+	logger.Info("Executing unbinding steps...")
+	err = binder.Unbind()
+	if err != nil {
+		logger.Error(err, "On unbinding application.")
+		return RequeueError(err)
+	}
+
+	logger.Info("Deleting intermediary secret...")
+	if err = secret.Delete(); err != nil {
+		logger.Error(err, "On deleting intermediary secret.")
+		return RequeueError(err)
+	}
+
+	logger.Debug("Removing resource finalizers...")
+	sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), sbrFinalizer))
+	if _, err = r.updateServiceBindingRequest(sbr); err != nil {
+		return NoRequeue(err)
+	}
+
+	logger.Debug("Deletion done!")
+	return Done()
+}
+
+func (r *Reconciler) bind(
+	logger *log.Log,
+	binder *Binder,
+	secret *Secret,
+	retrievedData map[string][]byte,
+	sbr *v1alpha1.ServiceBindingRequest,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+	objectsToAnnotate []*unstructured.Unstructured,
+) (reconcile.Result, error) {
+	logger = logger.WithName("bind")
+
+	logger.Info("Saving data on intermediary secret...")
+	secretObj, err := secret.Commit(retrievedData)
+	if err != nil {
+		logger.Error(err, "On saving secret data..")
+		return r.onError(err, sbr, sbrStatus, nil)
+	}
+
+	// appending intermediary secret in the list of objects to annotate
+	objectsToAnnotate = append(objectsToAnnotate, secretObj)
+	// making sure secret name is part of status
+	r.setSecretName(sbrStatus, secretObj.GetName())
+
+	logger.Info("Binding applications with intermediary secret...")
+	updatedObjects, err := binder.Bind()
+	if err != nil {
+		logger.Error(err, "On binding application.")
+		return r.onError(err, sbr, sbrStatus, updatedObjects)
+	}
+
+	// saving on status the list of objects that have been touched
+	r.setApplicationObjects(sbrStatus, updatedObjects)
+	namespacedName := types.NamespacedName{Namespace: sbr.GetNamespace(), Name: sbr.GetName()}
+
+	// annotating objects related to binding
+	if err = SetSBRAnnotations(r.dynClient, namespacedName, objectsToAnnotate); err != nil {
+		logger.Error(err, "On setting annotations in related objects.")
+		return r.onError(err, sbr, sbrStatus, updatedObjects)
+	}
+
+	// updating status of request instance
+	if sbr, err = r.updateStatusServiceBindingRequest(sbr, sbrStatus); err != nil {
+		return RequeueOnConflict(err)
+	}
+
+	// appending finalizer, should be later removed upon resource deletion
+	sbr.SetFinalizers(append(sbr.GetFinalizers(), sbrFinalizer))
+	if _, err = r.updateServiceBindingRequest(sbr); err != nil {
+		return NoRequeue(err)
+	}
+
+	logger.Info("All done!")
+	return Done()
+}
+
 // Reconcile a ServiceBindingRequest by the following steps:
 // 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
@@ -173,28 +298,28 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	ctx := context.TODO()
 	objectsToAnnotate := []*unstructured.Unstructured{}
 
-	log := reconcilerLog.WithValues(
+	logger := reconcilerLog.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
 	)
 
-	log.Info("Reconciling ServiceBindingRequest...")
+	logger.Info("Reconciling ServiceBindingRequest...")
 
 	// fetch the ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		log.Error(err, "On retrieving service-binding-request instance.")
+		logger.Error(err, "On retrieving service-binding-request instance.")
 		return DoneOnNotFound(err)
 	}
 
-	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
-	log.Debug("Found service binding request to inspect")
+	logger = logger.WithValues("ServiceBindingRequest.Name", sbr.Name)
+	logger.Debug("Found service binding request to inspect")
 
 	// splitting instance from it's status
-	sbrStatus := sbr.Status
+	sbrStatus := &sbr.Status
 
 	// check Service Binding Request
-	if err = checkSBR(sbr, log); err != nil {
+	if err = checkSBR(sbr, logger); err != nil {
 		return RequeueError(err)
 	}
 
@@ -202,12 +327,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Planing changes
 	//
 
-	log.Debug("Creating a plan based on OLM and CRD.")
+	logger.Debug("Creating a plan based on OLM and CRD.")
 	planner := NewPlanner(ctx, r.dynClient, sbr)
 	plan, err := planner.Plan()
 	if err != nil {
-		log.Error(err, "On creating a plan to bind applications.")
-		return r.onError(err, sbr, &sbrStatus, nil)
+		logger.Error(err, "On creating a plan to bind applications.")
+		return r.onError(err, sbr, sbrStatus, nil)
 	}
 
 	// storing CR in objects to annotate
@@ -217,81 +342,29 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// Retrieving data
 	//
 
-	log.Debug("Retrieving data to create intermediate secret.")
+	logger.Debug("Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
-	retrievedObjects, err := retriever.Retrieve()
+	retrievedData, err := retriever.Retrieve()
 	if err != nil {
-		log.Error(err, "On retrieving binding data.")
-		return r.onError(err, sbr, &sbrStatus, nil)
+		logger.Error(err, "On retrieving binding data.")
+		return r.onError(err, sbr, sbrStatus, nil)
 	}
 
-	r.setSecretName(&sbrStatus, plan.Name)
-
 	// storing objects used in Retriever
-	objectsToAnnotate = append(objectsToAnnotate, retrievedObjects...)
+	objectsToAnnotate = append(objectsToAnnotate, retriever.Objects...)
 
 	//
 	// Binding and unbind intermediary secret
 	//
 
+	secret := NewSecret(r.dynClient, plan)
 	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
 
 	if sbr.GetDeletionTimestamp() != nil {
-		log.Info("Resource is marked for deletion.")
-
-		// when finalizer is not found anymore, it can be safely removed
-		if result := cmp.Contains(sbr.GetFinalizers(), sbr.Finalizers)(); !result.Success() {
-			log.Info("Resource can be safely deleted!")
-			return Done()
-		}
-
-		log.Info("Executing unbind steps...")
-		err = binder.Unbind()
-		if err != nil {
-			log.Error(err, "On unbinding application.")
-			return RequeueError(err)
-		}
-
-		log.Info("Cleaning related object from operator's annotations...")
-		if err = RemoveSBRAnnotations(r.dynClient, objectsToAnnotate); err != nil {
-			log.Error(err, "On removing annotations from related objects.")
-			return RequeueError(err)
-		}
-
-		// executing the action of removing finalizer
-		sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), sbrFinalizer))
-		if err = r.updateServiceBindingRequest(sbr); err != nil {
-			return NoRequeue(err)
-		}
-	} else {
-		log.Info("Binding applications with intermediary secret.")
-		updatedObjects, err := binder.Bind()
-		if err != nil {
-			log.Error(err, "On binding application.")
-			return r.onError(err, sbr, &sbrStatus, updatedObjects)
-		}
-
-		// saving on status the list of objects that have been touched
-		r.setApplicationObjects(&sbrStatus, updatedObjects)
-
-		// annotating objects related to binding
-		if err = SetSBRAnnotations(r.dynClient, request.NamespacedName, objectsToAnnotate); err != nil {
-			log.Error(err, "On setting annotations in related objects.")
-			return r.onError(err, sbr, &sbrStatus, updatedObjects)
-		}
-
-		// updating status of request instance
-		if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
-			return RequeueOnConflict(err)
-		}
-
-		// appending finalizer
-		sbr.SetFinalizers(append(sbr.GetFinalizers(), sbrFinalizer))
-		if err = r.updateServiceBindingRequest(sbr); err != nil {
-			return NoRequeue(err)
-		}
+		logger.Info("Resource is marked for deletion...")
+		return r.unbind(logger, binder, secret, sbr, objectsToAnnotate)
 	}
 
-	log.Info("All done!")
-	return Done()
+	logger.Info("Starting the bind of application(s) with backing service...")
+	return r.bind(logger, binder, secret, retrievedData, sbr, sbrStatus, objectsToAnnotate)
 }

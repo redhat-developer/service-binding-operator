@@ -62,27 +62,27 @@ func TestAddSchemesToFramework(t *testing.T) {
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
-		t.Run("scenario-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
-		})
-		t.Run("scenario-db-sbr-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
-		})
-		t.Run("scenario-app-sbr-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
-		})
-		t.Run("scenario-sbr-db-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
-		})
-		t.Run("scenario-sbr-app-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
-		})
-		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		})
-		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
-		})
+		// t.Run("scenario-app-db-sbr", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+		// })
+		// t.Run("scenario-db-sbr-app", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
+		// })
+		// t.Run("scenario-app-sbr-db", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
+		// })
+		// t.Run("scenario-sbr-db-app", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		// })
+		// t.Run("scenario-sbr-app-db", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
+		// })
+		// t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		// })
+		// t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
+		// 	ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
+		// })
 	})
 }
 
@@ -167,8 +167,10 @@ func assertSBRStatus(
 	}
 
 	success := sbrcontroller.BindingSuccess
-	if sbr.Status.BindingStatus != success {
-		return fmt.Errorf("SBR '%#v' is not on '%s' status", namespacedName, success)
+	status := sbr.Status.BindingStatus
+	if status != success {
+		return fmt.Errorf("SBR '%s' is on '%s', instead of '%s' status",
+			status, namespacedName, success)
 	}
 	return nil
 }
@@ -205,6 +207,23 @@ func assertSBRSecret(
 	}
 
 	return sbrSecret, nil
+}
+
+// assertSecretNotFound execute assertion to make sure a secret is not found.
+func assertSecretNotFound(
+	ctx context.Context,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) error {
+	secret := &corev1.Secret{}
+	err := f.Client.Get(ctx, namespacedName, secret)
+	if err == nil {
+		return fmt.Errorf("secret '%s' still found", namespacedName)
+	}
+	if errors.IsNotFound(err) {
+		return nil
+	}
+	return err
 }
 
 // updateSBRSecret by exchanging all of its keys to "bogus" string.
@@ -315,12 +334,8 @@ func CreateSBR(
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
-	ns := namespacedName.Namespace
-	name := namespacedName.Name
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
-	// FIXME: why do we delete in so many places? should this be removed?
-	// making sure object does not exist before testing
-	_ = f.Client.Delete(ctx, sbr)
+	sbr := mocks.ServiceBindingRequestMock(
+		namespacedName.Namespace, namespacedName.Name, resourceRef, "", matchLabels, false)
 	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
 	return sbr
 }
@@ -350,7 +365,7 @@ func inspectDeployment(
 		t.Logf("Inspecting deployment '%s'", namespacedName)
 		_, err := assertDeploymentEnvFrom(ctx, f, namespacedName, sbrName)
 		if err != nil {
-			t.Logf("Error on inspecting deployment: '%#v'", err)
+			t.Logf("Error on inspecting deployment: '%s'", err)
 		}
 		return err
 	})
@@ -385,14 +400,32 @@ func inspectSBRSecret(
 	namespacedName types.NamespacedName,
 ) {
 	err := retry(10, 5*time.Second, func() error {
-		t.Log("Inspecting SBR generated secret...")
+		t.Logf("Inspecting secret '%s'...", namespacedName)
 		_, err := assertSBRSecret(ctx, f, namespacedName)
 		if err != nil {
-			t.Logf("SBR generated secret inspection error: '%#v'", err)
+			t.Logf("Secret inspection error: '%#v'", err)
 		}
 		return err
 	})
-	t.Logf("Intermediary-Secret: Result after attempts, error: '%#v'", err)
+	t.Logf("Secret: Result after attempts, error: '%#v'", err)
+	require.NoError(t, err)
+}
+
+func inspectSecretNotFound(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) {
+	err := retry(10, 5*time.Second, func() error {
+		t.Logf("Searching for secret '%s'...", namespacedName)
+		err := assertSecretNotFound(ctx, f, namespacedName)
+		if err != nil {
+			t.Logf("Secret search error: '%#v'", err)
+		}
+		return err
+	})
+	t.Logf("Secret: Result after attempts, error: '%#v'", err)
 	require.NoError(t, err)
 }
 
@@ -423,13 +456,13 @@ func serviceBindingRequestTest(
 	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
 	sbrNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
 	csvNamespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
+
 	cleanupOpts := cleanupOptions(ctx)
+	noCleanupOpts := &framework.CleanupOptions{TestContext: ctx}
 
 	todoCtx := context.TODO()
 
-	var d appsv1.Deployment
 	var sbr *v1alpha1.ServiceBindingRequest
-
 	for _, step := range steps {
 		switch step {
 		case CSVStep:
@@ -437,9 +470,9 @@ func serviceBindingRequestTest(
 		case DBStep:
 			CreateDB(todoCtx, t, f, cleanupOpts, resourceRefNamespacedName, secretName)
 		case AppStep:
-			d = CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
+			CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
-			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, matchLabels)
+			sbr = CreateSBR(todoCtx, t, f, noCleanupOpts, sbrNamespacedName, resourceRef, matchLabels)
 		}
 	}
 
@@ -467,13 +500,10 @@ func serviceBindingRequestTest(
 	t.Log("Inspecting intermediary secret...")
 	inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
 
-	// making sure clean up is always executed, and in background
-	defer func() {
-		t.Log("Cleaning up resource objects...")
-		_ = f.Client.Delete(todoCtx, sbr)
-		if sbrSecret != nil {
-			_ = f.Client.Delete(todoCtx, sbrSecret)
-		}
-		_ = f.Client.Delete(todoCtx, &d)
-	}()
+	// executing deletion of the request, triggering unbinding actions
+	err = f.Client.Delete(todoCtx, sbr)
+	require.NoError(t, err, "expecting deletion to not return errors")
+
+	// after deletion, secret should not be found anymore
+	inspectSecretNotFound(todoCtx, t, f, sbrNamespacedName)
 }

@@ -16,7 +16,7 @@ import (
 func Test_newSBRPredicate(t *testing.T) {
 
 	// keep the predicate around
-	pred := newSBRPredicate(log.NewLog("test-log"))
+	pred := buildSBRPredicate(log.NewLog("test-log"))
 
 	// the expected behavior is that every create event triggers a reconciliation
 	t.Run("create", func(t *testing.T) {
@@ -89,7 +89,7 @@ func Test_newSBRPredicate(t *testing.T) {
 
 func Test_newGVKPredicate(t *testing.T) {
 
-	pred := newGVKPredicate(log.NewLog("test-log"))
+	pred := buildGVKPredicate(log.NewLog("test-log"))
 
 	// update verifies whether only the accepted manifests trigger the reconciliation process
 	t.Run("update", func(t *testing.T) {

@@ -143,6 +143,7 @@ func RemoveSBRAnnotations(
 				cleanAnnotations[k] = v
 			}
 		}
+		obj.SetAnnotations(cleanAnnotations)
 
 		if err := updateUnstructuredObj(client, obj); err != nil {
 			return err
