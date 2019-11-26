@@ -27,20 +27,20 @@ type Reconciler struct {
 }
 
 const (
-	// binding is in progress
+	// bindingInProgress binding is in progress
 	bindingInProgress = "InProgress"
-	// binding has succeeded
+	// BindingSuccess binding has succeeded
 	BindingSuccess = "Success"
-	// binding has failed
+	// bindingFail binding has failed
 	bindingFail = "Fail"
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
-	sbrFinalizer       = "finalizer.servicebindingrequest.openshift.io"
+	// sbrFinalizer annotation used in finalizer steps
+	sbrFinalizer = "finalizer.servicebindingrequest.openshift.io"
 )
 
-var (
-	reconcilerLog = log.NewLog("reconciler")
-)
+// reconcilerLog local logger instance
+var reconcilerLog = log.NewLog("reconciler")
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
 func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
