@@ -26,6 +26,9 @@ type OLM struct {
 
 const (
 	csvResource = "clusterserviceversions"
+
+	// ServiceBindingOperatorAnnotationPrefix is the prefix of Service Binding Operator related annotations.
+	ServiceBindingOperatorAnnotationPrefix = "servicebindingoperator.redhat.io/"
 )
 
 var (
@@ -219,8 +222,6 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) ([]olmv1alph
 	}
 	return collectedSpecDescriptors, collectedStatusDescriptors, nil
 }
-
-const ServiceBindingOperatorAnnotationPrefix = "servicebindingoperator.redhat.io/"
 
 func splitBindingInfo(s string) (string, string, error) {
 	parts := strings.SplitN(s, "-", 2)
