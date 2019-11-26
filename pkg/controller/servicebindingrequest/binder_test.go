@@ -62,7 +62,7 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binderForSBRWithResourceRef)
 
-	t.Run("search target object by resource name", func(t *testing.T) {
+	t.Run("search-using-resourceref", func(t *testing.T) {
 		list, err := binderForSBRWithResourceRef.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
@@ -165,5 +165,4 @@ func TestBinderApplicationName(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 	})
-
 }

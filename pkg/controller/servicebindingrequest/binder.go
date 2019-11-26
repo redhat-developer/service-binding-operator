@@ -85,9 +85,9 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	return objList, err
 }
 
-func (b *Binder) extractSpecVolumes(
-	obj *unstructured.Unstructured,
-) ([]interface{}, error) {
+// extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
+// to find data in informed Unstructured object.
+func (b *Binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface{}, error) {
 	log := b.logger.WithValues("Volumes.NestedPath", volumesPath)
 	log.Debug("Reading volumes definitions...")
 	volumes, _, err := unstructured.NestedSlice(obj.Object, volumesPath...)
@@ -116,6 +116,9 @@ func (b *Binder) updateSpecVolumes(
 	return obj, nil
 }
 
+// removeSpecVolumes based on extract volume subset, removing volume bind volume entry. It can return
+// error on navigating though unstructured object, or in the case of having issues to edit
+// unstructured resource.
 func (b *Binder) removeSpecVolumes(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
@@ -168,6 +171,7 @@ func (b *Binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 	return append(volumes, u), nil
 }
 
+// removeVolumes remove the bind volumes from informed list of unstructured volumes.
 func (b *Binder) removeVolumes(volumes []interface{}) []interface{} {
 	name := b.sbr.GetName()
 	var cleanVolumes []interface{}
@@ -214,6 +218,9 @@ func (b *Binder) updateSpecContainers(
 	return obj, nil
 }
 
+// removeSpecContainers find and edit containers resource subset, removing bind related entries
+// from the object. It can return error on extracting data, editing steps and final editing of to be
+// returned object.
 func (b *Binder) removeSpecContainers(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
@@ -265,7 +272,12 @@ func (b *Binder) removeContainers(containers []interface{}) ([]interface{}, erro
 	return containers, nil
 }
 
-func (b *Binder) appendEnvVar(envList []corev1.EnvVar, envParam string, envValue string) []corev1.EnvVar {
+// appendEnvVar append a single environment variable onto informed "EnvVar" instance.
+func (b *Binder) appendEnvVar(
+	envList []corev1.EnvVar,
+	envParam string,
+	envValue string,
+) []corev1.EnvVar {
 	var updatedEnvList []corev1.EnvVar
 
 	alreadyPresent := false
@@ -307,6 +319,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []
 	})
 }
 
+// removeEnvFrom remove bind related entry from slice of "EnvFromSource".
 func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
 	var cleanEnvList []corev1.EnvFromSource
 	for _, env := range envList {
@@ -317,6 +330,8 @@ func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []
 	return cleanEnvList
 }
 
+// containerFromUnstructured based on informed unstructured corev1.Container, convert it back to the
+// original type. It can return errors on the process.
 func (b *Binder) containerFromUnstructured(container interface{}) (*corev1.Container, error) {
 	c := &corev1.Container{}
 	u := container.(map[string]interface{})
@@ -388,6 +403,8 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	})
 }
 
+// removeVolumeMounts from informed slice of corev1.VolumeMount, make sure all binding related
+// entries won't be part of returned slice.
 func (b *Binder) removeVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
 	var cleanVolumeMounts []corev1.VolumeMount
 	name := b.sbr.GetName()
