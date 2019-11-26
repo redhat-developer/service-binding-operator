@@ -13,6 +13,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -502,8 +503,12 @@ func serviceBindingRequestTest(
 
 	// executing deletion of the request, triggering unbinding actions
 	err = f.Client.Delete(todoCtx, sbr)
-	require.NoError(t, err, "expecting deletion to not return errors")
+	require.NoError(t, err, "expect deletion to not return errors")
 
 	// after deletion, secret should not be found anymore
 	inspectSecretNotFound(todoCtx, t, f, sbrNamespacedName)
+
+	// after deletion, deployment should not contain envFrom directive anymore
+	_, err = assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
+	assert.Error(t, err, "expect deployment not to be carrying envFrom directive")
 }
