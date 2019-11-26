@@ -5,8 +5,8 @@
 This scenario illustrates binding an imported Java application to an in-cluster operated managed PostgreSQL Database.
 
 Note that this example app is configured to operate with OpenShift 4.3 or newer.
-To use this example app with OpenShift 4.2, replace references to Deployments 
-with DeploymentConfigs.
+To use this example app with OpenShift 4.2, replace references to `Deployment`s
+with `DeploymentConfig`s.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -28,32 +28,9 @@ attributes. The Backing Service Operator may represent a database or other servi
 applications. We'll use [postgresql-operator](https://github.com/operator-backing-service-samples/postgresql-operator) to
 demonstrate a sample use case.
 
-#### Install the Service Binding Operator using an `OperatorSource`
+#### Install the Service Binding Operator
 
-Apply the following `OperatorSource`:
-
-```shell
-cat <<EOS |kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-```shell
-make install-service-binding-operator-source
-```
-
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
+Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
@@ -204,14 +181,14 @@ make create-service-binding-request
 
 There are 2 parts in the request:
 
-* `applicationSelector` - used to search for the application based on theresourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `DeploymentConfig`.
+* `applicationSelector` - used to search for the application based on theresourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
 
 Once the new version is up, go to the application's route to check the UI. Now, it works!
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `DeploymentConfig` as environment variables via an intermediate `Secret` called `binding-request`:
+When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
 
 ```yaml
 spec:
