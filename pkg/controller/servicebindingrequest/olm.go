@@ -205,7 +205,13 @@ func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*olm
 	return &crdDescription, nil
 }
 
-func buildDescriptorsFromAnnotations(annotations map[string]string) ([]olmv1alpha1.SpecDescriptor, []olmv1alpha1.StatusDescriptor, error) {
+// buildDescriptorsFromAnnotations builds two descriptors collection, one for spec descriptors and
+// another for status descriptors.
+func buildDescriptorsFromAnnotations(annotations map[string]string) (
+	[]olmv1alpha1.SpecDescriptor,
+	[]olmv1alpha1.StatusDescriptor,
+	error,
+) {
 	var (
 		collectedSpecDescriptors   []olmv1alpha1.SpecDescriptor
 		collectedStatusDescriptors []olmv1alpha1.StatusDescriptor
