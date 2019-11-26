@@ -379,6 +379,7 @@ func ServiceBindingRequestMock(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationResourceKind string,
 	matchLabels map[string]string,
 	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
@@ -404,7 +405,7 @@ func ServiceBindingRequestMock(
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				Group:       "apps",
 				Version:     "v1",
-				Resource:    "deployments",
+				Resource:    applicationResourceKind,
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
@@ -419,9 +420,10 @@ func UnstructuredServiceBindingRequestMock(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationResourceKind string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels, false)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err

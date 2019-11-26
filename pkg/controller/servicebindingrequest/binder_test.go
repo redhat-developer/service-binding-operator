@@ -28,7 +28,7 @@ func TestBinderNew(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", "deployments", matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -41,7 +41,7 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binder)
 
-	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", make(map[string]string))
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", "deployments", make(map[string]string))
 
 	binderForSBRWithResourceRef := NewBinder(
 		context.TODO(),
@@ -133,7 +133,7 @@ func TestBinderApplicationName(t *testing.T) {
 	name := "service-binding-request"
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", nil)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", "deployments", nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
@@ -147,6 +147,32 @@ func TestBinderApplicationName(t *testing.T) {
 	require.NotNil(t, binder)
 
 	t.Run("search by application name", func(t *testing.T) {
+		list, err := binder.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list.Items))
+	})
+
+}
+
+func TestBackingServiceWithDeploymentConfig(t *testing.T) {
+	ns := "service-binding-demo-with-deploymentconfig"
+	name := "service-binding-request"
+
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", "deploymentconfigs", nil)
+	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+
+	t.Run("deploymentconfig", func(t *testing.T) {
 		list, err := binder.search()
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(list.Items))

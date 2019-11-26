@@ -17,6 +17,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	ocav1 "github.com/openshift/api/apps/v1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
@@ -33,24 +34,25 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationResourceKind string,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels, false)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
-
 
 // AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with DetectBindingResources.
 func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationResourceKind string,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, true)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels, true)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -59,10 +61,11 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationResourceKind string,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels)
 	require.Nil(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -115,9 +118,18 @@ func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
 	f.objs = append(f.objs, d)
 }
 
+// AddMockedUnstructuredDeploymentConfig adds mocked object from UnstructuredDeploymentConfigMock.
+func (f *Fake) AddMockedUnstructuredDeploymentConfig(name string, matchLabels map[string]string) {
+	require.Nil(f.t, ocav1.AddToScheme(f.S))
+	d, err := UnstructuredDeploymentConfigMock(f.ns, name, matchLabels)
+	require.Nil(f.t, err)
+	f.S.AddKnownTypes(ocav1.SchemeGroupVersion, &ocav1.DeploymentConfig{})
+	f.objs = append(f.objs, d)
+}
+
 // AddMockedUnstructuredDeployment add mocked object from UnstructuredDeploymentMock.
 func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[string]string) {
-	require.Nil(f.t, appsv1.AddToScheme(f.S))
+	require.Nil(f.t, ocav1.AddToScheme(f.S))
 	d, err := UnstructuredDeploymentMock(f.ns, name, matchLabels)
 	require.Nil(f.t, err)
 	f.S.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})

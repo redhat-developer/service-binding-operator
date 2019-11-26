@@ -42,7 +42,7 @@ func TestReconcilerReconcileError(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", "deployments", matchLabels)
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
@@ -58,7 +58,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 	backingServiceResourceRef := "backingServiceRef"
 	applicationResourceRef := "applicationRef"
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, nil)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, "deployments", nil)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, nil)
@@ -96,7 +96,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", "deployments", matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
@@ -143,7 +143,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", "deployments", matchLabels)
 	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
