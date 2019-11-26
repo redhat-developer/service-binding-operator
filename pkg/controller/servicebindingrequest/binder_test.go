@@ -18,6 +18,16 @@ func init() {
 	logf.SetLogger(logf.ZapLogger(true))
 }
 
+// getEnvVar returns an EnvVar with given name if exists in the given envVars.
+func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
+	for _, v := range envVars {
+		if v.Name == name {
+			return &v
+		}
+	}
+	return nil
+}
+
 func TestBinderNew(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
@@ -113,17 +123,7 @@ func TestBinderNew(t *testing.T) {
 	})
 }
 
-// getEnvVar returns an EnvVar with given name if exists in the given envVars.
-func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
-	for _, v := range envVars {
-		if v.Name == name {
-			return &v
-		}
-	}
-	return nil
-}
-
-func TestAppendEnvVar(t *testing.T) {
+func TestBinderAppendEnvVar(t *testing.T) {
 	envName := "lastbound"
 	envList := []corev1.EnvVar{
 		corev1.EnvVar{

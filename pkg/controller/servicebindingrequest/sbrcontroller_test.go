@@ -13,8 +13,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-func Test_newSBRPredicate(t *testing.T) {
-
+func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 	// keep the predicate around
 	pred := buildSBRPredicate(log.NewLog("test-log"))
 
@@ -87,8 +86,7 @@ func Test_newSBRPredicate(t *testing.T) {
 	})
 }
 
-func Test_newGVKPredicate(t *testing.T) {
-
+func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 	pred := buildGVKPredicate(log.NewLog("test-log"))
 
 	// update verifies whether only the accepted manifests trigger the reconciliation process
