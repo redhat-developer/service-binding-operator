@@ -154,7 +154,7 @@ func TestBinderApplicationName(t *testing.T) {
 
 }
 
-func TestBackingServiceWithDeploymentConfig(t *testing.T) {
+func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
 
@@ -176,6 +176,7 @@ func TestBackingServiceWithDeploymentConfig(t *testing.T) {
 		list, err := binder.search()
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(list.Items))
+		assert.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
 	})
 
 }
