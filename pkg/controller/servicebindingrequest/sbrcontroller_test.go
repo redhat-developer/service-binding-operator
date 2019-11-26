@@ -13,7 +13,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-func Test_newSBRPredicate(t *testing.T) {
+func TestSBRControllerNewSBRPredicate(t *testing.T) {
 
 	// keep the predicate around
 	pred := newSBRPredicate(log.NewLog("test-log"))
@@ -87,7 +87,7 @@ func Test_newSBRPredicate(t *testing.T) {
 	})
 }
 
-func Test_newGVKPredicate(t *testing.T) {
+func TestSBRControllerNewGVKPredicate(t *testing.T) {
 
 	pred := newGVKPredicate(log.NewLog("test-log"))
 
