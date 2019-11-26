@@ -11,12 +11,15 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
+// Secret represents the data collected by this operator, and later handled as a secret.
 type Secret struct {
 	logger *log.Log          // logger instance
 	client dynamic.Interface // Kubernetes API client
 	plan   *Plan             // plan instance
 }
 
+// customEnvParser parse informed data in order to interpolate with values provided by custom
+// environment component.
 func (s *Secret) customEnvParser(data map[string][]byte) (map[string][]byte, error) {
 	// transforming input into format expected by custom environment parser
 	cache := make(map[string]interface{})
@@ -37,11 +40,14 @@ func (s *Secret) customEnvParser(data map[string][]byte) (map[string][]byte, err
 	return data, nil
 }
 
+// buildResourceClient creates a resource client to handle corev1/secret resource.
 func (s *Secret) buildResourceClient() dynamic.ResourceInterface {
 	gvr := corev1.SchemeGroupVersion.WithResource(SecretResource)
 	return s.client.Resource(gvr).Namespace(s.plan.Ns)
 }
 
+// createOrUpdate will take informed payload and either create a new secret or update an existing
+// one. It can return error when Kubernetes client does.
 func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
 	ns := s.plan.Ns
 	name := s.plan.Name
@@ -76,6 +82,8 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 	return u, nil
 }
 
+// Commit will store informed data as a secret, commit it against the API server. It can forward
+// errors from custom environment parser component, or from the API server itself.
 func (s *Secret) Commit(data map[string][]byte) (*unstructured.Unstructured, error) {
 	payload, err := s.customEnvParser(data)
 	if err != nil {
@@ -84,11 +92,14 @@ func (s *Secret) Commit(data map[string][]byte) (*unstructured.Unstructured, err
 	return s.createOrUpdate(payload)
 }
 
+// Get an unstructured object from the secret handled by this component. It can return errors in case
+// the API server does.
 func (s *Secret) Get() (*unstructured.Unstructured, error) {
 	resourceClient := s.buildResourceClient()
 	return resourceClient.Get(s.plan.Name, metav1.GetOptions{})
 }
 
+// Delete the secret represented by this component. It can return error when the API server does.
 func (s *Secret) Delete() error {
 	resourceClient := s.buildResourceClient()
 	err := resourceClient.Delete(s.plan.Name, &metav1.DeleteOptions{})
@@ -98,6 +109,7 @@ func (s *Secret) Delete() error {
 	return nil
 }
 
+// NewSecret instantiate a new Secret.
 func NewSecret(client dynamic.Interface, plan *Plan) *Secret {
 	return &Secret{
 		logger: log.NewLog("secret"),
