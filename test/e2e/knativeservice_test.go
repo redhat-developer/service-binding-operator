@@ -87,7 +87,7 @@ func TestKnativeService(t *testing.T) {
 	// create service binding request custom resource
 	t.Log("Creating service binding request...")
 	name := "e2e-service-binding-request"
-	gvr := "serving.knative.dev/v1/services" // Group/Version/Resource for sbr
+	gvr := knativev1.SchemeGroupVersion.WithResource("services") // Group/Version/Resource for sbr
 	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, serviceRef, matchLabels, false, gvr)
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)

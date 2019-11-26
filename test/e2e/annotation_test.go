@@ -66,7 +66,7 @@ func TestAnnoationBasedMetadata(t *testing.T) {
 	err = f.Client.Create(context.TODO(), &dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
 
-	gvr := "apps/v1/deployments" // Group/Version/Resource for sbr
+	gvr := appsv1.SchemeGroupVersion.WithResource("deployments") // Group/Version/Resource for sbr
 	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false, gvr)
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestAnnoationAndCSVBasedMetadata(t *testing.T) {
 	err = f.Client.Create(context.TODO(), &dp, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
 
-	gvr := "apps/v1/deployments" // Group/Version/Resource for sbr
+	gvr := appsv1.SchemeGroupVersion.WithResource("deployments") // Group/Version/Resource for sbr
 	sbr := mocks.ServiceBindingRequestMock(namespace, name, resourceRef, appResourceRef, matchLabels, false, gvr)
 	err = f.Client.Create(context.TODO(), sbr, &framework.CleanupOptions{TestContext: ctx, Timeout: time.Second * 5, RetryInterval: time.Second * 1})
 	require.NoError(t, err)
