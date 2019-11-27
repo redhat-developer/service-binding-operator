@@ -14,8 +14,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
@@ -250,12 +248,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// updating status of request instance
 	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
-		// requeue only in case of conflict
-		if k8serrors.IsConflict(err) {
-			return RequeueError(err)
-		}
-		log.Error(err, "On updating ServiceBindingRequest status")
-		return Done()
+		return RequeueOnConflict(err)
 	}
 
 	log.Info("All done!")
