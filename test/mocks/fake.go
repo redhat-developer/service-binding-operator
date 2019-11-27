@@ -41,7 +41,6 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	return sbr
 }
 
-
 // AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with DetectBindingResources.
 func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,
@@ -63,30 +62,30 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 ) *unstructured.Unstructured {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
 	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
 
 // AddMockedUnstructuredCSV add mocked unstructured CSV.
 func (f *Fake) AddMockedUnstructuredCSV(name string) {
-	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))
+	require.NoError(f.t, olmv1alpha1.AddToScheme(f.S))
 	csv, err := UnstructuredClusterServiceVersionMock(f.ns, name)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.S.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &olmv1alpha1.ClusterServiceVersion{})
 	f.objs = append(f.objs, csv)
 }
 
 // AddMockedCSVList add mocked object from ClusterServiceVersionListMock.
 func (f *Fake) AddMockedCSVList(name string) {
-	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))
+	require.NoError(f.t, olmv1alpha1.AddToScheme(f.S))
 	f.S.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &olmv1alpha1.ClusterServiceVersion{})
 	f.objs = append(f.objs, ClusterServiceVersionListMock(f.ns, name))
 }
 
 // AddMockedCSVWithVolumeMountList add mocked object from ClusterServiceVersionListVolumeMountMock.
 func (f *Fake) AddMockedCSVWithVolumeMountList(name string) {
-	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))
+	require.NoError(f.t, olmv1alpha1.AddToScheme(f.S))
 	f.S.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &olmv1alpha1.ClusterServiceVersion{})
 	f.objs = append(f.objs, ClusterServiceVersionListVolumeMountMock(f.ns, name))
 }
@@ -94,47 +93,47 @@ func (f *Fake) AddMockedCSVWithVolumeMountList(name string) {
 // AddMockedUnstructuredCSVWithVolumeMount same than AddMockedCSVWithVolumeMountList but using
 // unstructured object.
 func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
-	require.Nil(f.t, olmv1alpha1.AddToScheme(f.S))
+	require.NoError(f.t, olmv1alpha1.AddToScheme(f.S))
 	csv, err := UnstructuredClusterServiceVersionVolumeMountMock(f.ns, name)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.S.AddKnownTypes(olmv1alpha1.SchemeGroupVersion, &olmv1alpha1.ClusterServiceVersion{})
 	f.objs = append(f.objs, csv)
 }
 
 // AddMockedDatabaseCR add mocked object from DatabaseCRMock.
 func (f *Fake) AddMockedDatabaseCR(ref string) {
-	require.Nil(f.t, pgapis.AddToScheme(f.S))
+	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
 	f.objs = append(f.objs, DatabaseCRMock(f.ns, ref))
 }
 
 func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
-	require.Nil(f.t, pgapis.AddToScheme(f.S))
+	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	d, err := UnstructuredDatabaseCRMock(f.ns, ref)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.objs = append(f.objs, d)
 }
 
 // AddMockedUnstructuredDeployment add mocked object from UnstructuredDeploymentMock.
 func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[string]string) {
-	require.Nil(f.t, appsv1.AddToScheme(f.S))
+	require.NoError(f.t, appsv1.AddToScheme(f.S))
 	d, err := UnstructuredDeploymentMock(f.ns, name, matchLabels)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.S.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
 	f.objs = append(f.objs, d)
 }
 
 func (f *Fake) AddMockedUnstructuredDatabaseCRD() {
-	require.Nil(f.t, apiextensionv1beta1.AddToScheme(f.S))
+	require.NoError(f.t, apiextensionv1beta1.AddToScheme(f.S))
 	c, err := UnstructuredDatabaseCRDMock(f.ns)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.S.AddKnownTypes(apiextensionv1beta1.SchemeGroupVersion, &apiextensionv1beta1.CustomResourceDefinition{})
 	f.objs = append(f.objs, c)
 }
 
 func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) {
 	d, err := UnstructuredPostgresDatabaseCRMock(f.ns, ref)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.objs = append(f.objs, d)
 }
 

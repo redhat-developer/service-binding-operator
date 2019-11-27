@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,13 +22,11 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-const (
-	lastboundparam = "lastbound"
-)
-
 var (
 	binderLog = log.NewLog("binder")
 )
+
+const ServiceBindingOperatorChangeTriggerEnvVar = "ServiceBindingOperatorChangeTriggerEnvVar"
 
 // Binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
@@ -245,7 +244,12 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 	}
 	// effectively binding the application with intermediary secret
 	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
-	c.Env = b.appendEnvVar(c.Env, lastboundparam, time.Now().Format(time.RFC3339))
+
+	// add a special environment variable that is only used to trigger a change in the declaration,
+	// attempting to force a side effect (in case of a Deployment, it would result in its Pods to be
+	// restarted)
+	c.Env = b.appendEnvVar(c.Env, ServiceBindingOperatorChangeTriggerEnvVar, time.Now().Format(time.RFC3339))
+
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries
 		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts)
@@ -274,6 +278,32 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	})
 }
 
+// nestedMapComparison compares a nested field from two objects.
+func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
+	var (
+		aMap map[string]interface{}
+		bMap map[string]interface{}
+		ok   bool
+		err  error
+	)
+
+	if aMap, ok, err = unstructured.NestedMap(a.Object, fields...); err != nil {
+		return false, err
+	} else if !ok {
+		return false, fmt.Errorf("original object doesn't have a 'spec' field")
+	}
+
+	if bMap, ok, err = unstructured.NestedMap(b.Object, fields...); err != nil {
+		return false, err
+	} else if !ok {
+		return false, fmt.Errorf("original object doesn't have a 'spec' field")
+	}
+
+	result := cmp.DeepEqual(aMap, bMap)()
+
+	return result.Success(), nil
+}
+
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
@@ -281,6 +311,8 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 	updatedObjs := []*unstructured.Unstructured{}
 
 	for _, obj := range objs.Items {
+		// store a copy of the original object to later be used in a comparison
+		originalObj := obj.DeepCopy()
 		name := obj.GetName()
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		log.Debug("Inspecting object...")
@@ -295,6 +327,13 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			if err != nil {
 				return nil, err
 			}
+		}
+
+		if specsAreEqual, err := nestedMapComparison(originalObj, updatedObj, "spec"); err != nil {
+			log.Error(err, "")
+			continue
+		} else if specsAreEqual {
+			continue
 		}
 
 		log.Debug("Updating object...")
