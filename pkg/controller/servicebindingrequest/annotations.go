@@ -127,6 +127,8 @@ func SetSBRAnnotations(
 	return nil
 }
 
+// RemoveSBRAnnotations removes SBR related annotations from all the objects and updates them using
+// the given client.
 func RemoveSBRAnnotations(
 	client dynamic.Interface,
 	objs []*unstructured.Unstructured,
