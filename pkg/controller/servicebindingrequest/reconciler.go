@@ -176,6 +176,9 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 	return nil
 }
 
+// unbind removes the relationship between the given sbr and the manifests the operator has
+// previously modified. This process also deletes any manifests created to support the binding
+// functionality, such as ConfigMaps and Secrets.
 func (r *Reconciler) unbind(
 	logger *log.Log,
 	binder *Binder,
