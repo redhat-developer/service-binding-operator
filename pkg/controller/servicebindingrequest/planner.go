@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -37,7 +38,7 @@ type Plan struct {
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
+func (p *Planner) searchCR() (*unstructured.Unstructured, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
@@ -47,8 +48,9 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	log.Debug("Searching for CR instance...")
 
 	cr, err := p.client.Resource(gvr).Namespace(p.sbr.GetNamespace()).Get(bss.ResourceRef, opts)
+
 	if err != nil {
-		log.Error(err, "during reading CR")
+		log.Info("during reading CR")
 		return nil, err
 	}
 
@@ -56,18 +58,48 @@ func (p *Planner) searchCR(kind string) (*unstructured.Unstructured, error) {
 	return cr, nil
 }
 
+// searchCRD based on a CustomResourceDefinitionDescription and name, search for the object.
+func (p *Planner) searchCRD() (*unstructured.Unstructured, error) {
+	bss := p.sbr.Spec.BackingServiceSelector
+	gvk := schema.GroupVersionKind{Group: "apiextensions.k8s.io", Version: "v1beta1", Kind: "CustomResourceDefinition"}
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+	opts := metav1.GetOptions{}
+
+	logger := p.logger.WithValues("CR.GVK", gvk.String(), "CR.GVR", gvr.String(), "Kind", bss.Kind)
+	logger.Info("Searching for CRD instance...")
+
+	// TODO: This hack should be removed! Probably the name should be prompted from user through SBR CR.
+	name := strings.ToLower(bss.Kind) + "s." + bss.Group
+	crd, err := p.client.Resource(gvr).Get(name, opts)
+
+	if err != nil {
+		logger.Info("during reading CRD")
+		return nil, err
+	}
+
+	logger.WithValues("CR.Name", crd.GetName()).Info("Found target CR!")
+	return crd, nil
+}
+
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	bss := p.sbr.Spec.BackingServiceSelector
 	gvk := schema.GroupVersionKind{Group: bss.Group, Version: bss.Version, Kind: bss.Kind}
 	olm := NewOLM(p.client, p.sbr.GetNamespace())
-	crdDescription, err := olm.SelectCRDByGVK(gvk)
+	crd, err := p.searchCRD()
+	if err != nil {
+		return nil, err
+	}
+
+	p.logger.Debug("After search crd", "CRD", crd)
+
+	crdDescription, err := olm.SelectCRDByGVK(gvk, crd)
 	if err != nil {
 		return nil, err
 	}
 
 	// retrieve the CR based on kind, api-version and name
-	cr, err := p.searchCR(crdDescription.Kind)
+	cr, err := p.searchCR()
 	if err != nil {
 		return nil, err
 	}

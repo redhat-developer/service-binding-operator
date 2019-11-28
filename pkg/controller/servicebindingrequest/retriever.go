@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,6 +12,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // Retriever reads all data referred in plan instance, and store in a secret.
@@ -68,6 +69,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 		return "", sectionMap, fmt.Errorf("Can't find '%s' section in CR named '%s'", section, objName)
 	}
 
+	log.WithValues("SectionMap", sectionMap).Debug("Getting values from sectionmap")
 	v, _, err := r.getNestedValue(key, sectionMap)
 	for k, v := range sectionMap.(map[string]interface{}) {
 		if _, ok := r.cache[section]; !ok {
@@ -321,14 +323,14 @@ func (r *Retriever) saveDataOnSecret() error {
 func (r *Retriever) Retrieve() ([]*unstructured.Unstructured, error) {
 	var err error
 	log := r.logger
-	log.Debug("Looking for spec-descriptors in 'spec'...")
+	r.logger.Info("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
 		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return nil, err
 		}
 	}
 
-	log.Debug("Looking for status-descriptors in 'status'...")
+	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
 		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return nil, err

@@ -27,3 +27,9 @@ set-labels-on-knative-app:
 ## Create the Service Binding Request
 create-service-binding-request:
 	${Q}oc apply -f service-binding-request.yaml
+
+.PHONY: install-serverless-ui
+## Create the knative namespace, install knative serving
+install-serverless-ui:
+	${Q}oc apply -f serving.yaml
+
