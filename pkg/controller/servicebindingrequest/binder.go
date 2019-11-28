@@ -494,7 +494,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 	return updatedObjs, nil
 }
 
-// remove binding information from each object.
+// remove attempts to update each given object without any service binding related information.
 func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 	for _, obj := range objs.Items {
 		name := obj.GetName()
