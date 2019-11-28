@@ -509,5 +509,5 @@ func serviceBindingRequestTest(
 
 	// after deletion, deployment should not contain envFrom directive anymore
 	_, err = assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
-	assert.Error(t, err, "expect deployment not to be carrying envFrom directive")
+	require.Error(t, err, "expect deployment not to be carrying envFrom directive")
 }
