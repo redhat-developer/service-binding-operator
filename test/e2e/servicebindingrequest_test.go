@@ -13,7 +13,6 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -63,27 +62,27 @@ func TestAddSchemesToFramework(t *testing.T) {
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
-		// t.Run("scenario-app-db-sbr", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
-		// })
-		// t.Run("scenario-db-sbr-app", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
-		// })
-		// t.Run("scenario-app-sbr-db", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
-		// })
-		// t.Run("scenario-sbr-db-app", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
-		// })
-		// t.Run("scenario-sbr-app-db", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
-		// })
-		// t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		// })
-		// t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
-		// 	ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
-		// })
+		t.Run("scenario-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+		})
+		t.Run("scenario-db-sbr-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
+		})
+		t.Run("scenario-app-sbr-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
+		})
+		t.Run("scenario-sbr-db-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		})
+		t.Run("scenario-sbr-app-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
+		})
+		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		})
+		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
+		})
 	})
 }
 
