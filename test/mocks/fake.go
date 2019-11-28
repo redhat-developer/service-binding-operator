@@ -145,9 +145,9 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 
 // AddMockedUnstructuredKnativeService add mocked object from UnstructuredKnativeService.
 func (f *Fake) AddMockedUnstructuredKnativeService(name string, matchLabels map[string]string) {
-	require.Nil(f.t, knativev1.AddToScheme(f.S))
+	require.NoError(f.t, knativev1.AddToScheme(f.S))
 	d, err := UnstructuredKnativeServiceMock(f.ns, name, matchLabels)
-	require.Nil(f.t, err)
+	require.NoError(f.t, err)
 	f.S.AddKnownTypes(knativev1.SchemeGroupVersion, &knativev1.Service{})
 	f.objs = append(f.objs, d)
 }

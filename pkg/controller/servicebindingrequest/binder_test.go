@@ -301,18 +301,18 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	require.NotNil(t, binder)
 
 	updatedObjects, err := binder.Bind()
-	assert.NoError(t, err)
-	assert.Len(t, updatedObjects, 1)
+	require.NoError(t, err)
+	require.Len(t, updatedObjects, 1)
 
 	containersPath := []string{"spec", "template", "spec", "containers"}
 	containers, found, err := ustrv1.NestedSlice(updatedObjects[0].Object, containersPath...)
-	assert.NoError(t, err)
-	assert.True(t, found)
-	assert.Len(t, containers, 1)
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Len(t, containers, 1)
 
 	c := corev1.Container{}
 	u := containers[0].(map[string]interface{})
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
-	assert.NoError(t, err)
-	assert.Equal(t, name, c.EnvFrom[0].SecretRef.Name)
+	require.NoError(t, err)
+	require.Equal(t, name, c.EnvFrom[0].SecretRef.Name)
 }
