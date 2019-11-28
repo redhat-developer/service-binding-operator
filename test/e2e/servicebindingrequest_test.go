@@ -334,27 +334,6 @@ func CreateApp(
 	return d
 }
 
-// CreateSBR implements end-to-end step for creating a Service Binding Request to bind the Backing
-// Service and the Application.
-func CreateSBR(
-	ctx context.Context,
-	t *testing.T,
-	f *framework.Framework,
-	cleanupOpts *framework.CleanupOptions,
-	namespacedName types.NamespacedName,
-	resourceRef string,
-	matchLabels map[string]string,
-) *v1alpha1.ServiceBindingRequest {
-	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
-	ns := namespacedName.Namespace
-	name := namespacedName.Name
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false, nil)
-	// FIXME: why do we delete in so many places? should this be removed?
-	// making sure object does not exist before testing
-	_ = f.Client.Delete(ctx, sbr)
-	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
-	return sbr
-}
 
 // CreateCSV created mocked cluster service version object.
 func CreateCSV(

@@ -15,7 +15,7 @@ func ServiceBindingRequestSetup(t *testing.T, steps []Step) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 
-	ns, f := bootstrapNamespace(t, ctx, true)
+	ns, f := bootstrapNamespace(t, ctx)
 
 	// executing testing steps on operator
 	serviceBindingRequestTestSetup(t, ctx, f, ns, steps)
@@ -41,7 +41,8 @@ func serviceBindingRequestTestSetup(t *testing.T, ctx *framework.TestCtx, f *fra
 	for _, step := range steps {
 		switch step {
 		case AppStep:
-			CreateApp(todoCtx, t, ctx, f, deploymentNamespacedName, matchLabels)
+			cleanupOpts := cleanupOptions(ctx)
+			CreateApp(todoCtx, t,f,cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBREtcdStep:
 			CreateServiceBindingRequest(
 				todoCtx,
