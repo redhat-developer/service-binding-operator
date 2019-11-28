@@ -139,13 +139,9 @@ func RemoveSBRAnnotations(
 			annotations = make(map[string]string)
 		}
 
-		cleanAnnotations := make(map[string]string)
-		for k, v := range annotations {
-			if k != sbrNamespaceAnnotation && k != sbrNameAnnotation {
-				cleanAnnotations[k] = v
-			}
-		}
-		obj.SetAnnotations(cleanAnnotations)
+		delete(annotations, sbrNameAnnotation)
+		delete(annotations, sbrNamespaceAnnotation)
+		obj.SetAnnotations(annotations)
 
 		if err := updateUnstructuredObj(client, obj); err != nil {
 			return err
