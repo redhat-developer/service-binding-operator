@@ -62,9 +62,9 @@ func TestAddSchemesToFramework(t *testing.T) {
 	dbList := pgv1alpha1.DatabaseList{}
 	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
-	//t.Log("Adding EtcdClusterList scheme to cluster...")
-	//etcdClusterList := v1beta2.EtcdClusterList{}
-	//require.Nil(t, framework.AddToFrameworkScheme(v1beta2.AddToScheme, &etcdClusterList))
+	t.Log("Adding EtcdClusterList scheme to cluster...")
+	etcdClusterList := v1beta2.EtcdClusterList{}
+	require.Nil(t, framework.AddToFrameworkScheme(v1beta2.AddToScheme, &etcdClusterList))
 
 	t.Run("end-to-end", func(t *testing.T) {
 		// scenario-1
