@@ -498,8 +498,8 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 	for _, obj := range objs.Items {
 		name := obj.GetName()
-		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
-		log.Debug("Inspecting object...")
+		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
+		logger.Debug("Inspecting object...")
 
 		updatedObj, err := b.removeSpecContainers(&obj)
 		if err != nil {
@@ -512,7 +512,7 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 			}
 		}
 
-		log.Debug("Updating object...")
+		logger.Debug("Updating object...")
 		if err = b.client.Update(b.ctx, updatedObj); err != nil {
 			return err
 		}
