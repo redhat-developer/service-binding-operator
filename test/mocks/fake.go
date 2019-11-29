@@ -11,6 +11,7 @@ import (
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -34,11 +35,11 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
-	applicationResourceKind string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels, false)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, false)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -48,11 +49,11 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
-	applicationResourceKind string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels, true)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, true)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -61,11 +62,11 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
-	applicationResourceKind string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels)
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	require.Nil(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr

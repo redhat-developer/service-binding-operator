@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -26,9 +27,10 @@ func TestBinderNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "binder",
 	}
+	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", "deployments", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", applicationGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -41,7 +43,7 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binder)
 
-	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", "deployments", make(map[string]string))
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", applicationGVR, make(map[string]string))
 
 	binderForSBRWithResourceRef := NewBinder(
 		context.TODO(),
@@ -131,9 +133,10 @@ func TestAppendEnvVar(t *testing.T) {
 func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
+	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", "deployments", nil)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", applicationGVR, nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
@@ -157,9 +160,10 @@ func TestBinderApplicationName(t *testing.T) {
 func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
+	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deploymentconfigs"}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", "deploymentconfigs", nil)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", applicationGVR, nil)
 	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
 
 	binder := NewBinder(

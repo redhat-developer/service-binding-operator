@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -25,9 +26,10 @@ func TestPlannerNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
+	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", "deployments", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", applicationGVR, matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef)
 
@@ -61,9 +63,10 @@ func TestPlannerAnnotation(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
+	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
 
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", "deployments", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", applicationGVR, matchLabels)
 	f.AddMockedUnstructuredDatabaseCRD()
 
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)

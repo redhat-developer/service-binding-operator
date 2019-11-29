@@ -14,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
@@ -379,7 +380,7 @@ func ServiceBindingRequestMock(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
-	applicationResourceKind string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
@@ -403,9 +404,9 @@ func ServiceBindingRequestMock(
 				ResourceRef: backingServiceResourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				Group:       "apps",
-				Version:     "v1",
-				Resource:    applicationResourceKind,
+				Group:       applicationGVR.Group,
+				Version:     applicationGVR.Version,
+				Resource:    applicationGVR.Resource,
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
@@ -420,10 +421,10 @@ func UnstructuredServiceBindingRequestMock(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
-	applicationResourceKind string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationResourceKind, matchLabels, false)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, false)
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
 	if err != nil {
 		return nil, err
