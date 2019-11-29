@@ -5,13 +5,15 @@ import (
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // OLM represents the actions this operator needs to take upon Operator-Lifecycle-Manager resources,
@@ -24,6 +26,9 @@ type OLM struct {
 
 const (
 	csvResource = "clusterserviceversions"
+
+	// ServiceBindingOperatorAnnotationPrefix is the prefix of Service Binding Operator related annotations.
+	ServiceBindingOperatorAnnotationPrefix = "servicebindingoperator.redhat.io/"
 )
 
 var (
@@ -110,7 +115,7 @@ func (o *OLM) loopCRDDescriptions(
 }
 
 // SelectCRDByGVK return a single CRD based on a given GVK.
-func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescription, error) {
+func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	log := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
@@ -118,7 +123,19 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 		return nil, err
 	}
 
+	var crdDescription *olmv1alpha1.CRDDescription
+
+	// CRDDescription is both used by OLM to configure OLM descriptors in manifests existing in the
+	// cluster but is also built from annotations present in the CRD
+	if crd != nil {
+		crdDescription, err = buildCRDDescriptionFromCRDAnnotations(crd)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	crdDescriptions := []*olmv1alpha1.CRDDescription{}
+
 	err = o.loopCRDDescriptions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		log = o.logger.WithValues(
 			"CRDDescription.Name", crdDescription.Name,
@@ -142,11 +159,115 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind) (*olmv1alpha1.CRDDescr
 		return nil, err
 	}
 
-	if len(crdDescriptions) == 0 {
+	if len(crdDescriptions) == 0 && crdDescription == nil {
 		log.Debug("No CRD could be found for GVK.")
 		return nil, fmt.Errorf("no crd could be found for gvk")
+	} else if len(crdDescriptions) == 0 {
+		// use the crdDescription built from CRD annotations as fallback
+		return crdDescription, nil
 	}
+
 	return crdDescriptions[0], nil
+}
+
+// buildCRDDescriptionFromCRDAnnotations builds a CRDDescription from annotations present in the CRD.
+func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
+	var specDescriptors []olmv1alpha1.SpecDescriptor
+	var statusDescriptors []olmv1alpha1.StatusDescriptor
+
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+	if err != nil {
+		return nil, err
+	}
+
+	kind, ok, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	version, ok, err := unstructured.NestedString(crd.Object, "spec", "version")
+	if err != nil {
+		return nil, err
+	} else if !ok {
+		return nil, nil
+	}
+
+	crdDescription := olmv1alpha1.CRDDescription{
+		Name:              crd.GetName(),
+		Version:           version,
+		Kind:              kind,
+		SpecDescriptors:   specDescriptors,
+		StatusDescriptors: statusDescriptors,
+	}
+
+	return &crdDescription, nil
+}
+
+// buildDescriptorsFromAnnotations builds two descriptors collection, one for spec descriptors and
+// another for status descriptors.
+func buildDescriptorsFromAnnotations(annotations map[string]string) (
+	[]olmv1alpha1.SpecDescriptor,
+	[]olmv1alpha1.StatusDescriptor,
+	error,
+) {
+	var (
+		collectedSpecDescriptors   []olmv1alpha1.SpecDescriptor
+		collectedStatusDescriptors []olmv1alpha1.StatusDescriptor
+	)
+
+	for n, v := range annotations {
+		mappedSpecDescriptors, mappedStatusDescriptors, err := mapSBRAnnotationToXDescriptors(n, v)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		collectedSpecDescriptors = append(collectedSpecDescriptors, mappedSpecDescriptors...)
+		collectedStatusDescriptors = append(collectedStatusDescriptors, mappedStatusDescriptors...)
+	}
+	return collectedSpecDescriptors, collectedStatusDescriptors, nil
+}
+
+func splitBindingInfo(s string) (string, string, error) {
+	parts := strings.SplitN(s, "-", 2)
+
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("should have two parts")
+	}
+
+	return parts[0], parts[1], nil
+}
+
+func mapSBRAnnotationToXDescriptors(key string, value string) ([]olmv1alpha1.SpecDescriptor, []olmv1alpha1.StatusDescriptor, error) {
+	// key: 	'servicebindingoperator.redhat.io/status.dbConfigMap-db.host'
+	// value: 	'binding:env:object:configmap'
+	if !strings.HasPrefix(key, ServiceBindingOperatorAnnotationPrefix) {
+		return nil, nil, nil
+	}
+
+	// bindingInfo: `status.dbConfigMap-db.host`
+	bindingInfo := strings.Replace(key, ServiceBindingOperatorAnnotationPrefix, "", 1)
+
+	// path: status.dbConfigMap
+	// fieldPath: db.host
+	path, fieldPath, err := splitBindingInfo(bindingInfo)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// path: dbConfigMap
+	path = strings.TrimPrefix(path, "status.")
+
+	// xDescriptor: binding:env:object:configmap:db.host
+	xDescriptor := strings.Join([]string{value, fieldPath}, ":")
+
+	statusDescriptor := olmv1alpha1.StatusDescriptor{
+		Path:         path,
+		XDescriptors: []string{xDescriptor},
+	}
+
+	return nil, []olmv1alpha1.StatusDescriptor{statusDescriptor}, nil
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.
@@ -191,6 +312,10 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
+		// the CSV might have disappeared between discovery and check, so not found is not an error
+		if errors.IsNotFound(err) {
+			return []schema.GroupVersionKind{}, nil
+		}
 		log.Error(err, "on reading CSV object")
 		return []schema.GroupVersionKind{}, err
 	}

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"strings"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -13,17 +13,16 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	sbrcontroller "github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -33,6 +32,7 @@ const (
 	DBStep  Step = "create-db"
 	AppStep Step = "create-app"
 	SBRStep Step = "create-sbr"
+	CSVStep Step = "create-csv"
 )
 
 var (
@@ -48,48 +48,46 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Log("Adding ServiceBindingRequestList scheme to cluster...")
 	sbrlist := v1alpha1.ServiceBindingRequestList{}
-	require.Nil(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist))
+	require.NoError(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist))
 
 	t.Log("Adding ClusterServiceVersionList scheme to cluster...")
 	csvList := olmv1alpha1.ClusterServiceVersionList{}
-	require.Nil(t, framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, &csvList))
+	require.NoError(t, framework.AddToFrameworkScheme(olmv1alpha1.AddToScheme, &csvList))
 
 	t.Log("Adding DatabaseList scheme to cluster...")
 	dbList := pgv1alpha1.DatabaseList{}
-	require.Nil(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
+	require.NoError(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
 	t.Run("end-to-end", func(t *testing.T) {
-		// scenario-1
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
-
 		t.Run("scenario-app-db-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
 		})
-
 		t.Run("scenario-db-sbr-app", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
 		})
-
 		t.Run("scenario-app-sbr-db", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
 		})
-
-		// scenario-2 (pre create sbr then binding resources
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
 		})
-
 		t.Run("scenario-sbr-app-db", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
+		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		})
+		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
+		})
 	})
-
 }
 
-// cleanUpOptions using global variables to create the object.
-func cleanUpOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
+// cleanupOptions using global variables to create the object.
+func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
 		Timeout:       cleanupTimeout,
@@ -99,9 +97,9 @@ func cleanUpOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 
 // bootstrapNamespace execute scaffolding to have a new cluster initialized, and acquire a test
 // namespace, the namespace name is returned and framework global variables are returned.
-func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx, clean bool) (string, *framework.Framework) {
+func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framework.Framework) {
 	t.Log("Initializing cluster resources...")
-	err := ctx.InitializeClusterResources(cleanUpOptions(ctx))
+	err := ctx.InitializeClusterResources(cleanupOptions(ctx))
 	if err != nil {
 		t.Logf("Cluster resources initialization error: '%s'", err)
 		require.True(t, errors.IsAlreadyExists(err), "failed to setup cluster resources")
@@ -109,96 +107,11 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx, clean bool) (strin
 
 	// namespace name is informed on command-line or defined dinamically
 	ns, err := ctx.GetNamespace()
-	require.Nil(t, err)
+	require.NoError(t, err)
 	t.Logf("Using namespace '%s' for testing...", ns)
 
 	f := framework.Global
-
-	if clean {
-		err := cleanNamespace(t, ctx, f, ns)
-		require.Nil(t, err)
-	}
 	return ns, f
-}
-
-func cleanNamespace(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string) error {
-	todoCtx := context.TODO()
-	databseList := &pgv1alpha1.DatabaseList{}
-	deploymentList := &appsv1.DeploymentList{}
-	secretList := &corev1.SecretList{}
-	serviceBindingRequestList := &v1alpha1.ServiceBindingRequestList{}
-	csvList := &olmv1alpha1.ClusterServiceVersionList{}
-
-	listOptions := &client.ListOptions{
-		Namespace: ns,
-	}
-
-	t.Logf("Cleaning namespace:")
-
-	t.Logf("\tDatabases:")
-	if err := f.Client.List(todoCtx, listOptions, databseList); err != nil {
-		return err
-	}
-	for _, resource := range databseList.Items {
-		t.Logf("\t\t%s...", resource.GetName())
-		err := f.Client.Delete(todoCtx, &resource)
-		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
-		}
-	}
-
-	t.Logf("\tServiceBindingRequests:")
-	if err := f.Client.List(todoCtx, listOptions, serviceBindingRequestList); err != nil {
-		return err
-	}
-	for _, resource := range serviceBindingRequestList.Items {
-		t.Logf("\t\t%s...", resource.GetName())
-		err := f.Client.Delete(todoCtx, &resource)
-		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
-		}
-	}
-
-	t.Logf("\tDeployments:")
-	if err := f.Client.List(todoCtx, listOptions, deploymentList); err != nil {
-		return err
-	}
-	for _, resource := range deploymentList.Items {
-		t.Logf("\t\t%s...", resource.GetName())
-		err := f.Client.Delete(todoCtx, &resource)
-		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
-		}
-	}
-
-	t.Logf("\tClusterServiceVersions:")
-	if err := f.Client.List(todoCtx, listOptions, csvList); err != nil {
-		return err
-	}
-	for _, resource := range csvList.Items {
-		t.Logf("\t\t%s...", resource.GetName())
-		err := f.Client.Delete(todoCtx, &resource)
-		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
-		}
-	}
-
-	t.Logf("\tSecrets:")
-	if err := f.Client.List(todoCtx, listOptions, secretList); err != nil {
-		return err
-	}
-	for _, resource := range secretList.Items {
-		if strings.HasPrefix(string(resource.Type), "kubernetes.io/") {
-			continue // skip
-		}
-		t.Logf("\t\t%s...", resource.GetName())
-		err := f.Client.Delete(todoCtx, &resource)
-		if !errors.IsNotFound(err) {
-			require.Nil(t, err)
-		}
-	}
-
-	return nil
 }
 
 // ServiceBindingRequest bootstrap method to initialize cluster resources and setup a testing
@@ -208,7 +121,7 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
 
-	ns, f := bootstrapNamespace(t, ctx, true)
+	ns, f := bootstrapNamespace(t, ctx)
 
 	// executing testing steps on operator
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
@@ -242,6 +155,24 @@ func assertDeploymentEnvFrom(
 	return d, nil
 }
 
+// assertSBRStatus will determine if SBR is on "success" state
+func assertSBRStatus(
+	ctx context.Context,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) error {
+	sbr := &v1alpha1.ServiceBindingRequest{}
+	if err := f.Client.Get(ctx, namespacedName, sbr); err != nil {
+		return err
+	}
+
+	success := sbrcontroller.BindingSuccess
+	if sbr.Status.BindingStatus != success {
+		return fmt.Errorf("SBR '%#v' is not on '%s' status", namespacedName, success)
+	}
+	return nil
+}
+
 // assertSBRSecret execute the inspection in a secret created by the operator.
 func assertSBRSecret(
 	ctx context.Context,
@@ -259,7 +190,8 @@ func assertSBRSecret(
 	actualUser := sbrSecret.Data["DATABASE_SECRET_USER"]
 	expectedUser := []byte("user")
 	if !bytes.Equal(expectedUser, actualUser) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_USER (%s) is different than expected (%s)", actualUser, expectedUser)
+		return nil, fmt.Errorf("key DATABASE_SECRET_USER (%s) is different than expected (%s)",
+			actualUser, expectedUser)
 	}
 
 	if _, contains := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]; !contains {
@@ -268,21 +200,22 @@ func assertSBRSecret(
 	actualPassword := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]
 	expectedPassword := []byte("password")
 	if !bytes.Equal(expectedPassword, actualPassword) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD (%s) is different than expected (%s)", actualPassword, expectedPassword)
+		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD (%s) is different than expected (%s)",
+			actualPassword, expectedPassword)
 	}
 
 	return sbrSecret, nil
 }
 
-// updateSecret by exchanging all of its keys to "bogus" string.
-func updateSecret(
+// updateSBRSecret by exchanging all of its keys to "bogus" string.
+func updateSBRSecret(
 	ctx context.Context,
 	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
 ) {
 	sbrSecret := &corev1.Secret{}
-	require.Nil(t, f.Client.Get(ctx, namespacedName, sbrSecret))
+	require.NoError(t, f.Client.Get(ctx, namespacedName, sbrSecret))
 
 	// intentionally bumping the object generation, so the operator will reconcile;
 	generation := sbrSecret.GetGeneration()
@@ -294,7 +227,7 @@ func updateSecret(
 		sbrSecret.Data[k] = []byte("bogus")
 	}
 
-	require.Nil(t, f.Client.Update(ctx, sbrSecret))
+	require.NoError(t, f.Client.Update(ctx, sbrSecret))
 }
 
 // retry the informed method a few times, with sleep between attempts.
@@ -310,139 +243,237 @@ func retry(attempts int, sleep time.Duration, fn func() error) error {
 	return err
 }
 
-// serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
-// expecting for changes caused by the operator.
-func serviceBindingRequestTest(t *testing.T, ctx *framework.TestCtx, f *framework.Framework, ns string, steps []Step) {
-	todoCtx := context.TODO()
+// CreateDB implements end-to-end step for the creation of a Database CR along with the dependend
+// Secret serving as a Backing Service to be bound to the application.
+func CreateDB(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	cleanupOpts *framework.CleanupOptions,
+	namespacedName types.NamespacedName,
+	secretName string,
+) *pgv1alpha1.Database {
+	t.Logf("Creating Database mock object '%#v'...", namespacedName)
+	ns := namespacedName.Namespace
+	resourceRef := namespacedName.Name
 
-	name := "e2e-service-binding-request"
-	resourceRef := "e2e-db-testing"
-	secretName := "e2e-db-credentials"
-	appName := "e2e-application"
-	matchLabels := map[string]string{
-		"connects-to": "database",
-		"environment": "e2e",
-	}
+	db := mocks.DatabaseCRMock(ns, resourceRef)
+	require.NoError(t, f.Client.Create(ctx, db, cleanupOpts))
 
-	t.Log("Starting end-to-end tests for operator!")
+	t.Logf("Updating Database '%#v' status, adding 'DBCredentials'", namespacedName)
+	require.NoError(t, f.Client.Get(ctx, namespacedName, db))
+	db.Status.DBCredentials = secretName
+	require.NoError(t, f.Client.Status().Update(ctx, db))
 
-	t.Log("Creating ClusterServiceVersion mock object...")
-	csv := mocks.ClusterServiceVersionMock(ns, "cluster-service-version")
-	require.Nil(t, f.Client.Create(todoCtx, &csv, cleanUpOptions(ctx)))
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName)
+	require.NoError(t, f.Client.Create(ctx, dbSecret, cleanupOpts))
 
-	resourceRefNamespacedName := types.NamespacedName{Namespace: ns, Name: resourceRef}
-	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
-	serviceBindingRequestNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
+	return db
+}
 
-	var d appsv1.Deployment
-	var sbr *v1alpha1.ServiceBindingRequest
+// CreateApp implements end-to-end step for the creation of a Deployment serving as the Application
+// to which the Backing Service is bound.
+func CreateApp(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	cleanupOpts *framework.CleanupOptions,
+	namespacedName types.NamespacedName,
+	matchLabels map[string]string,
+) appsv1.Deployment {
+	t.Logf("Creating Deployment mock object '%#v'...", namespacedName)
+	ns := namespacedName.Namespace
+	appName := namespacedName.Name
 
-	for _, step := range steps {
-		switch step {
-		case DBStep:
-			CreateDB(todoCtx, t, ctx, f, resourceRefNamespacedName, secretName)
-		case AppStep:
-			d = CreateApp(todoCtx, t, ctx, f, deploymentNamespacedName, matchLabels)
-		case SBRStep:
-			// creating service-binding-request, which will trigger actions in the controller
-			sbr = CreateServiceBindingRequest(todoCtx, t, ctx, f, serviceBindingRequestNamespacedName, resourceRef, matchLabels)
-		}
-	}
+	d := mocks.DeploymentMock(ns, appName, matchLabels)
+	require.NoError(t, f.Client.Create(ctx, &d, cleanupOpts))
 
-	// retrying a few times to identify SBO changes in deployment, this loop is waiting for the
-	// operator reconciliation.
-	t.Log("Inspecting deployment structure...")
+	// waiting for application deployment to reach one replica
+	t.Log("Waiting for application deployment reach one replica...")
+	require.NoError(
+		t,
+		e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout),
+	)
+
+	// retrieveing deployment, to inspect its contents
+	t.Logf("Reading application deployment '%s'", appName)
+	require.NoError(t, f.Client.Get(ctx, namespacedName, &d))
+
+	return d
+}
+
+// CreateSBR implements end-to-end step for creating a Service Binding Request to bind the Backing
+// Service and the Application.
+func CreateSBR(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	cleanupOpts *framework.CleanupOptions,
+	namespacedName types.NamespacedName,
+	resourceRef string,
+	matchLabels map[string]string,
+) *v1alpha1.ServiceBindingRequest {
+	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
+	ns := namespacedName.Namespace
+	name := namespacedName.Name
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
+	// FIXME: why do we delete in so many places? should this be removed?
+	// making sure object does not exist before testing
+	_ = f.Client.Delete(ctx, sbr)
+	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
+	return sbr
+}
+
+// CreateCSV created mocked cluster service version object.
+func CreateCSV(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	cleanupOpts *framework.CleanupOptions,
+	namespacedName types.NamespacedName,
+) {
+	t.Logf("Creating ClusterServiceVersion mock object: '%#v'...", namespacedName)
+	csv := mocks.ClusterServiceVersionMock(namespacedName.Namespace, namespacedName.Name)
+	require.NoError(t, f.Client.Create(ctx, &csv, cleanupOpts))
+}
+
+// inspectDeployment assert deployment resource in a retry loop.
+func inspectDeployment(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+	sbrName string,
+) {
 	err := retry(10, 5*time.Second, func() error {
-		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
-		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, name)
+		t.Logf("Inspecting deployment '%s'", namespacedName)
+		_, err := assertDeploymentEnvFrom(ctx, f, namespacedName, sbrName)
 		if err != nil {
 			t.Logf("Error on inspecting deployment: '%#v'", err)
 		}
 		return err
 	})
 	t.Logf("Deployment: Result after attempts, error: '%#v'", err)
-	assert.NoError(t, err)
+	require.NoError(t, err)
+}
 
-	// checking intermediary secret contents, right after deployment the secrets must be in place
-	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
-	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
-	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
-	require.NotNil(t, sbrSecret)
+// inspectSBRStatus retry assert SBR status to make sure it's in "success" state.
+func inspectSBRStatus(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) {
+	err := retry(10, 5*time.Second, func() error {
+		t.Logf("Inspecting SBR: '%s'", namespacedName)
+		err := assertSBRStatus(ctx, f, namespacedName)
+		if err != nil {
+			t.Logf("Error on inspecting SBR: '%#v'", err)
+		}
+		return err
+	})
+	t.Logf("SBR-Status: Result after attempts, error: '%#v'", err)
+	require.NoError(t, err)
+}
 
-	// editing intermediary secret in order to trigger update event
-	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
-	updateSecret(todoCtx, t, f, intermediarySecretNamespacedName)
-
-	// retrying a few times to see if secret is back on original state, waiting for operator to
-	// reconcile again when detecting the change
-	t.Log("Inspecting intermediary secret...")
-	err = retry(10, 5*time.Second, func() error {
+// inspectSBRSecret retry assert on intermediary secret, making sure it contains expected content.
+func inspectSBRSecret(
+	ctx context.Context,
+	t *testing.T,
+	f *framework.Framework,
+	namespacedName types.NamespacedName,
+) {
+	err := retry(10, 5*time.Second, func() error {
 		t.Log("Inspecting SBR generated secret...")
-		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+		_, err := assertSBRSecret(ctx, f, namespacedName)
 		if err != nil {
 			t.Logf("SBR generated secret inspection error: '%#v'", err)
 		}
 		return err
 	})
 	t.Logf("Intermediary-Secret: Result after attempts, error: '%#v'", err)
-	assert.NoError(t, err)
-
-	// cleaning up
-	t.Log("Cleaning all up!")
-	_ = f.Client.Delete(todoCtx, sbr)
-	_ = f.Client.Delete(todoCtx, sbrSecret)
-	_ = f.Client.Delete(todoCtx, &d)
+	require.NoError(t, err)
 }
 
-// CreateDB implements end-to-end step for the creation of a Database CR along with the dependend Secret serving as a Backing Service
-// to be bound to the application.
-func CreateDB(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, secretName string) *pgv1alpha1.Database {
-	ns := namespacedName.Namespace
-	resourceRef := namespacedName.Name
-	t.Log("Creating Database mock object...")
-	db := mocks.DatabaseCRMock(ns, resourceRef)
-	require.Nil(t, f.Client.Create(todoCtx, db, cleanUpOptions(ctx)))
+// serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
+// expecting for changes caused by the operator.
+func serviceBindingRequestTest(
+	t *testing.T,
+	ctx *framework.TestCtx,
+	f *framework.Framework,
+	ns string,
+	steps []Step,
+) {
+	// making sure resource names employed during test are unique
+	randomSuffix := rand.Int()
+	csvName := fmt.Sprintf("cluster-service-version-%d", randomSuffix)
+	sbrName := fmt.Sprintf("e2e-service-binding-request-%d", randomSuffix)
+	resourceRef := fmt.Sprintf("e2e-db-testing-%d", randomSuffix)
+	secretName := fmt.Sprintf("e2e-db-credentials-%d", randomSuffix)
+	appName := fmt.Sprintf("e2e-application-%d", randomSuffix)
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": fmt.Sprintf("e2e-%d", randomSuffix),
+	}
 
-	t.Log("Updating Database status, adding 'DBCredentials'")
-	require.Nil(t, f.Client.Get(todoCtx, namespacedName, db))
-	db.Status.DBCredentials = secretName
-	require.Nil(t, f.Client.Status().Update(todoCtx, db))
+	t.Logf("Starting end-to-end tests for operator, using suffix '%d'!", randomSuffix)
 
-	t.Log("Creating Database credentials secret mock object...")
-	dbSecret := mocks.SecretMock(ns, secretName)
-	require.Nil(t, f.Client.Create(todoCtx, dbSecret, cleanUpOptions(ctx)))
+	resourceRefNamespacedName := types.NamespacedName{Namespace: ns, Name: resourceRef}
+	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
+	sbrNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
+	csvNamespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
+	cleanupOpts := cleanupOptions(ctx)
 
-	return db
-}
+	todoCtx := context.TODO()
 
-// CreateApp implements end-to-end step for the creation of a Deployment serving as the Application to which the Backing Service is bound.
-func CreateApp(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, matchLabels map[string]string) appsv1.Deployment {
-	ns := namespacedName.Namespace
-	appName := namespacedName.Name
-	t.Log("Creating Deployment mock object...")
-	d := mocks.DeploymentMock(ns, appName, matchLabels)
-	require.Nil(t, f.Client.Create(todoCtx, &d, cleanUpOptions(ctx)))
+	var d appsv1.Deployment
+	var sbr *v1alpha1.ServiceBindingRequest
 
-	// waiting for application deployment to reach one replica
-	t.Log("Waiting for application deployment reach one replica...")
-	require.Nil(t, e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout))
+	for _, step := range steps {
+		switch step {
+		case CSVStep:
+			CreateCSV(todoCtx, t, f, cleanupOpts, csvNamespacedName)
+		case DBStep:
+			CreateDB(todoCtx, t, f, cleanupOpts, resourceRefNamespacedName, secretName)
+		case AppStep:
+			d = CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
+		case SBRStep:
+			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, matchLabels)
+		}
+	}
 
-	// retrieveing deployment, to inspect its contents
+	// retrying a few times to identify SBO changes in deployment, this loop is waiting for the
+	// operator reconciliation.
+	t.Log("Inspecting deployment structure...")
+	inspectDeployment(todoCtx, t, f, deploymentNamespacedName, sbrName)
 
-	t.Logf("Reading application deployment '%s'", appName)
-	require.Nil(t, f.Client.Get(todoCtx, namespacedName, &d))
+	// retrying a few times to identify SBR status change to "success"
+	t.Log("Inspecting SBR status...")
+	inspectSBRStatus(todoCtx, t, f, sbrNamespacedName)
 
-	return d
-}
+	// checking intermediary secret contents, right after deployment the secrets must be in place
+	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
+	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
+	require.NotNil(t, sbrSecret)
 
-// CreateServiceBindingRequest implements end-to-end step for creating a Service Binding Request to bind the Backing Service and the Application
-func CreateServiceBindingRequest(todoCtx context.Context, t *testing.T, ctx *framework.TestCtx, f *framework.Framework, namespacedName types.NamespacedName, resourceRef string, matchLabels map[string]string) *v1alpha1.ServiceBindingRequest {
-	ns := namespacedName.Namespace
-	name := namespacedName.Name
-	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
-	// making sure object does not exist before testing
-	_ = f.Client.Delete(todoCtx, sbr)
-	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanUpOptions(ctx)))
-	return sbr
+	// editing intermediary secret in order to trigger update event
+	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
+	updateSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+
+	// retrying a few times to see if secret is back on original state, waiting for operator to
+	// reconcile again when detecting the change
+	t.Log("Inspecting intermediary secret...")
+	inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+
+	// making sure clean up is always executed, and in background
+	defer func() {
+		t.Log("Cleaning up resource objects...")
+		_ = f.Client.Delete(todoCtx, sbr)
+		if sbrSecret != nil {
+			_ = f.Client.Delete(todoCtx, sbrSecret)
+		}
+		_ = f.Client.Delete(todoCtx, &d)
+	}()
 }

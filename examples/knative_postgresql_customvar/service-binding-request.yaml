@@ -9,9 +9,7 @@ spec:
     group: serving.knative.dev
     version: v1beta1
     resource: services
-    matchLabels:
-      connects-to: postgres
-      environment: demo
+    resourceRef: knative-app
   backingServiceSelector:
     group: postgresql.baiju.dev
     version: v1alpha1
