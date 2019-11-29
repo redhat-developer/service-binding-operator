@@ -192,9 +192,9 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 
 	t.Run("deploymentconfig", func(t *testing.T) {
 		list, err := binder.search()
-		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list.Items))
-		assert.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+		require.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
 	})
 
 }
