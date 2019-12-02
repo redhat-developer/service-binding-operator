@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"gotest.tools/assert/cmp"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -29,7 +30,7 @@ const (
 	// binding is in progress
 	bindingInProgress = "InProgress"
 	// binding has succeeded
-	bindingSuccess = "Success"
+	BindingSuccess = "Success"
 	// binding has failed
 	bindingFail = "Fail"
 	// time in seconds to wait before requeuing requests
@@ -62,7 +63,7 @@ func (r *Reconciler) setApplicationObjects(
 	for _, obj := range objs {
 		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
 	}
-	sbrStatus.BindingStatus = bindingSuccess
+	sbrStatus.BindingStatus = BindingSuccess
 	sbrStatus.ApplicationObjects = names
 }
 
@@ -89,6 +90,12 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 ) error {
+	// do not update if both statuses are equal
+	result := cmp.DeepEqual(sbr.Status, sbrStatus)()
+	if result.Success() {
+		return nil
+	}
+
 	// coping status over informed object
 	sbr.Status = *sbrStatus
 
@@ -134,7 +141,6 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 
 		// Check if MatchLabels is present
 		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
-
 			err := errors.New("NotFoundError")
 			log.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
 			return err
@@ -161,13 +167,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
 	)
+
 	log.Info("Reconciling ServiceBindingRequest...")
 
 	// fetch the ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
 		log.Error(err, "On retrieving service-binding-request instance.")
-		return RequeueError(err)
+		// errors at this point should not trigger a requeue, probably should narrow this down to
+		// NotFound errors only.
+		return Done()
 	}
 
 	log = log.WithValues("ServiceBindingRequest.Name", sbr.Name)
@@ -241,8 +250,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// updating status of request instance
 	if err = r.updateStatusServiceBindingRequest(sbr, &sbrStatus); err != nil {
-		log.Error(err, "On updating status of ServiceBindingRequest.")
-		return RequeueError(err)
+		return RequeueOnConflict(err)
 	}
 
 	log.Info("All done!")

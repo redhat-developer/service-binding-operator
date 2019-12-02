@@ -2,7 +2,7 @@ package servicebindingrequest
 
 import (
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -36,7 +36,7 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 		t.Fail()
 	}
 	str := values["JDBC_CONNECTION_STRING"]
-	assert.Equal(t, "database-name:database-user@database-pass", str, "Connection string is not matching")
+	require.Equal(t, "database-name:database-user@database-pass", str, "Connection string is not matching")
 	str2 := values["ANOTHER_STRING"]
-	assert.Equal(t, "database-name_database-user", str2, "Connection string is not matching")
+	require.Equal(t, "database-name_database-user", str2, "Connection string is not matching")
 }

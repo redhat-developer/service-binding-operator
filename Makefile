@@ -188,6 +188,10 @@ out/test-namespace:
 get-test-namespace: out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
 
+.PHONY: deploy-e2e-crds
+deploy-e2e-crds:
+	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
+
 # E2E test
 .PHONY: e2e-setup
 e2e-setup: e2e-cleanup
@@ -301,7 +305,7 @@ generate-csv:
 	operator-sdk olm-catalog gen-csv --csv-version=$(OPERATOR_VERSION) --verbose
 
 generate-olm:
-	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 
 ## -- Publish image and manifests targets --
@@ -311,7 +315,7 @@ prepare-csv: build-image
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}
-	operator-courier --verbose flatten $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
