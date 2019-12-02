@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -312,12 +313,13 @@ func CreateSBR(
 	cleanupOpts *framework.CleanupOptions,
 	namespacedName types.NamespacedName,
 	resourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	ns := namespacedName.Namespace
 	name := namespacedName.Name
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, false)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", applicationGVR, matchLabels, false)
 	// FIXME: why do we delete in so many places? should this be removed?
 	// making sure object does not exist before testing
 	_ = f.Client.Delete(ctx, sbr)
@@ -439,7 +441,8 @@ func serviceBindingRequestTest(
 		case AppStep:
 			d = CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
-			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, matchLabels)
+			applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, applicationGVR, matchLabels)
 		}
 	}
 
