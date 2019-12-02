@@ -152,7 +152,10 @@ func TestBinderNew(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
 		require.NoError(t, err)
 
+		// making sure envFrom directive is removed
 		require.Empty(t, c.EnvFrom)
+		// making sure no volume mounts are present
+		require.Nil(t, c.VolumeMounts)
 	})
 }
 
