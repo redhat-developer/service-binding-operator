@@ -50,7 +50,12 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binder)
 
-	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", make(map[string]string))
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
+		"service-binding-request-with-ref",
+		"ref",
+		"ref",
+		map[string]string{},
+	)
 
 	binderForSBRWithResourceRef := NewBinder(
 		context.TODO(),
@@ -74,13 +79,17 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, 1, len(list.Items))
 	})
 
-	t.Run("appendEnvFrom", func(t *testing.T) {
+	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
 		secretName := "secret"
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
-		list := binder.appendEnvFrom(d.Spec.Template.Spec.Containers[0].EnvFrom, secretName)
+		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
 
+		list := binder.appendEnvFrom(envFrom, secretName)
 		require.Equal(t, 1, len(list))
 		require.Equal(t, secretName, list[0].SecretRef.Name)
+
+		list = binder.removeEnvFrom(envFrom, secretName)
+		require.Equal(t, 0, len(list))
 	})
 
 	t.Run("appendEnv", func(t *testing.T) {
@@ -100,7 +109,6 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
-		containersPath := []string{"spec", "template", "spec", "containers"}
 		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
@@ -111,7 +119,7 @@ func TestBinderNew(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
 		require.NoError(t, err)
 
-		// ServiceBindingOperatorChangeTriggerEnvVar should exist to trigger a side effect such as Pod restart when the
+		// special env-var should exist to trigger a side effect such as Pod restart when the
 		// intermediate secret has been modified
 		envVar := getEnvVar(c.Env, ChangeTriggerEnv)
 		require.NotNil(t, envVar)
@@ -120,6 +128,31 @@ func TestBinderNew(t *testing.T) {
 		parsedTime, err := time.Parse(time.RFC3339, envVar.Value)
 		require.NoError(t, err)
 		require.True(t, parsedTime.Before(time.Now()))
+	})
+
+	t.Run("remove", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedObjects, err := binder.update(list)
+		require.NoError(t, err)
+		require.Len(t, updatedObjects, 1)
+
+		err = binder.remove(list)
+		require.NoError(t, err)
+
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Len(t, containers, 1)
+
+		c := corev1.Container{}
+		u := containers[0].(map[string]interface{})
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+		require.NoError(t, err)
+
+		require.Empty(t, c.EnvFrom)
 	})
 }
 
