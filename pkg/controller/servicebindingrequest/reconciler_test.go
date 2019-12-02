@@ -40,7 +40,7 @@ func TestReconcilerReconcileError(t *testing.T) {
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", applicationGVR, matchLabels)
@@ -67,7 +67,7 @@ func TestReconcilerReconcileError(t *testing.T) {
 func TestApplicationSelectorByName(t *testing.T) {
 	backingServiceResourceRef := "backingServiceRef"
 	applicationResourceRef := "applicationRef"
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, applicationGVR, nil)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
@@ -106,7 +106,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", applicationGVR, matchLabels)
@@ -155,7 +155,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", applicationGVR, matchLabels)

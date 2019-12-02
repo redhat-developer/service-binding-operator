@@ -441,7 +441,7 @@ func serviceBindingRequestTest(
 		case AppStep:
 			d = CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
-			applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+			applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, applicationGVR, matchLabels)
 		}
 	}

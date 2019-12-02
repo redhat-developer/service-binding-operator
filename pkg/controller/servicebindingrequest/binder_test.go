@@ -26,7 +26,7 @@ func TestBinderNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "binder",
 	}
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", applicationGVR, matchLabels)
@@ -147,7 +147,7 @@ func TestAppendEnvVar(t *testing.T) {
 func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", applicationGVR, nil)
@@ -174,7 +174,7 @@ func TestBinderApplicationName(t *testing.T) {
 func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
-	applicationGVR := schema.GroupVersionResource{"apps", "v1", "deploymentconfigs"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deploymentconfigs"}
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", applicationGVR, nil)
