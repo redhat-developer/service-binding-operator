@@ -89,12 +89,6 @@ func TestRetriever(t *testing.T) {
 		require.Equal(t, []byte("test"), retriever.data["SERVICE_BINDING_DATABASE_TEST"])
 	})
 
-	// FIXME: move it into secret.go;
-	// t.Run("saveDataOnSecret", func(t *testing.T) {
-	// 	err := retriever.saveDataOnSecret()
-	// 	require.NoError(t, err)
-	// })
-
 	t.Run("empty prefix", func(t *testing.T) {
 		retriever = NewRetriever(fakeDynClient, plan, "")
 		require.NotNil(t, retriever)

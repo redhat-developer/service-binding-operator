@@ -62,7 +62,6 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	if IsNamespacedNameEmpty(sbrNamespacedName) {
 		log.Debug("SBR information not present in annotations, continue inspecting object")
 	} else {
-		// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
 		log.Trace("SBR information found in annotations, returning it")
 		return sbrNamespacedName, nil
 	}
@@ -74,7 +73,6 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 		return sbrNamespacedName, nil
 	}
 
-	// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
 	log.Trace("Object is not a SBR, returning an empty namespaced name")
 	return sbrNamespacedName, nil
 }
