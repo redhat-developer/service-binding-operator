@@ -79,10 +79,9 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	return sbrNamespacedName, nil
 }
 
-func updateUnstructuredObj(
-	client dynamic.Interface,
-	obj *unstructured.Unstructured,
-) error {
+// updateUnstructuredObj generic call to update the unstructured resource informed. It can return
+// error when API update call does.
+func updateUnstructuredObj(client dynamic.Interface, obj *unstructured.Unstructured) error {
 	gvk := obj.GroupVersionKind()
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	opts := metav1.UpdateOptions{}
@@ -129,10 +128,7 @@ func SetSBRAnnotations(
 
 // RemoveSBRAnnotations removes SBR related annotations from all the objects and updates them using
 // the given client.
-func RemoveSBRAnnotations(
-	client dynamic.Interface,
-	objs []*unstructured.Unstructured,
-) error {
+func RemoveSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
 	for _, obj := range objs {
 		annotations := obj.GetAnnotations()
 		if annotations == nil {
