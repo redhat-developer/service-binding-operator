@@ -56,6 +56,7 @@ func Done() (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }
 
+// DoneOnNotFound will return done when error is not-found, otherwise it calls out NoRequeue.
 func DoneOnNotFound(err error) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {
 		return Done()
@@ -63,10 +64,12 @@ func DoneOnNotFound(err error) (reconcile.Result, error) {
 	return NoRequeue(err)
 }
 
+// NoRequeue returns error without requeue flag.
 func NoRequeue(err error) (reconcile.Result, error) {
 	return reconcile.Result{}, err
 }
 
+// containsStringSlice given a string slice and a string, returns boolean when is contained.
 func containsStringSlice(slice []string, str string) bool {
 	for _, s := range slice {
 		if s == str {
@@ -76,6 +79,7 @@ func containsStringSlice(slice []string, str string) bool {
 	return false
 }
 
+// removeStringSlice given a string slice and a string, returns a new slice without given string.
 func removeStringSlice(slice []string, str string) []string {
 	var cleanSlice []string
 	for _, s := range slice {
