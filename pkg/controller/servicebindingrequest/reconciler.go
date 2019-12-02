@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,9 +47,9 @@ func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStat
 }
 
 // setStatus update the CR status field.
-func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string, errorMessage string) {
+func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string, errorMessage string, condition v1.ConditionStatus) {
 	sbrStatus.BindingStatus = status
-	sbrStatus.Reason = errorMessage
+	sbrStatus.Condition = condition
 }
 
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
@@ -113,7 +114,7 @@ func (r *Reconciler) onError(
 	objs []*unstructured.Unstructured,
 ) (reconcile.Result, error) {
 	// settting overall status to failed
-	r.setStatus(sbrStatus, bindingFail, err.Error())
+	r.setStatus(sbrStatus, bindingFail, err.Error(), v1.ConditionFalse)
 	//
 	if objs != nil {
 		r.setApplicationObjects(sbrStatus, objs)

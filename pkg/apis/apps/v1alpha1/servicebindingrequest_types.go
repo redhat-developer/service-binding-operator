@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -52,8 +53,8 @@ type CustomEnvMap struct {
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request.
 	BindingStatus string `json:"bindingStatus,omitempty"`
-	// Reason indicates the reason for any failures
-	Reason string `json:"reason,omitempty"`
+	// ConditionStatus indicates condition of resource
+	Condition v1.ConditionStatus `json:"reason,omitempty"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label

@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -56,7 +57,7 @@ func TestReconcilerReconcileError(t *testing.T) {
 	require.NoError(t, sbrError)
 
 	require.Equal(t, "Fail", sbrOutput.Status.BindingStatus)
-	require.Equal(t, err.Error(), sbrOutput.Status.Reason)
+	require.Equal(t, v1.ConditionFalse, sbrOutput.Status.Condition)
 	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
 
 	assert.True(t, res.Requeue)
