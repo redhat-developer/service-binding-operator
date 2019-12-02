@@ -118,6 +118,8 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 	return sbr, nil
 }
 
+// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
+// this action.
 func (r *Reconciler) updateServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
@@ -233,6 +235,8 @@ func (r *Reconciler) unbind(
 	return Done()
 }
 
+// bind steps to bind backing service and applications together. It receive the elements collected
+// in the common parts of the reconciler, and execute the final binding steps.
 func (r *Reconciler) bind(
 	logger *log.Log,
 	binder *Binder,
@@ -292,7 +296,8 @@ func (r *Reconciler) bind(
 // 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
 // 2. Using OperatorLifecycleManager standards, identifying which items are intersting for binding
-//    by parsing CustomResourceDefinitionDescripton object;
+//    by parsing CustomResourceDefinitionDescripton object. Alternatively, this informmation may
+// 	  also come from special annotations in the CR/CRD;
 // 3. Search and read contents identified in previous step, creating an intermediary secret to hold
 //    data formatted as environment variables key/value;
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
