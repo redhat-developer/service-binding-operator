@@ -5,20 +5,18 @@ import (
 	"fmt"
 	"strings"
 
+	ocv1 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 
-	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-
-	ocv1 "github.com/openshift/api/route/v1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 )
 
 // resource details employed in mocks
@@ -120,10 +118,9 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	return crd
 }
 
-func UnstructuredDatabaseCRDMock(ns string) (*ustrv1.Unstructured, error) {
-	c := DatabaseCRDMock(ns)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
-	return &ustrv1.Unstructured{Object: data}, err
+func UnstructuredDatabaseCRDMock(ns string) (*unstructured.Unstructured, error) {
+	crd := DatabaseCRDMock(ns)
+	return converter.ToUnstructured(&crd)
 }
 
 type PostgresDatabaseSpec struct {
@@ -155,10 +152,9 @@ func PostgresDatabaseCRMock(ns, name string) PostgresDatabase {
 	}
 }
 
-func UnstructuredPostgresDatabaseCRMock(ns, name string) (*ustrv1.Unstructured, error) {
+func UnstructuredPostgresDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
 	c := PostgresDatabaseCRMock(ns, name)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&c)
-	return &ustrv1.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&c)
 }
 
 //
@@ -261,10 +257,9 @@ func ClusterServiceVersionMock(ns, name string) olmv1alpha1.ClusterServiceVersio
 }
 
 // UnstructuredClusterServiceVersionMock unstructured object based on ClusterServiceVersionMock.
-func UnstructuredClusterServiceVersionMock(ns, name string) (*ustrv1.Unstructured, error) {
+func UnstructuredClusterServiceVersionMock(ns, name string) (*unstructured.Unstructured, error) {
 	csv := ClusterServiceVersionMock(ns, name)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&csv)
-	return &ustrv1.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&csv)
 }
 
 // ClusterServiceVersionVolumeMountMock based on PostgreSQL operator.
@@ -277,10 +272,9 @@ func ClusterServiceVersionVolumeMountMock(ns, name string) olmv1alpha1.ClusterSe
 func UnstructuredClusterServiceVersionVolumeMountMock(
 	ns string,
 	name string,
-) (*ustrv1.Unstructured, error) {
+) (*unstructured.Unstructured, error) {
 	csv := ClusterServiceVersionVolumeMountMock(ns, name)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&csv)
-	return &ustrv1.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&csv)
 }
 
 // ClusterServiceVersionListVolumeMountMock returns a list with a single CSV object inside, reusing mock.
@@ -332,8 +326,7 @@ func RouteCRMock(ns, name string) *ocv1.Route {
 // UnstructuredDatabaseCRMock returns a unstructured version of DatabaseCRMock.
 func UnstructuredDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
 	db := DatabaseCRMock(ns, name)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(db)
-	return &unstructured.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&db)
 }
 
 // SecretMock returns a Secret based on PostgreSQL operator usage.
@@ -420,14 +413,9 @@ func UnstructuredServiceBindingRequestMock(
 	applicationResourceRef string,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&sbr)
-	if err != nil {
-		return nil, err
-	}
-	u := &ustrv1.Unstructured{Object: data}
-	u.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
-	return u, nil
+	sbr := ServiceBindingRequestMock(
+		ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false)
+	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
 // DeploymentListMock returns a list of DeploymentMock.
@@ -446,10 +434,9 @@ func UnstructuredDeploymentMock(
 	ns,
 	name string,
 	matchLabels map[string]string,
-) (*ustrv1.Unstructured, error) {
+) (*unstructured.Unstructured, error) {
 	d := DeploymentMock(ns, name, matchLabels)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
-	return &ustrv1.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&d)
 }
 
 // DeploymentMock creates a mocked Deployment object of busybox.
@@ -537,8 +524,7 @@ func NestedDatabaseCRMock(ns, name string) NestedDatabase {
 // UnstructuredNestedDatabaseCRMock returns a unstructured object from NestedDatabaseCRMock.
 func UnstructuredNestedDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
 	db := NestedDatabaseCRMock(ns, name)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
-	return &ustrv1.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&db)
 }
 
 // ConfigMapDatabaseSpec ...
@@ -578,40 +564,5 @@ func DatabaseConfigMapMock(ns, name, configMapName string) *ConfigMapDatabase {
 // UnstructuredDatabaseConfigMapMock returns a unstructured version of DatabaseConfigMapMock.
 func UnstructuredDatabaseConfigMapMock(ns, name, configMapName string) (*unstructured.Unstructured, error) {
 	db := DatabaseConfigMapMock(ns, name, configMapName)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&db)
-	return &ustrv1.Unstructured{Object: data}, err
-}
-
-func ConvertToUnstructured(cr interface{}) (*unstructured.Unstructured, error) {
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(cr)
-	return &ustrv1.Unstructured{Object: data}, err
-}
-
-// DatabaseCRMockWithAnnotation based on PostgreSQL operator, returning a instantiated object.
-func DatabaseCRMockWithAnnotation(ns, name string) *pgv1alpha1.Database {
-	return &pgv1alpha1.Database{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       CRDKind,
-			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: pgv1alpha1.DatabaseSpec{
-			Image:     "docker.io/postgres:latest",
-			ImageName: "postgres",
-			DBName:    "test-db",
-		},
-		Status: pgv1alpha1.DatabaseStatus{
-			DBCredentials: "db-credentials",
-		},
-	}
-}
-
-// UnstructuredDatabaseCRMockWithAnnotation returns a unstructured version of DatabaseCRMockWithAnnotation.
-func UnstructuredDatabaseCRMockWithAnnotation(ns, name string) (*unstructured.Unstructured, error) {
-	db := DatabaseCRMockWithAnnotation(ns, name)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(db)
-	return &unstructured.Unstructured{Object: data}, err
+	return converter.ToUnstructured(&db)
 }
