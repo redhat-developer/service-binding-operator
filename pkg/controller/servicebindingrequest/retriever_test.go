@@ -243,7 +243,7 @@ func TestCustomEnvParser(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		require.Equal(t, "dXNlcg==_cGFzc3dvcmQ=", values["ANOTHER_STRING"], "Custom env values are not matching")
-		require.Equal(t, "postgres@cGFzc3dvcmQ=", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
+		require.Equal(t, "user_password", values["ANOTHER_STRING"], "Custom env values are not matching")
+		require.Equal(t, "postgres@password", values["JDBC_CONNECTION_STRING"], "Custom env values are not matching")
 	})
 }

@@ -199,7 +199,7 @@ func (r *Retriever) readSecret(
 		log.Debug("Inspecting secret key...")
 		r.markVisitedPaths(path, k, fromPath)
 		// update cache after reading configmap/secret in cache
-		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(value)
+		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
 		// making sure key name has a secret reference
 		r.store(fmt.Sprintf("configMap_%s", k), data)
 		r.store(fmt.Sprintf("secret_%s", k), data)
