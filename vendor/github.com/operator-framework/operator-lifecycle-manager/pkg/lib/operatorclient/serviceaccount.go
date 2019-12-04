@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/golang/glog"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -35,5 +35,5 @@ func (c *Client) UpdateServiceAccount(sa *v1.ServiceAccount) (*v1.ServiceAccount
 	if err != nil {
 		return nil, fmt.Errorf("error creating patch for ServiceAccount: %v", err)
 	}
-	return c.Core().ServiceAccounts(sa.GetNamespace()).Patch(sa.GetName(), types.StrategicMergePatchType, patchBytes)
+	return c.CoreV1().ServiceAccounts(sa.GetNamespace()).Patch(sa.GetName(), types.StrategicMergePatchType, patchBytes)
 }
