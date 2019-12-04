@@ -70,7 +70,6 @@ func TestAddSchemesToFramework(t *testing.T) {
 		t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
 			ServiceBindingRequestSetup(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
 		})
-
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
 		})
