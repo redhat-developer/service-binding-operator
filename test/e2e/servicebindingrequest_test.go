@@ -37,11 +37,10 @@ const (
 )
 
 var (
-	retryInterval        = time.Second * 5
-	timeout              = time.Second * 120
-	cleanupTimeout       = time.Second * 5
-	deploymentsGVR       = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
-	deploymentConfigsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deploymentConfigs"}
+	retryInterval  = time.Second * 5
+	timeout        = time.Second * 120
+	cleanupTimeout = time.Second * 5
+	deploymentsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 )
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
