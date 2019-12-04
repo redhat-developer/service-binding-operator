@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
@@ -22,8 +21,7 @@ func TestSecretNew(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 
 	matchLabels := map[string]string{}
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
-	sbr := mocks.ServiceBindingRequestMock(ns, name, "", "", applicationGVR, matchLabels, true)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, "", "", deploymentsGVR, matchLabels, true)
 
 	plan := &Plan{Ns: ns, Name: name, CRDDescription: nil, SBR: *sbr}
 	data := map[string][]byte{"key": []byte("value")}

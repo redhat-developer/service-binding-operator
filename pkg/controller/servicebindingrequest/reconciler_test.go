@@ -16,10 +16,13 @@ import (
 )
 
 const (
-	reconcilerNs         = "testing"
-	reconcilerName       = "binding-request"
-	deploymentsGVR       = "deployments"
-	deploymentConfigsGVR = "deploymentconfigs"
+	reconcilerNs   = "testing"
+	reconcilerName = "binding-request"
+)
+
+var (
+	deploymentsGVR       = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	deploymentConfigsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deploymentconfigs"}
 )
 
 func init() {
@@ -42,10 +45,8 @@ func TestReconcilerReconcileError(t *testing.T) {
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
-
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", applicationGVR, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
@@ -69,9 +70,8 @@ func TestReconcilerReconcileError(t *testing.T) {
 func TestApplicationSelectorByName(t *testing.T) {
 	backingServiceResourceRef := "backingServiceRef"
 	applicationResourceRef := "applicationRef"
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, applicationGVR, nil)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, deploymentsGVR, nil)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
@@ -108,10 +108,8 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
-
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", applicationGVR, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
@@ -157,10 +155,8 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
-
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", applicationGVR, matchLabels)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)

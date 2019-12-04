@@ -30,18 +30,18 @@ import (
 type Step string
 
 const (
-	DBStep               Step = "create-db"
-	AppStep              Step = "create-app"
-	SBRStep              Step = "create-sbr"
-	CSVStep              Step = "create-csv"
-	deploymentsGVR            = "deployments"
-	deploymentConfigsGVR      = "deploymentconfigs"
+	DBStep  Step = "create-db"
+	AppStep Step = "create-app"
+	SBRStep Step = "create-sbr"
+	CSVStep Step = "create-csv"
 )
 
 var (
-	retryInterval  = time.Second * 5
-	timeout        = time.Second * 120
-	cleanupTimeout = time.Second * 5
+	retryInterval        = time.Second * 5
+	timeout              = time.Second * 120
+	cleanupTimeout       = time.Second * 5
+	deploymentsGVR       = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	deploymentConfigsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deploymentConfigs"}
 )
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
@@ -476,8 +476,7 @@ func serviceBindingRequestTest(
 		case AppStep:
 			CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
-			applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
-			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, applicationGVR, matchLabels)
+			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, deploymentsGVR, matchLabels)
 		}
 	}
 
