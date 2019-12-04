@@ -62,7 +62,6 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	if IsNamespacedNameEmpty(sbrNamespacedName) {
 		log.Debug("SBR information not present in annotations, continue inspecting object")
 	} else {
-		// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
 		log.Trace("SBR information found in annotations, returning it")
 		return sbrNamespacedName, nil
 	}
@@ -74,9 +73,31 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 		return sbrNamespacedName, nil
 	}
 
-	// FIXME: Increase V level for tracing info to avoid flooding logs with this information.
 	log.Trace("Object is not a SBR, returning an empty namespaced name")
 	return sbrNamespacedName, nil
+}
+
+// updateUnstructuredObj generic call to update the unstructured resource informed. It can return
+// error when API update call does.
+func updateUnstructuredObj(client dynamic.Interface, obj *unstructured.Unstructured) error {
+	gvk := obj.GroupVersionKind()
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+	opts := metav1.UpdateOptions{}
+
+	log := annotationsLog.WithValues(
+		"SBR.Namespace", obj.GetNamespace(),
+		"SBR.Name", obj.GetName(),
+		"Resource.GVK", gvk,
+		"Resource.Namespace", obj.GetNamespace(),
+		"Resource.Name", obj.GetName(),
+	)
+	log.Debug("Updating resource annotations...")
+
+	_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
+	if err != nil {
+		log.Error(err, "unable to set/update annotations in object")
+	}
+	return err
 }
 
 // SetSBRAnnotations update existing annotations to include operator's. The annotations added are
@@ -96,21 +117,27 @@ func SetSBRAnnotations(
 		annotations[sbrNameAnnotation] = namespacedName.Name
 		obj.SetAnnotations(annotations)
 
-		gvk := obj.GroupVersionKind()
-		gvr, _ := meta.UnsafeGuessKindToResource(gvk)
-		opts := metav1.UpdateOptions{}
+		if err := updateUnstructuredObj(client, obj); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
-		log := annotationsLog.WithValues(
-			"SBR.Namespace", namespacedName.Namespace,
-			"SBR.Name", namespacedName.Name,
-			"Resource.GVK", gvk,
-			"Resource.Namespace", obj.GetNamespace(),
-			"Resource.Name", obj.GetName(),
-		)
-		log.Debug("Updating resource annotations...")
-		_, err := client.Resource(gvr).Namespace(obj.GetNamespace()).Update(obj, opts)
-		if err != nil {
-			log.Error(err, "unable to set/update annotations in object")
+// RemoveSBRAnnotations removes SBR related annotations from all the objects and updates them using
+// the given client.
+func RemoveSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
+	for _, obj := range objs {
+		annotations := obj.GetAnnotations()
+		if annotations == nil {
+			annotations = make(map[string]string)
+		}
+
+		delete(annotations, sbrNameAnnotation)
+		delete(annotations, sbrNamespaceAnnotation)
+		obj.SetAnnotations(annotations)
+
+		if err := updateUnstructuredObj(client, obj); err != nil {
 			return err
 		}
 	}
