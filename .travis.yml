@@ -17,7 +17,7 @@ env:
     - CHANGE_MINIKUBE_NONE_USER=true
     - KUBECONFIG=$HOME/.kube/config
     # FIXME: make sure Travis-CI and the rest of the project are using the same operator-sdk version;
-    - SDK_VERSION="0.8.1"
+    - SDK_VERSION="0.12.0"
     - MINIKUBE_VERSION="1.1.1"
     - KUBE_VERSION="1.14.3"
     # FIXME: GO111MODULE should only be exported in controlled environments, never globally;
