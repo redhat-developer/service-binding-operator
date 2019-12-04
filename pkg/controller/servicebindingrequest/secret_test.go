@@ -21,7 +21,7 @@ func TestSecretNew(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 
 	matchLabels := map[string]string{}
-	sbr := mocks.ServiceBindingRequestMock(ns, name, "", "", matchLabels, true)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, "", "", matchLabels, true, nil)
 
 	plan := &Plan{Ns: ns, Name: name, CRDDescription: nil, SBR: *sbr}
 	data := map[string][]byte{"key": []byte("value")}
