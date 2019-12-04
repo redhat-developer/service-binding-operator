@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	ocav1 "github.com/openshift/api/apps/v1"
 	ocv1 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
