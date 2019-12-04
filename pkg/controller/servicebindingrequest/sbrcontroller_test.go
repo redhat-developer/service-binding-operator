@@ -13,10 +13,9 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-func TestSBRControllerNewSBRPredicate(t *testing.T) {
-
+func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 	// keep the predicate around
-	pred := newSBRPredicate(log.NewLog("test-log"))
+	pred := buildSBRPredicate(log.NewLog("test-log"))
 
 	// the expected behavior is that every create event triggers a reconciliation
 	t.Run("create", func(t *testing.T) {
@@ -87,9 +86,8 @@ func TestSBRControllerNewSBRPredicate(t *testing.T) {
 	})
 }
 
-func TestSBRControllerNewGVKPredicate(t *testing.T) {
-
-	pred := newGVKPredicate(log.NewLog("test-log"))
+func TestSBRControllerBuildGVKPredicate(t *testing.T) {
+	pred := buildGVKPredicate(log.NewLog("test-log"))
 
 	// update verifies whether only the accepted manifests trigger the reconciliation process
 	t.Run("update", func(t *testing.T) {

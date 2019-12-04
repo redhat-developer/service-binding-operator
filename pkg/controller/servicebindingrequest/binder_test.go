@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -16,6 +16,16 @@ import (
 
 func init() {
 	logf.SetLogger(logf.ZapLogger(true))
+}
+
+// getEnvVar returns an EnvVar with given name if exists in the given envVars.
+func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
+	for _, v := range envVars {
+		if v.Name == name {
+			return &v
+		}
+	}
+	return nil
 }
 
 func TestBinderNew(t *testing.T) {
@@ -40,7 +50,12 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binder)
 
-	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", make(map[string]string))
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
+		"service-binding-request-with-ref",
+		"ref",
+		"ref",
+		map[string]string{},
+	)
 
 	binderForSBRWithResourceRef := NewBinder(
 		context.TODO(),
@@ -52,7 +67,7 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binderForSBRWithResourceRef)
 
-	t.Run("search target object by resource name", func(t *testing.T) {
+	t.Run("search-using-resourceref", func(t *testing.T) {
 		list, err := binderForSBRWithResourceRef.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
@@ -64,13 +79,17 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, 1, len(list.Items))
 	})
 
-	t.Run("appendEnvFrom", func(t *testing.T) {
+	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
 		secretName := "secret"
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
-		list := binder.appendEnvFrom(d.Spec.Template.Spec.Containers[0].EnvFrom, secretName)
+		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
 
+		list := binder.appendEnvFrom(envFrom, secretName)
 		require.Equal(t, 1, len(list))
 		require.Equal(t, secretName, list[0].SecretRef.Name)
+
+		list = binder.removeEnvFrom(envFrom, secretName)
+		require.Equal(t, 0, len(list))
 	})
 
 	t.Run("appendEnv", func(t *testing.T) {
@@ -90,8 +109,7 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
-		containersPath := []string{"spec", "template", "spec", "containers"}
-		containers, found, err := ustrv1.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -101,9 +119,9 @@ func TestBinderNew(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
 		require.NoError(t, err)
 
-		// ServiceBindingOperatorChangeTriggerEnvVar should exist to trigger a side effect such as Pod restart when the
+		// special env-var should exist to trigger a side effect such as Pod restart when the
 		// intermediate secret has been modified
-		envVar := getEnvVar(c.Env, ServiceBindingOperatorChangeTriggerEnvVar)
+		envVar := getEnvVar(c.Env, ChangeTriggerEnv)
 		require.NotNil(t, envVar)
 		require.NotEmpty(t, envVar.Value)
 
@@ -111,19 +129,37 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, parsedTime.Before(time.Now()))
 	})
+
+	t.Run("remove", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedObjects, err := binder.update(list)
+		require.NoError(t, err)
+		require.Len(t, updatedObjects, 1)
+
+		err = binder.remove(list)
+		require.NoError(t, err)
+
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Len(t, containers, 1)
+
+		c := corev1.Container{}
+		u := containers[0].(map[string]interface{})
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+		require.NoError(t, err)
+
+		// making sure envFrom directive is removed
+		require.Empty(t, c.EnvFrom)
+		// making sure no volume mounts are present
+		require.Nil(t, c.VolumeMounts)
+	})
 }
 
-// getEnvVar returns an EnvVar with given name if exists in the given envVars.
-func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
-	for _, v := range envVars {
-		if v.Name == name {
-			return &v
-		}
-	}
-	return nil
-}
-
-func TestAppendEnvVar(t *testing.T) {
+func TestBinderAppendEnvVar(t *testing.T) {
 	envName := "lastbound"
 	envList := []corev1.EnvVar{
 		corev1.EnvVar{
@@ -165,5 +201,4 @@ func TestBinderApplicationName(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 	})
-
 }
