@@ -30,10 +30,12 @@ import (
 type Step string
 
 const (
-	DBStep  Step = "create-db"
-	AppStep Step = "create-app"
-	SBRStep Step = "create-sbr"
-	CSVStep Step = "create-csv"
+	DBStep               Step = "create-db"
+	AppStep              Step = "create-app"
+	SBRStep              Step = "create-sbr"
+	CSVStep              Step = "create-csv"
+	deploymentsGVR            = "deployments"
+	deploymentConfigsGVR      = "deploymentconfigs"
 )
 
 var (
@@ -441,7 +443,7 @@ func serviceBindingRequestTest(
 		case AppStep:
 			d = CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
-			applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+			applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
 			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, applicationGVR, matchLabels)
 		}
 	}

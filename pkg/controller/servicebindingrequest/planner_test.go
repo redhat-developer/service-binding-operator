@@ -25,7 +25,7 @@ func TestPlannerNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", applicationGVR, matchLabels)
@@ -63,7 +63,7 @@ func TestPlannerAnnotation(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
-	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+	applicationGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: deploymentsGVR}
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", applicationGVR, matchLabels)
