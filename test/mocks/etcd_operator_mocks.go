@@ -4,6 +4,7 @@ import (
 	"github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 func etcdClusterMock(ns, name string) *v1beta2.EtcdCluster {
@@ -35,7 +36,15 @@ func etcdClusterServiceMock(ns, name string) *v12.Service {
 			Namespace: ns,
 		},
 		Spec: v12.ServiceSpec{
-			ClusterIP: "10.0.0.1",
+			ClusterIP: "172.30.0.129",
+			Ports: []v12.ServicePort{
+				{
+					Name:       "tcp-1",
+					Protocol:   "TCP",
+					Port:       33411,
+					TargetPort: intstr.IntOrString{},
+				},
+			},
 		},
 	}
 }
@@ -48,16 +57,5 @@ func etcdClusterServiceMock(ns, name string) *v12.Service {
 func CreateEtcdClusterMock(ns, name string) (*v1beta2.EtcdCluster, *v12.Service) {
 	ec := etcdClusterMock(ns, name)
 	sv := etcdClusterServiceMock(ns, name)
-	trueBool := true
-	sv.SetOwnerReferences([]v1.OwnerReference{
-		{
-			APIVersion:         ec.APIVersion,
-			Kind:               ec.Kind,
-			Name:               ec.Name,
-			UID:                ec.UID,
-			Controller:         &trueBool,
-			BlockOwnerDeletion: &trueBool,
-		},
-	})
 	return ec, sv
 }

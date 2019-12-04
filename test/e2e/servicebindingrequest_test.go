@@ -62,35 +62,36 @@ func TestAddSchemesToFramework(t *testing.T) {
 	dbList := pgv1alpha1.DatabaseList{}
 	require.NoError(t, framework.AddToFrameworkScheme(pgsqlapis.AddToScheme, &dbList))
 
-	//t.Log("Adding EtcdClusterList scheme to cluster...")
-	//etcdClusterList := v1beta2.EtcdClusterList{}
-	//require.Nil(t, framework.AddToFrameworkScheme(v1beta2.AddToScheme, &etcdClusterList))
+	t.Log("Adding EtcdClusterList scheme to cluster...")
+	etcdCluster := v1beta2.EtcdCluster{}
+	require.Nil(t, framework.AddToFrameworkScheme(v1beta2.AddToScheme, &etcdCluster))
 
 	t.Run("end-to-end", func(t *testing.T) {
-		//t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
-		//	ServiceBindingRequestSetup(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
-		//})
-		//t.Run("scenario-db-app-sbr", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		//})
-		//t.Run("scenario-app-db-sbr", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
-		//})
-		//t.Run("scenario-db-sbr-app", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
-		//})
-		//t.Run("scenario-app-sbr-db", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
-		//})
-		//t.Run("scenario-sbr-db-app", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
-		//})
-		//t.Run("scenario-sbr-app-db", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
-		//})
-		//t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
-		//	ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
-		//})
+		t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequestSetup(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
+		})
+
+		t.Run("scenario-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		})
+		t.Run("scenario-app-db-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+		})
+		t.Run("scenario-db-sbr-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
+		})
+		t.Run("scenario-app-sbr-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
+		})
+		t.Run("scenario-sbr-db-app", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+		})
+		t.Run("scenario-sbr-app-db", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
+		})
+		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
+			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+		})
 		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
 		})
@@ -541,6 +542,18 @@ func CreateEtcdCluster(
 	t.Log("Create etcd cluster")
 	etcd, etcdSvc := mocks.CreateEtcdClusterMock(ns, name)
 	require.Nil(t, f.Client.Create(todoCtx, etcd, cleanupOptions(ctx)))
+	trueBool := true
+	falseBool := false
+	etcdSvc.SetOwnerReferences([]v1.OwnerReference{
+		{
+			APIVersion:         v1beta2.SchemeGroupVersion.Version,
+			Kind:               v1beta2.EtcdClusterResourceKind,
+			Name:               etcd.Name,
+			UID:                etcd.UID,
+			Controller:         &trueBool,
+			BlockOwnerDeletion: &falseBool,
+		},
+	})
 	require.Nil(t, f.Client.Create(todoCtx, etcdSvc, cleanupOptions(ctx)))
 	return etcd, etcdSvc
 }
