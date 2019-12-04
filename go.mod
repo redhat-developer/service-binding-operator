@@ -7,7 +7,6 @@ require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.11 // indirect
 	github.com/Azure/go-autorest v11.7.0+incompatible // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
@@ -18,7 +17,7 @@ require (
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983 // indirect
 	github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
-	github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible
+	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190605231540-b8a4faf68e36
 	github.com/operator-framework/operator-sdk v0.12.0
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0

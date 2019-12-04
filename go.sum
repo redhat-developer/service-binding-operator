@@ -94,8 +94,6 @@ github.com/coreos/go-etcd v2.0.0+incompatible/go.mod h1:Jez6KQU2B/sWsbdaef3ED8Nz
 github.com/coreos/go-oidc v0.0.0-20180117170138-065b426bd416/go.mod h1:CgnwVTmzoESiwO9qyAFEMiHoZ1nMCKZlZ9V6mm3/LKc=
 github.com/coreos/go-semver v0.0.0-20180108230905-e214231b295a/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
 github.com/coreos/go-semver v0.2.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
-github.com/coreos/go-semver v0.3.0 h1:wkHLiw0WNATZnSG7epLsujiMCgPAc9xhjJ4tgnAxmfM=
-github.com/coreos/go-semver v0.3.0/go.mod h1:nnelYz7RCh+5ahJtPPxZlU+153eP4D4r3EedlOD2RNk=
 github.com/coreos/go-systemd v0.0.0-20180511133405-39ca1b05acc7/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/go-systemd v0.0.0-20181012123002-c6f51f82210d/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
@@ -456,8 +454,6 @@ github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190105193533-8
 github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190125151539-1e295784b30a/go.mod h1:vq6TTFvg6ti1Bn6ACsZneZTmjTsURgDD6tQtVDbEgsU=
 github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190605231540-b8a4faf68e36 h1:zQykXcFkA+wZm5//RKB7BEzEH7Q0Hwvp8+3HJrG5BD0=
 github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190605231540-b8a4faf68e36/go.mod h1:HKV3ZB9aOUxRyfM53shoBRtIMP4lg8QRmkW+dmZy+kI=
-github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible h1:Po8C8RVLRWq7pNQ5pKonM9CXpC/osoBWbmsuf+HJnSI=
-github.com/operator-framework/operator-lifecycle-manager v3.11.0+incompatible/go.mod h1:Ma5ZXd4S1vmMyewWlF7aO8CZiokR7Sd8dhSfkGkNU4U=
 github.com/operator-framework/operator-marketplace v0.0.0-20190216021216-57300a3ef3ba/go.mod h1:msZSL8pXwzQjB+hU+awVrZQw94IwJi3sNZVD3NoESIs=
 github.com/operator-framework/operator-registry v1.0.1/go.mod h1:1xEdZjjUg2hPEd52LG3YQ0jtwiwEGdm98S1TH5P4RAA=
 github.com/operator-framework/operator-registry v1.0.4/go.mod h1:hve6YwcjM2nGVlscLtNsp9sIIBkNZo6jlJgzWw7vP9s=
