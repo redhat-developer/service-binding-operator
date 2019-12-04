@@ -462,7 +462,6 @@ func serviceBindingRequestTest(
 	csvNamespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
 
 	cleanupOpts := cleanupOptions(ctx)
-	noCleanupOpts := &framework.CleanupOptions{TestContext: ctx}
 
 	todoCtx := context.TODO()
 
