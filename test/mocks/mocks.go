@@ -5,18 +5,21 @@ import (
 	"fmt"
 	"strings"
 
+	ocav1 "github.com/openshift/api/apps/v1"
 	ocv1 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
+	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // resource details employed in mocks
@@ -373,6 +376,7 @@ func ServiceBindingRequestMock(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 	bindUnannotated bool,
 	backendGvk *metav1.GroupVersionKind,
@@ -391,9 +395,9 @@ func ServiceBindingRequestMock(
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				Group:       "apps",
-				Version:     "v1",
-				Resource:    "deployments",
+				Group:       applicationGVR.Group,
+				Version:     applicationGVR.Version,
+				Resource:    applicationGVR.Resource,
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
@@ -424,11 +428,66 @@ func UnstructuredServiceBindingRequestMock(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
 	sbr := ServiceBindingRequestMock(
 		ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false, nil)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
+}
+
+// DeploymentConfigListMock returns a list of DeploymentMock.
+func DeploymentConfigListMock(ns, name string, matchLabels map[string]string) ocav1.DeploymentConfigList {
+	return ocav1.DeploymentConfigList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DeploymentConfigList",
+			APIVersion: "apps/v1",
+		},
+		Items: []ocav1.DeploymentConfig{DeploymentConfigMock(ns, name, matchLabels)},
+	}
+}
+
+// UnstructuredDeploymentConfigMock converts the DeploymentMock to unstructured.
+func UnstructuredDeploymentConfigMock(
+	ns,
+	name string,
+	matchLabels map[string]string,
+) (*ustrv1.Unstructured, error) {
+	d := DeploymentConfigMock(ns, name, matchLabels)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+// DeploymentConfigMock creates a mocked Deployment object of busybox.
+func DeploymentConfigMock(ns, name string, matchLabels map[string]string) ocav1.DeploymentConfig {
+	return ocav1.DeploymentConfig{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "DeploymentConfig",
+			APIVersion: "apps/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+			Labels:    matchLabels,
+		},
+		Spec: ocav1.DeploymentConfigSpec{
+			Selector: matchLabels,
+			Template: &corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: ns,
+					Name:      name,
+					Labels:    matchLabels,
+				},
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{
+						Name:    "busybox",
+						Image:   "busybox:latest",
+						Command: []string{"sleep", "3600"},
+					}},
+				},
+			},
+		},
+	}
 }
 
 // DeploymentListMock returns a list of DeploymentMock.

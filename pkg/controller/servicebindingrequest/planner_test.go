@@ -24,9 +24,8 @@ func TestPlannerNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
-
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDatabaseCRD()
@@ -61,9 +60,8 @@ func TestPlannerAnnotation(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
-
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDatabaseCRD()
 
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)

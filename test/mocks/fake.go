@@ -11,12 +11,14 @@ import (
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	ocav1 "github.com/openshift/api/apps/v1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
@@ -33,6 +35,7 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
@@ -46,6 +49,7 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
@@ -58,10 +62,11 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels)
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -111,6 +116,15 @@ func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
 	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	d, err := UnstructuredDatabaseCRMock(f.ns, ref)
 	require.NoError(f.t, err)
+	f.objs = append(f.objs, d)
+}
+
+// AddMockedUnstructuredDeploymentConfig adds mocked object from UnstructuredDeploymentConfigMock.
+func (f *Fake) AddMockedUnstructuredDeploymentConfig(name string, matchLabels map[string]string) {
+	require.Nil(f.t, ocav1.AddToScheme(f.S))
+	d, err := UnstructuredDeploymentConfigMock(f.ns, name, matchLabels)
+	require.Nil(f.t, err)
+	f.S.AddKnownTypes(ocav1.SchemeGroupVersion, &ocav1.DeploymentConfig{})
 	f.objs = append(f.objs, d)
 }
 
