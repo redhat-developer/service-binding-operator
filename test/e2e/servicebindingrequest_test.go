@@ -17,6 +17,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -39,6 +40,7 @@ var (
 	retryInterval  = time.Second * 5
 	timeout        = time.Second * 120
 	cleanupTimeout = time.Second * 5
+	deploymentsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 )
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
@@ -331,11 +333,12 @@ func CreateSBR(
 	cleanupOpts *framework.CleanupOptions,
 	namespacedName types.NamespacedName,
 	resourceRef string,
+	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
-		namespacedName.Namespace, namespacedName.Name, resourceRef, "", matchLabels, false)
+		namespacedName.Namespace, namespacedName.Name, resourceRef, "", applicationGVR, matchLabels, false)
 	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
 	return sbr
 }
@@ -458,7 +461,6 @@ func serviceBindingRequestTest(
 	csvNamespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
 
 	cleanupOpts := cleanupOptions(ctx)
-	noCleanupOpts := &framework.CleanupOptions{TestContext: ctx}
 
 	todoCtx := context.TODO()
 
@@ -472,7 +474,7 @@ func serviceBindingRequestTest(
 		case AppStep:
 			CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
-			sbr = CreateSBR(todoCtx, t, f, noCleanupOpts, sbrNamespacedName, resourceRef, matchLabels)
+			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, deploymentsGVR, matchLabels)
 		}
 	}
 
