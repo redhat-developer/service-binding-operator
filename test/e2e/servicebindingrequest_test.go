@@ -5,7 +5,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"math/rand"
 	"testing"
 	"time"
@@ -29,6 +30,7 @@ import (
 )
 
 type Step string
+type OnSBRCreate func(sbr *v1alpha1.ServiceBindingRequest)
 
 const (
 	DBStep      Step = "create-db"
@@ -43,6 +45,19 @@ var (
 	retryInterval  = time.Second * 5
 	timeout        = time.Second * 120
 	cleanupTimeout = time.Second * 5
+
+	// Intermediate secret should have following data
+	// for postgres operator
+	postgresSecretAssertion = map[string]string{
+		"DATABASE_SECRET_USER": "user",
+		"DATABASE_SECRET_PASSWORD": "password",
+	}
+
+	// Intermediate secret should have following data
+	// for etcd operator
+	etcdSecretAssertion = map[string]string{
+		"ETCDCLUSTER_CLUSTERIP": "172.30.0.129",
+	}
 )
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
@@ -68,7 +83,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequestSetup(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
+			ServiceBindingRequest(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
 		})
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
@@ -99,6 +114,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 // cleanupOptions using global variables to create the object.
 func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
+	return nil
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
 		Timeout:       cleanupTimeout,
@@ -142,6 +158,7 @@ func assertAppDeployed(
 	ctx context.Context,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
+	secretRefName string,
 	) (*appsv1.Deployment, error) {
 	d := &appsv1.Deployment{}
 	if err := f.Client.Get(ctx, namespacedName, d); err != nil {
@@ -152,9 +169,9 @@ func assertAppDeployed(
 	if len(containers) != 1 {
 		return nil, fmt.Errorf("can't find a container in deployment-spec")
 	}
-	//if len(containers[0].EnvFrom) != 1 {
-	//	return nil, fmt.Errorf("can't find envFrom in first container")
-	//}
+	if len(containers[0].EnvFrom) > 0 {
+		return nil, fmt.Errorf("Containers  are less than 0")
+	}
 	return d, nil
 }
 
@@ -211,30 +228,23 @@ func assertSBRSecret(
 	ctx context.Context,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
+	assertKeys map[string]string,
 ) (*corev1.Secret, error) {
 	sbrSecret := &corev1.Secret{}
 	if err := f.Client.Get(ctx, namespacedName, sbrSecret); err != nil {
 		return nil, err
 	}
 
-	if _, contains := sbrSecret.Data["DATABASE_SECRET_USER"]; !contains {
-		return nil, fmt.Errorf("can't find DATABASE_SECRET_USER in data")
-	}
-	actualUser := sbrSecret.Data["DATABASE_SECRET_USER"]
-	expectedUser := []byte("user")
-	if !bytes.Equal(expectedUser, actualUser) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_USER (%s) is different than expected (%s)",
-			actualUser, expectedUser)
-	}
-
-	if _, contains := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]; !contains {
-		return nil, fmt.Errorf("can't find DATABASE_SECRET_PASSWORD in data")
-	}
-	actualPassword := sbrSecret.Data["DATABASE_SECRET_PASSWORD"]
-	expectedPassword := []byte("password")
-	if !bytes.Equal(expectedPassword, actualPassword) {
-		return nil, fmt.Errorf("key DATABASE_SECRET_PASSWORD (%s) is different than expected (%s)",
-			actualPassword, expectedPassword)
+	for k, v := range assertKeys {
+		if _, contains := sbrSecret.Data[k]; !contains {
+			return nil, fmt.Errorf("can't find DATABASE_SECRET_USER in data")
+		}
+		actual := sbrSecret.Data[k]
+		expected := []byte(v)
+		if !bytes.Equal(expected, actual) {
+			return nil, fmt.Errorf("key %s (%s) is different than expected (%s)",
+				k,actual, expected)
+		}
 	}
 
 	return sbrSecret, nil
@@ -363,12 +373,35 @@ func CreateSBR(
 	namespacedName types.NamespacedName,
 	resourceRef string,
 	matchLabels map[string]string,
+	onSBRCreate OnSBRCreate,
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
 		namespacedName.Namespace, namespacedName.Name, resourceRef, "", matchLabels, false, nil)
+
+	// This anonymous function call explicitly modifies default SBR created by
+	// the mock
+	if onSBRCreate != nil {
+		onSBRCreate(sbr)
+	}
 	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
 	return sbr
+}
+
+// setSBRBackendGVK sets backend service selector
+func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind)  {
+	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+		Group:       backendGVK.Group,
+		Version:     backendGVK.Version,
+		Kind:        backendGVK.Kind,
+		ResourceRef: resourceRef,
+	}
+}
+
+// setSBRBindUnannotated makes SBR to detect bindable resource
+// without depending on annotation
+func setSBRBindUnannotated(sbr *v1alpha1.ServiceBindingRequest, bindUnAnnotated bool) {
+	sbr.Spec.DetectBindingResources = bindUnAnnotated
 }
 
 // CreateCSV created mocked cluster service version object.
@@ -429,10 +462,11 @@ func inspectSBRSecret(
 	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
+	assertKeys map[string]string,
 ) {
 	err := retry(10, 5*time.Second, func() error {
 		t.Logf("Inspecting secret '%s'...", namespacedName)
-		_, err := assertSBRSecret(ctx, f, namespacedName)
+		_, err := assertSBRSecret(ctx, f, namespacedName, assertKeys)
 		if err != nil {
 			t.Logf("Secret inspection error: '%#v'", err)
 		}
@@ -470,14 +504,12 @@ func serviceBindingRequestTest(
 	steps []Step,
 ) {
 	// making sure resource names employed during test are unique
-	name := "e2e-service-binding-request"
 	randomSuffix := rand.Int()
 	csvName := fmt.Sprintf("cluster-service-version-%d", randomSuffix)
 	sbrName := fmt.Sprintf("e2e-service-binding-request-%d", randomSuffix)
 	resourceRef := fmt.Sprintf("e2e-db-testing-%d", randomSuffix)
 	secretName := fmt.Sprintf("e2e-db-credentials-%d", randomSuffix)
 	appName := fmt.Sprintf("e2e-application-%d", randomSuffix)
-	serviceBindingRequestNamespacedName := types.NamespacedName{Namespace: ns, Name: name}
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": fmt.Sprintf("e2e-%d", randomSuffix),
@@ -494,6 +526,7 @@ func serviceBindingRequestTest(
 	noCleanupOpts := &framework.CleanupOptions{TestContext: ctx}
 
 	todoCtx := context.TODO()
+	assertKeys := postgresSecretAssertion
 
 	var sbr *v1alpha1.ServiceBindingRequest
 	for _, step := range steps {
@@ -506,23 +539,20 @@ func serviceBindingRequestTest(
 			CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
 			// creating service-binding-request, which will trigger actions in the controller
-			sbr = CreateSBR(todoCtx, t, f, noCleanupOpts, sbrNamespacedName, resourceRef, matchLabels)
+			sbr = CreateSBR(todoCtx, t, f, noCleanupOpts, sbrNamespacedName, resourceRef, matchLabels, nil)
 		case SBREtcdStep:
-			sbr = CreateServiceBindingRequest(
-				todoCtx,
-				t,
-				ctx,
-				f,
-				serviceBindingRequestNamespacedName,
+			assertKeys = etcdSecretAssertion
+			sbr = CreateSBR(todoCtx, t, f,
+				noCleanupOpts,
+				sbrNamespacedName,
 				resourceRef,
 				matchLabels,
-				&v1.GroupVersionKind{
-					Group:   "etcd.database.coreos.com",
-					Version: "v1beta2",
-					Kind:    "EtcdCluster",
-				},
-				true,
-			)
+				func(sbr *v1alpha1.ServiceBindingRequest) {
+				setSBRBackendGVK(sbr, resourceRef, v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind))
+				setSBRBindUnannotated(sbr, true)
+			})
+		case EtcdClusterStep:
+			CreateEtcdCluster(todoCtx, t, ctx, f, resourceRefNamespacedName)
 		}
 	}
 
@@ -537,7 +567,7 @@ func serviceBindingRequestTest(
 
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
-	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName)
+	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
 	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
 	require.NotNil(t, sbrSecret)
 
@@ -548,7 +578,7 @@ func serviceBindingRequestTest(
 	// retrying a few times to see if secret is back on original state, waiting for operator to
 	// reconcile again when detecting the change
 	t.Log("Inspecting intermediary secret...")
-	inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+	inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName, assertKeys)
 
 	// executing deletion of the request, triggering unbinding actions
 	err = f.Client.Delete(todoCtx, sbr)
@@ -560,28 +590,6 @@ func serviceBindingRequestTest(
 	// after deletion, deployment should not contain envFrom directive anymore
 	_, err = assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
 	require.Error(t, err, "expect deployment not to be carrying envFrom directive")
-}
-
-// CreateServiceBindingRequest implements end-to-end step for creating a Service Binding Request to bind the Backing Service and the Application
-func CreateServiceBindingRequest(
-	todoCtx context.Context,
-	t *testing.T,
-	ctx *framework.TestCtx,
-	f *framework.Framework,
-	namespacedName types.NamespacedName,
-	resourceRef string,
-	matchLabels map[string]string,
-	backendGvk *v1.GroupVersionKind,
-	bindUnannotated bool,
-) *v1alpha1.ServiceBindingRequest {
-	ns := namespacedName.Namespace
-	name := namespacedName.Name
-	t.Log("Creating ServiceBindingRequest mock object...")
-	sbr := mocks.ServiceBindingRequestMock(ns, name, resourceRef, "", matchLabels, bindUnannotated, backendGvk)
-	// making sure object does not exist before testing
-	_ = f.Client.Delete(todoCtx, sbr)
-	require.Nil(t, f.Client.Create(todoCtx, sbr, cleanupOptions(ctx)))
-	return sbr
 }
 
 func CreateEtcdCluster(
@@ -598,7 +606,7 @@ func CreateEtcdCluster(
 	require.Nil(t, f.Client.Create(todoCtx, etcd, cleanupOptions(ctx)))
 	trueBool := true
 	falseBool := false
-	etcdSvc.SetOwnerReferences([]v1.OwnerReference{
+	etcdSvc.SetOwnerReferences([]metav1.OwnerReference{
 		{
 			APIVersion:         v1beta2.SchemeGroupVersion.Version,
 			Kind:               v1beta2.EtcdClusterResourceKind,
