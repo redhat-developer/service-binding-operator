@@ -43,6 +43,9 @@ func main() {
 	check(err)
 	CSVMap := make(map[interface{}]interface{})
 	err = yaml.Unmarshal(yamlFileCSVBundle, &CSVMap)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 	if spec, ok := CSVMap["spec"].(map[interface{}]interface{}); ok {
 		if crds, ok := spec["customresourcedefinitions"].(map[interface{}]interface{}); ok {
 			crds["owned"] = crds2.Owned
@@ -53,6 +56,9 @@ func main() {
 		log.Fatalf("error: %v", err)
 	}
 	err = ioutil.WriteFile(filenameCSVBundle, d, os.FileMode(777))
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
 }
 func check(e error) {
 	if e != nil {
