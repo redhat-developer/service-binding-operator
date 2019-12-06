@@ -35,9 +35,8 @@ func TestBinderNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "binder",
 	}
-
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -54,6 +53,7 @@ func TestBinderNew(t *testing.T) {
 		"service-binding-request-with-ref",
 		"ref",
 		"ref",
+		deploymentsGVR,
 		map[string]string{},
 	)
 
@@ -181,9 +181,8 @@ func TestBinderAppendEnvVar(t *testing.T) {
 func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
-
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", nil)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
@@ -201,4 +200,30 @@ func TestBinderApplicationName(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 	})
+}
+
+func TestBindingWithDeploymentConfig(t *testing.T) {
+	ns := "service-binding-demo-with-deploymentconfig"
+	name := "service-binding-request"
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
+	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+
+	t.Run("deploymentconfig", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+		require.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
+	})
+
 }

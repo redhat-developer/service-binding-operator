@@ -41,7 +41,7 @@ func NewDetectBindableResources(
 	return b
 }
 
-// GetBindableVariables returns list of subresources owned by operator backed CR
+// GetOwnedResources returns list of subresources owned by operator backed CR
 func (b DetectBindableResources) GetOwnedResources() ([]unstructured.Unstructured, error) {
 	var subResources []unstructured.Unstructured
 	for _, resource := range b.resourcesToCheck {
