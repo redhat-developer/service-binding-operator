@@ -116,19 +116,24 @@ GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
 OPERATOR_VERSION ?= 0.0.20
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
+OPERATOR_IMAGE_REL ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
 OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
+COMMIT_COUNT := $(shell git rev-list --count HEAD)
+BUNDLE_VERSION := $(OPERATOR_VERSION)-$(COMMIT_COUNT)
 
 QUAY_TOKEN ?= ""
+QUAY_BUNDLE_TOKEN ?= ""
 
-MANIFESTS_DIR ?= ./manifests
-MANIFESTS_TMP ?= ./tmp/manifests
-HACK_DIR ?= ./hack
-OUTPUT_DIR ?= ./out
+MANIFESTS_DIR ?= $(shell echo ${PWD})/manifests
+MANIFESTS_TMP ?= $(shell echo ${PWD})/tmp/manifests
+HACK_DIR ?= $(shell echo ${PWD})/hack
+OUTPUT_DIR ?= $(shell echo ${PWD})/out
+OLM_CATALOG_DIR ?= $(shell echo ${PWD})/deploy/olm-catalog
+CRDS_DIR ?= $(shell echo ${PWD})/deploy/crds
 LOGS_DIR ?= $(OUTPUT_DIR)/logs
-
 GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
 
 # -- Variables for uploading code coverage reports to Codecov.io --
