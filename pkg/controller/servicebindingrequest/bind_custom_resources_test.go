@@ -4,7 +4,7 @@ import (
 	v12 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -27,11 +27,11 @@ func TestBindNonBindableResources_GetOwnedResources(t *testing.T) {
 	configMap := mocks.ConfigMapMock("test", "test_database")
 	us := &unstructured.Unstructured{}
 	uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&configMap)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	us.Object = uc
 	us.SetOwnerReferences([]v1.OwnerReference{reference})
 	route, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mocks.RouteCRMock("test", "test"))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	usRoute := &unstructured.Unstructured{Object: route}
 	usRoute.SetOwnerReferences([]v1.OwnerReference{reference})
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
@@ -62,13 +62,13 @@ func TestBindNonBindableResources_GetOwnedResources(t *testing.T) {
 
 	t.Run("Should return configmap as owned resource", func(t *testing.T) {
 		resources, err := b.GetOwnedResources()
-		assert.NoError(t, err)
-		assert.Equal(t, 2, len(resources), "Should return 1 owned resource")
+		require.NoError(t, err)
+		require.Equal(t, 2, len(resources), "Should return 1 owned resource")
 	})
 
 	t.Run("Should return all variables exist in the configmap data section", func(t *testing.T) {
 		data, err := b.GetBindableVariables()
-		assert.NoError(t, err)
-		assert.Equal(t, 3, len(data), "")
+		require.NoError(t, err)
+		require.Equal(t, 3, len(data), "")
 	})
 }

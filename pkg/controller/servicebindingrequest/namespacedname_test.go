@@ -3,13 +3,13 @@ package servicebindingrequest
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestNamespacednameIsSBRNamespacedNameEmpty(t *testing.T) {
-	assert.True(t, IsNamespacedNameEmpty(types.NamespacedName{}))
-	assert.True(t, IsNamespacedNameEmpty(types.NamespacedName{Namespace: "ns"}))
-	assert.True(t, IsNamespacedNameEmpty(types.NamespacedName{Name: "name"}))
-	assert.False(t, IsNamespacedNameEmpty(types.NamespacedName{Namespace: "ns", Name: "name"}))
+	require.True(t, IsNamespacedNameEmpty(types.NamespacedName{}))
+	require.True(t, IsNamespacedNameEmpty(types.NamespacedName{Namespace: "ns"}))
+	require.True(t, IsNamespacedNameEmpty(types.NamespacedName{Name: "name"}))
+	require.False(t, IsNamespacedNameEmpty(types.NamespacedName{Namespace: "ns", Name: "name"}))
 }

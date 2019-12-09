@@ -5,10 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -19,6 +18,16 @@ func init() {
 	logf.SetLogger(logf.ZapLogger(true))
 }
 
+// getEnvVar returns an EnvVar with given name if exists in the given envVars.
+func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
+	for _, v := range envVars {
+		if v.Name == name {
+			return &v
+		}
+	}
+	return nil
+}
+
 func TestBinderNew(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
@@ -26,9 +35,8 @@ func TestBinderNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "binder",
 	}
-
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -41,7 +49,13 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binder)
 
-	sbrWithResourceRef := f.AddMockedServiceBindingRequest("service-binding-request-with-ref", "ref", "ref", make(map[string]string))
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
+		"service-binding-request-with-ref",
+		"ref",
+		"ref",
+		deploymentsGVR,
+		map[string]string{},
+	)
 
 	binderForSBRWithResourceRef := NewBinder(
 		context.TODO(),
@@ -53,63 +67,99 @@ func TestBinderNew(t *testing.T) {
 
 	require.NotNil(t, binderForSBRWithResourceRef)
 
-	t.Run("search target object by resource name", func(t *testing.T) {
+	t.Run("search-using-resourceref", func(t *testing.T) {
 		list, err := binderForSBRWithResourceRef.search()
-		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list.Items))
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
 	})
 
 	t.Run("search", func(t *testing.T) {
 		list, err := binder.search()
-		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list.Items))
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
 	})
 
-	t.Run("appendEnvFrom", func(t *testing.T) {
+	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
 		secretName := "secret"
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
-		list := binder.appendEnvFrom(d.Spec.Template.Spec.Containers[0].EnvFrom, secretName)
+		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
 
-		assert.Equal(t, 1, len(list))
-		assert.Equal(t, secretName, list[0].SecretRef.Name)
+		list := binder.appendEnvFrom(envFrom, secretName)
+		require.Equal(t, 1, len(list))
+		require.Equal(t, secretName, list[0].SecretRef.Name)
+
+		list = binder.removeEnvFrom(envFrom, secretName)
+		require.Equal(t, 0, len(list))
 	})
 
 	t.Run("appendEnv", func(t *testing.T) {
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
 		list := binder.appendEnvVar(d.Spec.Template.Spec.Containers[0].Env, "name", "value")
-		assert.Equal(t, 1, len(list))
-		assert.Equal(t, "name", list[0].Name)
-		assert.Equal(t, "value", list[0].Value)
+		require.Equal(t, 1, len(list))
+		require.Equal(t, "name", list[0].Name)
+		require.Equal(t, "value", list[0].Value)
 	})
 
 	t.Run("update", func(t *testing.T) {
 		list, err := binder.search()
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(list.Items))
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
 
 		updatedObjects, err := binder.update(list)
-		assert.NoError(t, err)
-		assert.Len(t, updatedObjects, 1)
+		require.NoError(t, err)
+		require.Len(t, updatedObjects, 1)
 
-		containersPath := []string{"spec", "template", "spec", "containers"}
-		containers, found, err := ustrv1.NestedSlice(list.Items[0].Object, containersPath...)
-		assert.NoError(t, err)
-		assert.True(t, found)
-		assert.Len(t, containers, 1)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Len(t, containers, 1)
 
 		c := corev1.Container{}
 		u := containers[0].(map[string]interface{})
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
-		assert.NoError(t, err)
-		assert.NotEmpty(t, c.Env[0].Value)
+		require.NoError(t, err)
 
-		parsedTime, err := time.Parse(time.RFC3339, c.Env[0].Value)
-		assert.NoError(t, err)
-		assert.True(t, parsedTime.Before(time.Now()))
+		// special env-var should exist to trigger a side effect such as Pod restart when the
+		// intermediate secret has been modified
+		envVar := getEnvVar(c.Env, ChangeTriggerEnv)
+		require.NotNil(t, envVar)
+		require.NotEmpty(t, envVar.Value)
+
+		parsedTime, err := time.Parse(time.RFC3339, envVar.Value)
+		require.NoError(t, err)
+		require.True(t, parsedTime.Before(time.Now()))
+	})
+
+	t.Run("remove", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedObjects, err := binder.update(list)
+		require.NoError(t, err)
+		require.Len(t, updatedObjects, 1)
+
+		err = binder.remove(list)
+		require.NoError(t, err)
+
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Len(t, containers, 1)
+
+		c := corev1.Container{}
+		u := containers[0].(map[string]interface{})
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+		require.NoError(t, err)
+
+		// making sure envFrom directive is removed
+		require.Empty(t, c.EnvFrom)
+		// making sure no volume mounts are present
+		require.Nil(t, c.VolumeMounts)
 	})
 }
 
-func TestAppendEnvVar(t *testing.T) {
+func TestBinderAppendEnvVar(t *testing.T) {
 	envName := "lastbound"
 	envList := []corev1.EnvVar{
 		corev1.EnvVar{
@@ -131,9 +181,8 @@ func TestAppendEnvVar(t *testing.T) {
 func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
-
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", nil)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
@@ -148,8 +197,33 @@ func TestBinderApplicationName(t *testing.T) {
 
 	t.Run("search by application name", func(t *testing.T) {
 		list, err := binder.search()
-		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list.Items))
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+	})
+}
+
+func TestBindingWithDeploymentConfig(t *testing.T) {
+	ns := "service-binding-demo-with-deploymentconfig"
+	name := "service-binding-request"
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
+	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+
+	t.Run("deploymentconfig", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+		require.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
 	})
 
 }
