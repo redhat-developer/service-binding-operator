@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -238,7 +239,7 @@ func TestBindTwoApplications(t *testing.T) {
 		"environment": "binder",
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef1", matchLabels1)
-	sbr1 := f.AddMockedServiceBindingRequest(name1, "backingServiceResourceRef", "", matchLabels1)
+	sbr1 := f.AddMockedServiceBindingRequest(name1, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
 	binder1 := NewBinder(
 		context.TODO(),
 		f.FakeClient(),
@@ -254,7 +255,7 @@ func TestBindTwoApplications(t *testing.T) {
 		"environment": "demo",
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef2", matchLabels2)
-	sbr2 := f.AddMockedServiceBindingRequest(name2, "backingServiceResourceRef", "", matchLabels2)
+	sbr2 := f.AddMockedServiceBindingRequest(name2, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
 	binder2 := NewBinder(
 		context.TODO(),
 		f.FakeClient(),
@@ -265,10 +266,12 @@ func TestBindTwoApplications(t *testing.T) {
 	require.NotNil(t, binder2)
 
 	t.Run("two applications with one backing service", func(t *testing.T) {
-		list, err := binder1.search()
+		list1, err := binder1.search()
 		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list.Items))
-		result, err := binder1.Bind()
-	})
+		assert.Equal(t, 1, len(list1.Items))
 
+		list2, err := binder2.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list2.Items))
+	})
 }
