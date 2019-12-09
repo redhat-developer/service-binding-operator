@@ -4,17 +4,17 @@ import (
 	"bytes"
 	"text/template"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 )
 
-// CustomEnvParser is responsible to interpolate a given CustomEnvMap containing templates.
+// CustomEnvParser is responsible to interpolate a given EnvVar containing templates.
 type CustomEnvParser struct {
-	EnvMap []v1alpha1.CustomEnvMap
+	EnvMap []corev1.EnvVar
 	Cache  map[string]interface{}
 }
 
 // NewCustomEnvParser returns a new CustomEnvParser.
-func NewCustomEnvParser(envMap []v1alpha1.CustomEnvMap, cache map[string]interface{}) *CustomEnvParser {
+func NewCustomEnvParser(envMap []corev1.EnvVar, cache map[string]interface{}) *CustomEnvParser {
 	return &CustomEnvParser{
 		EnvMap: envMap,
 		Cache:  cache,
