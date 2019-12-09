@@ -154,27 +154,6 @@ func ServiceBindingRequest(t *testing.T, steps []Step) {
 	serviceBindingRequestTest(t, ctx, f, ns, steps)
 }
 
-func assertAppDeployed(
-	ctx context.Context,
-	f *framework.Framework,
-	namespacedName types.NamespacedName,
-	secretRefName string,
-	) (*appsv1.Deployment, error) {
-	d := &appsv1.Deployment{}
-	if err := f.Client.Get(ctx, namespacedName, d); err != nil {
-		return nil, err
-	}
-
-	containers := d.Spec.Template.Spec.Containers
-	if len(containers) != 1 {
-		return nil, fmt.Errorf("can't find a container in deployment-spec")
-	}
-	if len(containers[0].EnvFrom) > 0 {
-		return nil, fmt.Errorf("Containers  are less than 0")
-	}
-	return d, nil
-}
-
 // assertDeploymentEnvFrom execute the inspection of a deployment type, making sure the containers
 // are set, and are having "envFrom" directive.
 func assertDeploymentEnvFrom(
