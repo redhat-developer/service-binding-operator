@@ -20,7 +20,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -116,7 +115,6 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 // cleanupOptions using global variables to create the object.
 func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
-	return nil
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
 		Timeout:       cleanupTimeout,
@@ -380,7 +378,7 @@ func CreateSBR(
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
-		namespacedName.Namespace, namespacedName.Name, resourceRef, "", matchLabels, false, nil)
+		namespacedName.Namespace, namespacedName.Name, resourceRef, "",applicationGVR , matchLabels)
 
 	// This anonymous function call explicitly modifies default SBR created by
 	// the mock
@@ -541,13 +539,14 @@ func serviceBindingRequestTest(
 			CreateApp(todoCtx, t, f, cleanupOpts, deploymentNamespacedName, matchLabels)
 		case SBRStep:
 			// creating service-binding-request, which will trigger actions in the controller
-			sbr = CreateSBR(todoCtx, t, f, noCleanupOpts, sbrNamespacedName, resourceRef, matchLabels, nil)
+			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, deploymentsGVR, matchLabels, nil)
 		case SBREtcdStep:
 			assertKeys = etcdSecretAssertion
 			sbr = CreateSBR(todoCtx, t, f,
-				noCleanupOpts,
+				cleanupOpts,
 				sbrNamespacedName,
 				resourceRef,
+				deploymentsGVR,
 				matchLabels,
 				func(sbr *v1alpha1.ServiceBindingRequest) {
 				setSBRBackendGVK(sbr, resourceRef, v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind))

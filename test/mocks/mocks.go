@@ -378,8 +378,6 @@ func ServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-	bindUnannotated bool,
-	backendGvk *metav1.GroupVersionKind,
 ) *v1alpha1.ServiceBindingRequest {
 	sbr := &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
@@ -401,23 +399,14 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			DetectBindingResources: bindUnannotated,
+			DetectBindingResources:false,
 		},
 	}
-	if backendGvk != nil {
-		sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-			Group:       backendGvk.Group,
-			Version:     backendGvk.Version,
-			Kind:        backendGvk.Kind,
-			ResourceRef: backingServiceResourceRef,
-		}
-	} else {
-		sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-			Group:       CRDName,
-			Version:     CRDVersion,
-			Kind:        CRDKind,
-			ResourceRef: backingServiceResourceRef,
-		}
+	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+		Group:       CRDName,
+		Version:     CRDVersion,
+		Kind:        CRDKind,
+		ResourceRef: backingServiceResourceRef,
 	}
 	return sbr
 }
@@ -431,8 +420,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(
-		ns, name, backingServiceResourceRef, applicationResourceRef, matchLabels, false, nil)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef,applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
