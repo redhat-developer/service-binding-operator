@@ -153,3 +153,48 @@ func TestBinderApplicationName(t *testing.T) {
 	})
 
 }
+
+func TestBindTwoApplications(t *testing.T) {
+	ns := "binder"
+	f := mocks.NewFake(t, ns)
+
+	name1 := "service-binding-request-1"
+	matchLabels1 := map[string]string{
+		"connects-to": "database",
+		"environment": "binder",
+	}
+	f.AddMockedUnstructuredDeployment("applicationResourceRef1", matchLabels1)
+	sbr1 := f.AddMockedServiceBindingRequest(name1, "backingServiceResourceRef", "", matchLabels1)
+	binder1 := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr1,
+		[]string{},
+	)
+	require.NotNil(t, binder1)
+
+	name2 := "service-binding-request-2"
+	matchLabels2 := map[string]string{
+		"connects-to": "database",
+		"environment": "demo",
+	}
+	f.AddMockedUnstructuredDeployment("applicationResourceRef2", matchLabels2)
+	sbr2 := f.AddMockedServiceBindingRequest(name2, "backingServiceResourceRef", "", matchLabels2)
+	binder2 := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr2,
+		[]string{},
+	)
+	require.NotNil(t, binder2)
+
+	t.Run("two applications with one backing service", func(t *testing.T) {
+		list, err := binder1.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list.Items))
+		result, err := binder1.Bind()
+	})
+
+}
