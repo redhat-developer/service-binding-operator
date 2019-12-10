@@ -8,9 +8,7 @@ require (
 	github.com/Azure/go-autorest v11.7.0+incompatible // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/coreos/etcd-operator v0.9.4
-	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
-	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
 	github.com/go-openapi/swag v0.19.0 // indirect
@@ -18,7 +16,6 @@ require (
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983 // indirect
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
 	github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
 	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20190605231540-b8a4faf68e36
@@ -28,7 +25,6 @@ require (
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/genproto v0.0.0-20190404172233-64821d5d2107 // indirect
-	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.0.0
 	k8s.io/apiextensions-apiserver v0.0.0
