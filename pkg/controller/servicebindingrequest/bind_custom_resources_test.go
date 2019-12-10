@@ -13,10 +13,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+var trueBool = true
+
 func TestBindNonBindableResources_ConfigMap_GetOwnedResources(t *testing.T) {
 	f := mocks.NewFake(t, "test")
 	cr := mocks.DatabaseCRMock("test", "test")
-	trueBool := true
 	reference := v1.OwnerReference{
 		APIVersion:         cr.APIVersion,
 		Kind:               cr.Kind,
@@ -77,7 +78,6 @@ func TestBindNonBindableResources_ConfigMap_GetOwnedResources(t *testing.T) {
 func TestBindNonBindableResources_Secret_GetOwnedResources(t *testing.T) {
 	f := mocks.NewFake(t, "test")
 	cr := mocks.DatabaseCRMock("test", "test")
-	trueBool := true
 	reference := v1.OwnerReference{
 		APIVersion:         cr.APIVersion,
 		Kind:               cr.Kind,
