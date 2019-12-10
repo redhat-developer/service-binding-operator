@@ -24,13 +24,7 @@ manage off-cluster RDS database instances on AWS.
 
 #### Install the Service Binding Operator using an `OperatorSource`
 
-Apply the [Service Binding Operator Source](./operator-source.service-binding-operator.yaml):
-
-```shell
-make install-service-binding-operator-source
-```
-
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Other` category select the `Service Bidning Operator` operator
+Navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Other` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
@@ -45,7 +39,7 @@ This makes the `ServiceBindingRequest` custom resource available, that we as the
 The AWS RDS operator requires AWS credentials to be able to work with AWS. Follow the [instructions](https://github.com/operator-backing-service-samples/aws-rds#set-up-and-config) to install the proper secret.
 
 ``` shell
- install-aws-rds-operator-secrets
+ make install-aws-rds-operator-secrets
 ```
 
 ##### Install the operator source
@@ -82,6 +76,12 @@ The application and the DB needs a namespace to live in so let's create one for 
 
 ``` shell
 oc new-project service-binding-demo
+```
+
+Alternatively, you can perform the same task with this make command:
+
+``` shell
+make create-project
 ```
 
 #### Deploy Shell application
@@ -194,9 +194,7 @@ spec:
     kind: RDSDatabase
     resourceRef: mydb
   applicationSelector:
-    matchLabels:
-      connects-to: postgres
-      environment: shell
+    resourceRef: shell-app
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
@@ -206,7 +204,7 @@ There are 3 interesting parts in the request:
 
 * `envVarPrefix` - specifies the prefix for all the environment variables injected to the bound application
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `mydb`
-* `applicationSelector` - used to search for the application based on the labels (check the [labels on the Shell application](./deployment-config.shell-app.yaml#L7)) and the `resourceKind` of the application to be a `DeploymentConfig`
+* `applicationSelector` - used to search for the application based on the resourceRef and the `resourceKind` of the application to be a `DeploymentConfig`
 
 We can use `create-service-binding-request-shell-app` make target to create the binding request for us:
 
@@ -243,25 +241,8 @@ The Node.js application should be already up and running after we [imported it b
 
 Let's check by navigating to the application's route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That means that the application is not connected to DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
 
-Now we ask the Service Binding Operator to bind the DB to the Node.js application in the following steps:
-
-* [Set labels on the application](#set-labels-on-the-nodejs-application) for the Service Binding Operator to find it
+Now we ask the Service Binding Operator to bind the DB to the Node.js application in the following step:
 * [Create `ServiceBindingRequest`](#create-servicebindingrequest-for-the-nodejs-application)
-
-##### Set labels on the Node.js application
-
-Similarly as with the Shell application we need to have arbitrary labels on the application's `DeploymentConfig` in order for the Service Binding Operator to be able to find the application.
-
-The labels we use are:
-
-* `connects-to=postgres` - indicates that the application needs to connect to a PostgreSQL DB
-* `environment=nodejs` - indicates the `nodejs` environment - it narrows the search and exclude the Shell application which has a different label (`environment=shell` instead).
-
-To set our labels we can use the `set-labels-on-nodejs-app` make target:
-
-```shell
-make set-labels-on-nodejs-app
-```
 
 #### Create `ServiceBindingRequest` for the Node.js application
 
@@ -284,15 +265,13 @@ spec:
     kind: RDSDatabase
     resourceRef: mydb
   applicationSelector:
-    matchLabels:
-      connects-to: postgres
-      environment: nodejs
-    group: apps.openshift.io
+    resourceRef: nodejs-app
+    group: apps
     version: v1
-    resource: deploymentconfigs
+    resource: deployments
 ```
 
-The request is basically the same as the one we used for the Shell application. The only difference (appart from name) is the label `environment: nodejs` used in the `appicationSelector`.
+The request is basically the same as the one we used for the Shell application. The only difference is the application name used in resourceRef used in the `applicationSelector`.
 
 We can use the `create-service-binding-request-nodejs-app` make target to create the request for us:
 

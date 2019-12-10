@@ -12,9 +12,7 @@ spec:
     kind: RDSDatabase
     resourceRef: mydb
   applicationSelector:
-    matchLabels:
-      connects-to: postgres
-      environment: nodejs
-    group: apps.openshift.io
+    resourceRef: nodejs-app
+    group: apps
     version: v1
-    resource: deploymentconfigs
+    resource: deployments
