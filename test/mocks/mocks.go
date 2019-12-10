@@ -385,7 +385,7 @@ func ServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar: []v1alpha1.CustomEnvMap{
+			CustomEnvVar: []corev1.EnvVar{
 				{
 					Name:  "IMAGE_PATH",
 					Value: "spec.imagePath",
