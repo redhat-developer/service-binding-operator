@@ -399,7 +399,7 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			DetectBindingResources:false,
+			DetectBindingResources: false,
 		},
 	}
 	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
@@ -420,7 +420,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef,applicationGVR, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
