@@ -267,19 +267,19 @@ func (r *Retriever) store(key string, value []byte) {
 // Retrieve loop and read data pointed by the references in plan instance. Also runs through
 // "bindable resources", gathering extra data. It can return error on retrieving and reading
 // resources.
-func (r *Retriever) Retrieve() (map[string][]byte, error) {
+func (r *Retriever) Retrieve() (map[string][]byte, map[string]interface{}, error) {
 	var err error
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
 		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
 	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
 		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
 
@@ -293,14 +293,14 @@ func (r *Retriever) Retrieve() (map[string][]byte, error) {
 
 		vals, err := b.GetBindableVariables()
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		for k, v := range vals {
 			r.store(k, []byte(fmt.Sprintf("%v", v)))
 		}
 	}
 
-	return r.data, nil
+	return r.data, r.cache, nil
 }
 
 // NewRetriever instantiate a new retriever instance.

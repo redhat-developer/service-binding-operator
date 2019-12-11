@@ -27,9 +27,10 @@ func TestSecretNew(t *testing.T) {
 	data := map[string][]byte{"key": []byte("value")}
 
 	s := NewSecret(f.FakeDynClient(), plan)
-
+	fakeDynClient := f.FakeDynClient()
+	retriever := NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	t.Run("customEnvParser", func(t *testing.T) {
-		customData, err := s.customEnvParser(data)
+		customData, err := s.customEnvParser(data, retriever.cache)
 		assert.NoError(t, err)
 		assert.NotNil(t, customData)
 	})
@@ -46,7 +47,7 @@ func TestSecretNew(t *testing.T) {
 	})
 
 	t.Run("Commit", func(t *testing.T) {
-		u, err := s.Commit(data)
+		u, err := s.Commit(data, retriever.cache)
 		assert.NoError(t, err)
 		assertSecretNamespacedName(t, u, ns, name)
 	})
