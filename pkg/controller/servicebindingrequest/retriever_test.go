@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -227,7 +227,7 @@ func TestCustomEnvParser(t *testing.T) {
 
 		t.Logf("\nCache %+v", retriever.cache)
 
-		envMap := []v1alpha1.CustomEnvMap{
+		envMap := []corev1.EnvVar{
 			{
 				Name:  "JDBC_CONNECTION_STRING",
 				Value: `{{ .spec.imageName }}@{{ .status.dbCredentials.password }}`,
