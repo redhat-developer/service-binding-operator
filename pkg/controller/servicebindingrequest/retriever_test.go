@@ -204,7 +204,6 @@ func TestCustomEnvParser(t *testing.T) {
 	crName := "db-testing"
 
 	f := mocks.NewFake(t, ns)
-	// f.AddMockedUnstructuredCSV("csv")
 	f.AddMockedSecret("db-credentials")
 
 	crdDescription := mocks.CRDDescriptionMock()
