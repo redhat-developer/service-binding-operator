@@ -75,3 +75,49 @@ func TestOLMNew(t *testing.T) {
 		assertGVKs(t, gvks)
 	})
 }
+
+func Test_splitBindingInfo(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		want1   string
+		wantErr bool
+	}{
+		{
+			name:    "ref",
+			args:    struct{ s string }{s: "status.configMapRef-password"},
+			want:    "status.configMapRef",
+			want1:   "password",
+			wantErr: false,
+		},
+		{
+			name:    "embedded",
+			args:    struct{ s string }{s: "status.connectionString"},
+			want:    "status.connectionString",
+			want1:   "status.connectionString",
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := NewBindingInfo(tt.args.s)
+			if err != nil && !tt.wantErr {
+				t.Errorf("NewBindingInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			} else if err == nil {
+				if b.FieldPath != tt.want {
+					t.Errorf("NewBindingInfo() got = %v, want %v", b.FieldPath, tt.want)
+				}
+				if b.Path != tt.want1 {
+					t.Errorf("NewBindingInfo() got1 = %v, want %v", b.Path, tt.want1)
+				}
+
+			}
+
+		})
+	}
+}
