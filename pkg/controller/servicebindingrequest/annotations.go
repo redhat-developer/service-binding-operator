@@ -74,7 +74,7 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	}
 
 	log.Trace("Object is not a SBR, returning an empty namespaced name")
-	return sbrNamespacedName, nil
+	return types.NamespacedName{}, nil
 }
 
 // updateUnstructuredObj generic call to update the unstructured resource informed. It can return
