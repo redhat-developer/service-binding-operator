@@ -26,11 +26,11 @@ var (
 func extractSBRNamespacedName(data map[string]string) types.NamespacedName {
 	namespacedName := types.NamespacedName{}
 	ns, exists := data[sbrNamespaceAnnotation]
-	if !exists {
+	if !exists || len(ns) == 0 {
 		return namespacedName
 	}
 	name, exists := data[sbrNameAnnotation]
-	if !exists {
+	if !exists || len(name) == 0 {
 		return namespacedName
 	}
 	namespacedName.Namespace = ns
