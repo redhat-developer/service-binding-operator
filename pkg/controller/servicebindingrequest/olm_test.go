@@ -76,30 +76,31 @@ func TestOLMNew(t *testing.T) {
 	})
 }
 
+// Test_splitBindingInfo exercises annotation binding information parsing.
 func Test_splitBindingInfo(t *testing.T) {
 	type args struct {
 		s string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		want1   string
-		wantErr bool
+		name      string
+		args      args
+		fieldPath string
+		path      string
+		wantErr   bool
 	}{
 		{
-			name:    "ref",
-			args:    struct{ s string }{s: "status.configMapRef-password"},
-			want:    "status.configMapRef",
-			want1:   "password",
-			wantErr: false,
+			name:      "{fieldPath}-{path} annotation",
+			args:      struct{ s string }{s: "status.configMapRef-password"},
+			fieldPath: "status.configMapRef",
+			path:      "password",
+			wantErr:   false,
 		},
 		{
-			name:    "embedded",
-			args:    struct{ s string }{s: "status.connectionString"},
-			want:    "status.connectionString",
-			want1:   "status.connectionString",
-			wantErr: false,
+			name:      "{path} annotation",
+			args:      struct{ s string }{s: "status.connectionString"},
+			fieldPath: "status.connectionString",
+			path:      "status.connectionString",
+			wantErr:   false,
 		},
 	}
 	for _, tt := range tests {
@@ -109,15 +110,13 @@ func Test_splitBindingInfo(t *testing.T) {
 				t.Errorf("NewBindingInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			} else if err == nil {
-				if b.FieldPath != tt.want {
-					t.Errorf("NewBindingInfo() got = %v, want %v", b.FieldPath, tt.want)
+				if b.FieldPath != tt.fieldPath {
+					t.Errorf("NewBindingInfo() got = %v, want %v", b.FieldPath, tt.fieldPath)
 				}
-				if b.Path != tt.want1 {
-					t.Errorf("NewBindingInfo() got1 = %v, want %v", b.Path, tt.want1)
+				if b.Path != tt.path {
+					t.Errorf("NewBindingInfo() got1 = %v, want %v", b.Path, tt.path)
 				}
-
 			}
-
 		})
 	}
 }
