@@ -218,56 +218,21 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 	)
 
 	for n, v := range annotations {
-		mappedSpecDescriptors, mappedStatusDescriptors, err := mapSBRAnnotationToXDescriptors(n, v)
+		// do not process unknown annotations
+		if !strings.HasPrefix(n, ServiceBindingOperatorAnnotationPrefix) {
+			return nil, nil, nil
+		}
+
+		// annotationName has the binding information encoded into it.
+		bindingInfo, err := NewBindingInfo(n)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		collectedSpecDescriptors = append(collectedSpecDescriptors, mappedSpecDescriptors...)
-		collectedStatusDescriptors = append(collectedStatusDescriptors, mappedStatusDescriptors...)
+		collectedSpecDescriptors = append(collectedSpecDescriptors, bindingInfo.SpecDescriptor(v))
+		collectedStatusDescriptors = append(collectedStatusDescriptors, bindingInfo.StatusDescriptor(v))
 	}
 	return collectedSpecDescriptors, collectedStatusDescriptors, nil
-}
-
-func splitBindingInfo(s string) (string, string, error) {
-	parts := strings.SplitN(s, "-", 2)
-
-	if len(parts) != 2 {
-		return "", "", fmt.Errorf("should have two parts")
-	}
-
-	return parts[0], parts[1], nil
-}
-
-func mapSBRAnnotationToXDescriptors(key string, value string) ([]olmv1alpha1.SpecDescriptor, []olmv1alpha1.StatusDescriptor, error) {
-	// key: 	'servicebindingoperator.redhat.io/status.dbConfigMap-db.host'
-	// value: 	'binding:env:object:configmap'
-	if !strings.HasPrefix(key, ServiceBindingOperatorAnnotationPrefix) {
-		return nil, nil, nil
-	}
-
-	// bindingInfo: `status.dbConfigMap-db.host`
-	bindingInfo := strings.Replace(key, ServiceBindingOperatorAnnotationPrefix, "", 1)
-
-	// path: status.dbConfigMap
-	// fieldPath: db.host
-	path, fieldPath, err := splitBindingInfo(bindingInfo)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	// path: dbConfigMap
-	path = strings.TrimPrefix(path, "status.")
-
-	// xDescriptor: binding:env:object:configmap:db.host
-	xDescriptor := strings.Join([]string{value, fieldPath}, ":")
-
-	statusDescriptor := olmv1alpha1.StatusDescriptor{
-		Path:         path,
-		XDescriptors: []string{xDescriptor},
-	}
-
-	return nil, []olmv1alpha1.StatusDescriptor{statusDescriptor}, nil
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.
