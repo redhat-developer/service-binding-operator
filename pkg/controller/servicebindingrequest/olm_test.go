@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -174,17 +173,13 @@ func Test_buildDescriptorsFromAnnotations(t *testing.T) {
 			}
 
 			text, err := yamlDiff(specDescriptor, tt.specDescriptor)
-			if err != nil {
-				t.Errorf("buildDescriptorsFromAnnotations() specDescriptor = %v, want %v", specDescriptor, tt.specDescriptor)
-			}
+			require.NoError(t, err)
 			if len(text) > 0 {
 				t.Errorf("expected is different from actual:\n%s", text)
 			}
 
 			text, err = yamlDiff(statusDescriptor, tt.statusDescriptor)
-			if err != nil {
-				t.Errorf("buildDescriptorsFromAnnotations() statusDescriptor = %v, want %v", statusDescriptor, tt.statusDescriptor)
-			}
+			require.NoError(t, err)
 			if len(text) > 0 {
 				t.Errorf("expected is different from actual:\n%s", text)
 			}
@@ -247,9 +242,7 @@ func Test_buildCRDDescriptionFromCRDAnnotations(t *testing.T) {
 				return
 			}
 			text, err := yamlDiff(crdDescription, tt.crdDescription)
-			if !reflect.DeepEqual(crdDescription, tt.crdDescription) {
-				t.Errorf("buildCRDDescriptionFromCRD() got = %v, want %v", crdDescription, tt.crdDescription)
-			}
+			require.NoError(t, err)
 			if len(text) > 0 {
 				t.Errorf("expected is different from actual:\n%s", text)
 			}

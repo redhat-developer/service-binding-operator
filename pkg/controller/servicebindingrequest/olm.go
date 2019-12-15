@@ -234,7 +234,7 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 
 		descriptors, exists := acc[bindingInfo.FieldPath]
 		if !exists {
-			descriptors = make([]string, 0, 0)
+			descriptors = make([]string, 0)
 		}
 		descriptors = append(descriptors, bindingInfo.Descriptor)
 		acc[bindingInfo.FieldPath] = descriptors
