@@ -152,8 +152,8 @@ func (o *OLM) SelectCRDDescriptionByGVK(gvk schema.GroupVersionKind, crd *unstru
 			return
 		}
 		log.Debug("CRDDescription object matches selector!")
-		if crdDescription == nil {
-			crdDescription = crdDescription.DeepCopy()
+		if resultCRDDescription == nil {
+			resultCRDDescription = crdDescription.DeepCopy()
 		}
 
 		resultCRDDescription.StatusDescriptors = append(resultCRDDescription.StatusDescriptors, crdDescription.StatusDescriptors...)
