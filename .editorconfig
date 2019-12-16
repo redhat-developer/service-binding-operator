@@ -12,7 +12,13 @@ indent_size = 4
 
 max_line_length = 101
 
-[*.yml,*.yaml,*.toml]
+[*.yml]
+indent_size = 2
+
+[*.yaml]
+indent_size = 2
+
+[*.toml]
 indent_size = 2
 
 [*.md]
