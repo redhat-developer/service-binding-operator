@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"gotest.tools/assert/cmp"
@@ -67,6 +66,16 @@ func (r *Reconciler) setApplicationObjects(
 	sbrStatus.ApplicationObjects = names
 }
 
+// validateServiceBindingRequest check for unsupported settings in SBR.
+func (r *Reconciler) validateServiceBindingRequest(sbr *v1alpha1.ServiceBindingRequest) error {
+	// check if application ResourceRef and MatchLabels, one of them is required.
+	if sbr.Spec.ApplicationSelector.ResourceRef == "" &&
+		sbr.Spec.ApplicationSelector.MatchLabels == nil {
+		return fmt.Errorf("both ResourceRef and MatchLabels are not set")
+	}
+	return nil
+}
+
 // getServiceBindingRequest retrieve the SBR object based on namespaced-name.
 func (r *Reconciler) getServiceBindingRequest(
 	namespacedName types.NamespacedName,
@@ -77,9 +86,14 @@ func (r *Reconciler) getServiceBindingRequest(
 	if err != nil {
 		return nil, err
 	}
+
 	sbr := &v1alpha1.ServiceBindingRequest{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
 	if err != nil {
+		return nil, err
+	}
+
+	if err = r.validateServiceBindingRequest(sbr); err != nil {
 		return nil, err
 	}
 	return sbr, nil
@@ -160,22 +174,6 @@ func (r *Reconciler) onError(
 		return RequeueError(errStatus)
 	}
 	return RequeueOnNotFound(err, requeueAfter)
-}
-
-// checkSBR checks the Service Binding Request
-func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
-	// Check if application ResourceRef is present
-	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
-		log.Debug("Spec.ApplicationSelector.ResourceRef not found")
-
-		// Check if MatchLabels is present
-		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
-			err := errors.New("NotFoundError")
-			log.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
-			return err
-		}
-	}
-	return nil
 }
 
 // unbind removes the relationship between the given sbr and the manifests the operator has
@@ -313,7 +311,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger.Info("Reconciling ServiceBindingRequest...")
 
-	// fetch the ServiceBindingRequest instance
+	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
 		logger.Error(err, "On retrieving service-binding-request instance.")
@@ -325,11 +323,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// splitting instance from it's status
 	sbrStatus := &sbr.Status
-
-	// check Service Binding Request
-	if err = checkSBR(sbr, logger); err != nil {
-		return RequeueError(err)
-	}
 
 	//
 	// Planing changes
