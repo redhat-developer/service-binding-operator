@@ -193,6 +193,19 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
 						},
 					},
+					"backingServiceSelectors": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BackingServiceSelectors is an slice of BackingServiceSelector",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+									},
+								},
+							},
+						},
+					},
 					"applicationSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator.",
@@ -207,7 +220,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"backingServiceSelector", "applicationSelector"},
+				Required: []string{"backingServiceSelector", "backingServiceSelectors", "applicationSelector"},
 			},
 		},
 		Dependencies: []string{

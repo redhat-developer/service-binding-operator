@@ -120,6 +120,11 @@ func (in *ServiceBindingRequestSpec) DeepCopyInto(out *ServiceBindingRequestSpec
 		}
 	}
 	out.BackingServiceSelector = in.BackingServiceSelector
+	if in.BackingServiceSelectors != nil {
+		in, out := &in.BackingServiceSelectors, &out.BackingServiceSelectors
+		*out = make([]BackingServiceSelector, len(*in))
+		copy(*out, *in)
+	}
 	in.ApplicationSelector.DeepCopyInto(&out.ApplicationSelector)
 	return
 }
