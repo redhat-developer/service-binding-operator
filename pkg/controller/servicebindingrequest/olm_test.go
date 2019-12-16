@@ -81,7 +81,7 @@ func TestOLMNew(t *testing.T) {
 	})
 }
 
-// Test_splitBindingInfo exercises annotation binding information parsing.
+// TestNewBindingInfo exercises annotation binding information parsing.
 func TestNewBindingInfo(t *testing.T) {
 	type args struct {
 		s string
@@ -121,17 +121,18 @@ func TestNewBindingInfo(t *testing.T) {
 				t.Errorf("NewBindingInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			} else if err == nil {
-				text, err := yamlDiff(tt.want, b)
-				require.NoError(t, err)
-				if len(text) > 0 {
-					t.Errorf("expected is different from actual:\n%s", text)
-				}
+				requireYamlEqual(t, tt.want, b)
 			}
 		})
 	}
 }
 
-func Test_buildDescriptorsFromAnnotations(t *testing.T) {
+var (
+	dataUserAnnotation     = "servicebindingoperator.redhat.io/status.dbCredentials-data.user"
+	dataPasswordAnnotation = "servicebindingoperator.redhat.io/status.dbCredentials-data.password"
+)
+
+func TestOLMBuildDescriptorsFromAnnotations(t *testing.T) {
 	type args struct {
 		annotations map[string]string
 	}
@@ -146,8 +147,8 @@ func Test_buildDescriptorsFromAnnotations(t *testing.T) {
 			name: "secret",
 			args: args{
 				annotations: map[string]string{
-					"servicebindingoperator.redhat.io/status.dbCredentials-data.user":     "binding:env:object:secret",
-					"servicebindingoperator.redhat.io/status.dbCredentials-data.password": "binding:env:object:secret",
+					dataUserAnnotation:     "binding:env:object:secret",
+					dataPasswordAnnotation: "binding:env:object:secret",
 				},
 			},
 			specDescriptor: nil,
@@ -166,28 +167,21 @@ func Test_buildDescriptorsFromAnnotations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(tt.args.annotations)
+			specDescriptor, statusDescriptor, err :=
+				buildDescriptorsFromAnnotations(tt.args.annotations)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("buildDescriptorsFromAnnotations() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf(
+					"buildDescriptorsFromAnnotations() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			text, err := yamlDiff(specDescriptor, tt.specDescriptor)
-			require.NoError(t, err)
-			if len(text) > 0 {
-				t.Errorf("expected is different from actual:\n%s", text)
-			}
-
-			text, err = yamlDiff(statusDescriptor, tt.statusDescriptor)
-			require.NoError(t, err)
-			if len(text) > 0 {
-				t.Errorf("expected is different from actual:\n%s", text)
-			}
+			requireYamlEqual(t, specDescriptor, tt.specDescriptor)
+			requireYamlEqual(t, statusDescriptor, tt.statusDescriptor)
 		})
 	}
 }
 
-func Test_buildCRDDescriptionFromCRDAnnotations(t *testing.T) {
+func TestOLMBuildCRDDescriptionFromCRDAnnotations(t *testing.T) {
 	type args struct {
 		crd *unstructured.Unstructured
 	}
@@ -199,7 +193,7 @@ func Test_buildCRDDescriptionFromCRDAnnotations(t *testing.T) {
 		wantErr        bool
 	}{
 		{
-			name: "",
+			name: "happy path",
 			args: args{
 				crd: &unstructured.Unstructured{
 					Object: map[string]interface{}{
@@ -211,8 +205,8 @@ func Test_buildCRDDescriptionFromCRDAnnotations(t *testing.T) {
 						},
 						"metadata": map[string]interface{}{
 							"annotations": map[string]interface{}{
-								"servicebindingoperator.redhat.io/status.dbCredentials-data.user":     "binding:env:object:secret",
-								"servicebindingoperator.redhat.io/status.dbCredentials-data.password": "binding:env:object:secret",
+								dataUserAnnotation:     "binding:env:object:secret",
+								dataPasswordAnnotation: "binding:env:object:secret",
 							},
 						},
 					},
@@ -241,16 +235,13 @@ func Test_buildCRDDescriptionFromCRDAnnotations(t *testing.T) {
 				t.Errorf("buildCRDDescriptionFromCRD() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			text, err := yamlDiff(crdDescription, tt.crdDescription)
-			require.NoError(t, err)
-			if len(text) > 0 {
-				t.Errorf("expected is different from actual:\n%s", text)
-			}
+			requireYamlEqual(t, crdDescription, tt.crdDescription)
 		})
 	}
 }
 
-func yamlDiff(a interface{}, b interface{}) (string, error) {
+// requireYamlEqual compares two values and return a message with the different context
+func requireYamlEqual(t *testing.T, a interface{}, b interface{}) {
 	yamlActual, _ := yaml.Marshal(a)
 	yamlExpected, _ := yaml.Marshal(b)
 
@@ -262,5 +253,9 @@ func yamlDiff(a interface{}, b interface{}) (string, error) {
 		Context:  4,
 	}
 
-	return difflib.GetUnifiedDiffString(diff)
+	message, err := difflib.GetUnifiedDiffString(diff)
+	require.NoError(t, err)
+	if len(message) > 0 {
+		t.Errorf("expected is different from actual:\n%s", message)
+	}
 }
