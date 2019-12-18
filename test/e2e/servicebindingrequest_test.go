@@ -339,6 +339,12 @@ func CreateSBR(
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
 		namespacedName.Namespace, namespacedName.Name, resourceRef, "", applicationGVR, matchLabels, false)
+
+	// wait deletion of sbr, this should give time for the operator to finalize the unbind operation
+	// and remove the finalizer
+	err := e2eutil.WaitForDeletion(t, f.Client.Client, sbr, retryInterval, timeout)
+	require.NoError(t, err, "expect waiting for deletion to not return errors")
+
 	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
 	return sbr
 }
@@ -512,4 +518,5 @@ func serviceBindingRequestTest(
 	// after deletion, deployment should not contain envFrom directive anymore
 	_, err = assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
 	require.Error(t, err, "expect deployment not to be carrying envFrom directive")
+
 }
