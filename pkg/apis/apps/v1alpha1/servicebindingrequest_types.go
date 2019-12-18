@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -55,10 +56,8 @@ type ServiceBindingRequestStatus struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	Group       string `json:"group"`
-	Version     string `json:"version"`
-	Kind        string `json:"kind"`
-	ResourceRef string `json:"resourceRef"`
+	schema.GroupVersionKind `json:",inline"`
+	ResourceRef             string `json:"resourceRef"`
 }
 
 // ApplicationSelector defines the selector based on labels and GVR

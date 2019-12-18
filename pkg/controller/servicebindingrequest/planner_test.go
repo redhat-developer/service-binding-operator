@@ -34,7 +34,7 @@ func TestPlannerNew(t *testing.T) {
 	require.NotNil(t, planner)
 
 	t.Run("searchCR", func(t *testing.T) {
-		cr, err := planner.searchCR()
+		cr, err := planner.searchCR(ns, sbr.Spec.BackingServiceSelector)
 
 		require.NoError(t, err)
 		require.NotNil(t, cr)
@@ -63,12 +63,13 @@ func TestPlannerAnnotation(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDatabaseCRD()
+	cr := f.AddMockedDatabaseCR("database")
 
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
 	require.NotNil(t, planner)
 
 	t.Run("searchCRD", func(t *testing.T) {
-		crd, err := planner.searchCRD()
+		crd, err := planner.searchCRD(cr.GetObjectKind().GroupVersionKind())
 
 		require.NoError(t, err)
 		require.NotNil(t, crd)

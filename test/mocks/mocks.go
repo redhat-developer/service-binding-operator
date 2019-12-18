@@ -10,8 +10,6 @@ import (
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -20,6 +18,9 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 )
 
 // resource details employed in mocks
@@ -392,9 +393,11 @@ func ServiceBindingRequestMock(
 				},
 			},
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				Group:       CRDName,
-				Version:     CRDVersion,
-				Kind:        CRDKind,
+				GroupVersionKind: schema.GroupVersionKind{
+					Group:   CRDName,
+					Version: CRDVersion,
+					Kind:    CRDKind,
+				},
 				ResourceRef: backingServiceResourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
@@ -532,7 +535,7 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 	}
 }
 
-//ThirdLevel ...
+// ThirdLevel ...
 type ThirdLevel struct {
 	Something string `json:"something"`
 }

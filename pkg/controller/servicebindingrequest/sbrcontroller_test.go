@@ -7,6 +7,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -29,9 +30,11 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 		sbrA := &v1alpha1.ServiceBindingRequest{
 			Spec: v1alpha1.ServiceBindingRequestSpec{
 				BackingServiceSelector: v1alpha1.BackingServiceSelector{
-					Group:       "test",
-					Version:     "v1alpha1",
-					Kind:        "TestHost",
+					GroupVersionKind: schema.GroupVersionKind{
+						Group:   "test",
+						Version: "v1alpha1",
+						Kind:    "TestHost",
+					},
 					ResourceRef: "",
 				},
 			},
@@ -39,9 +42,11 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 		sbrB := &v1alpha1.ServiceBindingRequest{
 			Spec: v1alpha1.ServiceBindingRequestSpec{
 				BackingServiceSelector: v1alpha1.BackingServiceSelector{
-					Group:       "test",
-					Version:     "v1",
-					Kind:        "TestHost",
+					GroupVersionKind: schema.GroupVersionKind{
+						Group:   "test",
+						Version: "v1",
+						Kind:    "TestHost",
+					},
 					ResourceRef: "",
 				},
 			},

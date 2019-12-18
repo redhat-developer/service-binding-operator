@@ -106,10 +106,12 @@ func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
 }
 
 // AddMockedDatabaseCR add mocked object from DatabaseCRMock.
-func (f *Fake) AddMockedDatabaseCR(ref string) {
+func (f *Fake) AddMockedDatabaseCR(ref string) runtime.Object {
 	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	f.objs = append(f.objs, DatabaseCRMock(f.ns, ref))
+	mock := DatabaseCRMock(f.ns, ref)
+	f.objs = append(f.objs, mock)
+	return mock
 }
 
 func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
@@ -137,12 +139,13 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 	f.objs = append(f.objs, d)
 }
 
-func (f *Fake) AddMockedUnstructuredDatabaseCRD() {
+func (f *Fake) AddMockedUnstructuredDatabaseCRD() *unstructured.Unstructured {
 	require.NoError(f.t, apiextensionv1beta1.AddToScheme(f.S))
 	c, err := UnstructuredDatabaseCRDMock(f.ns)
 	require.NoError(f.t, err)
 	f.S.AddKnownTypes(apiextensionv1beta1.SchemeGroupVersion, &apiextensionv1beta1.CustomResourceDefinition{})
 	f.objs = append(f.objs, c)
+	return c
 }
 
 func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) {
