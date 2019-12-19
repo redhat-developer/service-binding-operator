@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"strings"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -264,43 +266,53 @@ func (r *Retriever) store(key string, value []byte) {
 	r.data[key] = value
 }
 
-// Retrieve loop and read data pointed by the references in plan instance. Also runs through
-// "bindable resources", gathering extra data. It can return error on retrieving and reading
-// resources.
+// Retrieve returns the data read from related resources (see ReadBindableResourcesData and
+// ReadCRDDescriptionData).
 func (r *Retriever) Retrieve() (map[string][]byte, error) {
-	var err error
+	return r.data, nil
+}
+
+// ReadBindableResourcesData reads all related resources of a given sbr
+func (r *Retriever) ReadBindableResourcesData(
+	sbr *v1alpha1.ServiceBindingRequest,
+	cr *unstructured.Unstructured,
+	resources []schema.GroupVersionResource,
+) error {
+	r.logger.Info("Detecting extra resources for binding...")
+	b := NewDetectBindableResources(sbr, cr, []schema.GroupVersionResource{
+		{Group: "", Version: "v1", Resource: "configmaps"},
+		{Group: "", Version: "v1", Resource: "services"},
+		{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
+	}, r.client)
+
+	vals, err := b.GetBindableVariables()
+	if err != nil {
+		return err
+	}
+	for k, v := range vals {
+		r.store(k, []byte(fmt.Sprintf("%v", v)))
+	}
+
+	return nil
+}
+
+// ReadCRDDescriptionData reads data related to given crdDescription
+func (r *Retriever) ReadCRDDescriptionData(crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
-	for _, specDescriptor := range r.plan.CRDDescription.SpecDescriptors {
-		if err = r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
-			return nil, err
+	for _, specDescriptor := range crdDescription.SpecDescriptors {
+		if err := r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+			return err
 		}
 	}
 
 	r.logger.Info("Looking for status-descriptors in 'status'...")
-	for _, statusDescriptor := range r.plan.CRDDescription.StatusDescriptors {
-		if err = r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
-			return nil, err
+	for _, statusDescriptor := range crdDescription.StatusDescriptors {
+		if err := r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+			return err
 		}
 	}
 
-	if r.plan.SBR.Spec.DetectBindingResources {
-		r.logger.Info("Detecting extra resources for binding...")
-		b := NewDetectBindableResources(&r.plan.SBR, r.plan.CR, []schema.GroupVersionResource{
-			{Group: "", Version: "v1", Resource: "configmaps"},
-			{Group: "", Version: "v1", Resource: "services"},
-			{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
-		}, r.client)
-
-		vals, err := b.GetBindableVariables()
-		if err != nil {
-			return nil, err
-		}
-		for k, v := range vals {
-			r.store(k, []byte(fmt.Sprintf("%v", v)))
-		}
-	}
-
-	return r.data, nil
+	return nil
 }
 
 // NewRetriever instantiate a new retriever instance.

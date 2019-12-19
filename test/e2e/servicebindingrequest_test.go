@@ -24,6 +24,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	sbrcontroller "github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -339,7 +340,9 @@ func CreateSBR(
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
 		namespacedName.Namespace, namespacedName.Name, resourceRef, "", applicationGVR, matchLabels, false)
-	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
+	u, err := converter.ToUnstructured(sbr)
+	require.NoError(t, err)
+	require.NoError(t, f.Client.Create(ctx, u, cleanupOpts))
 	return sbr
 }
 

@@ -32,7 +32,8 @@ func TestRetriever(t *testing.T) {
 	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
-	t.Run("retrive", func(t *testing.T) {
+	t.Run("retrieve", func(t *testing.T) {
+		_ = retriever.ReadCRDDescriptionData(&crdDescription)
 		objs, err := retriever.Retrieve()
 		require.NoError(t, err)
 		require.NotEmpty(t, retriever.data)
@@ -222,6 +223,7 @@ func TestCustomEnvParser(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("Should detect custom env values", func(t *testing.T) {
+		_ = retriever.ReadCRDDescriptionData(&crdDescription)
 		_, err = retriever.Retrieve()
 		require.NoError(t, err)
 
