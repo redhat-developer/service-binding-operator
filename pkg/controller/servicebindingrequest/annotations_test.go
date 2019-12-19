@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,38 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
+	})
+
+	// incomplete annotations, only name present
+	t.Run("only-name-from-annotations", func(t *testing.T) {
+		u.SetAnnotations(map[string]string{sbrNameAnnotation: "name"})
+		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, namespacedName)
+	})
+
+	// incomplete annotations, namespace annotation is present but an empty string
+	t.Run("namespace-empty-from-annotations", func(t *testing.T) {
+		u.SetAnnotations(map[string]string{sbrNameAnnotation: "name", sbrNamespaceAnnotation: ""})
+		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, namespacedName)
+	})
+
+	// incomplete annotations, only namespace present
+	t.Run("only-namespace-from-annotations", func(t *testing.T) {
+		u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "namespace"})
+		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, namespacedName)
+	})
+
+	// incomplete annotations, name annotation is present but an empty string
+	t.Run("name-empty-from-annotations", func(t *testing.T) {
+		u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "namespace", sbrNameAnnotation: ""})
+		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
 
 	// it should also understand a actual SBR as well, so return not empty
@@ -94,4 +127,81 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, objNamespacedName)
 	})
+}
+
+// Test_extractSBRNamespacedName verifies whether extractSBRNamespacedName returns an empty
+// NamespacedName where appropriate.
+func Test_extractSBRNamespacedName(t *testing.T) {
+	type args struct {
+		data map[string]string
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want types.NamespacedName
+	}{
+		{
+			name: "empty map",
+			args: args{
+				data: map[string]string{},
+			},
+			want: types.NamespacedName{},
+		},
+		{
+			name: "all annotations present",
+			args: args{
+				data: map[string]string{
+					sbrNameAnnotation:      "name",
+					sbrNamespaceAnnotation: "namespace",
+				},
+			},
+			want: types.NamespacedName{Name: "name", Namespace: "namespace"},
+		},
+		{
+			name: "only name present",
+			args: args{
+				data: map[string]string{
+					sbrNameAnnotation: "name",
+				},
+			},
+			want: types.NamespacedName{},
+		},
+		{
+			name: "namespace present but empty",
+			args: args{
+				data: map[string]string{
+					sbrNameAnnotation:      "name",
+					sbrNamespaceAnnotation: "",
+				},
+			},
+			want: types.NamespacedName{},
+		},
+		{
+			name: "only namespace present",
+			args: args{
+				data: map[string]string{
+					sbrNamespaceAnnotation: "namespace",
+				},
+			},
+			want: types.NamespacedName{},
+		},
+		{
+			name: "name present but empty",
+			args: args{
+				data: map[string]string{
+					sbrNameAnnotation:      "",
+					sbrNamespaceAnnotation: "namespace",
+				},
+			},
+			want: types.NamespacedName{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := extractSBRNamespacedName(tt.args.data); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("extractSBRNamespacedName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

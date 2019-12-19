@@ -12,9 +12,7 @@ spec:
     kind: RDSDatabase
     resourceRef: mydb
   applicationSelector:
-    matchLabels:
-      connects-to: postgres
-      environment: shell
+    resourceRef: shell-app
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
