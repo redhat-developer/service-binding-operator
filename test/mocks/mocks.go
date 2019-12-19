@@ -380,6 +380,10 @@ func ServiceBindingRequestMock(
 	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
 	return &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceBindingRequest",
+			APIVersion: v1alpha1.SchemeGroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -423,7 +427,7 @@ func UnstructuredServiceBindingRequestMock(
 ) (*unstructured.Unstructured, error) {
 	sbr := ServiceBindingRequestMock(
 		ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, false)
-	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
+	return converter.ToUnstructured(sbr)
 }
 
 // DeploymentConfigListMock returns a list of DeploymentMock.
