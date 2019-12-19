@@ -56,7 +56,7 @@ type ServiceBindingRequestStatus struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	schema.GroupVersionKind `json:",inline"`
+	schema.GroupVersionKind `json:",inline" yaml:",inline"`
 	ResourceRef             string `json:"resourceRef"`
 }
 
