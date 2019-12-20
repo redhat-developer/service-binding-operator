@@ -33,12 +33,12 @@ type Step string
 type OnSBRCreate func(sbr *v1alpha1.ServiceBindingRequest)
 
 const (
-	DBStep      Step = "create-db"
-	AppStep     Step = "create-app"
-	SBRStep     Step = "create-sbr"
-	SBREtcdStep Step = "create-etcd-sbr"
+	DBStep          Step = "create-db"
+	AppStep         Step = "create-app"
+	SBRStep         Step = "create-sbr"
+	SBREtcdStep     Step = "create-etcd-sbr"
 	EtcdClusterStep Step = "create-etcd-cluster"
-	CSVStep Step = "create-csv"
+	CSVStep         Step = "create-csv"
 )
 
 var (
@@ -49,7 +49,7 @@ var (
 	// Intermediate secret should have following data
 	// for postgres operator
 	postgresSecretAssertion = map[string]string{
-		"DATABASE_SECRET_USER": "user",
+		"DATABASE_SECRET_USER":     "user",
 		"DATABASE_SECRET_PASSWORD": "password",
 	}
 
@@ -222,7 +222,7 @@ func assertSBRSecret(
 		expected := []byte(v)
 		if !bytes.Equal(expected, actual) {
 			return nil, fmt.Errorf("key %s (%s) is different than expected (%s)",
-				k,actual, expected)
+				k, actual, expected)
 		}
 	}
 
@@ -357,19 +357,25 @@ func CreateSBR(
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
-		namespacedName.Namespace, namespacedName.Name, resourceRef, "",applicationGVR , matchLabels)
+		namespacedName.Namespace, namespacedName.Name, resourceRef, "", applicationGVR, matchLabels)
 
-	// This anonymous function call explicitly modifies default SBR created by
+	// This function call explicitly modifies default SBR created by
 	// the mock
 	if onSBRCreate != nil {
 		onSBRCreate(sbr)
 	}
+
+	// wait deletion of sbr, this should give time for the operator to finalize the unbind operation
+	// and remove the finalizer
+	err := e2eutil.WaitForDeletion(t, f.Client.Client, sbr, retryInterval, timeout)
+	require.NoError(t, err, "expect waiting for deletion to not return errors")
+
 	require.NoError(t, f.Client.Create(ctx, sbr, cleanupOpts))
 	return sbr
 }
 
 // setSBRBackendGVK sets backend service selector
-func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind)  {
+func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind) {
 	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
 		Group:       backendGVK.Group,
 		Version:     backendGVK.Version,
@@ -528,9 +534,9 @@ func serviceBindingRequestTest(
 				deploymentsGVR,
 				matchLabels,
 				func(sbr *v1alpha1.ServiceBindingRequest) {
-				setSBRBackendGVK(sbr, resourceRef, v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind))
-				setSBRBindUnannotated(sbr, true)
-			})
+					setSBRBackendGVK(sbr, resourceRef, v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind))
+					setSBRBindUnannotated(sbr, true)
+				})
 		case EtcdClusterStep:
 			CreateEtcdCluster(todoCtx, t, ctx, f, resourceRefNamespacedName)
 		}
@@ -570,6 +576,7 @@ func serviceBindingRequestTest(
 	// after deletion, deployment should not contain envFrom directive anymore
 	_, err = assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
 	require.Error(t, err, "expect deployment not to be carrying envFrom directive")
+
 }
 
 func CreateEtcdCluster(

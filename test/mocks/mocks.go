@@ -10,8 +10,6 @@ import (
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -20,6 +18,9 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 )
 
 // resource details employed in mocks
@@ -96,7 +97,8 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	CRDPlural := "databases"
 	FullCRDName := CRDPlural + "." + CRDName
 	annotations := map[string]string{
-		"servicebindingoperator.redhat.io/status.dbConfigMap-password": "binding:env:object:configmap",
+		"servicebindingoperator.redhat.io/status.dbCredentials-password": "binding:env:object:secret",
+		"servicebindingoperator.redhat.io/status.dbCredentials-user":     "binding:env:object:secret",
 	}
 
 	crd := apiextensionv1beta1.CustomResourceDefinition{
@@ -386,7 +388,7 @@ func ServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar: []v1alpha1.CustomEnvMap{
+			CustomEnvVar: []corev1.EnvVar{
 				{
 					Name:  "IMAGE_PATH",
 					Value: "spec.imagePath",
@@ -399,7 +401,7 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			DetectBindingResources:false,
+			DetectBindingResources: false,
 		},
 	}
 	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
@@ -420,7 +422,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef,applicationGVR, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 

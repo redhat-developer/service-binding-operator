@@ -1,9 +1,10 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 )
 
 func TestCustomEnvPath_Parse(t *testing.T) {
@@ -19,12 +20,12 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 		},
 	}
 
-	envMap := []v1alpha1.CustomEnvMap{
-		v1alpha1.CustomEnvMap{
+	envMap := []corev1.EnvVar{
+		corev1.EnvVar{
 			Name:  "JDBC_CONNECTION_STRING",
 			Value: `{{ .spec.dbName }}:{{ .status.creds.user }}@{{ .status.creds.pass }}`,
 		},
-		v1alpha1.CustomEnvMap{
+		corev1.EnvVar{
 			Name:  "ANOTHER_STRING",
 			Value: `{{ .spec.dbName }}_{{ .status.creds.user }}`,
 		},
