@@ -25,6 +25,8 @@ import (
 
 // resource details employed in mocks
 const (
+	// Fixme(Akash): This values are tightly coupled with postgresql operator.
+	// Need to make it more dynamic.
 	CRDName            = "postgresql.baiju.dev"
 	CRDVersion         = "v1alpha1"
 	CRDKind            = "Database"
@@ -378,9 +380,8 @@ func ServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
-	return &v1alpha1.ServiceBindingRequest{
+	sbr := &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
@@ -393,12 +394,6 @@ func ServiceBindingRequestMock(
 					Value: "spec.imagePath",
 				},
 			},
-			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				Group:       CRDName,
-				Version:     CRDVersion,
-				Kind:        CRDKind,
-				ResourceRef: backingServiceResourceRef,
-			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				Group:       applicationGVR.Group,
 				Version:     applicationGVR.Version,
@@ -406,9 +401,16 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			DetectBindingResources: bindUnannotated,
+			DetectBindingResources: false,
 		},
 	}
+	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+		Group:       CRDName,
+		Version:     CRDVersion,
+		Kind:        CRDKind,
+		ResourceRef: backingServiceResourceRef,
+	}
+	return sbr
 }
 
 // UnstructuredServiceBindingRequestMock returns a unstructured version of SBR.
@@ -420,8 +422,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(
-		ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, false)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
