@@ -52,7 +52,6 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-	groupVersionResource schema.GroupVersionResource,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
 	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
