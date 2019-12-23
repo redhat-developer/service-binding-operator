@@ -147,7 +147,6 @@ func PodSpecMask(in *corev1.PodSpec) *corev1.PodSpec {
 	out.ServiceAccountName = in.ServiceAccountName
 	out.Containers = in.Containers
 	out.Volumes = in.Volumes
-	out.ImagePullSecrets = in.ImagePullSecrets
 
 	// Disallowed fields
 	// This list is unnecessary, but added here for clarity
@@ -164,6 +163,7 @@ func PodSpecMask(in *corev1.PodSpec) *corev1.PodSpec {
 	out.HostIPC = false
 	out.ShareProcessNamespace = nil
 	out.SecurityContext = nil
+	out.ImagePullSecrets = nil
 	out.Hostname = ""
 	out.Subdomain = ""
 	out.Affinity = nil

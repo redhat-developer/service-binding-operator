@@ -17,14 +17,12 @@ limitations under the License.
 package gc
 
 import (
-	"context"
 	"errors"
 	"strconv"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
-	"knative.dev/pkg/controller"
-	"knative.dev/pkg/logging"
+	"knative.dev/pkg/configmap"
 )
 
 const (
@@ -43,9 +41,7 @@ type Config struct {
 	StaleRevisionLastpinnedDebounce time.Duration
 }
 
-func NewConfigFromConfigMapFunc(ctx context.Context) func(configMap *corev1.ConfigMap) (*Config, error) {
-	logger := logging.FromContext(ctx)
-	minRevisionTimeout := controller.GetResyncPeriod(ctx)
+func NewConfigFromConfigMapFunc(logger configmap.Logger, minRevisionTimeout time.Duration) func(configMap *corev1.ConfigMap) (*Config, error) {
 	return func(configMap *corev1.ConfigMap) (*Config, error) {
 		c := Config{}
 

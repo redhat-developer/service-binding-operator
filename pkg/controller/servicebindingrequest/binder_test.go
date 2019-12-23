@@ -287,7 +287,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	gvr := knativev1.SchemeGroupVersion.WithResource("services") // Group/Version/Resource for sbr
-	sbr := f.AddMockedServiceBindingRequest(name, "", "knative-app", matchLabels, gvr)
+	sbr := f.AddMockedServiceBindingRequest(name, "", "knative-app", gvr, matchLabels)
 	f.AddMockedUnstructuredKnativeService("knative-app", matchLabels)
 
 	binder := NewBinder(
@@ -305,7 +305,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	require.Len(t, updatedObjects, 1)
 
 	containersPath := []string{"spec", "template", "spec", "containers"}
-	containers, found, err := ustrv1.NestedSlice(updatedObjects[0].Object, containersPath...)
+	containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
 	require.NoError(t, err)
 	require.True(t, found)
 	require.Len(t, containers, 1)

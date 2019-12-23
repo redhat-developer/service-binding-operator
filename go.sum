@@ -952,6 +952,8 @@ k8s.io/utils v0.0.0-20190506122338-8fab8cb257d5 h1:VBM/0P5TWxwk+Nw6Z+lAw3DKgO76g
 k8s.io/utils v0.0.0-20190506122338-8fab8cb257d5/go.mod h1:sZAwmy6armz5eXlNoLmJcl4F1QuKu7sr+mFQ0byX7Ew=
 knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67 h1:C2qjr78E6krO5+f3N/DkODxQSuyislNM+WSRDWj1S9E=
 knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67/go.mod h1:pgODObA1dTyhNoFxPZTTjNWfx6F0aKsKzn+vaT9XO/Q=
+knative.dev/serving v0.9.0 h1:GVnsksAEX6vMXGygvzsGPIrFTypiesaseK7emm0LKWQ=
+knative.dev/serving v0.9.0/go.mod h1:x2n255JS2XBI39tmjZ8CwTxIf9EKNMCrkVuiOttLRm0=
 knative.dev/serving v0.11.0 h1:FK8aPpMuiBHZbfBfT+Avxyk11TaIlOMDEw/Va2sw1w0=
 knative.dev/serving v0.11.0/go.mod h1:x2n255JS2XBI39tmjZ8CwTxIf9EKNMCrkVuiOttLRm0=
 modernc.org/cc v1.0.0/go.mod h1:1Sk4//wdnYJiUIxnW8ddKpaOJCF37yAdqYnkxUpaYxw=
