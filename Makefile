@@ -407,3 +407,4 @@ endif
 consistent-crds-manifests-upstream:
 	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
 	servicebindingrequests.apps.openshift.io.crd.yaml
+
