@@ -8,31 +8,20 @@ ENV GIT_COMMITTER_NAME devtools
 ENV GIT_COMMITTER_EMAIL devtools@redhat.com
 LABEL com.redhat.delivery.appregistry=true
 
-WORKDIR /go/src/github.com/redhat-developer/service-binding-operator
+# GOPATH-ish dir structure not needed anymore
+WORKDIR /tmp/service-binding-operator
 
-# Copy only relevant things (instead of all) to speed-up the build.
-COPY assets assets
-COPY build build
-COPY cmd cmd
-COPY deploy deploy
-COPY hack hack
-COPY manifests manifests
-COPY pkg pkg
-COPY test test
-COPY vendor vendor
-COPY go.mod .
-COPY go.sum .
-COPY LICENSE .
-COPY Makefile .
-COPY tools.go .
+# TODO: Use a RUN command to copy over specific files/dirs in a different PR
+# Collapsing it into a single COPY to reduce layers, as of now.
+COPY . . 
 
 ARG VERBOSE=2
 RUN make build
 
 #--------------------------------------------------------------------
 
-# On CI , use
-# FROM registry.svc.ci.openshift.org/ocp/ubi-minimal:7
+# On CI with pull secrets , use
+# FROM registry.redhat.io/ubi8/ubi
 
 FROM registry.access.redhat.com/ubi7/ubi-minimal
 
@@ -41,7 +30,7 @@ LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Shoubhik Bose <shbose@redhat.com>"
 ENV LANG=en_US.utf8
 
-COPY --from=builder /go/src/github.com/redhat-developer/service-binding-operator/out/operator /usr/local/bin/service-binding-operator
+COPY --from=builder /tmp/service-binding-operator/out/operator /usr/local/bin/service-binding-operator
 
 USER 10001
 
