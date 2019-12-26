@@ -21,6 +21,8 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
+
+	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 // resource details employed in mocks
@@ -529,6 +531,58 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 						Image:   "busybox:latest",
 						Command: []string{"sleep", "3600"},
 					}},
+				},
+			},
+		},
+	}
+}
+
+// KnativeServiceListMock returns a list of KnativeServiceMock.
+func KnativeServiceListMock(ns, name string, matchLabels map[string]string) knativev1.ServiceList {
+	return knativev1.ServiceList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceList",
+			APIVersion: "serving.knative.dev/v1",
+		},
+		Items: []knativev1.Service{KnativeServiceMock(ns, name, matchLabels)},
+	}
+}
+
+// UnstructuredKnativeServiceMock converts the KnativeServiceMock to unstructured.
+func UnstructuredKnativeServiceMock(
+	ns,
+	name string,
+	matchLabels map[string]string,
+) (*ustrv1.Unstructured, error) {
+	d := KnativeServiceMock(ns, name, matchLabels)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+// KnativeServiceMock creates a mocked knative serivce object of busybox.
+func KnativeServiceMock(ns, name string, matchLabels map[string]string) knativev1.Service {
+	return knativev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "serving.knative.dev/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+			Labels:    matchLabels,
+		},
+		Spec: knativev1.ServiceSpec{
+			ConfigurationSpec: knativev1.ConfigurationSpec{
+				Template: knativev1.RevisionTemplateSpec{
+					Spec: knativev1.RevisionSpec{
+						PodSpec: corev1.PodSpec{
+							Containers: []corev1.Container{{
+								Name:    "busybox",
+								Image:   "busybox:latest",
+								Command: []string{"sleep", "3600"},
+							}},
+						},
+					},
 				},
 			},
 		},
