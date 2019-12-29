@@ -1,0 +1,15 @@
+PyYAML
+brewkoji
+git
+jq
+kinit
+krb5-workstation
+openssl
+python-koji
+python-psycopg2
+python2-koji-containerbuild-cli
+rhpkg
+rpmdevtools
+wget
+yum
+yum-utils

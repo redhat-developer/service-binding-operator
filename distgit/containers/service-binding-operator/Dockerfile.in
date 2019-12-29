@@ -1,0 +1,51 @@
+ARG BUILD_DIR=/tmp/service-binding-operator
+
+# On CI, use
+# FROM registry.svc.ci.openshift.org/ocp/builder:golang-1.13 AS builder
+
+#FROM openshift/origin-release:golang-1.13 AS builder
+#@follow_tag(rhel8/go-toolset:1.13)
+FROM rhel8/go-toolset:1.13 AS builder
+
+USER root
+RUN dnf install -y jq
+
+ARG BUILD_DIR
+
+ENV LANG=en_US.utf8
+
+# GOPATH-ish dir structure not needed anymore
+WORKDIR $BUILD_DIR
+
+# TODO: Use a RUN command to copy over specific files/dirs in a different PR
+# Collapsing it into a single COPY to reduce layers, as of now.
+COPY ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} .
+
+RUN tar xf ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} --strip-components=1 && rm ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} 
+
+ARG VERBOSE=2
+RUN GOFLAGS="-mod=vendor" make build
+
+
+#--------------------------------------------------------------------
+
+# On CI with pull secrets , use
+# FROM registry.redhat.io/ubi8/ubi
+
+#@follow_tag(ubi8-minimal:8-released)
+FROM ubi8-minimal:8-released
+
+ARG BUILD_DIR
+
+ENV LANG=en_US.utf8
+
+COPY --from=builder $BUILD_DIR/out/operator /usr/local/bin/service-binding-operator
+COPY --from=builder $BUILD_DIR/manifests /manifests
+
+USER 1001
+
+ENTRYPOINT [ "/usr/local/bin/service-binding-operator" ]
+
+LABEL com.redhat.component="service-binding-operator-container" \
+	com.redhat.delivery.appregistry="false" \
+	name="ocp-tools-43-tech-preview/service-binding-operator-rhel8"

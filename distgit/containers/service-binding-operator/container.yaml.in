@@ -1,6 +1,12 @@
 ---
+compose:
+    packages:
+        - jq
 image_build_method: imagebuilder
 go:
     modules:
         - module: github.com/redhat-developer/service-binding-operator
+          archive: ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR}
+          path: cmd/manager
+
         

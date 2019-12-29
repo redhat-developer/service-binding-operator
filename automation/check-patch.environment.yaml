@@ -1,0 +1,6 @@
+---
+- name: KRB_KEYTAB_B64
+  valueFrom:
+    secretKeyRef:
+      name: rhev-build-credentials
+      key: krb-keytab

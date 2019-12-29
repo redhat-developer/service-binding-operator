@@ -1,4 +1,3 @@
----
 git:
   - branch: master
     commit: 48ed759fe7ccdcc3e2320d2c064129343d6644ef
@@ -6,3 +5,5 @@ git:
     dest_formats:
       branch:
         gen_source_repos: true
+      files: {}
+      
