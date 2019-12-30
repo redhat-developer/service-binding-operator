@@ -31,6 +31,24 @@ const (
 	Finalizer = "finalizer.servicebindingrequest.openshift.io"
 )
 
+// GroupVersion represents the service binding request resource's group version.
+var GroupVersion = v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+
+// BindingManagerOptions is BuildBindingManager arguments.
+type BindingManagerOptions struct {
+	Logger                 *log.Log
+	DynClient              dynamic.Interface
+	DetectBindingResources bool
+	EnvVarPrefix           string
+	SBR                    *v1alpha1.ServiceBindingRequest
+	Client                 client.Client
+}
+
+// Valid returns whether the options are valid.
+func (o *BindingManagerOptions) Valid() bool {
+	return o.SBR != nil && o.DynClient != nil && o.Client != nil
+}
+
 // BindingManager manages binding for a Service Binding Request and associated objects.
 type BindingManager struct {
 	// Binder is responsible for interacting with the cluster and apply binding related changes.
@@ -233,20 +251,6 @@ func (b *BindingManager) setApplicationObjects(
 		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
 	}
 	sbrStatus.ApplicationObjects = names
-}
-
-// GroupVersion represents the service binding request resource's group version.
-var GroupVersion = v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-
-// BindingManagerOptions is BuildBindingManager arguments.
-type BindingManagerOptions struct {
-	Logger                 *log.Log
-	DynClient              dynamic.Interface
-	CR                     *unstructured.Unstructured
-	DetectBindingResources bool
-	EnvVarPrefix           string
-	SBR                    *v1alpha1.ServiceBindingRequest
-	Client                 client.Client
 }
 
 // buildPlan creates a new plan.
