@@ -131,6 +131,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	sbrStatus := &sbr.Status
 
 	options := &BindingManagerOptions{
+		Client:                 r.client,
 		DynClient:              r.dynClient,
 		DetectBindingResources: sbr.Spec.DetectBindingResources,
 		EnvVarPrefix:           sbr.Spec.EnvVarPrefix,
