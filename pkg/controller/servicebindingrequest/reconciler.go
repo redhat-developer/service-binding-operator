@@ -64,17 +64,17 @@ func (r *Reconciler) getServiceBindingRequest(
 // unbind removes the relationship between the given sbr and the manifests the operator has
 // previously modified. This process also deletes any manifests created to support the binding
 // functionality, such as ConfigMaps and Secrets.
-func (r *Reconciler) unbind(logger *log.Log, bindingContext *BindingManager) (reconcile.Result, error) {
+func (r *Reconciler) unbind(logger *log.Log, bm *BindingManager) (reconcile.Result, error) {
 	logger = logger.WithName("unbind")
 
 	// when finalizer is not found anymore, it can be safely removed
-	if !containsStringSlice(bindingContext.SBR.GetFinalizers(), Finalizer) {
+	if !containsStringSlice(bm.SBR.GetFinalizers(), Finalizer) {
 		logger.Info("Resource can be safely deleted!")
 		return Done()
 	}
 
 	logger.Info("Executing unbinding steps...")
-	if res, err := bindingContext.Unbind(); err != nil {
+	if res, err := bm.Unbind(); err != nil {
 		logger.Error(err, "On unbinding application.")
 		return res, err
 	}
@@ -87,7 +87,7 @@ func (r *Reconciler) unbind(logger *log.Log, bindingContext *BindingManager) (re
 // in the common parts of the reconciler, and execute the final binding steps.
 func (r *Reconciler) bind(
 	logger *log.Log,
-	bindingContext *BindingManager,
+	bm *BindingManager,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 ) (
 	reconcile.Result,
@@ -96,7 +96,7 @@ func (r *Reconciler) bind(
 	logger = logger.WithName("bind")
 
 	logger.Info("Binding applications with intermediary secret...")
-	return bindingContext.Bind()
+	return bm.Bind()
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:
@@ -139,7 +139,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		Logger:                 logger,
 	}
 
-	bindingContext, err := BuildBindingManager(options)
+	bm, err := BuildBindingManager(options)
 	if err != nil {
 		logger.Error(err, "Creating binding context")
 		return RequeueError(err)
@@ -147,9 +147,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if sbr.GetDeletionTimestamp() != nil {
 		logger.Info("Resource is marked for deletion...")
-		return r.unbind(logger, bindingContext)
+		return r.unbind(logger, bm)
 	}
 
 	logger.Info("Starting the bind of application(s) with backing service...")
-	return r.bind(logger, bindingContext, sbrStatus)
+	return r.bind(logger, bm, sbrStatus)
 }
