@@ -263,14 +263,20 @@ func buildPlan(
 	return planner.Plan()
 }
 
+// InvalidOptionsErr is returned when BindingManagerOptions are not valid.
+var InvalidOptionsErr = errors.New("invalid options")
+
 // BuildBindingManager creates a new binding manager according to options.
 func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error) {
-	ctx := context.Background()
+	if !options.Valid() {
+		return nil, InvalidOptionsErr
+	}
 
 	// objs groups all extra objects related to the informed SBR
 	objs := make([]*unstructured.Unstructured, 0, 0)
 
 	// plan is a source of information regarding the binding process
+	ctx := context.Background()
 	plan, err := buildPlan(ctx, options.DynClient, options.SBR)
 	if err != nil {
 		return nil, err
