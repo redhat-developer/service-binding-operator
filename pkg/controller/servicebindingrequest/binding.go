@@ -2,10 +2,10 @@ package servicebindingrequest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"gotest.tools/assert/cmp"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -309,11 +309,8 @@ func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error
 
 	// gather related secret, again only appending it if there's a value.
 	secret := NewSecret(options.DynClient, plan)
-	secretObj, err := secret.Get()
-	if !errors.IsNotFound(err) {
-		return nil, err
-	}
-	if secretObj != nil {
+	secretObj, found, err := secret.Get()
+	if found {
 		objs = append(objs, secretObj)
 	}
 
