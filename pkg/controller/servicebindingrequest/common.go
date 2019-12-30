@@ -78,14 +78,3 @@ func containsStringSlice(slice []string, str string) bool {
 	}
 	return false
 }
-
-// removeStringSlice given a string slice and a string, returns a new slice without given string.
-func removeStringSlice(slice []string, str string) []string {
-	var cleanSlice []string
-	for _, s := range slice {
-		if str != s {
-			cleanSlice = append(cleanSlice, s)
-		}
-	}
-	return cleanSlice
-}

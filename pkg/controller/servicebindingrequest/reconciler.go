@@ -1,21 +1,16 @@
 package servicebindingrequest
 
 import (
-	"context"
 	"fmt"
 
-	"gotest.tools/assert/cmp"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -27,45 +22,11 @@ type Reconciler struct {
 }
 
 const (
-	// bindingInProgress binding is in progress
-	bindingInProgress = "InProgress"
-	// BindingSuccess binding has succeeded
 	BindingSuccess = "Success"
-	// bindingFail binding has failed
-	bindingFail = "Fail"
-	// time in seconds to wait before requeuing requests
-	requeueAfter int64 = 45
-	// sbrFinalizer annotation used in finalizer steps
-	sbrFinalizer = "finalizer.servicebindingrequest.openshift.io"
 )
 
 // reconcilerLog local logger instance
 var reconcilerLog = log.NewLog("reconciler")
-
-// setSecretName update the CR status field to "in progress", and setting secret name.
-func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
-	sbrStatus.BindingStatus = bindingInProgress
-	sbrStatus.Secret = name
-}
-
-// setStatus update the CR status field.
-func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string) {
-	sbrStatus.BindingStatus = status
-}
-
-// setApplicationObjects set the ApplicationObject status field, and also set the overall status as
-// success, since it was able to bind applications.
-func (r *Reconciler) setApplicationObjects(
-	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
-	objs []*unstructured.Unstructured,
-) {
-	names := []string{}
-	for _, obj := range objs {
-		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
-	}
-	sbrStatus.BindingStatus = BindingSuccess
-	sbrStatus.ApplicationObjects = names
-}
 
 // validateServiceBindingRequest check for unsupported settings in SBR.
 func (r *Reconciler) validateServiceBindingRequest(sbr *v1alpha1.ServiceBindingRequest) error {
@@ -100,120 +61,22 @@ func (r *Reconciler) getServiceBindingRequest(
 	return sbr, nil
 }
 
-// updateStatusServiceBindingRequest update the status field of a ServiceBindingRequest.
-func (r *Reconciler) updateStatusServiceBindingRequest(
-	sbr *v1alpha1.ServiceBindingRequest,
-	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
-) (*v1alpha1.ServiceBindingRequest, error) {
-	// do not update if both statuses are equal
-	if result := cmp.DeepEqual(sbr.Status, sbrStatus)(); result.Success() {
-		return sbr, nil
-	}
-
-	// coping status over informed object
-	sbr.Status = *sbrStatus
-
-	// converting object into unstructured
-	u, err := converter.ToUnstructured(sbr)
-	if err != nil {
-		return nil, err
-	}
-
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	u, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
-	if err != nil {
-		return nil, err
-	}
-	return sbr, nil
-}
-
-// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
-// this action.
-func (r *Reconciler) updateServiceBindingRequest(
-	sbr *v1alpha1.ServiceBindingRequest,
-) (*v1alpha1.ServiceBindingRequest, error) {
-	u, err := converter.ToUnstructured(sbr)
-	if err != nil {
-		return nil, err
-	}
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	u, err = resourceClient.Update(u, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
-	if err != nil {
-		return nil, err
-	}
-	return sbr, nil
-}
-
-// onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
-// informed error to apply a different behavior for not-founds.
-func (r *Reconciler) onError(
-	err error,
-	sbr *v1alpha1.ServiceBindingRequest,
-	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
-	objs []*unstructured.Unstructured,
-) (reconcile.Result, error) {
-	// settting overall status to failed
-	r.setStatus(sbrStatus, bindingFail)
-	//
-	if objs != nil {
-		r.setApplicationObjects(sbrStatus, objs)
-	}
-	_, errStatus := r.updateStatusServiceBindingRequest(sbr, sbrStatus)
-	if errStatus != nil {
-		return RequeueError(errStatus)
-	}
-	return RequeueOnNotFound(err, requeueAfter)
-}
-
 // unbind removes the relationship between the given sbr and the manifests the operator has
 // previously modified. This process also deletes any manifests created to support the binding
 // functionality, such as ConfigMaps and Secrets.
-func (r *Reconciler) unbind(logger *log.Log, binder *Binder, bindingContext *BindingContext) (reconcile.Result, error) {
-	var err error
-
+func (r *Reconciler) unbind(logger *log.Log, bindingContext *BindingManager) (reconcile.Result, error) {
 	logger = logger.WithName("unbind")
 
 	// when finalizer is not found anymore, it can be safely removed
-	if !containsStringSlice(bindingContext.SBR.GetFinalizers(), sbrFinalizer) {
+	if !containsStringSlice(bindingContext.SBR.GetFinalizers(), Finalizer) {
 		logger.Info("Resource can be safely deleted!")
 		return Done()
 	}
 
-	logger.Info("Cleaning related objects from operator's annotations...")
-	if err = RemoveSBRAnnotations(r.dynClient, bindingContext.Objects); err != nil {
-		logger.Error(err, "On removing annotations from related objects.")
-		return RequeueError(err)
-	}
-
 	logger.Info("Executing unbinding steps...")
-	err = binder.Unbind()
-	if err != nil {
+	if res, err := bindingContext.Unbind(); err != nil {
 		logger.Error(err, "On unbinding application.")
-		return RequeueError(err)
-	}
-
-	logger.Info("Deleting intermediary secret...")
-	if err = bindingContext.Secret.Delete(); err != nil {
-		logger.Error(err, "On deleting intermediary secret.")
-		return RequeueError(err)
-	}
-
-	logger.Debug("Removing resource finalizers...")
-	bindingContext.SBR.SetFinalizers(removeStringSlice(bindingContext.SBR.GetFinalizers(), sbrFinalizer))
-	if _, err = r.updateServiceBindingRequest(bindingContext.SBR); err != nil {
-		return NoRequeue(err)
+		return res, err
 	}
 
 	logger.Debug("Deletion done!")
@@ -222,50 +85,18 @@ func (r *Reconciler) unbind(logger *log.Log, binder *Binder, bindingContext *Bin
 
 // bind steps to bind backing service and applications together. It receive the elements collected
 // in the common parts of the reconciler, and execute the final binding steps.
-func (r *Reconciler) bind(logger *log.Log, binder *Binder, bindingContext *BindingContext, sbrStatus *v1alpha1.ServiceBindingRequestStatus) (reconcile.Result, error) {
+func (r *Reconciler) bind(
+	logger *log.Log,
+	bindingContext *BindingManager,
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+) (
+	reconcile.Result,
+	error,
+) {
 	logger = logger.WithName("bind")
 
-	logger.Info("Saving data on intermediary secret...")
-	secretObj, err := bindingContext.Secret.Commit(bindingContext.Data)
-	sbr := bindingContext.SBR
-	if err != nil {
-		logger.Error(err, "On saving secret data..")
-		return r.onError(err, sbr, sbrStatus, nil)
-	}
-
-	// making sure secret name is part of status
-	r.setSecretName(sbrStatus, secretObj.GetName())
-
 	logger.Info("Binding applications with intermediary secret...")
-	updatedObjects, err := binder.Bind()
-	if err != nil {
-		logger.Error(err, "On binding application.")
-		return r.onError(err, sbr, sbrStatus, updatedObjects)
-	}
-
-	// saving on status the list of objects that have been touched
-	r.setApplicationObjects(sbrStatus, updatedObjects)
-	namespacedName := types.NamespacedName{Namespace: sbr.GetNamespace(), Name: sbr.GetName()}
-
-	// annotating objects related to binding
-	if err = SetSBRAnnotations(r.dynClient, namespacedName, bindingContext.Objects); err != nil {
-		logger.Error(err, "On setting annotations in related objects.")
-		return r.onError(err, sbr, sbrStatus, updatedObjects)
-	}
-
-	// updating status of request instance
-	if sbr, err = r.updateStatusServiceBindingRequest(sbr, sbrStatus); err != nil {
-		return RequeueOnConflict(err)
-	}
-
-	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(sbr.GetFinalizers(), sbrFinalizer))
-	if _, err = r.updateServiceBindingRequest(sbr); err != nil {
-		return NoRequeue(err)
-	}
-
-	logger.Info("All done!")
-	return Done()
+	return bindingContext.Bind()
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:
@@ -279,8 +110,6 @@ func (r *Reconciler) bind(logger *log.Log, binder *Binder, bindingContext *Bindi
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
 //    Deployment (and other kinds) will be updated in "spec" level.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx := context.TODO()
-
 	logger := reconcilerLog.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
@@ -301,104 +130,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// splitting instance from it's status
 	sbrStatus := &sbr.Status
 
-	options := &BindingContextOptions{
-		Client:                 r.dynClient,
+	options := &BindingManagerOptions{
+		DynClient:              r.dynClient,
 		DetectBindingResources: sbr.Spec.DetectBindingResources,
 		EnvVarPrefix:           sbr.Spec.EnvVarPrefix,
 		SBR:                    sbr,
+		Logger:                 logger,
 	}
 
-	bindingContext, err := BuildBindingContext(options)
+	bindingContext, err := BuildBindingManager(options)
 	if err != nil {
 		logger.Error(err, "Creating binding context")
-		return r.onError(err, sbr, sbrStatus, nil)
+		return RequeueError(err)
 	}
-
-	//
-	// Binding and unbind intermediary secret
-	//
-	binder := NewBinder(ctx, r.client, r.dynClient, sbr, bindingContext.VolumeKeys)
 
 	if sbr.GetDeletionTimestamp() != nil {
 		logger.Info("Resource is marked for deletion...")
-		return r.unbind(logger, binder, bindingContext)
+		return r.unbind(logger, bindingContext)
 	}
 
 	logger.Info("Starting the bind of application(s) with backing service...")
-	return r.bind(logger, binder, bindingContext, sbrStatus)
-}
-
-type BindingContext struct {
-	Data       map[string][]byte
-	Objects    []*unstructured.Unstructured
-	SBR        *v1alpha1.ServiceBindingRequest
-	Secret     *Secret
-	VolumeKeys []string
-}
-
-type BindingContextOptions struct {
-	Client                 dynamic.Interface
-	CR                     *unstructured.Unstructured
-	DetectBindingResources bool
-	EnvVarPrefix           string
-	Plan                   *Plan
-	SBR                    *v1alpha1.ServiceBindingRequest
-}
-
-func BuildBindingContext(options *BindingContextOptions) (*BindingContext, error) {
-	ctx := context.Background()
-
-	plan, err := BuildPlan(ctx, options.Client, options.SBR)
-	if err != nil {
-		return nil, err
-	}
-
-	// storing CR in objects to annotate
-	retriever := NewRetriever(options.Client, options.Plan, options.EnvVarPrefix)
-
-	if options.DetectBindingResources {
-		err := retriever.ReadBindableResourcesData(
-			&options.Plan.SBR, options.Plan.CR, []schema.GroupVersionResource{
-				{Group: "", Version: "v1", Resource: "configmaps"},
-				{Group: "", Version: "v1", Resource: "services"},
-				{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = retriever.ReadCRDDescriptionData(options.Plan.CRDDescription)
-	if err != nil {
-		return nil, err
-	}
-
-	retrievedData, err := retriever.Retrieve()
-	if err != nil {
-		return nil, err
-	}
-
-	secret := NewSecret(options.Client, plan)
-	secretObj, err := secret.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	return &BindingContext{
-		SBR:        options.SBR,
-		Objects:    append([]*unstructured.Unstructured{}, plan.CR, secretObj),
-		Data:       retrievedData,
-		VolumeKeys: retriever.volumeKeys,
-		Secret:     secret,
-	}, nil
-}
-
-func BuildPlan(
-	ctx context.Context,
-	dynClient dynamic.Interface,
-	sbr *v1alpha1.ServiceBindingRequest,
-) (*Plan, error) {
-	planner := NewPlanner(ctx, dynClient, sbr)
-	return planner.Plan()
+	return r.bind(logger, bindingContext, sbrStatus)
 }

@@ -22,7 +22,7 @@ type Retriever struct {
 	Objects       []*unstructured.Unstructured // list of objects employed
 	client        dynamic.Interface            // Kubernetes API client
 	plan          *Plan                        // plan instance
-	volumeKeys    []string                     // list of keys found
+	VolumeKeys    []string                     // list of keys found
 	bindingPrefix string                       // prefix for variable names
 	cache         map[string]interface{}       // store visited paths
 }
@@ -114,7 +114,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 		} else if strings.HasPrefix(xDescriptor, volumeMountSecretPrefix) {
 			secrets[pathValue] = append(secrets[pathValue], r.extractSecretItemName(xDescriptor))
 			r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
-			r.volumeKeys = append(r.volumeKeys, pathValue)
+			r.VolumeKeys = append(r.VolumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
 			r.store(path, []byte(pathValue))
 		} else {
@@ -323,7 +323,7 @@ func NewRetriever(client dynamic.Interface, plan *Plan, bindingPrefix string) *R
 		Objects:       []*unstructured.Unstructured{},
 		client:        client,
 		plan:          plan,
-		volumeKeys:    []string{},
+		VolumeKeys:    []string{},
 		bindingPrefix: bindingPrefix,
 		cache:         make(map[string]interface{}),
 	}
