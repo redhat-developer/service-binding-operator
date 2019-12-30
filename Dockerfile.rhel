@@ -1,3 +1,5 @@
+ARG BUILD_DIR=/tmp/service-binding-operator
+
 # On CI, use
 # FROM registry.svc.ci.openshift.org/ocp/builder:golang-1.13 AS builder
 
@@ -9,7 +11,7 @@ ENV GIT_COMMITTER_EMAIL devtools@redhat.com
 LABEL com.redhat.delivery.appregistry=true
 
 # GOPATH-ish dir structure not needed anymore
-WORKDIR /tmp/service-binding-operator
+WORKDIR $BUILD_DIR
 
 # TODO: Use a RUN command to copy over specific files/dirs in a different PR
 # Collapsing it into a single COPY to reduce layers, as of now.
@@ -30,7 +32,7 @@ LABEL maintainer "Devtools <devtools@redhat.com>"
 LABEL author "Shoubhik Bose <shbose@redhat.com>"
 ENV LANG=en_US.utf8
 
-COPY --from=builder /tmp/service-binding-operator/out/operator /usr/local/bin/service-binding-operator
+COPY --from=builder $BUILD_DIR/out/operator /usr/local/bin/service-binding-operator
 
 USER 10001
 
