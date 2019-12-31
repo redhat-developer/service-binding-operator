@@ -1,11 +1,12 @@
 package servicebindingrequest
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 var (
