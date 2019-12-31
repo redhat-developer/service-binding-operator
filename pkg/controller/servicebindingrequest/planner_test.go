@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -26,6 +27,9 @@ func TestPlannerNew(t *testing.T) {
 	}
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
+	sbr.Spec.BackingServiceSelectors = []v1alpha1.BackingServiceSelector{
+		sbr.Spec.BackingServiceSelector,
+	}
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDatabaseCRD()
@@ -45,8 +49,7 @@ func TestPlannerNew(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, plan)
-		require.NotNil(t, plan.CRDDescription)
-		require.NotNil(t, plan.CR)
+		require.NotEmpty(t, plan.RelatedResources)
 		require.Equal(t, ns, plan.Ns)
 		require.Equal(t, name, plan.Name)
 	})

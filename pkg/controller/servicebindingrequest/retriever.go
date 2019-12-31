@@ -53,9 +53,9 @@ func (r *Retriever) getNestedValue(key string, sectionMap interface{}) (string, 
 }
 
 // getCRKey retrieve key in section from CR object, part of the "plan" instance.
-func (r *Retriever) getCRKey(section string, key string) (string, interface{}, error) {
-	obj := r.plan.CR.Object
-	objName := r.plan.CR.GetName()
+func (r *Retriever) getCRKey(u *unstructured.Unstructured, section string, key string) (string, interface{}, error) {
+	obj := u.Object
+	objName := u.GetName()
 	log := r.logger.WithValues("CR.Name", objName, "CR.section", section, "CR.key", key)
 	log.Debug("Reading CR attributes...")
 
@@ -78,7 +78,7 @@ func (r *Retriever) getCRKey(section string, key string) (string, interface{}, e
 // read attributes from CR, where place means which top level key name contains the "path" actual
 // value, and parsing x-descriptors in order to either directly read CR data, or read items from
 // a secret.
-func (r *Retriever) read(place, path string, xDescriptors []string) error {
+func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDescriptors []string) error {
 	log := r.logger.WithValues(
 		"CR.Section", place,
 		"CRDDescription.Path", path,
@@ -91,13 +91,13 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	// holds the configMap name and items
 	configMaps := make(map[string][]string)
-	pathValue, _, err := r.getCRKey(place, path)
+	pathValue, _, err := r.getCRKey(cr, place, path)
+	if err != nil {
+		return err
+	}
 	for _, xDescriptor := range xDescriptors {
 		log = log.WithValues("CRDDescription.xDescriptor", xDescriptor, "cache", r.cache)
 		log.Debug("Inspecting xDescriptor...")
-		if err != nil {
-			return err
-		}
 
 		if _, ok := r.cache[place].(map[string]interface{}); !ok {
 			r.cache[place] = make(map[string]interface{})
@@ -116,7 +116,7 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 			r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
 			r.VolumeKeys = append(r.VolumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
-			r.store(path, []byte(pathValue))
+			r.store(cr, path, []byte(pathValue))
 		} else {
 			log.Debug("Defaulting....")
 		}
@@ -124,14 +124,14 @@ func (r *Retriever) read(place, path string, xDescriptors []string) error {
 
 	for name, items := range secrets {
 		// loading secret items all-at-once
-		err := r.readSecret(name, items, place, path)
+		err := r.readSecret(cr, name, items, place, path)
 		if err != nil {
 			return err
 		}
 	}
 	for name, items := range configMaps {
 		// add the function readConfigMap
-		err := r.readConfigMap(name, items, place, path)
+		err := r.readConfigMap(cr, name, items, place, path)
 		if err != nil {
 			return err
 		}
@@ -169,21 +169,17 @@ func (r *Retriever) markVisitedPaths(name, keyPath, fromPath string) {
 
 // readSecret based in secret name and list of items, read a secret from the same namespace informed
 // in plan instance.
-func (r *Retriever) readSecret(
-	name string,
-	items []string,
-	fromPath string,
-	path string) error {
+func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items []string, fromPath string, path string) error {
 	log := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
 	log.Debug("Reading secret items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	u, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
+	secret, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	data, exists, err := unstructured.NestedMap(u.Object, []string{"data"}...)
+	data, exists, err := unstructured.NestedMap(secret.Object, []string{"data"}...)
 	if err != nil {
 		return err
 	}
@@ -203,21 +199,17 @@ func (r *Retriever) readSecret(
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
 		// making sure key name has a secret reference
-		r.store(fmt.Sprintf("configMap_%s", k), data)
-		r.store(fmt.Sprintf("secret_%s", k), data)
+		r.store(cr, fmt.Sprintf("configMap_%s", k), data)
+		r.store(cr, fmt.Sprintf("secret_%s", k), data)
 	}
 
-	r.Objects = append(r.Objects, u)
+	r.Objects = append(r.Objects, secret)
 	return nil
 }
 
 // readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
 // in plan instance.
-func (r *Retriever) readConfigMap(
-	name string,
-	items []string,
-	fromPath string,
-	path string) error {
+func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, items []string, fromPath string, path string) error {
 	log := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
 	log.Debug("Reading ConfigMap items...")
 
@@ -246,7 +238,7 @@ func (r *Retriever) readConfigMap(
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = value
 		// making sure key name has a configMap reference
-		r.store(fmt.Sprintf("configMap_%s", k), []byte(value))
+		r.store(cr, fmt.Sprintf("configMap_%s", k), []byte(value))
 	}
 
 	r.Objects = append(r.Objects, u)
@@ -254,13 +246,13 @@ func (r *Retriever) readConfigMap(
 }
 
 // store key and value, formatting key to look like an environment variable.
-func (r *Retriever) store(key string, value []byte) {
+func (r *Retriever) store(u *unstructured.Unstructured, key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
 	key = strings.ReplaceAll(key, ".", "_")
 	if r.bindingPrefix == "" {
-		key = fmt.Sprintf("%s_%s", r.plan.CR.GetKind(), key)
+		key = fmt.Sprintf("%s_%s", u.GetKind(), key)
 	} else {
-		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, r.plan.CR.GetKind(), key)
+		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, u.GetKind(), key)
 	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
@@ -275,39 +267,41 @@ func (r *Retriever) Retrieve() (map[string][]byte, error) {
 // ReadBindableResourcesData reads all related resources of a given sbr
 func (r *Retriever) ReadBindableResourcesData(
 	sbr *v1alpha1.ServiceBindingRequest,
-	cr *unstructured.Unstructured,
+	crs []*unstructured.Unstructured,
 	resources []schema.GroupVersionResource,
 ) error {
 	r.logger.Info("Detecting extra resources for binding...")
-	b := NewDetectBindableResources(sbr, cr, []schema.GroupVersionResource{
-		{Group: "", Version: "v1", Resource: "configmaps"},
-		{Group: "", Version: "v1", Resource: "services"},
-		{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
-	}, r.client)
+	for _, cr := range crs {
+		b := NewDetectBindableResources(sbr, cr, []schema.GroupVersionResource{
+			{Group: "", Version: "v1", Resource: "configmaps"},
+			{Group: "", Version: "v1", Resource: "services"},
+			{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
+		}, r.client)
 
-	vals, err := b.GetBindableVariables()
-	if err != nil {
-		return err
-	}
-	for k, v := range vals {
-		r.store(k, []byte(fmt.Sprintf("%v", v)))
+		vals, err := b.GetBindableVariables()
+		if err != nil {
+			return err
+		}
+		for k, v := range vals {
+			r.store(cr, k, []byte(fmt.Sprintf("%v", v)))
+		}
 	}
 
 	return nil
 }
 
 // ReadCRDDescriptionData reads data related to given crdDescription
-func (r *Retriever) ReadCRDDescriptionData(crdDescription *olmv1alpha1.CRDDescription) error {
+func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range crdDescription.SpecDescriptors {
-		if err := r.read("spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+		if err := r.read(u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}
 
 	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range crdDescription.StatusDescriptors {
-		if err := r.read("status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+		if err := r.read(u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}
