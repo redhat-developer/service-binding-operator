@@ -282,10 +282,9 @@ func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error
 		return nil, err
 	}
 
-	if plan.CR != nil {
-		// append only if contains a value
-		objs = append(objs, plan.CR)
-	}
+	rs := plan.RelatedResources.GetCRs()
+	// append all SBR related CRs
+	objs = append(objs, rs...)
 
 	// retriever is responsible for gathering data related to the given plan.
 	retriever := NewRetriever(options.DynClient, plan, options.EnvVarPrefix)
@@ -293,7 +292,7 @@ func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error
 	// read bindable data from the specified resources
 	if options.DetectBindingResources {
 		err := retriever.ReadBindableResourcesData(
-			&plan.SBR, plan.CR, []schema.GroupVersionResource{
+			&plan.SBR, rs, []schema.GroupVersionResource{
 				{Group: "", Version: "v1", Resource: "configmaps"},
 				{Group: "", Version: "v1", Resource: "services"},
 				{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
@@ -305,9 +304,11 @@ func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error
 	}
 
 	// read bindable data from the CRDDescription found by the planner
-	err = retriever.ReadCRDDescriptionData(plan.CRDDescription)
-	if err != nil {
-		return nil, err
+	for _, r := range plan.RelatedResources {
+		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// gather retriever's read data

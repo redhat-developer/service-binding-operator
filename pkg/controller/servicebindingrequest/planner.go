@@ -29,11 +29,10 @@ type Planner struct {
 
 // Plan outcome, after executing planner.
 type Plan struct {
-	Ns             string                         // namespace name
-	Name           string                         // plan name, same than ServiceBindingRequest
-	CRDDescription *olmv1alpha1.CRDDescription    // custom resource definition description
-	CR             *unstructured.Unstructured     // custom resource object
-	SBR            v1alpha1.ServiceBindingRequest // service binding request
+	Ns               string                         // namespace name
+	Name             string                         // plan name, same than ServiceBindingRequest
+	SBR              v1alpha1.ServiceBindingRequest // service binding request
+	RelatedResources RelatedResources               // CR and CRDDescription pairs SBR related
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
@@ -61,38 +60,70 @@ func (p *Planner) searchCRD(gvk schema.GroupVersionKind) (*unstructured.Unstruct
 	return p.client.Resource(CRDGVR).Get(crdName, metav1.GetOptions{})
 }
 
+// RelatedResource represents a SBR related resource, composed by its CR and CRDDescription.
+type RelatedResource struct {
+	CRDDescription *olmv1alpha1.CRDDescription
+	CR             *unstructured.Unstructured
+}
+
+// RelatedResources contains a collection of SBR related resources.
+type RelatedResources []*RelatedResource
+
+// GetCRs returns a slice of unstructured CRs contained in the collection.
+func (rr RelatedResources) GetCRs() []*unstructured.Unstructured {
+	var crs []*unstructured.Unstructured
+	for _, r := range rr {
+		crs = append(crs, r.CR)
+	}
+	return crs
+}
+
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
-	bssGVK := p.sbr.Spec.BackingServiceSelector.GroupVersionKind
+	ns := p.sbr.GetNamespace()
+	selector := p.sbr.Spec.BackingServiceSelector
+	selectors := append(
+		[]v1alpha1.BackingServiceSelector{selector},
+		p.sbr.Spec.BackingServiceSelectors...,
+	)
 
-	// resolve the CRD using the service's GVK
-	crd, err := p.searchCRD(bssGVK)
-	if err != nil {
-		return nil, err
-	}
-	p.logger.Debug("Resolved CRD", "CRD", crd)
+	relatedResources := make([]*RelatedResource, 0, 0)
+	for _, s := range selectors {
+		bssGVK := s.GroupVersionKind
 
-	// resolve the CRDDescription based on the service's GVK and the resolved CRD
-	olm := NewOLM(p.client, p.sbr.GetNamespace())
-	crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
-	if err != nil {
-		return nil, err
-	}
-	p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
+		// resolve the CRD using the service's GVK
+		crd, err := p.searchCRD(bssGVK)
+		if err != nil {
+			return nil, err
+		}
+		p.logger.Debug("Resolved CRD", "CRD", crd)
 
-	// retrieve the CR referred by the service
-	cr, err := p.searchCR(p.sbr.GetNamespace(), p.sbr.Spec.BackingServiceSelector)
-	if err != nil {
-		return nil, err
+		// resolve the CRDDescription based on the service's GVK and the resolved CRD
+		olm := NewOLM(p.client, ns)
+		crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
+		if err != nil {
+			return nil, err
+		}
+		p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
+
+		cr, err := p.searchCR(ns, s)
+		if err != nil {
+			return nil, err
+		}
+
+		r := &RelatedResource{
+			CRDDescription: crdDescription,
+			CR:             cr,
+		}
+		relatedResources = append(relatedResources, r)
+		p.logger.Debug("Resolved related resource", "RelatedResource", r)
 	}
-	p.logger.Debug("Resolved CR", "CR", cr)
 
 	return &Plan{
-		Ns:             p.sbr.GetNamespace(),
-		Name:           p.sbr.GetName(),
-		CRDDescription: crdDescription,
-		CR:             cr,
-		SBR:            *p.sbr,
+		Name:             p.sbr.GetName(),
+		Ns:               ns,
+		RelatedResources: relatedResources,
+		SBR:              *p.sbr,
 	}, nil
 }
 

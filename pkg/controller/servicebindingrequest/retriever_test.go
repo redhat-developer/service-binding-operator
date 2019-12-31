@@ -25,7 +25,16 @@ func TestRetriever(t *testing.T) {
 	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
 	require.NoError(t, err)
 
-	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+	plan := &Plan{
+		Ns:   ns,
+		Name: "retriever",
+		RelatedResources: []*RelatedResource{
+			{
+				CRDDescription: &crdDescription,
+				CR:             cr,
+			},
+		},
+	}
 
 	fakeDynClient := f.FakeDynClient()
 
@@ -118,7 +127,16 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 	cr, err := mocks.UnstructuredNestedDatabaseCRMock(ns, crName)
 	require.NoError(t, err)
 
-	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+	plan := &Plan{
+		Ns:   ns,
+		Name: "retriever",
+		RelatedResources: []*RelatedResource{
+			{
+				CRDDescription: &crdDescription,
+				CR:             cr,
+			},
+		},
+	}
 
 	fakeDynClient := f.FakeDynClient()
 
@@ -163,7 +181,16 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	cr, err := mocks.UnstructuredDatabaseConfigMapMock(ns, crName, crName)
 	require.NoError(t, err)
 
-	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+	plan := &Plan{
+		Ns:   ns,
+		Name: "retriever",
+		RelatedResources: []*RelatedResource{
+			{
+				CRDDescription: &crdDescription,
+				CR:             cr,
+			},
+		},
+	}
 
 	fakeDynClient := f.FakeDynClient()
 
@@ -215,7 +242,16 @@ func TestCustomEnvParser(t *testing.T) {
 	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
 	require.NoError(t, err)
 
-	plan := &Plan{Ns: ns, Name: "retriever", CRDDescription: &crdDescription, CR: cr}
+	plan := &Plan{
+		Ns:   ns,
+		Name: "retriever",
+		RelatedResources: []*RelatedResource{
+			{
+				CRDDescription: &crdDescription,
+				CR:             cr,
+			},
+		},
+	}
 
 	fakeDynClient := f.FakeDynClient()
 
