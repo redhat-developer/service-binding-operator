@@ -148,10 +148,11 @@ func (f *Fake) AddMockedUnstructuredDatabaseCRD() *unstructured.Unstructured {
 	return c
 }
 
-func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) {
+func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) *unstructured.Unstructured {
 	d, err := UnstructuredPostgresDatabaseCRMock(f.ns, ref)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, d)
+	return d
 }
 
 // AddMockedSecret add mocked object from SecretMock.
