@@ -78,6 +78,32 @@ func removeStringSlice(slice []string, str string) []string {
 	return cleanSlice
 }
 
+// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
+// this action.
+func (b *BindingManager) updateServiceBindingRequest(
+	sbr *v1alpha1.ServiceBindingRequest,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	u, err := converter.ToUnstructured(sbr)
+	if err != nil {
+		return nil, err
+	}
+
+	u, err = b.DynClient.
+		Resource(GroupVersion).
+		Namespace(sbr.GetNamespace()).
+		Update(u, v1.UpdateOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+	return sbr, nil
+}
+
 // Unbind removes the relationship between a Service Binding Request and its related objects.
 func (b *BindingManager) Unbind() (reconcile.Result, error) {
 	logger := b.Logger.WithName("Unbind")
@@ -108,21 +134,31 @@ func (b *BindingManager) Unbind() (reconcile.Result, error) {
 	return Done()
 }
 
-// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
-// this action.
-func (b *BindingManager) updateServiceBindingRequest(
+// updateStatusServiceBindingRequest updates the Service Binding Request's status field.
+func (b *BindingManager) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
-) (*v1alpha1.ServiceBindingRequest, error) {
+	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
+) (
+	*v1alpha1.ServiceBindingRequest,
+	error,
+) {
+	// do not update if both statuses are equal
+	if result := cmp.DeepEqual(sbr.Status, sbrStatus)(); result.Success() {
+		return sbr, nil
+	}
+
+	// coping status over informed object
+	sbr.Status = *sbrStatus
+
+	// converting object into unstructured
 	u, err := converter.ToUnstructured(sbr)
 	if err != nil {
 		return nil, err
 	}
 
-	u, err = b.DynClient.
-		Resource(GroupVersion).
-		Namespace(sbr.GetNamespace()).
-		Update(u, v1.UpdateOptions{})
-
+	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := b.DynClient.Resource(gr).Namespace(sbr.GetNamespace())
+	u, err = resourceClient.UpdateStatus(u, v1.UpdateOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -203,42 +239,6 @@ func (b *BindingManager) Bind() (reconcile.Result, error) {
 
 	b.Logger.Info("All done!")
 	return Done()
-}
-
-// updateStatusServiceBindingRequest updates the Service Binding Request's status field.
-func (b *BindingManager) updateStatusServiceBindingRequest(
-	sbr *v1alpha1.ServiceBindingRequest,
-	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
-) (
-	*v1alpha1.ServiceBindingRequest,
-	error,
-) {
-	// do not update if both statuses are equal
-	if result := cmp.DeepEqual(sbr.Status, sbrStatus)(); result.Success() {
-		return sbr, nil
-	}
-
-	// coping status over informed object
-	sbr.Status = *sbrStatus
-
-	// converting object into unstructured
-	u, err := converter.ToUnstructured(sbr)
-	if err != nil {
-		return nil, err
-	}
-
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := b.DynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	u, err = resourceClient.UpdateStatus(u, v1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
-	if err != nil {
-		return nil, err
-	}
-	return sbr, nil
 }
 
 // setApplicationObjects replaces the Status's equivalent field.
