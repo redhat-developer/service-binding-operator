@@ -34,8 +34,8 @@ const (
 // GroupVersion represents the service binding request resource's group version.
 var GroupVersion = v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
 
-// BindingManagerOptions is BuildBindingManager arguments.
-type BindingManagerOptions struct {
+// ServiceBinderOptions is BuildServiceBinder arguments.
+type ServiceBinderOptions struct {
 	Logger                 *log.Log
 	DynClient              dynamic.Interface
 	DetectBindingResources bool
@@ -45,12 +45,12 @@ type BindingManagerOptions struct {
 }
 
 // Valid returns whether the options are valid.
-func (o *BindingManagerOptions) Valid() bool {
+func (o *ServiceBinderOptions) Valid() bool {
 	return o.SBR != nil && o.DynClient != nil && o.Client != nil
 }
 
-// BindingManager manages binding for a Service Binding Request and associated objects.
-type BindingManager struct {
+// ServiceBinder manages binding for a Service Binding Request and associated objects.
+type ServiceBinder struct {
 	// Binder is responsible for interacting with the cluster and apply binding related changes.
 	Binder *Binder
 	// Data is the collection of all data read by the manager.
@@ -80,7 +80,7 @@ func removeStringSlice(slice []string, str string) []string {
 
 // updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
 // this action.
-func (b *BindingManager) updateServiceBindingRequest(
+func (b *ServiceBinder) updateServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
 	u, err := converter.ToUnstructured(sbr)
@@ -105,7 +105,7 @@ func (b *BindingManager) updateServiceBindingRequest(
 }
 
 // Unbind removes the relationship between a Service Binding Request and its related objects.
-func (b *BindingManager) Unbind() (reconcile.Result, error) {
+func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 	logger := b.Logger.WithName("Unbind")
 
 	logger.Info("Cleaning related objects from operator's annotations...")
@@ -135,7 +135,7 @@ func (b *BindingManager) Unbind() (reconcile.Result, error) {
 }
 
 // updateStatusServiceBindingRequest updates the Service Binding Request's status field.
-func (b *BindingManager) updateStatusServiceBindingRequest(
+func (b *ServiceBinder) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 ) (
@@ -172,7 +172,7 @@ func (b *BindingManager) updateStatusServiceBindingRequest(
 
 // onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
 // informed error to apply a different behavior for not-founds.
-func (b *BindingManager) onError(
+func (b *ServiceBinder) onError(
 	err error,
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
@@ -194,7 +194,7 @@ func (b *BindingManager) onError(
 }
 
 // Bind configures binding between the Service Binding Request and its related objects.
-func (b *BindingManager) Bind() (reconcile.Result, error) {
+func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus := b.SBR.Status.DeepCopy()
 
 	b.Logger.Info("Saving data on intermediary secret...")
@@ -242,7 +242,7 @@ func (b *BindingManager) Bind() (reconcile.Result, error) {
 }
 
 // setApplicationObjects replaces the Status's equivalent field.
-func (b *BindingManager) setApplicationObjects(
+func (b *ServiceBinder) setApplicationObjects(
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objs []*unstructured.Unstructured,
 ) {
@@ -263,11 +263,11 @@ func buildPlan(
 	return planner.Plan()
 }
 
-// InvalidOptionsErr is returned when BindingManagerOptions are not valid.
+// InvalidOptionsErr is returned when ServiceBinderOptions are not valid.
 var InvalidOptionsErr = errors.New("invalid options")
 
-// BuildBindingManager creates a new binding manager according to options.
-func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error) {
+// BuildServiceBinder creates a new binding manager according to options.
+func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
@@ -325,7 +325,7 @@ func BuildBindingManager(options *BindingManagerOptions) (*BindingManager, error
 		objs = append(objs, secretObj)
 	}
 
-	return &BindingManager{
+	return &ServiceBinder{
 		Logger:    options.Logger,
 		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),
 		DynClient: options.DynClient,

@@ -64,7 +64,7 @@ func (r *Reconciler) getServiceBindingRequest(
 // unbind removes the relationship between the given sbr and the manifests the operator has
 // previously modified. This process also deletes any manifests created to support the binding
 // functionality, such as ConfigMaps and Secrets.
-func (r *Reconciler) unbind(logger *log.Log, bm *BindingManager) (reconcile.Result, error) {
+func (r *Reconciler) unbind(logger *log.Log, bm *ServiceBinder) (reconcile.Result, error) {
 	logger = logger.WithName("unbind")
 
 	// when finalizer is not found anymore, it can be safely removed
@@ -87,7 +87,7 @@ func (r *Reconciler) unbind(logger *log.Log, bm *BindingManager) (reconcile.Resu
 // in the common parts of the reconciler, and execute the final binding steps.
 func (r *Reconciler) bind(
 	logger *log.Log,
-	bm *BindingManager,
+	bm *ServiceBinder,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 ) (
 	reconcile.Result,
@@ -130,7 +130,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// splitting instance from it's status
 	sbrStatus := &sbr.Status
 
-	options := &BindingManagerOptions{
+	options := &ServiceBinderOptions{
 		Client:                 r.client,
 		DynClient:              r.dynClient,
 		DetectBindingResources: sbr.Spec.DetectBindingResources,
@@ -139,7 +139,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		Logger:                 logger,
 	}
 
-	bm, err := BuildBindingManager(options)
+	bm, err := BuildServiceBinder(options)
 	if err != nil {
 		logger.Error(err, "Creating binding context")
 		return RequeueError(err)
