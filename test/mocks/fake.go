@@ -131,12 +131,13 @@ func (f *Fake) AddMockedUnstructuredDeploymentConfig(name string, matchLabels ma
 }
 
 // AddMockedUnstructuredDeployment add mocked object from UnstructuredDeploymentMock.
-func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[string]string) {
+func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[string]string) *unstructured.Unstructured {
 	require.NoError(f.t, appsv1.AddToScheme(f.S))
 	d, err := UnstructuredDeploymentMock(f.ns, name, matchLabels)
 	require.NoError(f.t, err)
 	f.S.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
 	f.objs = append(f.objs, d)
+	return d
 }
 
 func (f *Fake) AddMockedUnstructuredDatabaseCRD() *unstructured.Unstructured {
