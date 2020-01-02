@@ -161,9 +161,12 @@ func (f *Fake) AddMockedSecret(name string) {
 	f.objs = append(f.objs, SecretMock(f.ns, name))
 }
 
-// AddMockedConfigMap add mocked object from ConfigMapMock.
-func (f *Fake) AddMockedConfigMap(name string) {
-	f.objs = append(f.objs, ConfigMapMock(f.ns, name))
+// AddMockedUnstructuredConfigMap add mocked object from ConfigMapMock.
+func (f *Fake) AddMockedUnstructuredConfigMap(name string) {
+	mock := ConfigMapMock(f.ns, name)
+	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mock)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, &unstructured.Unstructured{Object: uObj})
 }
 
 func (f *Fake) AddMockResource(resource runtime.Object) {
