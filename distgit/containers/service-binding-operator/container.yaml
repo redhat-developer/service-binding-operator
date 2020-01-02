@@ -1,0 +1,6 @@
+---
+image_build_method: imagebuilder
+go:
+    modules:
+        - module: github.com/redhat-developer/service-binding-operator
+        
