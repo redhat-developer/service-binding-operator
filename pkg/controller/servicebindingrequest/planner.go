@@ -81,11 +81,11 @@ func (rr RelatedResources) GetCRs() []*unstructured.Unstructured {
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	ns := p.sbr.GetNamespace()
+	selectors := append([]v1alpha1.BackingServiceSelector{}, p.sbr.Spec.BackingServiceSelectors...)
 	selector := p.sbr.Spec.BackingServiceSelector
-	selectors := append(
-		[]v1alpha1.BackingServiceSelector{selector},
-		p.sbr.Spec.BackingServiceSelectors...,
-	)
+	if len(selector.ResourceRef) > 0 {
+		selectors = append(selectors, selector)
+	}
 
 	relatedResources := make([]*RelatedResource, 0, 0)
 	for _, s := range selectors {
