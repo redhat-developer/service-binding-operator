@@ -12,13 +12,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	ocav1 "github.com/openshift/api/apps/v1"
+
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
@@ -176,7 +176,7 @@ func (f *Fake) FakeClient() client.Client {
 }
 
 // FakeDynClient returns fake dynamic api client.
-func (f *Fake) FakeDynClient() dynamic.Interface {
+func (f *Fake) FakeDynClient() *fakedynamic.FakeDynamicClient {
 	return fakedynamic.NewSimpleDynamicClient(f.S, f.objs...)
 }
 
