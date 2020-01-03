@@ -117,26 +117,38 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 	d := f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedUnstructuredDatabaseCRD()
-	f.AddMockedUnstructuredConfigMap(reconcilerName)
+	f.AddMockedUnstructuredConfigMap("db1")
+	f.AddMockedUnstructuredConfigMap("db2")
 
 	// create and munge a Database CR since there's no "Status" field in
 	// databases.postgres.baiju.dev, requiring us to add the field directly in the unstructured
 	// object
-	cr := f.AddMockedUnstructuredPostgresDatabaseCR(reconcilerName)
-	runtimeStatus := map[string]interface{}{
-		"dbConfigMap": reconcilerName,
+	db1 := f.AddMockedUnstructuredPostgresDatabaseCR("db1")
+	{
+		runtimeStatus := map[string]interface{}{
+			"dbConfigMap": "db1",
+		}
+		err := unstructured.SetNestedMap(db1.Object, runtimeStatus, "status")
+		require.NoError(t, err)
 	}
-	err := unstructured.SetNestedMap(cr.Object, runtimeStatus, "status")
-	require.NoError(t, err)
+
+	db2 := f.AddMockedUnstructuredPostgresDatabaseCR("db2")
+	{
+		runtimeStatus := map[string]interface{}{
+			"dbConfigMap": "db2",
+		}
+		err := unstructured.SetNestedMap(db2.Object, runtimeStatus, "status")
+		require.NoError(t, err)
+	}
 
 	// create the ServiceBindingRequest
-	sbr := &v1alpha1.ServiceBindingRequest{
+	sbrSingleService := &v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.openshift.io/v1alpha1",
 			Kind:       "ServiceBindingRequest",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: reconcilerName,
+			Name: "single-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			ApplicationSelector: v1alpha1.ApplicationSelector{
@@ -144,44 +156,76 @@ func TestServiceBinder_Bind(t *testing.T) {
 				Group:       d.GetObjectKind().GroupVersionKind().Group,
 				Version:     d.GetObjectKind().GroupVersionKind().Version,
 				Resource:    "deployments",
-				ResourceRef: reconcilerName,
+				ResourceRef: d.GetName(),
 			},
 			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
 				{
-					GroupVersionKind: cr.GetObjectKind().GroupVersionKind(),
-					ResourceRef:      reconcilerName,
+					GroupVersionKind: db1.GetObjectKind().GroupVersionKind(),
+					ResourceRef:      db1.GetName(),
 				},
 			},
 		},
 		Status: v1alpha1.ServiceBindingRequestStatus{},
 	}
-	f.AddMockResource(sbr)
+	f.AddMockResource(sbrSingleService)
+
+	// create the ServiceBindingRequest
+	sbrMultipleServices := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiple-sbr",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				MatchLabels: matchLabels,
+				Group:       d.GetObjectKind().GroupVersionKind().Group,
+				Version:     d.GetObjectKind().GroupVersionKind().Version,
+				Resource:    "deployments",
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: db1.GetObjectKind().GroupVersionKind(),
+					ResourceRef:      db1.GetName(),
+				},
+				{
+					GroupVersionKind: db2.GetObjectKind().GroupVersionKind(),
+					ResourceRef:      "db2",
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{},
+	}
+	f.AddMockResource(sbrMultipleServices)
 
 	logger := log.NewLog("service-binder")
-	t.Run("bind golden path", assertBind(args{
+	t.Run("single bind golden path", assertBind(args{
 		options: &ServiceBinderOptions{
 			Logger:                 logger,
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: false,
 			EnvVarPrefix:           "",
-			SBR:                    sbr,
+			SBR:                    sbrSingleService,
 			Client:                 f.FakeClient(),
 		},
 		wantedActions: []wantedAction{
 			{
 				resource: "servicebindingrequests",
 				verb:     "update",
-				name:     reconcilerName,
+				name:     sbrSingleService.GetName(),
 			},
 			{
 				resource: "secrets",
 				verb:     "update",
-				name:     reconcilerName,
+				name:     sbrSingleService.GetName(),
 			},
 			{
 				resource: "databases",
 				verb:     "update",
-				name:     reconcilerName,
+				name:     db1.GetName(),
 			},
 		},
 	}))
@@ -192,7 +236,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: true,
 			EnvVarPrefix:           "",
-			SBR:                    sbr,
+			SBR:                    sbrSingleService,
 			Client:                 f.FakeClient(),
 		},
 	}))
@@ -208,5 +252,38 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Client:                 f.FakeClient(),
 		},
 		wantBuildErr: InvalidOptionsErr,
+	}))
+
+	t.Run("multiple services bind golden path", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrMultipleServices,
+			Client:                 f.FakeClient(),
+		},
+		wantedActions: []wantedAction{
+			{
+				resource: "servicebindingrequests",
+				verb:     "update",
+				name:     sbrMultipleServices.GetName(),
+			},
+			{
+				resource: "secrets",
+				verb:     "update",
+				name:     sbrMultipleServices.GetName(),
+			},
+			{
+				resource: "databases",
+				verb:     "update",
+				name:     db1.GetName(),
+			},
+			{
+				resource: "databases",
+				verb:     "update",
+				name:     db2.GetName(),
+			},
+		},
 	}))
 }
