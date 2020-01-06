@@ -20,6 +20,7 @@ import (
 
 	ocav1 "github.com/openshift/api/apps/v1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 // Fake defines all the elements to fake a kubernetes api client.
@@ -39,7 +40,7 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, false)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -53,7 +54,7 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, true)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -134,6 +135,15 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 	d, err := UnstructuredDeploymentMock(f.ns, name, matchLabels)
 	require.NoError(f.t, err)
 	f.S.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
+	f.objs = append(f.objs, d)
+}
+
+// AddMockedUnstructuredKnativeService add mocked object from UnstructuredKnativeService.
+func (f *Fake) AddMockedUnstructuredKnativeService(name string, matchLabels map[string]string) {
+	require.NoError(f.t, knativev1.AddToScheme(f.S))
+	d, err := UnstructuredKnativeServiceMock(f.ns, name, matchLabels)
+	require.NoError(f.t, err)
+	f.S.AddKnownTypes(knativev1.SchemeGroupVersion, &knativev1.Service{})
 	f.objs = append(f.objs, d)
 }
 

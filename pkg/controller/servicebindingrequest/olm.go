@@ -1,7 +1,7 @@
 package servicebindingrequest
 
 import (
-	"fmt"
+	"sort"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -114,8 +114,9 @@ func (o *OLM) loopCRDDescriptions(
 	return nil
 }
 
-// SelectCRDByGVK return a single CRD based on a given GVK.
-func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
+// SelectCRDDescriptionByGVK return a single CRDDescription filled with information from CSVs and
+// annotations.
+func (o *OLM) SelectCRDDescriptionByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	log := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
@@ -123,18 +124,16 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 		return nil, err
 	}
 
-	var crdDescription *olmv1alpha1.CRDDescription
+	var resultCRDDescription *olmv1alpha1.CRDDescription
 
 	// CRDDescription is both used by OLM to configure OLM descriptors in manifests existing in the
 	// cluster but is also built from annotations present in the CRD
 	if crd != nil {
-		crdDescription, err = buildCRDDescriptionFromCRDAnnotations(crd)
+		resultCRDDescription, err = buildCRDDescriptionFromCRD(crd)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	crdDescriptions := []*olmv1alpha1.CRDDescription{}
 
 	err = o.loopCRDDescriptions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		log = o.logger.WithValues(
@@ -153,86 +152,112 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 			return
 		}
 		log.Debug("CRDDescription object matches selector!")
-		crdDescriptions = append(crdDescriptions, crdDescription)
+		if resultCRDDescription == nil {
+			resultCRDDescription = crdDescription.DeepCopy()
+		}
+
+		resultCRDDescription.StatusDescriptors = append(resultCRDDescription.StatusDescriptors, crdDescription.StatusDescriptors...)
+		resultCRDDescription.SpecDescriptors = append(resultCRDDescription.SpecDescriptors, crdDescription.SpecDescriptors...)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(crdDescriptions) == 0 && crdDescription == nil {
-		log.Debug("No CRD could be found for GVK.")
-		return nil, fmt.Errorf("no crd could be found for gvk")
-	} else if len(crdDescriptions) == 0 {
-		// use the crdDescription built from CRD annotations as fallback
-		return crdDescription, nil
-	}
-
-	return crdDescriptions[0], nil
+	return resultCRDDescription, nil
 }
 
-// buildCRDDescriptionFromCRDAnnotations builds a CRDDescription from annotations present in the CRD.
-func buildCRDDescriptionFromCRDAnnotations(crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
-	var specDescriptors []olmv1alpha1.SpecDescriptor
-	var statusDescriptors []olmv1alpha1.StatusDescriptor
+// buildCRDDescriptionFromCRD builds a CRDDescription from annotations present in the CRD.
+func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
+	var (
+		ok  bool
+		err error
+	)
 
-	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+	crdDescription := &olmv1alpha1.CRDDescription{
+		Name: crd.GetName(),
+	}
+
+	crdDescription.Kind, ok, err = unstructured.NestedString(crd.Object, "spec", "names", "kind")
+	if err != nil || !ok {
+		return nil, err
+	}
+
+	crdDescription.Version, ok, err = unstructured.NestedString(crd.Object, "spec", "version")
+	if err != nil || !ok {
+		return nil, err
+	}
+
+	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
 	if err != nil {
 		return nil, err
 	}
 
-	kind, ok, err := unstructured.NestedString(crd.Object, "spec", "names", "kind")
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
+	if specDescriptor != nil {
+		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, *specDescriptor)
 	}
 
-	version, ok, err := unstructured.NestedString(crd.Object, "spec", "version")
-	if err != nil {
-		return nil, err
-	} else if !ok {
-		return nil, nil
+	if statusDescriptor != nil {
+		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, *statusDescriptor)
 	}
 
-	crdDescription := olmv1alpha1.CRDDescription{
-		Name:              crd.GetName(),
-		Version:           version,
-		Kind:              kind,
-		SpecDescriptors:   specDescriptors,
-		StatusDescriptors: statusDescriptors,
-	}
-
-	return &crdDescription, nil
+	return crdDescription, nil
 }
 
 // buildDescriptorsFromAnnotations builds two descriptors collection, one for spec descriptors and
 // another for status descriptors.
 func buildDescriptorsFromAnnotations(annotations map[string]string) (
-	[]olmv1alpha1.SpecDescriptor,
-	[]olmv1alpha1.StatusDescriptor,
+	*olmv1alpha1.SpecDescriptor,
+	*olmv1alpha1.StatusDescriptor,
 	error,
 ) {
-	var (
-		collectedSpecDescriptors   []olmv1alpha1.SpecDescriptor
-		collectedStatusDescriptors []olmv1alpha1.StatusDescriptor
-	)
+	var currentSpecDescriptor *olmv1alpha1.SpecDescriptor
+	var currentStatusDescriptor *olmv1alpha1.StatusDescriptor
+
+	acc := make(map[string][]string)
 
 	for n, v := range annotations {
+		// Iterate all annotations and compose related Spec and Status descriptors, where those
+		// descriptors should be grouped by field path.	So, for example, the "status.dbCredentials"
+		// field path should accumulate all related annotations, so the StatusDescriptor referring
+		// "status.dbCredentials" have both "user" and "password" XDescriptors.
+
 		// do not process unknown annotations
 		if !strings.HasPrefix(n, ServiceBindingOperatorAnnotationPrefix) {
-			return nil, nil, nil
+			continue
 		}
 
 		// annotationName has the binding information encoded into it.
-		bindingInfo, err := NewBindingInfo(n)
+		bindingInfo, err := NewBindingInfo(n, v)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		collectedSpecDescriptors = append(collectedSpecDescriptors, bindingInfo.SpecDescriptor(v))
-		collectedStatusDescriptors = append(collectedStatusDescriptors, bindingInfo.StatusDescriptor(v))
+		descriptors, exists := acc[bindingInfo.FieldPath]
+		if !exists {
+			descriptors = make([]string, 0)
+		}
+		descriptors = append(descriptors, bindingInfo.Descriptor)
+		acc[bindingInfo.FieldPath] = descriptors
 	}
-	return collectedSpecDescriptors, collectedStatusDescriptors, nil
+
+	// create the status and/or spec descriptors based on the
+	for fieldPath, descriptors := range acc {
+		sort.Strings(descriptors)
+		path := strings.Split(fieldPath, ".")
+		if path[0] == "status" {
+			currentStatusDescriptor = &olmv1alpha1.StatusDescriptor{
+				Path:         path[1],
+				XDescriptors: descriptors,
+			}
+		} else if path[0] == "spec" {
+			currentSpecDescriptor = &olmv1alpha1.SpecDescriptor{
+				Path:         path[1],
+				XDescriptors: descriptors,
+			}
+		}
+	}
+
+	return currentSpecDescriptor, currentStatusDescriptor, nil
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.

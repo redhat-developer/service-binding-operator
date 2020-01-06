@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -274,4 +275,44 @@ func TestBindTwoApplications(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(list2.Items))
 	})
+}
+
+func TestKnativeServicesContractWithBinder(t *testing.T) {
+	ns := "binder"
+	name := "service-binding-request"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "binder",
+	}
+
+	f := mocks.NewFake(t, ns)
+	gvr := knativev1.SchemeGroupVersion.WithResource("services") // Group/Version/Resource for sbr
+	sbr := f.AddMockedServiceBindingRequest(name, "", "knative-app", gvr, matchLabels)
+	f.AddMockedUnstructuredKnativeService("knative-app", matchLabels)
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+
+	updatedObjects, err := binder.Bind()
+	require.NoError(t, err)
+	require.Len(t, updatedObjects, 1)
+
+	containersPath := []string{"spec", "template", "spec", "containers"}
+	containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
+	require.NoError(t, err)
+	require.True(t, found)
+	require.Len(t, containers, 1)
+
+	c := corev1.Container{}
+	u := containers[0].(map[string]interface{})
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+	require.NoError(t, err)
+	require.Equal(t, name, c.EnvFrom[0].SecretRef.Name)
 }

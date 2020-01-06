@@ -26,11 +26,11 @@ var (
 func extractSBRNamespacedName(data map[string]string) types.NamespacedName {
 	namespacedName := types.NamespacedName{}
 	ns, exists := data[sbrNamespaceAnnotation]
-	if !exists {
+	if !exists || len(ns) == 0 {
 		return namespacedName
 	}
 	name, exists := data[sbrNameAnnotation]
-	if !exists {
+	if !exists || len(name) == 0 {
 		return namespacedName
 	}
 	namespacedName.Namespace = ns
@@ -74,7 +74,7 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 	}
 
 	log.Trace("Object is not a SBR, returning an empty namespaced name")
-	return sbrNamespacedName, nil
+	return types.NamespacedName{}, nil
 }
 
 // updateUnstructuredObj generic call to update the unstructured resource informed. It can return

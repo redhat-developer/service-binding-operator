@@ -3,8 +3,6 @@ package servicebindingrequest
 import (
 	"fmt"
 	"strings"
-
-	omlv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 )
 
 // BindingInfo represents the pieces of a binding as parsed from an annotation.
@@ -14,49 +12,31 @@ type BindingInfo struct {
 	FieldPath string
 	// Path is the field that will be collected from the Backing Service CR or a related object.
 	Path string
-}
-
-// TrimmedPath returns a copy of Path without the given prefix.
-func (b *BindingInfo) TrimmedPath(prefix string) string {
-	prefix = fmt.Sprintf("%s.", prefix)
-	return strings.TrimPrefix(b.Path, prefix)
-}
-
-// StatusDescriptor creates a StatusDescriptor.
-func (b *BindingInfo) StatusDescriptor(value string) omlv1alpha1.StatusDescriptor {
-	xDescriptor := strings.Join([]string{value, b.FieldPath}, ":")
-
-	statusDescriptor := omlv1alpha1.StatusDescriptor{
-		Path:         b.TrimmedPath("status"),
-		XDescriptors: []string{xDescriptor},
-	}
-
-	return statusDescriptor
-}
-
-// SpecDescriptor creates a SpecDescriptor.
-func (b *BindingInfo) SpecDescriptor(value string) omlv1alpha1.SpecDescriptor {
-	xDescriptor := strings.Join([]string{value, b.FieldPath}, ":")
-
-	statusDescriptor := omlv1alpha1.SpecDescriptor{
-		Path:         b.TrimmedPath("spec"),
-		XDescriptors: []string{xDescriptor},
-	}
-
-	return statusDescriptor
+	// Descriptor is the field reference to another manifest
+	Descriptor string
 }
 
 // NewBindingInfo parses the encoded in the annotation name, returning its parts.
-func NewBindingInfo(annotationName string) (*BindingInfo, error) {
-	cleanAnnotationName := strings.TrimPrefix(annotationName, ServiceBindingOperatorAnnotationPrefix)
-	parts := strings.SplitN(cleanAnnotationName, "-", 2)
+func NewBindingInfo(name string, value string) (*BindingInfo, error) {
+	cleanName := strings.TrimPrefix(name, ServiceBindingOperatorAnnotationPrefix)
+	parts := strings.SplitN(cleanName, "-", 2)
 
+	// if there is only one part, it means the value of the referenced field itself will be used
 	if len(parts) == 1 {
-		return &BindingInfo{FieldPath: parts[0], Path: parts[0]}, nil
+		return &BindingInfo{
+			FieldPath:  parts[0],
+			Path:       parts[0],
+			Descriptor: strings.Join([]string{value, parts[0]}, ":"),
+		}, nil
 	}
 
+	// the annotation is a reference to another manifest
 	if len(parts) == 2 {
-		return &BindingInfo{FieldPath: parts[0], Path: parts[1]}, nil
+		return &BindingInfo{
+			FieldPath:  parts[0],
+			Path:       parts[1],
+			Descriptor: strings.Join([]string{value, parts[1]}, ":"),
+		}, nil
 	}
 
 	return nil, fmt.Errorf("should have two parts")
