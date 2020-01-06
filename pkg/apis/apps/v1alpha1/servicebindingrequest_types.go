@@ -24,7 +24,7 @@ type ServiceBindingRequestSpec struct {
 
 	// Custom env variables
 	// +optional
-	CustomEnvVar []corev1.EnvVar `json:"customEnvVar"`
+	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
@@ -62,7 +62,7 @@ type BackingServiceSelector struct {
 // ApplicationSelector defines the selector based on labels and GVR
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
-	MatchLabels map[string]string `json:"matchLabels"`
+	MatchLabels map[string]string `json:"matchLabels,omitempty"`
 	Group       string            `json:"group,omitempty"`
 	Version     string            `json:"version"`
 	Resource    string            `json:"resource"`

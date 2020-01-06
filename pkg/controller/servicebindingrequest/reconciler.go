@@ -242,6 +242,7 @@ func (r *Reconciler) bind(
 	binder *Binder,
 	secret *Secret,
 	retrievedData map[string][]byte,
+	retrievedCache map[string]interface{},
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objectsToAnnotate []*unstructured.Unstructured,
@@ -249,7 +250,7 @@ func (r *Reconciler) bind(
 	logger = logger.WithName("bind")
 
 	logger.Info("Saving data on intermediary secret...")
-	secretObj, err := secret.Commit(retrievedData)
+	secretObj, err := secret.Commit(retrievedData, retrievedCache)
 	if err != nil {
 		logger.Error(err, "On saving secret data..")
 		return r.onError(err, sbr, sbrStatus, nil)
@@ -352,7 +353,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger.Debug("Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
-	retrievedData, err := retriever.Retrieve()
+	retrievedData, retrievedCache, err := retriever.Retrieve()
 	if err != nil {
 		logger.Error(err, "On retrieving binding data.")
 		return r.onError(err, sbr, sbrStatus, nil)
@@ -374,5 +375,5 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	logger.Info("Starting the bind of application(s) with backing service...")
-	return r.bind(logger, binder, secret, retrievedData, sbr, sbrStatus, objectsToAnnotate)
+	return r.bind(logger, binder, secret, retrievedData, retrievedCache, sbr, sbrStatus, objectsToAnnotate)
 }

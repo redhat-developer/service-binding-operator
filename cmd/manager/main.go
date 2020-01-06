@@ -36,7 +36,7 @@ var (
 	metricsHost               = "0.0.0.0"
 	metricsPort         int32 = 8383
 	operatorMetricsPort int32 = 8686
-	mainLog                = log.NewLog("main")
+	mainLog                   = log.NewLog("main")
 )
 
 func printVersion() {

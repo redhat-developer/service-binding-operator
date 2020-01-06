@@ -4,10 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
-
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 var planner *Planner
