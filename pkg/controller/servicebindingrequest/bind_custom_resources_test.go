@@ -65,10 +65,10 @@ func TestBindNonBindableResources_ConfigMap_GetOwnedResources(t *testing.T) {
 	t.Run("Should return configmap as owned resource", func(t *testing.T) {
 		resources, err := b.GetOwnedResources()
 		require.NoError(t, err)
-		require.Equal(t, 2, len(resources), "Should return 1 owned resource")
+		require.Equal(t, 2, len(resources), "Should return 2 owned resource")
 	})
 
-	t.Run("Should return all variables exist in the configmap data section", func(t *testing.T) {
+	t.Run("Should return all variables exist in the configmap data section and route", func(t *testing.T) {
 		data, err := b.GetBindableVariables()
 		require.NoError(t, err)
 		require.Equal(t, 3, len(data), "")
@@ -125,10 +125,10 @@ func TestBindNonBindableResources_Secret_GetOwnedResources(t *testing.T) {
 	t.Run("Should return secret as owned resource", func(t *testing.T) {
 		resources, err := b.GetOwnedResources()
 		require.NoError(t, err)
-		require.Equal(t, 2, len(resources), "Should return 1 owned resource")
+		require.Equal(t, 2, len(resources), "Should return 2 owned resource")
 	})
 
-	t.Run("Should return all variables exist in the secret data section", func(t *testing.T) {
+	t.Run("Should return all variables exist in the secret data section and route", func(t *testing.T) {
 		data, err := b.GetBindableVariables()
 		require.NoError(t, err)
 		require.Equal(t, 3, len(data), "")
