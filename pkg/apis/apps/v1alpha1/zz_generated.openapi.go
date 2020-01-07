@@ -65,7 +65,7 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 						},
 					},
 				},
-				Required: []string{"matchLabels", "version", "resource", "resourceRef"},
+				Required: []string{"version", "resource", "resourceRef"},
 			},
 		},
 	}
