@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,7 +23,7 @@ type ServiceBindingRequestSpec struct {
 
 	// Custom env variables
 	// +optional
-	CustomEnvVar []CustomEnvMap `json:"customEnvVar"`
+	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
@@ -35,16 +36,6 @@ type ServiceBindingRequestSpec struct {
 	// different subresources owned by backing operator CR.
 	// +optional
 	DetectBindingResources bool `json:"detectBindingResources"`
-}
-
-// CustomEnvMap is a set of Name and Value of an environment variable
-// +k8s:openapi-gen=true
-// +optional
-type CustomEnvMap struct {
-	// key of custom env variable
-	Name string `json:"name"`
-	// value template, currently supports expected is go template
-	Value string `json:"value"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
@@ -70,7 +61,7 @@ type BackingServiceSelector struct {
 // ApplicationSelector defines the selector based on labels and GVR
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
-	MatchLabels map[string]string `json:"matchLabels"`
+	MatchLabels map[string]string `json:"matchLabels,omitempty"`
 	Group       string            `json:"group,omitempty"`
 	Version     string            `json:"version"`
 	Resource    string            `json:"resource"`

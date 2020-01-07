@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	corev1 "k8s.io/api/core/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -33,7 +33,7 @@ func TestRetriever(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("retrive", func(t *testing.T) {
-		objs, err := retriever.Retrieve()
+		objs, _, err := retriever.Retrieve()
 		require.NoError(t, err)
 		require.NotEmpty(t, retriever.data)
 		require.True(t, len(objs) > 0)
@@ -142,7 +142,6 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "somevalue", something)
 	})
-
 }
 
 func TestRetrieverWithConfigMap(t *testing.T) {
@@ -181,7 +180,6 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_CONFIGMAP_USER")
 		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD")
 	})
-
 	t.Run("extractConfigMapItemName", func(t *testing.T) {
 		require.Equal(t, "user", retriever.extractConfigMapItemName(
 			"binding:env:object:configmap:user"))
@@ -196,7 +194,6 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 		require.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))
 		require.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
 	})
-
 }
 
 func TestCustomEnvParser(t *testing.T) {
@@ -207,7 +204,6 @@ func TestCustomEnvParser(t *testing.T) {
 	crName := "db-testing"
 
 	f := mocks.NewFake(t, ns)
-	f.AddMockedUnstructuredCSV("csv")
 	f.AddMockedSecret("db-credentials")
 
 	crdDescription := mocks.CRDDescriptionMock()
@@ -222,12 +218,10 @@ func TestCustomEnvParser(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("Should detect custom env values", func(t *testing.T) {
-		_, err = retriever.Retrieve()
+		_, _, err = retriever.Retrieve()
 		require.NoError(t, err)
 
-		t.Logf("\nCache %+v", retriever.cache)
-
-		envMap := []v1alpha1.CustomEnvMap{
+		envMap := []corev1.EnvVar{
 			{
 				Name:  "JDBC_CONNECTION_STRING",
 				Value: `{{ .spec.imageName }}@{{ .status.dbCredentials.password }}`,

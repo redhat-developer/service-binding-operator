@@ -10,8 +10,6 @@ import (
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -20,10 +18,17 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
+
+	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 // resource details employed in mocks
 const (
+	// Fixme(Akash): This values are tightly coupled with postgresql operator.
+	// Need to make it more dynamic.
 	CRDName            = "postgresql.baiju.dev"
 	CRDVersion         = "v1alpha1"
 	CRDKind            = "Database"
@@ -94,7 +99,8 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	CRDPlural := "databases"
 	FullCRDName := CRDPlural + "." + CRDName
 	annotations := map[string]string{
-		"servicebindingoperator.redhat.io/status.dbConfigMap-password": "binding:env:object:configmap",
+		"servicebindingoperator.redhat.io/status.dbCredentials-password": "binding:env:object:secret",
+		"servicebindingoperator.redhat.io/status.dbCredentials-user":     "binding:env:object:secret",
 	}
 
 	crd := apiextensionv1beta1.CustomResourceDefinition{
@@ -376,26 +382,19 @@ func ServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-	bindUnannotated bool,
 ) *v1alpha1.ServiceBindingRequest {
-	return &v1alpha1.ServiceBindingRequest{
+	sbr := &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar: []v1alpha1.CustomEnvMap{
+			CustomEnvVar: []corev1.EnvVar{
 				{
 					Name:  "IMAGE_PATH",
 					Value: "spec.imagePath",
 				},
-			},
-			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				Group:       CRDName,
-				Version:     CRDVersion,
-				Kind:        CRDKind,
-				ResourceRef: backingServiceResourceRef,
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				Group:       applicationGVR.Group,
@@ -404,9 +403,16 @@ func ServiceBindingRequestMock(
 				ResourceRef: applicationResourceRef,
 				MatchLabels: matchLabels,
 			},
-			DetectBindingResources: bindUnannotated,
+			DetectBindingResources: false,
 		},
 	}
+	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+		Group:       CRDName,
+		Version:     CRDVersion,
+		Kind:        CRDKind,
+		ResourceRef: backingServiceResourceRef,
+	}
+	return sbr
 }
 
 // UnstructuredServiceBindingRequestMock returns a unstructured version of SBR.
@@ -418,8 +424,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(
-		ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels, false)
+	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
@@ -526,6 +531,58 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 						Image:   "busybox:latest",
 						Command: []string{"sleep", "3600"},
 					}},
+				},
+			},
+		},
+	}
+}
+
+// KnativeServiceListMock returns a list of KnativeServiceMock.
+func KnativeServiceListMock(ns, name string, matchLabels map[string]string) knativev1.ServiceList {
+	return knativev1.ServiceList{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceList",
+			APIVersion: "serving.knative.dev/v1",
+		},
+		Items: []knativev1.Service{KnativeServiceMock(ns, name, matchLabels)},
+	}
+}
+
+// UnstructuredKnativeServiceMock converts the KnativeServiceMock to unstructured.
+func UnstructuredKnativeServiceMock(
+	ns,
+	name string,
+	matchLabels map[string]string,
+) (*ustrv1.Unstructured, error) {
+	d := KnativeServiceMock(ns, name, matchLabels)
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
+	return &ustrv1.Unstructured{Object: data}, err
+}
+
+// KnativeServiceMock creates a mocked knative serivce object of busybox.
+func KnativeServiceMock(ns, name string, matchLabels map[string]string) knativev1.Service {
+	return knativev1.Service{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Service",
+			APIVersion: "serving.knative.dev/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+			Labels:    matchLabels,
+		},
+		Spec: knativev1.ServiceSpec{
+			ConfigurationSpec: knativev1.ConfigurationSpec{
+				Template: knativev1.RevisionTemplateSpec{
+					Spec: knativev1.RevisionSpec{
+						PodSpec: corev1.PodSpec{
+							Containers: []corev1.Container{{
+								Name:    "busybox",
+								Image:   "busybox:latest",
+								Command: []string{"sleep", "3600"},
+							}},
+						},
+					},
 				},
 			},
 		},

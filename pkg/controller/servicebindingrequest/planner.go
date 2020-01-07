@@ -93,7 +93,7 @@ func (p *Planner) Plan() (*Plan, error) {
 
 	p.logger.Debug("After search crd", "CRD", crd)
 
-	crdDescription, err := olm.SelectCRDByGVK(gvk, crd)
+	crdDescription, err := olm.SelectCRDDescriptionByGVK(gvk, crd)
 	if err != nil {
 		return nil, err
 	}
