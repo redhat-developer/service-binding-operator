@@ -62,6 +62,7 @@ type BackingServiceSelector struct {
 // ApplicationSelector defines the selector based on labels and GVR
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
+	// +optional
 	MatchLabels map[string]string `json:"matchLabels,omitempty"`
 	Group       string            `json:"group,omitempty"`
 	Version     string            `json:"version"`
