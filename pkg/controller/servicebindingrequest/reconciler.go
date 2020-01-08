@@ -284,9 +284,11 @@ func (r *Reconciler) bind(
 	}
 
 	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(sbr.GetFinalizers(), sbrFinalizer))
-	if _, err = r.updateServiceBindingRequest(sbr); err != nil {
-		return NoRequeue(err)
+	if !containsStringSlice(sbr.GetFinalizers(), sbrFinalizer) {
+		sbr.SetFinalizers(append(sbr.GetFinalizers(), sbrFinalizer))
+		if _, err = r.updateServiceBindingRequest(sbr); err != nil {
+			return NoRequeue(err)
+		}
 	}
 
 	logger.Info("All done!")
