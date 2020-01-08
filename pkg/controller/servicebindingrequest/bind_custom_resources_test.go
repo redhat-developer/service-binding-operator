@@ -70,8 +70,10 @@ func TestBindNonBindableResources_ConfigMap_GetOwnedResources(t *testing.T) {
 
 	t.Run("Should return all variables exist in the configmap data section and route", func(t *testing.T) {
 		data, err := b.GetBindableVariables()
+		str1 := b.data["user"]
 		require.NoError(t, err)
 		require.Equal(t, 3, len(data), "")
+		require.Equal(t, str1, "user", "The intermediate data values are equal ")
 	})
 }
 
@@ -130,7 +132,9 @@ func TestBindNonBindableResources_Secret_GetOwnedResources(t *testing.T) {
 
 	t.Run("Should return all variables exist in the secret data section and route", func(t *testing.T) {
 		data, err := b.GetBindableVariables()
+		str2 := (b.data["user"]).([]byte)
 		require.NoError(t, err)
 		require.Equal(t, 3, len(data), "")
+		require.Equal(t, str2, []byte("user"), "The intermediate data values are equal ")
 	})
 }
