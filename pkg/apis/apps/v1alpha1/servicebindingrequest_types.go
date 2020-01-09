@@ -7,6 +7,7 @@ import (
 
 // Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
+
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestSpec struct {
@@ -42,8 +43,8 @@ type ServiceBindingRequestSpec struct {
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
-	// BindingStatus is the status of the service binding request.
-	BindingStatus string `json:"bindingStatus,omitempty"`
+	// conditions describes the state of the operator's reconciliation functionality
+	Conditions []conditions.Condition `json:"condition,omitempty"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label

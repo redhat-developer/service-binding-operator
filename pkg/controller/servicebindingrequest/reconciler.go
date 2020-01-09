@@ -13,10 +13,13 @@ import (
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
+
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -26,6 +29,7 @@ type Reconciler struct {
 	scheme    *runtime.Scheme   // api scheme
 }
 
+//corev1.ConditionTrue
 const (
 	// bindingInProgress binding is in progress
 	bindingInProgress = "InProgress"
@@ -44,13 +48,13 @@ var reconcilerLog = log.NewLog("reconciler")
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
 func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
-	sbrStatus.BindingStatus = bindingInProgress
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition(
+		Type: conditions.BindingInProgress
+		Status: conditions.ConditionTrue
+		Reason: "setSecretName"
+		Message: "Binding is in Progress"
+	))
 	sbrStatus.Secret = name
-}
-
-// setStatus update the CR status field.
-func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string) {
-	sbrStatus.BindingStatus = status
 }
 
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
@@ -150,7 +154,12 @@ func (r *Reconciler) onError(
 	objs []*unstructured.Unstructured,
 ) (reconcile.Result, error) {
 	// settting overall status to failed
-	r.setStatus(sbrStatus, bindingFail)
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type: conditions.BindingFailed
+		Status: conditions.ConditionFalse
+		Reason: "Binding Failed"
+		Message: "Encountered Error. Binding Failed"
+	})
 	//
 	if objs != nil {
 		r.setApplicationObjects(sbrStatus, objs)
@@ -167,11 +176,28 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 	// Check if application ResourceRef is present
 	if sbr.Spec.ApplicationSelector.ResourceRef == "" {
 		log.Debug("Spec.ApplicationSelector.ResourceRef not found")
-
+		conditionsv1.SetStatusCondition(&r.conditions, conditionsv1.Condition{
+			Type: conditions.BindingReady
+			Status: conditions.ConditionFalse
+			Message: "Binding not ready"
+			Reason: "Spec.ApplicationSelector.ResourceRef not found"
+		})
 		// Check if MatchLabels is present
 		if sbr.Spec.ApplicationSelector.LabelSelector == nil {
 			err := errors.New("NotFoundError")
-			log.Error(err, "Spec.ApplicationSelector.LabelSelector not found")
+			log.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
+			conditionsv1.SetStatusCondition(&r.conditions, conditionsv1.Condition{
+				Type: conditions.BindingReady
+				Status: conditions.ConditionFalse
+				Message: "Binding Failed"
+				Reason: "ApplicationSelector.MatchLables and Spec.ApplicationSelector.ResourceRef not found "
+			})
+			conditionsv1.SetStatusCondition(&r.conditions, conditionsv1.Condition{
+				Type: conditions.BindingFailed
+				Status: conditions.ConditionTrue
+				Message: "Binding Failed"
+				Reason: "ApplicationSelector.MatchLables not found "
+			})
 			return err
 		}
 	}
@@ -328,6 +354,70 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// splitting instance from it's status
 	sbrStatus := &sbr.Status
+
+	if sbrStatus.Conditions == nil {
+		logger.Infor("No Condition on Status has been reported")
+		conditionsv1.SetStatusCondition(&sbrStatus.conditions, conditionsv1.Condition{
+			Type: conditions.BindingReady
+			Status: conditions.ConditionFlase
+			Reason: "Binding Conditions"
+			Message: "Binding has no conditions"
+		})
+		conditionsv1.SetStatusCondition(&sbrStatus.conditions, conditionsv1.Condition{
+			Type: conditions.BindingInProgress
+			Status: conditions.ConditionTrue
+			Reason: "Binding Conditions"
+			Message: "Binding has no conditions"
+		})
+		conditionsv1.SetStatusCondition(&sbrStatus.conditions, conditionsv1.Condition{
+			Type: conditions.BindingFailed
+			Status: conditions.ConditionFlase
+			Reason: "Binding Conditions"
+			Message: "Binding has no conditions"
+		})
+	} else {
+		for _, condition := range sbrStatus.Conditions{
+			switch conditionsv1.ConditionType(condition.Type){
+			case conditions.BindingReady:
+				if condition.Status == conditions.ConditionFalse{
+					logger.Info("Binding Failed")
+					conditionsv1.SetStatusCondition(&sbrStatus.conditions, conditionsv1.Condition{
+						Type: conditions.BindingReady,
+						Status: conditions.ConditionFalse,
+						Reason: "Binding failed",
+						Message "Some message",
+					})
+
+				}
+			case conditions.BindingInProgress:
+				if condition.Status == conditions.ConditionTrue{
+					logger.Info("Binding is in progress")
+					conditionsv1.SetStatusCondition(&sbrStatus.conditions, conditionsv1.Condition{
+						Type: conditions.BindingInProgress,
+						Status: conditions.ConditionTrue,
+						Reason: "Binding is in Progress"
+						Message: "Binding in progress after reconciliation"
+					})
+				}
+			case conditions.BindingFailed:
+				if conditions.Status == ConditionTrue{
+					logger.Info("Binding Failed")
+					conditionsv1.SetStatusCondition(&sbrStatus.conditions, conditionsv1.Condition{
+						Type: conditions.BindingFailed,
+						Status: conditions.ConditionTrue,
+						Reason: "Binding Failed"
+						Message: "Some message"	
+					})
+				}
+			}
+
+		}
+	}
+
+	errStatus = r.client.Status().Update(context.TODO(), sbr)
+	if errStatus != nil {
+		return RequeueError(errStatus)
+	}
 
 	// check Service Binding Request
 	if err = checkSBR(sbr, logger); err != nil {
