@@ -15,6 +15,7 @@ type ServiceBindingRequestSpec struct {
 	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 
 	// MountPathPrefix is the prefix for volume mount
+	// +optional
 	MountPathPrefix string `json:"mountPathPrefix,omitempty"`
 
 	// EnvVarPrefix is the prefix for environment variables
