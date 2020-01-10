@@ -48,6 +48,9 @@ var reconcilerLog = log.NewLog("reconciler")
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
 func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
+	// sbrStatus.BindingStatus supported for the UI.
+	sbrStatus.BindingStatus = bindingInProgress
+
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition(
 		Type: conditions.BindingInProgress
 		Status: conditions.ConditionTrue
@@ -55,6 +58,11 @@ func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStat
 		Message: "Binding is in Progress"
 	))
 	sbrStatus.Secret = name
+}
+
+// setStatus update the CR status field.(BindingStatus supported for the UI)
+func (r *Reconciler) setStatus(sbrStatus *v1alpha1.ServiceBindingRequestStatus, status string) {
+	sbrStatus.BindingStatus = status
 }
 
 // setApplicationObjects set the ApplicationObject status field, and also set the overall status as
@@ -67,7 +75,14 @@ func (r *Reconciler) setApplicationObjects(
 	for _, obj := range objs {
 		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
 	}
+	//sbrStatus.BindingStatus supported for UI
 	sbrStatus.BindingStatus = BindingSuccess
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition(
+		Type: conditions.BindingReady
+		Status: conditions.ConditionTrue
+		Reason: "BindingSucceeded"
+		Message: "Binding succeeded"
+	))
 	sbrStatus.ApplicationObjects = names
 }
 
@@ -154,6 +169,7 @@ func (r *Reconciler) onError(
 	objs []*unstructured.Unstructured,
 ) (reconcile.Result, error) {
 	// settting overall status to failed
+	r.setStatus(sbrStatus, bindingFail)
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type: conditions.BindingFailed
 		Status: conditions.ConditionFalse
