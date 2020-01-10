@@ -3,16 +3,17 @@ module github.com/redhat-developer/service-binding-operator
 go 1.13
 
 require (
+	cloud.google.com/go v0.45.1 // indirect
 	contrib.go.opencensus.io/exporter/ocagent v0.4.11 // indirect
-	contrib.go.opencensus.io/exporter/prometheus v0.1.0 // indirect
-	contrib.go.opencensus.io/exporter/stackdriver v0.12.8 // indirect
 	github.com/Azure/go-autorest v11.7.0+incompatible // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
+	github.com/census-instrumentation/opencensus-proto v0.2.1 // indirect
 	github.com/coreos/etcd-operator v0.9.4
 	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
 	github.com/go-openapi/swag v0.19.0 // indirect
+	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/go-containerregistry v0.0.0-20191218175032-34fb8ff33bed // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/mailru/easyjson v0.0.0-20190403194419-1ea4449da983 // indirect
@@ -24,8 +25,13 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/pflag v1.0.3
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/build v0.0.0-20190314133821-5284462c4bec // indirect
+	go.opencensus.io v0.22.1 // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
+	golang.org/x/net v0.0.0-20190912160710-24e19bdeb0f2 // indirect
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
+	google.golang.org/api v0.10.0 // indirect
+	google.golang.org/appengine v1.6.2 // indirect
+	google.golang.org/genproto v0.0.0-20190911173649-1774047e7e51 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.0.0
