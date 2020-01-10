@@ -92,7 +92,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, "Success", sbrOutput.Status.BindingStatus)
+		require.Equal(t, "BindingSucceeded", sbrOutput.Status.BindingStatus)
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
 		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
 		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
@@ -139,7 +139,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, "Success", sbrOutput.Status.BindingStatus)
+		require.Equal(t, "BindingSucceeded", sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))

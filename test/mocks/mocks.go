@@ -397,20 +397,16 @@ func ServiceBindingRequestMock(
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				Group:         applicationGVR.Group,
-				Version:       applicationGVR.Version,
-				Resource:      applicationGVR.Resource,
-				ResourceRef:   applicationResourceRef,
-				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
+				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
+				ResourceRef:          applicationResourceRef,
+				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
 		},
 	}
 	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-		Group:       CRDName,
-		Version:     CRDVersion,
-		Kind:        CRDKind,
-		ResourceRef: backingServiceResourceRef,
+		GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+		ResourceRef:      backingServiceResourceRef,
 	}
 	return sbr
 }

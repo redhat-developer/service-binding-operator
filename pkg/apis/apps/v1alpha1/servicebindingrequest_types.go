@@ -1,12 +1,12 @@
 package v1alpha1
 
 import (
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-
 
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 // +k8s:openapi-gen=true
@@ -46,7 +46,7 @@ type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request.
 	BindingStatus string `json:"bindingStatus,omitempty"`
 	// conditions describes the state of the operator's reconciliation functionality.
-	Conditions []conditions.Condition `json:"condition,omitempty"`
+	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
@@ -56,21 +56,17 @@ type ServiceBindingRequestStatus struct {
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
 // +k8s:openapi-gen=true
 type BackingServiceSelector struct {
-	Group       string `json:"group"`
-	Version     string `json:"version"`
-	Kind        string `json:"kind"`
-	ResourceRef string `json:"resourceRef"`
+	metav1.GroupVersionKind `json:",inline"`
+	ResourceRef             string `json:"resourceRef"`
 }
 
 // ApplicationSelector defines the selector based on labels and GVR
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	// +optional
-	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
-	Group         string                `json:"group,omitempty"`
-	Version       string                `json:"version"`
-	Resource      string                `json:"resource"`
-	ResourceRef   string                `json:"resourceRef"`
+	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
+	metav1.GroupVersionResource `json:",inline"`
+	ResourceRef                 string `json:"resourceRef"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
