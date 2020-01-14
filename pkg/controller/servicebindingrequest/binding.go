@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -282,7 +281,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 		return nil, err
 	}
 
-	rs := plan.RelatedResources.GetCRs()
+	rs := plan.GetCRs()
 	// append all SBR related CRs
 	objs = append(objs, rs...)
 
@@ -291,20 +290,14 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the specified resources
 	if options.DetectBindingResources {
-		err := retriever.ReadBindableResourcesData(
-			&plan.SBR, rs, []schema.GroupVersionResource{
-				{Group: "", Version: "v1", Resource: "configmaps"},
-				{Group: "", Version: "v1", Resource: "services"},
-				{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
-			},
-		)
+		err := retriever.ReadBindableResourcesData(&plan.SBR, rs)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// read bindable data from the CRDDescription found by the planner
-	for _, r := range plan.RelatedResources {
+	for _, r := range plan.GetRelatedResources() {
 		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
 		if err != nil {
 			return nil, err
