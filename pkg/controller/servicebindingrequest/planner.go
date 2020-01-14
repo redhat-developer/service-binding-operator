@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"context"
 
-	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -58,24 +57,6 @@ func (p *Planner) searchCRD(gvk schema.GroupVersionKind) (*unstructured.Unstruct
 	crdName := gvr.GroupResource().String()
 	// delegate the search to the CustomResourceDefinition resource client
 	return p.client.Resource(CRDGVR).Get(crdName, metav1.GetOptions{})
-}
-
-// RelatedResource represents a SBR related resource, composed by its CR and CRDDescription.
-type RelatedResource struct {
-	CRDDescription *olmv1alpha1.CRDDescription
-	CR             *unstructured.Unstructured
-}
-
-// RelatedResources contains a collection of SBR related resources.
-type RelatedResources []*RelatedResource
-
-// GetCRs returns a slice of unstructured CRs contained in the collection.
-func (rr RelatedResources) GetCRs() []*unstructured.Unstructured {
-	var crs []*unstructured.Unstructured
-	for _, r := range rr {
-		crs = append(crs, r.CR)
-	}
-	return crs
 }
 
 // Plan by retrieving the necessary resources related to binding a service backend.
