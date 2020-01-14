@@ -197,7 +197,7 @@ func (r *Reconciler) unbind(
 	}
 
 	logger.Debug("Reading intermediary secret before deletion.")
-	secretObj, err := secret.Get()
+	secretObj, _, err := secret.Get()
 	if err != nil {
 		logger.Error(err, "On reading intermediary secret.")
 		return RequeueError(err)
