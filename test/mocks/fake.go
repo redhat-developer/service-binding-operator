@@ -12,15 +12,15 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	ocav1 "github.com/openshift/api/apps/v1"
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
+
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
 // Fake defines all the elements to fake a kubernetes api client.
@@ -107,10 +107,12 @@ func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
 }
 
 // AddMockedDatabaseCR add mocked object from DatabaseCRMock.
-func (f *Fake) AddMockedDatabaseCR(ref string) {
+func (f *Fake) AddMockedDatabaseCR(ref string) runtime.Object {
 	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	f.objs = append(f.objs, DatabaseCRMock(f.ns, ref))
+	mock := DatabaseCRMock(f.ns, ref)
+	f.objs = append(f.objs, mock)
+	return mock
 }
 
 func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
@@ -130,12 +132,13 @@ func (f *Fake) AddMockedUnstructuredDeploymentConfig(name string, matchLabels ma
 }
 
 // AddMockedUnstructuredDeployment add mocked object from UnstructuredDeploymentMock.
-func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[string]string) {
+func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[string]string) *unstructured.Unstructured {
 	require.NoError(f.t, appsv1.AddToScheme(f.S))
 	d, err := UnstructuredDeploymentMock(f.ns, name, matchLabels)
 	require.NoError(f.t, err)
 	f.S.AddKnownTypes(appsv1.SchemeGroupVersion, &appsv1.Deployment{})
 	f.objs = append(f.objs, d)
+	return d
 }
 
 // AddMockedUnstructuredKnativeService add mocked object from UnstructuredKnativeService.
@@ -147,18 +150,20 @@ func (f *Fake) AddMockedUnstructuredKnativeService(name string, matchLabels map[
 	f.objs = append(f.objs, d)
 }
 
-func (f *Fake) AddMockedUnstructuredDatabaseCRD() {
+func (f *Fake) AddMockedUnstructuredDatabaseCRD() *unstructured.Unstructured {
 	require.NoError(f.t, apiextensionv1beta1.AddToScheme(f.S))
 	c, err := UnstructuredDatabaseCRDMock(f.ns)
 	require.NoError(f.t, err)
 	f.S.AddKnownTypes(apiextensionv1beta1.SchemeGroupVersion, &apiextensionv1beta1.CustomResourceDefinition{})
 	f.objs = append(f.objs, c)
+	return c
 }
 
-func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) {
+func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) *unstructured.Unstructured {
 	d, err := UnstructuredPostgresDatabaseCRMock(f.ns, ref)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, d)
+	return d
 }
 
 // AddMockedSecret add mocked object from SecretMock.
@@ -166,9 +171,12 @@ func (f *Fake) AddMockedSecret(name string) {
 	f.objs = append(f.objs, SecretMock(f.ns, name))
 }
 
-// AddMockedConfigMap add mocked object from ConfigMapMock.
-func (f *Fake) AddMockedConfigMap(name string) {
-	f.objs = append(f.objs, ConfigMapMock(f.ns, name))
+// AddMockedUnstructuredConfigMap add mocked object from ConfigMapMock.
+func (f *Fake) AddMockedUnstructuredConfigMap(name string) {
+	mock := ConfigMapMock(f.ns, name)
+	uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mock)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, &unstructured.Unstructured{Object: uObj})
 }
 
 func (f *Fake) AddMockResource(resource runtime.Object) {
@@ -181,7 +189,7 @@ func (f *Fake) FakeClient() client.Client {
 }
 
 // FakeDynClient returns fake dynamic api client.
-func (f *Fake) FakeDynClient() dynamic.Interface {
+func (f *Fake) FakeDynClient() *fakedynamic.FakeDynamicClient {
 	return fakedynamic.NewSimpleDynamicClient(f.S, f.objs...)
 }
 
