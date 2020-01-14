@@ -27,14 +27,8 @@ type Reconciler struct {
 }
 
 const (
-	// bindingInProgress binding is in progress
-	bindingInProgress = "InProgress"
 	// BindingSuccess binding has succeeded
 	BindingSuccess = "Success"
-	// bindingFail binding has failed
-	bindingFail = "Fail"
-	// time in seconds to wait before requeuing requests
-	requeueAfter int64 = 45
 	// sbrFinalizer annotation used in finalizer steps
 	sbrFinalizer = "finalizer.servicebindingrequest.openshift.io"
 )
