@@ -135,7 +135,7 @@ github.com/mitchellh/go-homedir
 github.com/modern-go/concurrent
 # github.com/modern-go/reflect2 v1.0.1
 github.com/modern-go/reflect2
-# github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible
+# github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible => github.com/openshift/api v0.0.0-20190424152011-77b8897ec79a
 github.com/openshift/api/apps/v1
 github.com/openshift/api/route/v1
 # github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
