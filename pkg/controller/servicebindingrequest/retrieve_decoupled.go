@@ -10,7 +10,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
-// Retrieve returns the data read from related resources (see ReadBindableResourcesData and
+// Get returns the data read from related resources (see ReadBindableResourcesData and
 // ReadCRDDescriptionData).
 func (r *Retriever) Get() (map[string][]byte, error) {
 	return r.data, nil
