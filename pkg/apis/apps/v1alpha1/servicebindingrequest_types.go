@@ -63,11 +63,11 @@ type BackingServiceSelector struct {
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	// +optional
-	MatchLabels map[string]string `json:"matchLabels,omitempty"`
-	Group       string            `json:"group,omitempty"`
-	Version     string            `json:"version"`
-	Resource    string            `json:"resource"`
-	ResourceRef string            `json:"resourceRef"`
+	LabelSelector *metav1.LabelSelector `json:",inline"`
+	Group         string                `json:"group,omitempty"`
+	Version       string                `json:"version"`
+	Resource      string                `json:"resource"`
+	ResourceRef   string                `json:"resourceRef"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

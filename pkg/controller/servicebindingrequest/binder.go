@@ -61,8 +61,8 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		opts = metav1.ListOptions{
 			FieldSelector: fields.Set(fieldName).String(),
 		}
-	} else if b.sbr.Spec.ApplicationSelector.MatchLabels != nil {
-		matchLabels := b.sbr.Spec.ApplicationSelector.MatchLabels
+	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
+		matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
 		opts = metav1.ListOptions{
 			LabelSelector: labels.Set(matchLabels).String(),
 		}

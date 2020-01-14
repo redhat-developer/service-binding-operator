@@ -26,20 +26,6 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 				Description: "ApplicationSelector defines the selector based on labels and GVR",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"matchLabels": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
-						},
-					},
 					"group": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
