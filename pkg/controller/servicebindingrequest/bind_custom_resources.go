@@ -1,6 +1,8 @@
 package servicebindingrequest
 
 import (
+	"encoding/base64"
+
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -69,8 +71,8 @@ func (b DetectBindableResources) GetBindableVariables() (map[string]interface{},
 	}
 	for _, resource := range ownedResources {
 		switch resource.GetKind() {
-		// In case ConfigMap and Secret we would read data field
-		case "ConfigMap", "Secret":
+		// In case of ConfigMap we would read data field
+		case "ConfigMap":
 			for _, v := range path[resource.GetKind()] {
 				d, exist, err := unstructured.NestedMap(resource.Object, v...)
 				if err != nil {
@@ -80,6 +82,21 @@ func (b DetectBindableResources) GetBindableVariables() (map[string]interface{},
 				if exist {
 					for k, val := range d {
 						b.data[k] = val
+					}
+				}
+			}
+		// In case of Secret we would decode and read data field
+		case "Secret":
+			for _, v := range path[resource.GetKind()] {
+				d, exist, err := unstructured.NestedMap(resource.Object, v...)
+				if err != nil {
+					// skipping on error
+					continue
+				}
+				if exist {
+					for k, val := range d {
+						value, _ := base64.StdEncoding.DecodeString(val.(string))
+						b.data[k] = value
 					}
 				}
 			}

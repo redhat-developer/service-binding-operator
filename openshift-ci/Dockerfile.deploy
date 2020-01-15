@@ -1,9 +1,0 @@
-FROM registry.access.redhat.com/ubi7/ubi-minimal:latest
-LABEL com.redhat.delivery.appregistry=true
-
-ENV LANG=en_US.utf8
-
-COPY operator /usr/local/bin/service-binding-operator
-USER 1001
-
-ENTRYPOINT [ "/usr/local/bin/service-binding-operator" ]

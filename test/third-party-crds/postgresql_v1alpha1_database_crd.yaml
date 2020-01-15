@@ -5,6 +5,7 @@ metadata:
   name: databases.postgresql.baiju.dev
   annotations:
     servicebindingoperator.redhat.io/status.dbCredentials-data.user: 'binding:env:object:secret'
+    servicebindingoperator.redhat.io/status.dbCredentials-data.password: 'binding:env:object:secret'
 spec:
   group: postgresql.baiju.dev
   names:
