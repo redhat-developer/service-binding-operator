@@ -28,7 +28,6 @@ before_install:
 - sudo apt-get update -y
 - sudo apt-get install python3.7 -y
 - sudo apt-get install python3.7-venv -y
-- python3.7 -m venv ./venv3
 
 # Download Operator SDK
 - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
