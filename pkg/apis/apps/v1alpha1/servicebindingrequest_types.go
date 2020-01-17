@@ -63,7 +63,7 @@ type BackingServiceSelector struct {
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	// +optional
-	LabelSelector *metav1.LabelSelector `json:",inline"`
+	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
 	Group         string                `json:"group,omitempty"`
 	Version       string                `json:"version"`
 	Resource      string                `json:"resource"`
