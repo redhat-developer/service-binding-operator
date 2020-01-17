@@ -169,9 +169,9 @@ func checkSBR(sbr *v1alpha1.ServiceBindingRequest, log *log.Log) error {
 		log.Debug("Spec.ApplicationSelector.ResourceRef not found")
 
 		// Check if MatchLabels is present
-		if sbr.Spec.ApplicationSelector.MatchLabels == nil {
+		if sbr.Spec.ApplicationSelector.LabelSelector == nil {
 			err := errors.New("NotFoundError")
-			log.Error(err, "Spec.ApplicationSelector.MatchLabels not found")
+			log.Error(err, "Spec.ApplicationSelector.LabelSelector not found")
 			return err
 		}
 	}

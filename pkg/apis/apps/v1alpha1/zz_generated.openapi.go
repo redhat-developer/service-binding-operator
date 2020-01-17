@@ -26,18 +26,9 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 				Description: "ApplicationSelector defines the selector based on labels and GVR",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"matchLabels": {
+					"labelSelector": {
 						SchemaProps: spec.SchemaProps{
-							Type: []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
 						},
 					},
 					"group": {
@@ -68,6 +59,8 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 				Required: []string{"version", "resource", "resourceRef"},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
