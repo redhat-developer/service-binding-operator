@@ -441,7 +441,7 @@ push-to-manifest-repo:
 ## -- Target for pushing manifest bundle to quay application --
 .PHONY: push-bundle-to-quay
 ## Push manifest bundle to quay application
-push-bundle-to-quay: setup-venv
+push-bundle-to-quay:
 	$(Q)python3.7 -m venv $(OUTPUT_DIR)/venv3
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
