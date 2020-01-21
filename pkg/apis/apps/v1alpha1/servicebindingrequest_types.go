@@ -63,9 +63,9 @@ type BackingServiceSelector struct {
 // +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	// +optional
-	LabelSelector        *metav1.LabelSelector       `json:"labelSelector,omitempty"`
-	GroupVersionResource metav1.GroupVersionResource `json:",inline" yaml:",inline"`
-	ResourceRef          string                      `json:"resourceRef"`
+	LabelSelector        *metav1.LabelSelector        `json:"labelSelector,omitempty"`
+	GroupVersionResource *metav1.GroupVersionResource `json:",inline" yaml:",inline"`
+	ResourceRef          string                       `json:"resourceRef"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
