@@ -94,10 +94,7 @@ spec:
                 version:
                   type: string
               required:
-              - group
-              - resource
               - resourceRef
-              - version
               type: object
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
