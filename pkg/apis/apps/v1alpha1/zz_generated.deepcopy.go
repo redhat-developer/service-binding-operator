@@ -18,11 +18,7 @@ func (in *ApplicationSelector) DeepCopyInto(out *ApplicationSelector) {
 		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.GroupVersionResource != nil {
-		in, out := &in.GroupVersionResource, &out.GroupVersionResource
-		*out = new(v1.GroupVersionResource)
-		**out = **in
-	}
+	out.GroupVersionResource = in.GroupVersionResource
 	return
 }
 

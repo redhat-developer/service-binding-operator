@@ -397,7 +397,7 @@ func ServiceBindingRequestMock(
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				GroupVersionResource: &metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
+				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 				ResourceRef:          applicationResourceRef,
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},

@@ -31,6 +31,24 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
 						},
 					},
+					"group": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"resource": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"resourceRef": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -38,7 +56,7 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 						},
 					},
 				},
-				Required: []string{"resourceRef"},
+				Required: []string{"group", "version", "resource", "resourceRef"},
 			},
 		},
 		Dependencies: []string{
