@@ -1,6 +1,6 @@
 git:
   - branch: master
-    commit: 48ed759fe7ccdcc3e2320d2c064129343d6644ef
+    commit: 7180de9ca3af30623fc6e21852662c90a0e16f5c
     url: https://github.com/redhat-developer/service-binding-operator
     dest_formats:
       branch:
