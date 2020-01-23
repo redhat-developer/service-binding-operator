@@ -29,20 +29,16 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 		sbrA := &v1alpha1.ServiceBindingRequest{
 			Spec: v1alpha1.ServiceBindingRequestSpec{
 				BackingServiceSelector: v1alpha1.BackingServiceSelector{
-					Group:       "test",
-					Version:     "v1alpha1",
-					Kind:        "TestHost",
-					ResourceRef: "",
+					GroupVersionKind: metav1.GroupVersionKind{Group: "test", Version: "v1alpha1", Kind: "TestHost"},
+					ResourceRef:      "",
 				},
 			},
 		}
 		sbrB := &v1alpha1.ServiceBindingRequest{
 			Spec: v1alpha1.ServiceBindingRequestSpec{
 				BackingServiceSelector: v1alpha1.BackingServiceSelector{
-					Group:       "test",
-					Version:     "v1",
-					Kind:        "TestHost",
-					ResourceRef: "",
+					GroupVersionKind: metav1.GroupVersionKind{Group: "test", Version: "v1", Kind: "TestHost"},
+					ResourceRef:      "",
 				},
 			},
 		}
