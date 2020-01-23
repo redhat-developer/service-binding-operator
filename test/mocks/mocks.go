@@ -402,11 +402,11 @@ func ServiceBindingRequestMock(
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+				ResourceRef:      backingServiceResourceRef,
+			},
 		},
-	}
-	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-		GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-		ResourceRef:      backingServiceResourceRef,
 	}
 	return sbr
 }
