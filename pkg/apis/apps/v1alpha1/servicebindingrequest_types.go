@@ -64,7 +64,7 @@ type BackingServiceSelector struct {
 type ApplicationSelector struct {
 	// +optional
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
-	metav1.GroupVersionResource `json:",inline" yaml:",inline"`
+	metav1.GroupVersionResource `json:",inline"`
 	ResourceRef                 string `json:"resourceRef"`
 }
 
