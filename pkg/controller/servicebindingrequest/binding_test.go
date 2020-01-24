@@ -154,16 +154,24 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				MatchLabels: matchLabels,
-				Group:       d.GetObjectKind().GroupVersionKind().Group,
-				Version:     d.GetObjectKind().GroupVersionKind().Version,
-				Resource:    "deployments",
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
 				ResourceRef: d.GetName(),
 			},
 			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
 				{
-					GroupVersionKind: db1.GetObjectKind().GroupVersionKind(),
-					ResourceRef:      db1.GetName(),
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
 				},
 			},
 		},
@@ -182,20 +190,32 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				MatchLabels: matchLabels,
-				Group:       d.GetObjectKind().GroupVersionKind().Group,
-				Version:     d.GetObjectKind().GroupVersionKind().Version,
-				Resource:    "deployments",
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
 				ResourceRef: d.GetName(),
 			},
 			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
 				{
-					GroupVersionKind: db1.GetObjectKind().GroupVersionKind(),
-					ResourceRef:      db1.GetName(),
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
 				},
 				{
-					GroupVersionKind: db2.GetObjectKind().GroupVersionKind(),
-					ResourceRef:      "db2",
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db2.GetObjectKind().GroupVersionKind().Group,
+						Version: db2.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db2.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db2.GetName(),
 				},
 			},
 		},
