@@ -1,9 +1,8 @@
 git:
-  - branch: master
-    commit: 7180de9ca3af30623fc6e21852662c90a0e16f5c
-    url: https://github.com/redhat-developer/service-binding-operator
-    dest_formats:
-      branch:
-        gen_source_repos: true
-      files: {}
-      
+- branch: master
+  commit: 794c252f7f2d797cfcc6c902d7047040f6c39302
+  dest_formats:
+    branch:
+      gen_source_repos: true
+    files: {}
+  url: https://github.com/redhat-developer/service-binding-operator
