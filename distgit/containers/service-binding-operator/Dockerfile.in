@@ -1,4 +1,4 @@
-ARG BUILD_DIR=/tmp/service-binding-operator
+ARG BUILD_DIR=/tmp/github.com/redhat-developer/service-binding-operator
 
 # On CI, use
 # FROM registry.svc.ci.openshift.org/ocp/builder:golang-1.13 AS builder
@@ -23,8 +23,30 @@ COPY ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} .
 
 RUN tar xf ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} --strip-components=1 && rm ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} 
 
+RUN curl -Lo /usr/local/bin/operator-sdk http://pkgs.devel.redhat.com/repo/containers/service-binding-operator/operator-sdk-v0.10.1-x86_64-linux-gnu/622f09f813038e8526eed3fe8eea8921/operator-sdk-v0.10.1-x86_64-linux-gnu && \
+    chmod +x /usr/local/bin/operator-sdk
+
 ARG VERBOSE=2
-RUN GOFLAGS="-mod=vendor" make build
+
+ENV GOFLAGS="-mod=vendor"
+
+RUN make build
+
+ENV MANIFESTS_TMP="tmp/manifests" \
+    BUNDLE_VERSION="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
+    OLM_CATALOG_DIR="deploy/olm-catalog" \
+    CRDS_DIR="deploy/crds" \
+    OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-operator-rhel8:${CI_CONTAINER_VERSION}"
+
+RUN     mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION} && rm -rf ${OLM_CATALOG_DIR}/service-binding-operator/${BUNDLE_VERSION}
+RUN    	operator-sdk olm-catalog gen-csv --csv-version ${BUNDLE_VERSION}
+RUN    	go build -ldflags "-X main.BundleVersion=${BUNDLE_VERSION}" ./hack/add-info-to-csv.go
+RUN    	./add-info-to-csv
+RUN    	cp -vrf ${OLM_CATALOG_DIR}/service-binding-operator/${BUNDLE_VERSION}/* ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
+RUN    	cp -vrf ${OLM_CATALOG_DIR}/service-binding-operator/*package.yaml ${MANIFESTS_TMP}/
+RUN    	cp -vrf ${CRDS_DIR}/*_crd.yaml ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
+RUN    	sed -i -e "s,REPLACE_IMAGE,${OPERATOR_IMAGE_REF},g" ${MANIFESTS_TMP}/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+RUN    	sed -i -e "s,BUNDLE_VERSION,${BUNDLE_VERSION},g" ${MANIFESTS_TMP}/*.yaml
 
 
 #--------------------------------------------------------------------
@@ -39,13 +61,17 @@ ARG BUILD_DIR
 
 ENV LANG=en_US.utf8
 
-COPY --from=builder $BUILD_DIR/out/operator /usr/local/bin/service-binding-operator
-COPY --from=builder $BUILD_DIR/manifests /manifests
-
-USER 1001
+RUN microdnf install -y shadow-utils && \
+    adduser --system --no-create-home -u 1001 sbo
 
 ENTRYPOINT [ "/usr/local/bin/service-binding-operator" ]
 
+COPY --from=builder $BUILD_DIR/out/operator /usr/local/bin/service-binding-operator
+COPY --from=builder $BUILD_DIR/tmp/manifests /manifests
+
+USER sbo
+
+
 LABEL com.redhat.component="service-binding-operator-container" \
-	com.redhat.delivery.appregistry="false" \
+	com.redhat.delivery.appregistry="true" \
 	name="ocp-tools-43-tech-preview/service-binding-operator-rhel8"
