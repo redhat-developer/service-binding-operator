@@ -10,7 +10,7 @@ spec:
     group: postgresql.example.dev
     kind: Database
     version: v1alpha1
-  applicationSelector: 
+  applicationSelector:
     resourceRef: nodejs-rest-http-crud
     group: apps
     version: v1
