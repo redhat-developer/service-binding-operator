@@ -96,7 +96,6 @@ spec:
               required:
               - group
               - resource
-              - resourceRef
               - version
               type: object
             backingServiceSelector:

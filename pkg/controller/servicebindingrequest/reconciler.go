@@ -95,8 +95,8 @@ func (r *Reconciler) setApplicationObjects(
 func (r *Reconciler) getServiceBindingRequest(
 	namespacedName types.NamespacedName,
 ) (*v1alpha1.ServiceBindingRequest, error) {
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := r.dynClient.Resource(gr).Namespace(namespacedName.Namespace)
+	gvr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gvr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -128,8 +128,8 @@ func (r *Reconciler) updateStatusServiceBindingRequest(
 		return nil, err
 	}
 
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
+	gvr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gvr).Namespace(sbr.GetNamespace())
 	u, err = resourceClient.UpdateStatus(u, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
@@ -151,8 +151,8 @@ func (r *Reconciler) updateServiceBindingRequest(
 	if err != nil {
 		return nil, err
 	}
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := r.dynClient.Resource(gr).Namespace(sbr.GetNamespace())
+	gvr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	resourceClient := r.dynClient.Resource(gvr).Namespace(sbr.GetNamespace())
 	u, err = resourceClient.Update(u, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err
