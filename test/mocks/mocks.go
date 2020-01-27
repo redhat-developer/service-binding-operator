@@ -7,6 +7,7 @@ import (
 
 	ocav1 "github.com/openshift/api/apps/v1"
 	ocv1 "github.com/openshift/api/route/v1"
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
@@ -20,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
@@ -402,11 +404,23 @@ func ServiceBindingRequestMock(
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+				ResourceRef:      backingServiceResourceRef,
+			},
 		},
-	}
-	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-		GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-		ResourceRef:      backingServiceResourceRef,
+		Status: v1alpha1.ServiceBindingRequestStatus{
+			Conditions: []conditionsv1.Condition{
+				{
+					Type:   conditions.BindingReady,
+					Status: corev1.ConditionTrue,
+				},
+				{
+					Type:   conditions.BindingReady,
+					Status: corev1.ConditionUnknown,
+				},
+			},
+		},
 	}
 	return sbr
 }

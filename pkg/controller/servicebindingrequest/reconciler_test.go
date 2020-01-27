@@ -92,7 +92,12 @@ func TestApplicationSelectorByName(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, "BindingSucceeded", sbrOutput.Status.BindingStatus)
+		resourceRef := sbrOutput.Spec.ApplicationSelector.ResourceRef
+		require.NotEqual(t, 0, len(resourceRef))
+		require.Equal(t, "Unknown", string(sbrOutput.Status.Conditions[1].Status))
+
+		require.Equal(t, "Ready", string(sbrOutput.Status.Conditions[0].Type))
+		require.Equal(t, "True", string(sbrOutput.Status.Conditions[0].Status))
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
 		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
 		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
@@ -139,6 +144,12 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
+		require.Equal(t, "database", sbrOutput.Spec.ApplicationSelector.LabelSelector.MatchLabels["connects-to"])
+		require.Equal(t, "reconciler", sbrOutput.Spec.ApplicationSelector.LabelSelector.MatchLabels["environment"])
+		require.Equal(t, "Unknown", string(sbrOutput.Status.Conditions[1].Status))
+
+		require.Equal(t, "Ready", string(sbrOutput.Status.Conditions[0].Type))
+		require.Equal(t, "True", string(sbrOutput.Status.Conditions[0].Status))
 		require.Equal(t, "BindingSucceeded", sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
