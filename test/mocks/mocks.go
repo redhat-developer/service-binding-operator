@@ -232,7 +232,20 @@ func clusterServiceVersionMock(
 	strategy := olminstall.StrategyDetailsDeployment{
 		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
 			Name: "deployment",
-			Spec: appsv1.DeploymentSpec{},
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						name: "service-binding-operator",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Command: []string{"service-binding-operator"},
+						}},
+					},
+				},
+			},
 		}},
 	}
 
