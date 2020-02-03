@@ -450,3 +450,9 @@ push-bundle-to-quay:
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(MANIFESTS_TMP)
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
+
+## -- Target for validating the operator --
+.PHONY: dev-release
+## validating the operator by installing new quay releases
+dev-release:
+	echo  "HELLO BUNDLE VERSION -${BUNDLE_VERSION}"
