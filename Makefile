@@ -451,7 +451,6 @@ push-bundle-to-quay:
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
-
 ## -- Target for validating the operator --
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
@@ -462,9 +461,13 @@ dev-release:
 	# Subscribing to the operator
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
 	$(eval VERSION_NUMBER := $(shell k get csvs  -n=default -o jsonpath='{.items[*].spec.version}'))
-	@if [ ${VERSION_NUMBER} -eq ${BUNDLE_VERSION} ] ; then \
-    # other validation
+	@if [ ${VERSION_NUMBER} -eq ${BUNDLE_VERSION} ]; \
+	then \
+    	echo -e "OLM Bundle Version validation succeeded \n " \
 		exit 0; \
     else \
-        exit 1; \ #terminate and indicate error
+		echo -e "OLM Bundle Version validation failed \n" \
+		exit 1; \
     fi
+
+

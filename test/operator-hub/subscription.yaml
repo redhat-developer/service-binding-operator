@@ -10,4 +10,3 @@ spec:
   name: service-binding-operator
   source: example-operators
   sourceNamespace: openshift-marketplace
-
