@@ -456,3 +456,4 @@ push-bundle-to-quay:
 ## validating the operator by installing new quay releases
 dev-release:
 	echo  "HELLO BUNDLE VERSION -${BUNDLE_VERSION}"
+	sleep 10m
