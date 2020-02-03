@@ -6,6 +6,6 @@ metadata:
   namespace: openshift-operator-lifecycle-manager
 spec:
   sourceType: grpc
-  image: REPLACE_IMAGE
+  image: quay.io/redhat-developer/app-binding-operator:4c0a725
   displayName: Community Operators
   publisher: Red Hat
