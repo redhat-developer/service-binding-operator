@@ -23,7 +23,7 @@ COPY ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} .
 
 RUN tar xf ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} --strip-components=1 && rm ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} 
 
-RUN curl -Lo /usr/local/bin/operator-sdk http://pkgs.devel.redhat.com/repo/containers/service-binding-operator/operator-sdk-v0.10.1-x86_64-linux-gnu/622f09f813038e8526eed3fe8eea8921/operator-sdk-v0.10.1-x86_64-linux-gnu && \
+RUN curl -Lo /usr/local/bin/operator-sdk http://pkgs.devel.redhat.com/repo/containers/service-binding-operator/operator-sdk-v0.15.1-x86_64-linux-gnu/f01af7292432e048580e69e413c55dce/operator-sdk-v0.15.1-x86_64-linux-gnu && \
     chmod +x /usr/local/bin/operator-sdk
 
 ARG VERBOSE=2
@@ -39,9 +39,7 @@ ENV MANIFESTS_TMP="tmp/manifests" \
     OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-operator-rhel8:${CI_CONTAINER_VERSION}"
 
 RUN     mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION} && rm -rf ${OLM_CATALOG_DIR}/service-binding-operator/${BUNDLE_VERSION}
-RUN    	operator-sdk olm-catalog gen-csv --csv-version ${BUNDLE_VERSION}
-RUN    	go build -ldflags "-X main.BundleVersion=${BUNDLE_VERSION}" ./hack/add-info-to-csv.go
-RUN    	./add-info-to-csv
+RUN    	operator-sdk generate csv --csv-version ${BUNDLE_VERSION} --from-version=0.0.23
 RUN    	cp -vrf ${OLM_CATALOG_DIR}/service-binding-operator/${BUNDLE_VERSION}/* ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
 RUN    	cp -vrf ${OLM_CATALOG_DIR}/service-binding-operator/*package.yaml ${MANIFESTS_TMP}/
 RUN    	cp -vrf ${CRDS_DIR}/*_crd.yaml ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
