@@ -153,7 +153,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
-	f.AddMockedConfigMap(crName)
+	f.AddMockedUnstructuredConfigMap(crName)
 	f.AddMockedDatabaseCR(crName)
 
 	crdDescription := mocks.CRDDescriptionConfigMapMock()

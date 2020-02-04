@@ -90,9 +90,13 @@ func (s *Secret) Commit(data map[string][]byte, cache map[string]interface{}) (*
 
 // Get an unstructured object from the secret handled by this component. It can return errors in case
 // the API server does.
-func (s *Secret) Get() (*unstructured.Unstructured, error) {
+func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
 	resourceClient := s.buildResourceClient()
-	return resourceClient.Get(s.plan.Name, metav1.GetOptions{})
+	u, err := resourceClient.Get(s.plan.Name, metav1.GetOptions{})
+	if err != nil && !errors.IsNotFound(err) {
+		return nil, false, err
+	}
+	return u, u != nil, nil
 }
 
 // Delete the secret represented by this component. It can return error when the API server does.
