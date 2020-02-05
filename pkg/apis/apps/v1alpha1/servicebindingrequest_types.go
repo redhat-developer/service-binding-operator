@@ -67,6 +67,7 @@ type ApplicationSelector struct {
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
 	metav1.GroupVersionResource `json:",inline"`
 	ResourceRef                 string `json:"resourceRef,omitempty"`
+	Namespace                   string `json:"namespace,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -45,7 +45,7 @@ type Binder struct {
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
-	ns := b.sbr.GetNamespace()
+	ns := b.sbr.Spec.ApplicationSelector.Namespace
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
 		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,

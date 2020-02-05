@@ -39,13 +39,14 @@ func (s *Secret) customEnvParser(data map[string][]byte, cache map[string]interf
 // buildResourceClient creates a resource client to handle corev1/secret resource.
 func (s *Secret) buildResourceClient() dynamic.ResourceInterface {
 	gvr := corev1.SchemeGroupVersion.WithResource(SecretResource)
-	return s.client.Resource(gvr).Namespace(s.plan.Ns)
+	return s.client.Resource(gvr).Namespace(s.plan.SBR.Spec.ApplicationSelector.Namespace)
 }
 
 // createOrUpdate will take informed payload and either create a new secret or update an existing
 // one. It can return error when Kubernetes client does.
 func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
-	ns := s.plan.Ns
+	// create token in target namespace
+	ns := s.plan.SBR.Spec.ApplicationSelector.Namespace
 	name := s.plan.Name
 	logger := s.logger.WithValues("Namespace", ns, "Name", name)
 	secretObj := &corev1.Secret{

@@ -10,6 +10,7 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/coreos/etcd-operator v0.9.4
 	github.com/emicklei/go-restful v2.9.6+incompatible // indirect
+	github.com/go-logfmt/logfmt v0.4.0 // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.0
 	github.com/go-openapi/swag v0.19.0 // indirect
@@ -25,6 +26,7 @@ require (
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/build v0.0.0-20190314133821-5284462c4bec // indirect
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.0.0
