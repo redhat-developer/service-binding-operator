@@ -9,6 +9,10 @@ ci_get_xyz_version() {
     echo "0 0 25"
 }
 
+ci_get_branch() {
+    echo "${GERRIT_BRANCH}-container"
+}
+
 for container in $(find distgit/containers -mindepth 1 -maxdepth 1 -type d); do
   cat automation/labels >> "$container/Dockerfile.in"
   cp automation/distgit-gitignore "$container/.gitignore"

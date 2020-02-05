@@ -1,6 +1,6 @@
 git:
 - branch: APPSVC-405
-  commit: 69749a7791d80b0577906b7ad92a1ee55f1d10f9
+  commit: f15c513c9947fa9e539e4eb6beb80ba67e0268dd
   dest_formats:
     branch:
       gen_source_repos: true
