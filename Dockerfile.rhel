@@ -29,11 +29,8 @@ COPY tools.go .
 ARG VERBOSE=2
 RUN make build
 
-#--------------------------------------------------------------------
 
-# On CI , use
-
-FROM registry.access.redhat.com/ubi8/ubi
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL com.redhat.delivery.appregistry=true
 LABEL maintainer "Devtools <devtools@redhat.com>"
