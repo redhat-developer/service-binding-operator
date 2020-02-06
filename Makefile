@@ -308,7 +308,7 @@ vendor: go.mod go.sum
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
-	operator-sdk olm-catalog gen-csv --csv-version=$(OPERATOR_VERSION) --verbose
+	operator-sdk generate csv --csv-version=$(OPERATOR_VERSION) --verbose
 
 generate-olm:
 	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
@@ -429,7 +429,7 @@ merge-to-master-release:
 push-to-manifest-repo:
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
-	operator-sdk olm-catalog gen-csv --csv-version $(BUNDLE_VERSION)
+	operator-sdk generate csv --csv-version $(BUNDLE_VERSION)
 	go build -ldflags "-X main.BundleVersion=$(BUNDLE_VERSION)" ./hack/add-info-to-csv.go
 	./add-info-to-csv
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
