@@ -33,7 +33,7 @@ RUN make build
 
 # On CI , use
 
-FROM registry.redhat.io/ubi8/ubi
+FROM registry.access.redhat.com/ubi8/ubi
 
 LABEL com.redhat.delivery.appregistry=true
 LABEL maintainer "Devtools <devtools@redhat.com>"
