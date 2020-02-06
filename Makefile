@@ -455,13 +455,15 @@ push-bundle-to-quay:
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
-	$(Q)kubectl delete operatorsources community-operators -n=openshift-marketplace
-	# Listing of the operator
-	$(Q)kubectl apply -f ./test/operator-hub/operator_source.yaml
+	$(Q)oc apply -f ./test/operator-hub/operator_source.yaml
 	# Subscribing to the operator
-	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
-	$(eval VERSION_NUMBER := $(shell k get csvs  -n=default -o jsonpath='{.items[*].spec.version}'))
-	@if [ ${VERSION_NUMBER} -eq ${BUNDLE_VERSION} ]; \
+	$(Q)oc apply -f ./test/operator-hub/subscription.yaml
+	while [ "$(oc get pods --field-selector=status.phase=Running -n openshift-marketplace" == "No resources found." ]
+	do
+		sleep 1s
+	done
+	$(eval VERSION_NUMBER := $(shell oc get csvs  -n=default -o jsonpath='{.items[*].spec.version}'))
+	@if [ ${VERSION_NUMBER} == ${BUNDLE_VERSION} ]; \
 	then \
     	echo -e "OLM Bundle Version validation succeeded \n " \
 		exit 0; \
