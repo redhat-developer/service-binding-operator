@@ -32,9 +32,8 @@ RUN make build
 #--------------------------------------------------------------------
 
 # On CI , use
-# FROM registry.svc.ci.openshift.org/ocp/ubi-minimal:7
 
-FROM registry.access.redhat.com/ubi7/ubi-minimal
+FROM registry.redhat.io/ubi8/ubi
 
 LABEL com.redhat.delivery.appregistry=true
 LABEL maintainer "Devtools <devtools@redhat.com>"
