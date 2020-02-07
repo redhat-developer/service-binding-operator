@@ -176,7 +176,6 @@ func (b *ServiceBinder) onError(
 ) (reconcile.Result, error) {
 
 	if objs != nil {
-		sbrStatus.BindingStatus = BindingSuccess // TODO- create an issue for this
 		b.setApplicationObjects(sbrStatus, objs)
 	}
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
