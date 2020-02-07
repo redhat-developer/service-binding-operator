@@ -46,7 +46,7 @@ RUN    	cp -vrf ${CRDS_DIR}/*_crd.yaml ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
 RUN     awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' ${MANIFESTS_TMP}/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 RUN    	sed -i -e "s,REPLACE_IMAGE,${OPERATOR_IMAGE_REF},g" ${MANIFESTS_TMP}/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 RUN    	sed -i -e "s,BUNDLE_VERSION,${BUNDLE_VERSION},g" ${MANIFESTS_TMP}/*.yaml
-RUN     sed -i -e 's,PACKAGE_NAME,service-binding,g' ${MANIFESTS_TMP}/*.yaml
+RUN     sed -i -e 's,PACKAGE_NAME,rh-service-binding-operator,g' ${MANIFESTS_TMP}/*.yaml
 
 
 #--------------------------------------------------------------------
