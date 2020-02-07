@@ -138,6 +138,8 @@ github.com/modern-go/reflect2
 # github.com/openshift/api v3.9.1-0.20190424152011-77b8897ec79a+incompatible => github.com/openshift/api v0.0.0-20190424152011-77b8897ec79a
 github.com/openshift/api/apps/v1
 github.com/openshift/api/route/v1
+# github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3
+github.com/openshift/custom-resource-status/conditions/v1
 # github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
 github.com/operator-backing-service-samples/postgresql-operator/pkg/apis
 github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1

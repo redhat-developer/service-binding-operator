@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,8 +46,8 @@ type ServiceBindingRequestSpec struct {
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
-	// BindingStatus is the status of the service binding request.
-	BindingStatus string `json:"bindingStatus,omitempty"`
+	// conditions describes the state of the operator's reconciliation functionality.
+	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
