@@ -73,6 +73,7 @@ type ApplicationSelector struct {
 
 // Expresses intent to bind an operator-backed service with a Deployment
 // +k8s:openapi-gen=true
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding Request"
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=servicebindingrequests,shortName=sbr;sbrs
 type ServiceBindingRequest struct {
