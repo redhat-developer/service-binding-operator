@@ -378,7 +378,7 @@ func CreateSBR(
 // setSBRBackendGVK sets backend service selector
 func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind) {
 	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-		GroupVersionKind: metav1.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
+		GroupVersionKind: schema.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
 		ResourceRef:      resourceRef,
 	}
 }

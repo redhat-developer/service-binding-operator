@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 var planner *Planner
@@ -25,6 +27,9 @@ func TestPlannerNew(t *testing.T) {
 	}
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
+	sbr.Spec.BackingServiceSelectors = []v1alpha1.BackingServiceSelector{
+		sbr.Spec.BackingServiceSelector,
+	}
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef)
 	f.AddMockedUnstructuredDatabaseCRD()
@@ -33,7 +38,7 @@ func TestPlannerNew(t *testing.T) {
 	require.NotNil(t, planner)
 
 	t.Run("searchCR", func(t *testing.T) {
-		cr, err := planner.searchCR()
+		cr, err := planner.searchCR(ns, sbr.Spec.BackingServiceSelector)
 
 		require.NoError(t, err)
 		require.NotNil(t, cr)
@@ -44,8 +49,7 @@ func TestPlannerNew(t *testing.T) {
 
 		require.NoError(t, err)
 		require.NotNil(t, plan)
-		require.NotNil(t, plan.CRDDescription)
-		require.NotNil(t, plan.CR)
+		require.NotEmpty(t, plan.RelatedResources)
 		require.Equal(t, ns, plan.Ns)
 		require.Equal(t, name, plan.Name)
 	})
@@ -62,12 +66,13 @@ func TestPlannerAnnotation(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDatabaseCRD()
+	cr := f.AddMockedDatabaseCR("database")
 
 	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
 	require.NotNil(t, planner)
 
 	t.Run("searchCRD", func(t *testing.T) {
-		crd, err := planner.searchCRD()
+		crd, err := planner.searchCRD(cr.GetObjectKind().GroupVersionKind())
 
 		require.NoError(t, err)
 		require.NotNil(t, crd)

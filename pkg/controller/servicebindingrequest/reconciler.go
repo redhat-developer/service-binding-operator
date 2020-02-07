@@ -236,7 +236,6 @@ func (r *Reconciler) bind(
 	binder *Binder,
 	secret *Secret,
 	retrievedData map[string][]byte,
-	retrievedCache map[string]interface{},
 	sbr *v1alpha1.ServiceBindingRequest,
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objectsToAnnotate []*unstructured.Unstructured,
@@ -244,7 +243,7 @@ func (r *Reconciler) bind(
 	logger = logger.WithName("bind")
 
 	logger.Info("Saving data on intermediary secret...")
-	secretObj, err := secret.Commit(retrievedData, retrievedCache)
+	secretObj, err := secret.Commit(retrievedData)
 	if err != nil {
 		logger.Error(err, "On saving secret data..")
 		return r.onError(err, sbr, sbrStatus, nil)
@@ -341,7 +340,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// storing CR in objects to annotate
-	objectsToAnnotate = append(objectsToAnnotate, plan.CR)
+	objectsToAnnotate = append(objectsToAnnotate, plan.GetCRs()...)
 
 	//
 	// Retrieving data
@@ -349,7 +348,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger.Debug("Retrieving data to create intermediate secret.")
 	retriever := NewRetriever(r.dynClient, plan, sbr.Spec.EnvVarPrefix)
-	retrievedData, retrievedCache, err := retriever.Retrieve()
+
+	retrievedData, err := retriever.Retrieve()
 	if err != nil {
 		logger.Error(err, "On retrieving binding data.")
 		return r.onError(err, sbr, sbrStatus, nil)
@@ -363,7 +363,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//
 
 	secret := NewSecret(r.dynClient, plan)
-	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.volumeKeys)
+	binder := NewBinder(ctx, r.client, r.dynClient, sbr, retriever.VolumeKeys)
 
 	if sbr.GetDeletionTimestamp() != nil {
 		logger.Info("Resource is marked for deletion...")
@@ -371,5 +371,5 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	logger.Info("Starting the bind of application(s) with backing service...")
-	return r.bind(logger, binder, secret, retrievedData, retrievedCache, sbr, sbrStatus, objectsToAnnotate)
+	return r.bind(logger, binder, secret, retrievedData, sbr, sbrStatus, objectsToAnnotate)
 }

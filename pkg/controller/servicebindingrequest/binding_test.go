@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,7 +19,7 @@ import (
 
 // TestServiceBinder_Bind exercises scenarios regarding binding SBR and its related resources.
 func TestServiceBinder_Bind(t *testing.T) {
-	t.Skip("functionality is not ready yet")
+	// t.Skip("functionality is not ready yet")
 
 	// wantedAction represents an action issued by the component that is required to exist after it
 	// finished the operation
@@ -166,7 +167,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
+					GroupVersionKind: schema.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
 						Version: db1.GetObjectKind().GroupVersionKind().Version,
 						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
@@ -202,7 +203,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
+					GroupVersionKind: schema.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
 						Version: db1.GetObjectKind().GroupVersionKind().Version,
 						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
@@ -210,7 +211,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 					ResourceRef: db1.GetName(),
 				},
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
+					GroupVersionKind: schema.GroupVersionKind{
 						Group:   db2.GetObjectKind().GroupVersionKind().Group,
 						Version: db2.GetObjectKind().GroupVersionKind().Version,
 						Kind:    db2.GetObjectKind().GroupVersionKind().Kind,

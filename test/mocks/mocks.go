@@ -416,7 +416,7 @@ func ServiceBindingRequestMock(
 			},
 			DetectBindingResources: false,
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
-				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+				GroupVersionKind: schema.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
 				ResourceRef:      backingServiceResourceRef,
 			},
 		},
