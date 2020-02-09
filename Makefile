@@ -455,37 +455,5 @@ push-bundle-to-quay:
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
-	$(Q)kubectl apply -f ./test/operator-hub/operator_source.yaml
-	# Subscribing to the operator
-	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
-	#$(Q)kubectl get pods -n openshift-marketplace | grep "example-operators" | awk '{print $3}'
-	@if [ "kubectl get pods -n openshift-marketplace | grep "example-operators" | awk '{print $3}'" == "Running"] ; \
-	then \
-			echo "Operator marketplace pod is running"; \
-	fi
-	$(Q)$(HACK_DIR)/check-crds.sh
-	INSTALL_PLAN_PRIOR ?= service-binding-operator.v${BUNDLE_VERSION}
-	$(eval VERSION_NUMBER := $(shell kubectl get csvs  -n=default -o jsonpath='{.items[*].spec.version}'))
-	@if [ ${VERSION_NUMBER} == ${BUNDLE_VERSION} ]; \
-	then \
-    	echo -e "OLM Bundle Version validation succeeded \n ";
-		kubectl get csvs -n=default -o jsonpath='{.items[*].metadata.annotations.alm-examples}' | cut -d "[" -f 2 | cut -d "]" -f 1 > output.json;
-		kubectl apply -f ./output.json;
-		@if [ $? == 0 ]; \
-			then \
-				echo "CSV alm example validation succeeded";
-		fi; \
-		@if [ kubectl get installplans -n=openshift-operators -o jsonpath='{.items[*].status.phase}' == "Complete" ]; \
-		then \
-			$(eval INSTALL_PLAN := $(shell kubectl get installplans -n=openshift-operators -o jsonpath='{.items[*].spec.clusterServiceVersionNames[0]}')) \
-			@if [ ${INSTALL_PLAN_PRIOR} == ${INSTALL_PLAN} ]; \
-				then \
-					echo "Install Plan validation succeeded. OLM Bundle Validation succeeded"; \
-			fi; \
-		fi; \
-		exit 0; \
-    else \
-		echo -e "OLM Bundle validation failed \n"; \
-		exit 1; \
-    fi
-	$(Q)rm ./output.json
+	chmod +x ./hack/dev-release.sh
+	./hack/dev-release.sh $(BUNDLE_VERSION)
