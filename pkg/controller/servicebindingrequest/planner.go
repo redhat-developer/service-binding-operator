@@ -37,8 +37,12 @@ type Plan struct {
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
 	// gvr is the plural guessed resource for the given selector
-	gvr, _ := meta.UnsafeGuessKindToResource(
-		schema.GroupVersionKind{selector.Group, selector.Version, selector.Kind})
+	gvk := schema.GroupVersionKind{
+		Group:   selector.Group,
+		Version: selector.Version,
+		Kind:    selector.Kind,
+	}
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	// delegate the search selector's namespaced resource client
 	return p.client.Resource(gvr).Namespace(namespace).Get(selector.ResourceRef, metav1.GetOptions{})
 }
