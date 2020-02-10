@@ -261,7 +261,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	}
 
 	// objs groups all extra objects related to the informed SBR
-	objs := make([]*unstructured.Unstructured, 0, 0)
+	objs := make([]*unstructured.Unstructured, 0)
 
 	// plan is a source of information regarding the binding process
 	ctx := context.Background()

@@ -69,7 +69,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		selectors = append(selectors, selector)
 	}
 
-	relatedResources := make([]*RelatedResource, 0, 0)
+	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
 		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 
