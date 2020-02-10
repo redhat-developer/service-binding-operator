@@ -37,7 +37,8 @@ type Plan struct {
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
 	// gvr is the plural guessed resource for the given selector
-	gvr, _ := meta.UnsafeGuessKindToResource(selector.GroupVersionKind)
+	gvr, _ := meta.UnsafeGuessKindToResource(
+		schema.GroupVersionKind{selector.Group, selector.Version, selector.Kind})
 	// delegate the search selector's namespaced resource client
 	return p.client.Resource(gvr).Namespace(namespace).Get(selector.ResourceRef, metav1.GetOptions{})
 }
@@ -70,7 +71,7 @@ func (p *Planner) Plan() (*Plan, error) {
 
 	relatedResources := make([]*RelatedResource, 0, 0)
 	for _, s := range selectors {
-		bssGVK := s.GroupVersionKind
+		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 
 		// resolve the CRD using the service's GVK
 		crd, err := p.searchCRD(bssGVK)
