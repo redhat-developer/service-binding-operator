@@ -111,7 +111,7 @@ GOCOV_DIR ?= $(ARTIFACT_DIR)/test-coverage
 GOCOV_FILE_TEMPL ?= $(GOCOV_DIR)/REPLACE_TEST.txt
 GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
-GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
+GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.0.24
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
@@ -122,7 +122,10 @@ OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
 OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
 COMMIT_COUNT := $(shell git rev-list --count HEAD)
-BUNDLE_VERSION := $(OPERATOR_VERSION)-$(COMMIT_COUNT)
+BUNDLE_VERSION ?= $(OPERATOR_VERSION)-$(COMMIT_COUNT)
+BASE_BUNDLE_VERSION ?= 0.0.23
+OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
+CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 
 QUAY_TOKEN ?= ""
 QUAY_BUNDLE_TOKEN ?= ""
@@ -419,8 +422,8 @@ consistent-crds-manifests-upstream:
 merge-to-master-release:
 	echo "${QUAY_TOKEN}" | docker login -u "redhat-developer+travis" --password-stdin quay.io
 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
-	$(Q)docker build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID) .
-	docker push "$(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)"
+	$(Q)docker build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
+	docker push "$(OPERATOR_IMAGE_REF)"
 
 
 ## -- Target for pushing manifest bundle to service-binding-operator-manifest repo --
@@ -429,14 +432,14 @@ merge-to-master-release:
 push-to-manifest-repo:
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
-	operator-sdk generate csv --csv-version $(BUNDLE_VERSION)
-	go build -ldflags "-X main.BundleVersion=$(BUNDLE_VERSION)" ./hack/add-info-to-csv.go
-	./add-info-to-csv
+	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=$(BASE_BUNDLE_VERSION)
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
 	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
-	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_TMP)/*.yaml
 
 ## -- Target for pushing manifest bundle to quay application --
 .PHONY: push-bundle-to-quay
