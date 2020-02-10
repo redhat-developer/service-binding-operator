@@ -30,23 +30,10 @@ ARG VERBOSE=2
 
 ENV GOFLAGS="-mod=vendor"
 
-RUN make build
-
-ENV MANIFESTS_TMP="tmp/manifests" \
-    BUNDLE_VERSION="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
-    OLM_CATALOG_DIR="deploy/olm-catalog" \
-    CRDS_DIR="deploy/crds" \
-    OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-operator-rhel8:${CI_CONTAINER_VERSION}"
-
-RUN     mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION} && rm -rf ${OLM_CATALOG_DIR}/service-binding-operator/${BUNDLE_VERSION}
-RUN    	operator-sdk generate csv --csv-version ${BUNDLE_VERSION} --from-version=0.0.23
-RUN    	cp -vrf ${OLM_CATALOG_DIR}/service-binding-operator/${BUNDLE_VERSION}/* ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
-RUN    	cp -vrf ${OLM_CATALOG_DIR}/service-binding-operator/*package.yaml ${MANIFESTS_TMP}/
-RUN    	cp -vrf ${CRDS_DIR}/*_crd.yaml ${MANIFESTS_TMP}/${BUNDLE_VERSION}/
-RUN     awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' ${MANIFESTS_TMP}/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-RUN    	sed -i -e "s,REPLACE_IMAGE,${OPERATOR_IMAGE_REF},g" ${MANIFESTS_TMP}/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-RUN    	sed -i -e "s,BUNDLE_VERSION,${BUNDLE_VERSION},g" ${MANIFESTS_TMP}/*.yaml
-RUN     sed -i -e 's,PACKAGE_NAME,service-binding,g' ${MANIFESTS_TMP}/*.yaml
+RUN BUNDLE_VERSION="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
+    OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-operator-rhel8:${CI_CONTAINER_VERSION}" \
+    CSV_PACKAGE_NAME="service-binding" \
+    make build push-to-manifest-repo
 
 
 #--------------------------------------------------------------------
