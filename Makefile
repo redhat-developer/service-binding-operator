@@ -455,5 +455,4 @@ push-bundle-to-quay:
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
-	chmod +x ./hack/dev-release.sh
 	./hack/dev-release.sh
