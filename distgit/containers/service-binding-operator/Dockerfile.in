@@ -31,7 +31,7 @@ ARG VERBOSE=2
 ENV GOFLAGS="-mod=vendor"
 
 RUN BUNDLE_VERSION="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
-    OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-operator-rhel8:${CI_CONTAINER_VERSION}" \
+    OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-rhel8-operator:${CI_CONTAINER_VERSION}" \
     CSV_PACKAGE_NAME="service-binding" \
     make build push-to-manifest-repo
 
@@ -61,4 +61,4 @@ USER sbo
 
 LABEL com.redhat.component="service-binding-operator-container" \
 	com.redhat.delivery.appregistry="true" \
-	name="ocp-tools-43-tech-preview/service-binding-operator-rhel8"
+	name="ocp-tools-43-tech-preview/service-binding-rhel8-operator"
