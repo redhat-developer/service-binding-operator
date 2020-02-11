@@ -455,21 +455,4 @@ push-bundle-to-quay:
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
-	$(Q)kubectl apply -f ./test/operator-hub/operator_source.yaml
-	# Subscribing to the operator
-	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
-	while [ "$(kubectl get pods --field-selector=status.phase=Running -n openshift-marketplace" == "No resources found." ]
-	do
-		sleep 1s
-	done
-	$(eval VERSION_NUMBER := $(shell kubectl get csvs  -n=default -o jsonpath='{.items[*].spec.version}'))
-	@if [ ${VERSION_NUMBER} == ${BUNDLE_VERSION} ]; \
-	then \
-    	echo -e "OLM Bundle Version validation succeeded \n " \
-		exit 0; \
-    else \
-		echo -e "OLM Bundle Version validation failed \n" \
-		exit 1; \
-    fi
-
-
+	./hack/dev-release.sh
