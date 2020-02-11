@@ -153,7 +153,7 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 
 .PHONY: lint
 ## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
-lint: setup-venv lint-go-code lint-yaml courier
+lint: setup-venv lint-go-code lint-yaml
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
@@ -171,13 +171,6 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
-
-.PHONY: courier
-## Validate manifests using operator-courier
-courier:
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier flatten ./manifests $(OUTPUT_DIR)/manifests
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(OUTPUT_DIR)/manifests
 
 .PHONY: setup-venv
 ## Setup virtual environment
