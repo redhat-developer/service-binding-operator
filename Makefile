@@ -456,4 +456,4 @@ push-bundle-to-quay:
 ## validating the operator by installing new quay releases
 dev-release:
 	chmod +x ./hack/dev-release.sh
-	./hack/dev-release.sh $(BUNDLE_VERSION)
+	./hack/dev-release.sh
