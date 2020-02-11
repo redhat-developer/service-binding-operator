@@ -28,10 +28,10 @@ WORKDIR /tmp
 RUN mkdir -p $GOPATH/bin
 RUN mkdir -p /tmp/goroot
 
-RUN curl -Lo go1.13.1.linux-amd64.tar.gz https://dl.google.com/go/go1.13.1.linux-amd64.tar.gz && tar -C /tmp/goroot -xzf go1.13.1.linux-amd64.tar.gz
+RUN curl -Lo go1.13.7.linux-amd64.tar.gz https://dl.google.com/go/go1.13.7.linux-amd64.tar.gz && tar -C /tmp/goroot -xzf go1.13.7.linux-amd64.tar.gz
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x kubectl && mv kubectl $GOPATH/bin/
 
-RUN curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.10.0/operator-sdk-v0.10.0-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
+RUN curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v0.15.1/operator-sdk-v0.15.1-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
 
 RUN mkdir -p ${GOPATH}/src/${GO_PACKAGE_PATH}/
 
