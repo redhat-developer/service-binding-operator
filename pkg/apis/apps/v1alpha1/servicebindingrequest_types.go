@@ -46,6 +46,8 @@ type ServiceBindingRequestSpec struct {
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
+	// BindingStatus is the status of the service binding request.
+	BindingStatus string `json:"bindingStatus,omitempty"`
 	// conditions describes the state of the operator's reconciliation functionality.
 	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
 	// Secret is the name of the intermediate secret
