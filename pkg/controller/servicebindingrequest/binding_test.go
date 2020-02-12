@@ -3,6 +3,7 @@ package servicebindingrequest
 import (
 	"testing"
 
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -12,6 +13,7 @@ import (
 	k8stesting "k8s.io/client-go/testing"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
@@ -28,6 +30,13 @@ func TestServiceBinder_Bind(t *testing.T) {
 		name     string
 	}
 
+	type wantedCondition struct {
+		Type    string
+		Status  string
+		Reason  string
+		Message string
+	}
+
 	// args are the test arguments
 	type args struct {
 		// options inform the test how to build the ServiceBinder.
@@ -39,6 +48,8 @@ func TestServiceBinder_Bind(t *testing.T) {
 		// wantedActions informs the test all the actions that should have been issued by
 		// ServiceBinder.
 		wantedActions []wantedAction
+		// have a slice of wanted conditions
+		wantedConditions []wantedCondition
 	}
 
 	// assertBind exercises the bind functionality
@@ -104,6 +115,49 @@ func TestServiceBinder_Bind(t *testing.T) {
 						}
 					}
 					require.True(t, match, "expected action %+v not found", w)
+				}
+			}
+		}
+	}
+
+	// assertCondition exercises the status of bind functionality
+	assertCondition := func(args args) func(*testing.T) {
+		return func(t *testing.T) {
+			sb, err := BuildServiceBinder(args.options)
+			if args.wantBuildErr != nil {
+				require.Error(t, err)
+				return
+			} else {
+				require.NoError(t, err)
+			}
+
+			res, err := sb.Bind()
+
+			if args.wantErr != nil {
+				require.Error(t, err)
+				require.Equal(t, args.wantErr, err)
+				require.Nil(t, res)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, res)
+			}
+
+			if len(args.wantedConditions) > 0 {
+				// proceed to find whether conditions match wanted conditions
+				for _, c := range args.wantedConditions {
+					if c.Type != "" {
+						require.Equal(t, c.Type, "BindingReady")
+					}
+					if c.Status != "" {
+						switch c.Status {
+						case "True":
+							require.Equal(t, c.Status, "True")
+						case "False":
+							require.Equal(t, c.Status, "Flase")
+							require.Equal(t, c.Reason, "BindingFail")
+							require.Equal(t, c.Message, "Error_message")
+						}
+					}
 				}
 			}
 		}
@@ -223,6 +277,93 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockResource(sbrMultipleServices)
 
+	// create the ServiceBindingRequest with status condition
+	sbrSingleServiceStatusTrue := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "status-sbr",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{
+			Conditions: []conditionsv1.Condition{
+				{
+					Type:   conditions.BindingReady,
+					Status: corev1.ConditionTrue,
+				},
+			},
+		},
+	}
+	f.AddMockResource(sbrSingleServiceStatusTrue)
+
+	sbrSingleServiceStatusFalse := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "status-sbr",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{
+			Conditions: []conditionsv1.Condition{
+				{
+					Type:    conditions.BindingReady,
+					Status:  corev1.ConditionFalse,
+					Reason:  BindingFail,
+					Message: "Error_message",
+				},
+			},
+		},
+	}
+	f.AddMockResource(sbrSingleServiceStatusFalse)
+
 	logger := log.NewLog("service-binder")
 	t.Run("single bind golden path", assertBind(args{
 		options: &ServiceBinderOptions{
@@ -263,6 +404,41 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 	}))
 
+	t.Run("bind with binding resource detection", assertCondition(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: true,
+			EnvVarPrefix:           "",
+			SBR:                    sbrSingleServiceStatusTrue,
+			Client:                 f.FakeClient(),
+		},
+		wantedConditions: []wantedCondition{
+			{
+				Type:   "Ready",
+				Status: "True",
+			},
+		},
+	}))
+
+	t.Run("bind with binding resource detection", assertCondition(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: true,
+			EnvVarPrefix:           "",
+			SBR:                    sbrSingleServiceStatusFalse,
+			Client:                 f.FakeClient(),
+		},
+		wantedConditions: []wantedCondition{
+			{
+				Type:    "Ready",
+				Status:  "False",
+				Reason:  BindingFail,
+				Message: "Error_message",
+			},
+		},
+	}))
 	// Missing SBR returns an InvalidOptionsErr
 	t.Run("bind missing SBR", assertBind(args{
 		options: &ServiceBinderOptions{
