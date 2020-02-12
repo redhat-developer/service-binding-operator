@@ -32,7 +32,7 @@ ENV GOFLAGS="-mod=vendor"
 
 RUN BUNDLE_VERSION="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
     OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-43-tech-preview/service-binding-rhel8-operator:${CI_CONTAINER_VERSION}" \
-    CSV_PACKAGE_NAME="service-binding" \
+    CSV_PACKAGE_NAME="rh-service-binding-operator" \
     make build push-to-manifest-repo
 
 
