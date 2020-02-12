@@ -1,8 +1,6 @@
 package servicebindingrequest
 
 import (
-	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -28,15 +26,15 @@ const (
 // reconcilerLog local logger instance
 var reconcilerLog = log.NewLog("reconciler")
 
-// validateServiceBindingRequest check for unsupported settings in SBR.
-func (r *Reconciler) validateServiceBindingRequest(sbr *v1alpha1.ServiceBindingRequest) error {
-	// check if application ResourceRef and MatchLabels, one of them is required.
-	if sbr.Spec.ApplicationSelector.ResourceRef == "" &&
-		sbr.Spec.ApplicationSelector.LabelSelector == nil {
-		return fmt.Errorf("both ResourceRef and LabelSelector are not set")
-	}
-	return nil
-}
+//// validateServiceBindingRequest check for unsupported settings in SBR.
+//func (r *Reconciler) validateServiceBindingRequest(sbr *v1alpha1.ServiceBindingRequest) error {
+//	// check if application ResourceRef and MatchLabels, one of them is required.
+//	if sbr.Spec.ApplicationSelector.ResourceRef == "" &&
+//		sbr.Spec.ApplicationSelector.LabelSelector == nil {
+//		return fmt.Errorf("both ResourceRef and LabelSelector are not set")
+//	}
+//	return nil
+//}
 
 // getServiceBindingRequest retrieve the SBR object based on namespaced-name.
 func (r *Reconciler) getServiceBindingRequest(
