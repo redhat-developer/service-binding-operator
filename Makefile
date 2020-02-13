@@ -435,6 +435,8 @@ push-to-manifest-repo:
 	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 
 ## -- Target for pushing manifest bundle to quay application --
 .PHONY: push-bundle-to-quay

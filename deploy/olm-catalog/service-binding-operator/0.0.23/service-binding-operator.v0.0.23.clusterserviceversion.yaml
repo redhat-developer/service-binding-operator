@@ -37,6 +37,9 @@ metadata:
   name: service-binding-operator.v0.0.23
   namespace: placeholder
 spec:
+  icon:
+  - base64data: ICON_BASE64_DATA
+    mediatype: ICON_MEDIA_TYPE
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
@@ -181,8 +184,8 @@ spec:
     - name: Blog post
       url: https://developers.redhat.com/blog/2019/12/19/introducing-the-service-binding-operator
   maintainers:
-    - email: shbose@redhat.com
-      name: Shoubhik Bose
+    - email: service-binding-support@redhat.com
+      name: Openshift Application Services
   provider:
     name: Red Hat, Inc.
   version: 0.0.23
