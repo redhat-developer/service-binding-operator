@@ -128,6 +128,7 @@ BUNDLE_VERSION ?= $(OPERATOR_VERSION)-$(COMMIT_COUNT)
 BASE_BUNDLE_VERSION ?= 0.0.23
 OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
+CSV_CREATION_TIMESTAMP ?= $(shell date '+%FT%T%Z')
 
 QUAY_TOKEN ?= ""
 QUAY_BUNDLE_TOKEN ?= ""
@@ -432,6 +433,7 @@ push-to-manifest-repo:
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
 	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
 	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,CSV_CREATION_TIMESTAMP,$(CSV_CREATION_TIMESTAMP),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_TMP)/*.yaml

@@ -29,6 +29,9 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Developer Tools, OpenShift Optional, Integration & Delivery
+    createdAt: CSV_CREATION_TIMESTAMP
+    repository: https://github.com/redhat-developer/service-binding-operator
+    support: Red Hat, Inc
     containerImage: REPLACE_IMAGE
     description: An operator to support binding capabilities between imported apps and operator backed services
   name: service-binding-operator.v0.0.23
@@ -175,8 +178,8 @@ spec:
     type: AllNamespaces
   maturity: alpha
   links:
-    - name: Source Code
-      url: https://github.com/redhat-developer/service-binding-operator
+    - name: Blog post
+      url: https://developers.redhat.com/blog/2019/12/19/introducing-the-service-binding-operator
   maintainers:
     - email: shbose@redhat.com
       name: Shoubhik Bose
