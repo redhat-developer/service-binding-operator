@@ -30,11 +30,17 @@ demonstrate a sample use case.
 
 #### Install the Service Binding Operator
 
-Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Other` category select the `Service Bidning Operator` operator
+Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Developer Tools` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install a `stable` version.
+and install a `alpha` version.
+
+Alternatively, you can perform the same task with this make command:
+
+``` shell
+make install-service-binding-operator
+```
 
 This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
 

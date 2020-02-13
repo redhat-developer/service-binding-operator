@@ -127,34 +127,18 @@ function uninstall_postgresql_db_instance {
 
 ## Service Binding Operator
 
-function install_service_binding_operator_source {
-    OPSRC_NAMESPACE=redhat-developer
-    OPSRC_NAME=redhat-developer-operators
-    PACKAGE_NAME=service-binding-operator
-
-    install_operator_source $OPSRC_NAMESPACE $OPSRC_NAME
-    wait_for_packagemanifest $PACKAGE_NAME
-}
-
-function uninstall_service_binding_operator_source {
-    OPSRC_NAMESPACE=redhat-developer
-    OPSRC_NAME=redhat-developer-operators
-
-    uninstall_operator_source $OPSRC_NAMESPACE $OPSRC_NAME
-}
-
 function install_service_binding_operator_subscription {
     NAME=service-binding-operator
-    OPSRC_NAME=redhat-developer-operators
-    CHANNEL=stable
+    OPSRC_NAME=community-operators
+    CHANNEL=alpha
 
     install_operator_subscription $NAME $OPSRC_NAME $CHANNEL
 }
 
 function uninstall_service_binding_operator_subscription {
     NAME=service-binding-operator
-    OPSRC_NAME=redhat-developer-operators
-    CHANNEL=stable
+    OPSRC_NAME=community-operators
+    CHANNEL=alpha
 
     uninstall_operator_subscription $NAME $OPSRC_NAME $CHANNEL
     uninstall_current_csv $NAME $CHANNEL

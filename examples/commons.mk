@@ -82,11 +82,6 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 
 ## --- Service Binding Operator ---
 
-.PHONY: install-service-binding-operator-source
-## Install the Service Binding Operator Source
-install-service-binding-operator-source:
-	${Q}${EC} install_service_binding_operator_source
-
 .PHONY: install-service-binding-operator-subscription
 ## Install the Service Binding Operator Subscription
 install-service-binding-operator-subscription:
@@ -94,12 +89,7 @@ install-service-binding-operator-subscription:
 
 .PHONY: install-service-binding-operator
 ## Install the Service Binding Operator
-install-service-binding-operator: install-service-binding-operator-source install-service-binding-operator-subscription
-
-.PHONY: uninstall-service-binding-operator-source
-## Uninstall the Service Binding Operator Source
-uninstall-service-binding-operator-source:
-	${Q}${EC} uninstall_service_binding_operator_source
+install-service-binding-operator: install-service-binding-operator-subscription
 
 .PHONY: uninstall-service-binding-operator-subscription
 ## Uninstall the Service Binding Operator Subscription
@@ -108,7 +98,7 @@ uninstall-service-binding-operator-subscription:
 
 .PHONY: uninstall-service-binding-operator
 ## Uninstall the Service Binding Operator
-uninstall-service-binding-operator: uninstall-service-binding-operator-subscription uninstall-service-binding-operator-source
+uninstall-service-binding-operator: uninstall-service-binding-operator-subscription
 
 ## --- Backing Service DB (PostgreSQL) Operator ---
 

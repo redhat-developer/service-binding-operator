@@ -22,15 +22,21 @@ The Backing Service Operator represents a database required by the
 applications. We'll use [aws-rds-operator](https://github.com/operator-backing-service-samples/aws-rds) to
 manage off-cluster RDS database instances on AWS.
 
-#### Install the Service Binding Operator using an `OperatorSource`
+#### Install the Service Binding Operator
 
-Navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Other` category select the `Service Bidning Operator` operator
+Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Developer Tools` category select the `Service Bidning Operator` operator
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install a `stable` version.
+and install a `alpha` version.
 
-This makes the `ServiceBindingRequest` custom resource available, that we as the application developer will [use later](#bind-the-db-to-the-shell-application).
+Alternatively, you can perform the same task with this make command:
+
+``` shell
+make install-service-binding-operator
+```
+
+This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
 
 #### Install the DB operator using an `OperatorSource`
 
@@ -242,6 +248,7 @@ The Node.js application should be already up and running after we [imported it b
 Let's check by navigating to the application's route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That means that the application is not connected to DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
 
 Now we ask the Service Binding Operator to bind the DB to the Node.js application in the following step:
+
 * [Create `ServiceBindingRequest`](#create-servicebindingrequest-for-the-nodejs-application)
 
 #### Create `ServiceBindingRequest` for the Node.js application
