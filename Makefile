@@ -453,4 +453,5 @@ push-bundle-to-quay:
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
+	export BUNDLE_VERSION OPERATOR_SOURCE SUBSCRIPTION RUNNING_STATUS INSTALL_PLAN_PRIOR INSTALL_PLAN
 	./hack/dev-release.sh
