@@ -1,7 +1,5 @@
 .DEFAULT_GOAL := help
 
-.EXPORT_ALL_VARIABLES:
-
 # It's necessary to set this because some environments don't link sh -> bash.
 SHELL := /bin/bash
 
