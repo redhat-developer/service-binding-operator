@@ -19,8 +19,8 @@ CRD_NAME="servicebindingrequests.apps.openshift.io"
 echo "# Searching for '${CRD_NAME}'..."
 
 if ! check_crds ${CRD_NAME} ; then
-    echo "CRD doesn't exist: ${crd_name}"
+    echo "CRD doesn't exist: ${CRD_NAME}"
     exit 1
 fi
 
-echo "CRD is found: ${crd_name}"
+echo "CRD is found: ${CRD_NAME}"

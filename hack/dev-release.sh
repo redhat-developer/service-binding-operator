@@ -15,6 +15,7 @@ if [ ${RUNNING_STATUS} = "Running" ] ; then
 	echo "Operator marketplace pod is running"
 fi
 ./hack/check-crds.sh
+./hack/check-csvs.sh
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}
 VERSION_NUMBER=`kubectl get csvs  -n=default -o jsonpath='{.items[*].spec.version}'`
 if [ "${VERSION_NUMBER}" = "${BUNDLE_VERSION}" ] ; then
