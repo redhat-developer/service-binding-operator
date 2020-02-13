@@ -33,6 +33,6 @@ if [ "${VERSION_NUMBER}" = "${BUNDLE_VERSION}" ] ; then
 	exit 0
 else
 	echo -e "OLM Bundle validation failed \n"
-    echo "Version number: ${VERSION_NUMBER} \nBuild version: ${BUNDLE_VERSION}"
+	echo "Version number: ${VERSION_NUMBER} \nBuild version: ${BUNDLE_VERSION}"
 	exit 1
 fi
