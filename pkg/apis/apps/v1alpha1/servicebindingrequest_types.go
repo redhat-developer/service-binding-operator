@@ -74,8 +74,9 @@ type ApplicationSelector struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceBindingRequest is the Schema for the servicebindings API
+// Expresses intent to bind an operator-backed service with a Deployment
 // +k8s:openapi-gen=true
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding Request"
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=servicebindingrequests,shortName=sbr;sbrs
 type ServiceBindingRequest struct {

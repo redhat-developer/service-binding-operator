@@ -1,4 +1,0 @@
-channels:
-  - currentCSV: service-binding-operator.v4.3.0
-    name: "4.3"
-packageName: service-binding-operator

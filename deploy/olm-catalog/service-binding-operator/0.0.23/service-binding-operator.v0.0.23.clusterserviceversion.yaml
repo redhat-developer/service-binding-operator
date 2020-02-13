@@ -2,28 +2,62 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    alm-examples: '[{"apiVersion":"apps.openshift.io/v1alpha1","kind":"ServiceBindingRequest","metadata":{"name":"binding-request","namespace":"service-binding-demo"},"spec":{"applicationSelector":{"matchLabels":{"connects-to":"postgres","environment":"demo"},"group":"apps.openshift.io","version":"v1","resource":"deploymentconfigs"},"backingServiceSelector":{"group":"postgresql.baiju.dev","version":"v1alpha1","kind":"Database","resourceRef":"db-demo"}}}]'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "apps.openshift.io/v1alpha1",
+          "kind": "ServiceBindingRequest",
+          "metadata": {
+            "name": "example-servicebindingrequest"
+          },
+          "spec": {
+            "applicationSelector": {
+              "group": "apps",
+              "resource": "deployments",
+              "resourceRef": "nodejs-rest-http-crud",
+              "version": "v1"
+            },
+            "backingServiceSelector": {
+              "group": "postgresql.example.dev",
+              "kind": "Database",
+              "resourceRef": "pg-instance",
+              "version": "v1alpha1"
+            },
+            "mountPathPrefix": "/var/credentials"
+          }
+        }
+      ]
     capabilities: Basic Install
-    containerImage: quay.io/redhat-developer/app-binding-operator:v0.0.23
-    description: An operator to support binding capabilities between imported apps
-      and operator backed services
+    categories: Developer Tools, OpenShift Optional, Integration & Delivery
+    createdAt: CSV_CREATION_TIMESTAMP
+    repository: https://github.com/redhat-developer/service-binding-operator
+    support: Red Hat, Inc
+    containerImage: REPLACE_IMAGE
+    description: An operator to support binding capabilities between imported apps and operator backed services
   name: service-binding-operator.v0.0.23
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: Expresses intent to bind an operator-backed service with a Deployment.
-      displayName: ServiceBindingRequest
+    - description: Expresses intent to bind an operator-backed service with a Deployment
       kind: ServiceBindingRequest
       name: servicebindingrequests.apps.openshift.io
       version: v1alpha1
   description: '
-   The Service Binding Operator enables application developers to more easily bind applications together with operator managed backing services such as databases, without having to perform manual configuration of secrets, configmaps, etc. The Service Binding Operator accomplishes this through automatically collecting binding information and sharing with an application to bind it with operator managed backing services. The binding is performed through a new custom resource called a ServiceBindingRequest.
+   The Service Binding Operator enables application developers
+   to more easily bind applications together with operator managed backing services such as databases,
+   without having to perform manual configuration of secrets, configmaps, etc.
+   The Service Binding Operator accomplishes this through automatically collecting binding information
+   and sharing with an application to bind it with operator managed backing services.
+   The binding is performed through a new custom resource called a ServiceBindingRequest.
 
    ### Example
 
-   A set of examples, each of which illustrates a usage scenario for the Service Binding Operator, is being developed in parallel with the Operator. Each example includes documentation and can be run either through the OpenShift web console or command line client. The examples are available [here](https://github.com/redhat-developer/service-binding-operator/blob/master/README.md#example-scenarios)
+   A set of examples, each of which illustrates a usage scenario for the Service Binding Operator,
+   is being developed in parallel with the Operator. Each example includes documentation
+   and can be run either through the OpenShift web console or command line client.
+   The examples are available [here](https://github.com/redhat-developer/service-binding-operator/blob/master/README.md#example-scenarios)
 
    ### Documentation
 
@@ -58,14 +92,16 @@ spec:
                 - service-binding-operator
                 env:
                 - name: WATCH_NAMESPACE
-                  value: ''
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: quay.io/redhat-developer/app-binding-operator:v0.0.23
+                image: REPLACE_IMAGE
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
@@ -73,7 +109,7 @@ spec:
       permissions:
       - rules:
         - apiGroups:
-          - ''
+          - ""
           resources:
           - pods
           - services
@@ -140,13 +176,13 @@ spec:
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
-  links:
-  - name: Source Code
-    url: https://github.com/redhat-developer/service-binding-operator
-  maintainers:
-  - email: shbose@redhat.com
-    name: Shoubhik Bose
   maturity: alpha
+  links:
+    - name: Blog post
+      url: https://developers.redhat.com/blog/2019/12/19/introducing-the-service-binding-operator
+  maintainers:
+    - email: shbose@redhat.com
+      name: Shoubhik Bose
   provider:
     name: Red Hat, Inc.
   version: 0.0.23
