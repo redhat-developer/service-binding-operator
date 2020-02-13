@@ -1,8 +1,8 @@
 git:
-- branch: master
-  commit: 7a7e9f2f651f121e90ac480ee54e1c5b54ec3d9f
+- branch: added-logo-csv
+  commit: 129f20c6d7f982f43eff063542b269de96584032
   dest_formats:
     branch:
       gen_source_repos: true
     files: {}
-  url: https://github.com/redhat-developer/service-binding-operator
+  url: https://github.com/pedjak/service-binding-operator
