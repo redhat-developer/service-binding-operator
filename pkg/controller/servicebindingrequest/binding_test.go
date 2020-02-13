@@ -320,7 +320,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockResource(sbrSingleServiceStatusTrue)
 
-	sbrSingleServiceStatusFalse := &v1alpha1.ServiceBindingRequest{
+	sbrEmptyAppSelector := &v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "apps.openshift.io/v1alpha1",
 			Kind:       "ServiceBindingRequest",
@@ -329,17 +329,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "status-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			ApplicationSelector: v1alpha1.ApplicationSelector{
-				LabelSelector: &metav1.LabelSelector{
-					MatchLabels: matchLabels,
-				},
-				GroupVersionResource: metav1.GroupVersionResource{
-					Group:    d.GetObjectKind().GroupVersionKind().Group,
-					Version:  d.GetObjectKind().GroupVersionKind().Version,
-					Resource: "deployments",
-				},
-				ResourceRef: d.GetName(),
-			},
+			ApplicationSelector: v1alpha1.ApplicationSelector{},
 			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
@@ -362,7 +352,42 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 		},
 	}
-	f.AddMockResource(sbrSingleServiceStatusFalse)
+	f.AddMockResource(sbrEmptyAppSelector)
+
+	sbrEmptyBackingServiceSelector := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "status-sbr",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{
+			Conditions: []conditionsv1.Condition{
+				{
+					Type:    conditions.BindingReady,
+					Status:  corev1.ConditionFalse,
+					Reason:  BindingFail,
+					Message: "Error_message",
+				},
+			},
+		},
+	}
+	f.AddMockResource(sbrEmptyBackingServiceSelector)
 
 	logger := log.NewLog("service-binder")
 	t.Run("single bind golden path", assertBind(args{
@@ -427,7 +452,26 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: true,
 			EnvVarPrefix:           "",
-			SBR:                    sbrSingleServiceStatusFalse,
+			SBR:                    sbrEmptyAppSelector,
+			Client:                 f.FakeClient(),
+		},
+		wantedConditions: []wantedCondition{
+			{
+				Type:    "Ready",
+				Status:  "False",
+				Reason:  BindingFail,
+				Message: "Error_message",
+			},
+		},
+	}))
+
+	t.Run("bind with binding resource detection", assertCondition(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: true,
+			EnvVarPrefix:           "",
+			SBR:                    sbrEmptyBackingServiceSelector,
 			Client:                 f.FakeClient(),
 		},
 		wantedConditions: []wantedCondition{

@@ -28,7 +28,7 @@ type Reconciler struct {
 
 const (
 	// BindingSuccess binding has succeeded
-	BindingSuccess = "Success"
+	//BindingSuccess = "Success"
 	// sbrFinalizer annotation used in finalizer steps
 	sbrFinalizer = "finalizer.servicebindingrequest.openshift.io"
 )
@@ -38,7 +38,7 @@ var reconcilerLog = log.NewLog("reconciler")
 
 // setSecretName update the CR status field to "in progress", and setting secret name.
 func (r *Reconciler) setSecretName(sbrStatus *v1alpha1.ServiceBindingRequestStatus, name string) {
-	sbrStatus.BindingStatus = bindingInProgress
+	//sbrStatus.BindingStatus = bindingInProgress
 	sbrStatus.Secret = name
 }
 
@@ -144,7 +144,7 @@ func (r *Reconciler) onError(
 	objs []*unstructured.Unstructured,
 ) (reconcile.Result, error) {
 	// settting overall status to failed
-	r.setStatus(sbrStatus, bindingFail)
+	r.setStatus(sbrStatus, BindingFail)
 	//
 	if objs != nil {
 		r.setApplicationObjects(sbrStatus, objs)
