@@ -27,7 +27,8 @@ type ServiceBindingRequestSpec struct {
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector"`
+	// +optional
+	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
 	// BackingServiceSelectors is used to identify multiple backing services.
 	BackingServiceSelectors []BackingServiceSelector `json:"backingServiceSelectors,omitempty"`

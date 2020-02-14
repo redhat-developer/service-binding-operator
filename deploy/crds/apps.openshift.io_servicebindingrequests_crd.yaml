@@ -117,7 +117,8 @@ spec:
               - version
               type: object
             backingServiceSelectors:
-              description: BackingServiceSelectors is a slice of BackingServiceSelector
+              description: BackingServiceSelectors is used to identify multiple backing
+                services.
               items:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
@@ -247,7 +248,6 @@ spec:
               type: string
           required:
           - applicationSelector
-          - backingServiceSelector
           type: object
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
