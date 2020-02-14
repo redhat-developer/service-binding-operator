@@ -68,9 +68,8 @@ func (p *Planner) searchCRD(gvk schema.GroupVersionKind) (*unstructured.Unstruct
 func (p *Planner) Plan() (*Plan, error) {
 	ns := p.sbr.GetNamespace()
 	selectors := append([]v1alpha1.BackingServiceSelector{}, p.sbr.Spec.BackingServiceSelectors...)
-	selector := p.sbr.Spec.BackingServiceSelector
-	if len(selector.ResourceRef) > 0 {
-		selectors = append(selectors, selector)
+	if (p.sbr.Spec.BackingServiceSelector != v1alpha1.BackingServiceSelector{}) {
+		selectors = append(selectors, p.sbr.Spec.BackingServiceSelector)
 	}
 
 	relatedResources := make([]*RelatedResource, 0)
