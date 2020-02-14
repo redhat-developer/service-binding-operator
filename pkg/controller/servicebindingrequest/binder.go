@@ -421,20 +421,21 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 	var (
 		aMap map[string]interface{}
 		bMap map[string]interface{}
-		ok   bool
+		aOk  bool
+		bOk  bool
 		err  error
 	)
 
-	if aMap, ok, err = unstructured.NestedMap(a.Object, fields...); err != nil {
+	if aMap, aOk, err = unstructured.NestedMap(a.Object, fields...); err != nil {
 		return false, err
-	} else if !ok {
-		return false, fmt.Errorf("original object doesn't have a 'spec' field")
 	}
 
-	if bMap, ok, err = unstructured.NestedMap(b.Object, fields...); err != nil {
+	if bMap, bOk, err = unstructured.NestedMap(b.Object, fields...); err != nil {
 		return false, err
-	} else if !ok {
-		return false, fmt.Errorf("original object doesn't have a 'spec' field")
+	}
+
+	if aOk != bOk {
+		return false, nil
 	}
 
 	result := cmp.DeepEqual(aMap, bMap)()
