@@ -302,13 +302,6 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// gather related secret, again only appending it if there's a value.
 	secret := NewSecret(options.DynClient, plan)
-	secretObj, found, err := secret.Get()
-	if err != nil {
-		return nil, err
-	}
-	if found {
-		objs = append(objs, secretObj)
-	}
 
 	return &ServiceBinder{
 		Logger:    options.Logger,
