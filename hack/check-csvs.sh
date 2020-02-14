@@ -8,7 +8,7 @@ function check_csvs () {
             return 0
         fi
 
-        sleep 3
+        sleep 10
     done
 
     return 1
