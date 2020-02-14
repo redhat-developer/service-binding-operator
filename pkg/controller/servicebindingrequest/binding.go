@@ -208,7 +208,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
-	if err = SetSBRAnnotations(b.DynClient, namespacedName, b.Objects); err != nil {
+	if err = SetSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
 		b.Logger.Error(err, "On setting annotations in related objects.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
