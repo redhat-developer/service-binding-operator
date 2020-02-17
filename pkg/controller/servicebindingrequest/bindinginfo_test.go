@@ -1,6 +1,9 @@
 package servicebindingrequest
 
-import "testing"
+import (
+	"github.com/stretchr/testify/require"
+	"testing"
+)
 
 // TestNewBindingInfo exercises annotation binding information parsing.
 func TestNewBindingInfo(t *testing.T) {
@@ -42,7 +45,7 @@ func TestNewBindingInfo(t *testing.T) {
 				t.Errorf("NewBindingInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			} else if err == nil {
-				requireYamlEqual(t, tt.want, b)
+				require.Equal(t, tt.want, b)
 			}
 		})
 	}
