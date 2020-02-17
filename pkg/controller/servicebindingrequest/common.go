@@ -27,7 +27,7 @@ func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) 
 	if errors.IsNotFound(err) {
 		return Requeue(nil, requeueAfter)
 	}
-	return Requeue(err, requeueAfter)
+	return Done()
 }
 
 // RequeueOnConflict in case of conflict error, returning the error with requeue, otherwise Done.
