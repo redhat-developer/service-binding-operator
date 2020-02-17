@@ -74,9 +74,8 @@ type ServiceBinder struct {
 	Secret *Secret
 }
 
-// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
-// this action.
-func (b *ServiceBinder) updateServiceBindingRequest(
+func UpdateServiceBindingRequest(
+	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
 	u, err := converter.ToUnstructured(sbr)
@@ -84,10 +83,11 @@ func (b *ServiceBinder) updateServiceBindingRequest(
 		return nil, err
 	}
 
-	u, err = b.DynClient.
+	nsClient := dynClient.
 		Resource(GroupVersion).
-		Namespace(sbr.GetNamespace()).
-		Update(u, v1.UpdateOptions{})
+		Namespace(sbr.GetNamespace())
+
+	u, err = nsClient.Update(u, v1.UpdateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -97,7 +97,16 @@ func (b *ServiceBinder) updateServiceBindingRequest(
 	if err != nil {
 		return nil, err
 	}
+
 	return sbr, nil
+}
+
+// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
+// this action.
+func (b *ServiceBinder) updateServiceBindingRequest(
+	sbr *v1alpha1.ServiceBindingRequest,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	return UpdateServiceBindingRequest(b.DynClient, sbr)
 }
 
 // Unbind removes the relationship between a Service Binding Request and its related objects.
@@ -130,6 +139,33 @@ func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 	return Done()
 }
 
+func UpdateServiceBindingRequestStatus(
+	dynClient dynamic.Interface,
+	sbr *v1alpha1.ServiceBindingRequest,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	u, err := converter.ToUnstructured(sbr)
+	if err != nil {
+		return nil, err
+	}
+
+	nsClient := dynClient.
+		Resource(GroupVersion).
+		Namespace(sbr.GetNamespace())
+
+	u, err = nsClient.UpdateStatus(u, v1.UpdateOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+
+	return sbr, nil
+}
+
 // updateStatusServiceBindingRequest updates the Service Binding Request's status field.
 func (b *ServiceBinder) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
@@ -146,24 +182,7 @@ func (b *ServiceBinder) updateStatusServiceBindingRequest(
 	// coping status over informed object
 	sbr.Status = *sbrStatus
 
-	// converting object into unstructured
-	u, err := converter.ToUnstructured(sbr)
-	if err != nil {
-		return nil, err
-	}
-
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := b.DynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	u, err = resourceClient.UpdateStatus(u, v1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
-	if err != nil {
-		return nil, err
-	}
-	return sbr, nil
+	return UpdateServiceBindingRequestStatus(b.DynClient, sbr)
 }
 
 // onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
