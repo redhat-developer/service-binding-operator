@@ -184,6 +184,7 @@ func (b *ServiceBinder) onError(
 		Reason:  BindingFail,
 		Message: b.message(err),
 	})
+	sbrStatus.BindingStatus = BindingFail
 	_, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
@@ -209,7 +210,6 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		b.Logger.Error(err, "On binding application.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
-
 	b.setApplicationObjects(sbrStatus, updatedObjects)
 
 	// annotating objects related to binding
@@ -219,7 +219,8 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
 
-	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
+	sbrStatus.BindingStatus = BindingSuccess
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   conditions.BindingReady,
 		Status: corev1.ConditionTrue,
 	})
