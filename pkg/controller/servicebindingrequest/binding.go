@@ -185,10 +185,11 @@ func (b *ServiceBinder) onError(
 		Message: b.message(err),
 	})
 	sbrStatus.BindingStatus = BindingFail
-	_, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
+	newSbr, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
 	}
+	b.SBR = newSbr
 
 	return RequeueOnNotFound(err, requeueAfter)
 }
