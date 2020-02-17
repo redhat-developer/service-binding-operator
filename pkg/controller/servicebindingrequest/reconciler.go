@@ -19,10 +19,6 @@ type Reconciler struct {
 	scheme    *runtime.Scheme   // api scheme
 }
 
-const (
-	BindingSuccess = "Success"
-)
-
 // reconcilerLog local logger instance
 var reconcilerLog = log.NewLog("reconciler")
 
