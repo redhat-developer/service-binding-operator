@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"errors"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -64,12 +65,18 @@ func (p *Planner) searchCRD(gvk schema.GroupVersionKind) (*unstructured.Unstruct
 	return p.client.Resource(CRDGVR).Get(crdName, metav1.GetOptions{})
 }
 
+var EmptyBackingServiceSelectorsErr = errors.New("backing service selectors are empty")
+
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	ns := p.sbr.GetNamespace()
 	selectors := append([]v1alpha1.BackingServiceSelector{}, p.sbr.Spec.BackingServiceSelectors...)
 	if (p.sbr.Spec.BackingServiceSelector != v1alpha1.BackingServiceSelector{}) {
 		selectors = append(selectors, p.sbr.Spec.BackingServiceSelector)
+	}
+
+	if len(selectors) == 0 {
+		return nil, EmptyBackingServiceSelectorsErr
 	}
 
 	relatedResources := make([]*RelatedResource, 0)
