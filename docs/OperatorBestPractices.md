@@ -32,7 +32,7 @@ There are three methods for making Operator Managed Backing Service Bindable:
 
 * [Operator Providing Metadata in CRD Annotations](#operator-providing-metadata-in-crd-annotations)
 * [Operator Providing Metadata in OLM](#operator-providing-metadata-in-olm)
-* [Operator Not Providing Metadata](#operator-not-providing-metadata) Coming Soon!
+* [Operator Not Providing Metadata](#operator-not-providing-metadata)
 
 ### Operator Providing Metadata in CRD Annotations
 
