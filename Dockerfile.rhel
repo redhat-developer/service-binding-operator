@@ -16,7 +16,6 @@ COPY build build
 COPY cmd cmd
 COPY deploy deploy
 COPY hack hack
-COPY manifests manifests
 COPY pkg pkg
 COPY test test
 COPY vendor vendor
