@@ -1,6 +1,6 @@
 git:
 - branch: added-logo-csv
-  commit: 129f20c6d7f982f43eff063542b269de96584032
+  commit: d07c8774b6a5e3534f4b95899b197d411df40114
   dest_formats:
     branch:
       gen_source_repos: true
