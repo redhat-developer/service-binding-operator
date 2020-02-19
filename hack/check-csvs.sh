@@ -4,7 +4,7 @@ function check_csvs () {
     local csv_name="$1"
 
     for i in  {1..120} ; do
-        if ( kubectl get csvs |grep ${csv_name} 2>&1 > /dev/null ) ; then
+        if ( kubectl get csvs -n default | grep ${csv_name} 2>&1 > /dev/null ) ; then
             return 0
         fi
 
