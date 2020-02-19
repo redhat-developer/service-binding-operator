@@ -1,6 +1,7 @@
 package servicebindingrequest
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -114,9 +115,8 @@ func (o *OLM) loopCRDDescriptions(
 	return nil
 }
 
-// SelectCRDDescriptionByGVK return a single CRDDescription filled with information from CSVs and
-// annotations.
-func (o *OLM) SelectCRDDescriptionByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
+// SelectCRDByGVK return a single CRD based on a given GVK.
+func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	log := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
@@ -124,16 +124,18 @@ func (o *OLM) SelectCRDDescriptionByGVK(gvk schema.GroupVersionKind, crd *unstru
 		return nil, err
 	}
 
-	var resultCRDDescription *olmv1alpha1.CRDDescription
+	var crdDescription *olmv1alpha1.CRDDescription
 
 	// CRDDescription is both used by OLM to configure OLM descriptors in manifests existing in the
 	// cluster but is also built from annotations present in the CRD
 	if crd != nil {
-		resultCRDDescription, err = buildCRDDescriptionFromCRD(crd)
+		crdDescription, err = buildCRDDescriptionFromCRD(crd)
 		if err != nil {
 			return nil, err
 		}
 	}
+
+	crdDescriptions := []*olmv1alpha1.CRDDescription{}
 
 	err = o.loopCRDDescriptions(ownedCRDs, func(crdDescription *olmv1alpha1.CRDDescription) {
 		log = o.logger.WithValues(
@@ -152,18 +154,21 @@ func (o *OLM) SelectCRDDescriptionByGVK(gvk schema.GroupVersionKind, crd *unstru
 			return
 		}
 		log.Debug("CRDDescription object matches selector!")
-		if resultCRDDescription == nil {
-			resultCRDDescription = crdDescription.DeepCopy()
-		}
-
-		resultCRDDescription.StatusDescriptors = append(resultCRDDescription.StatusDescriptors, crdDescription.StatusDescriptors...)
-		resultCRDDescription.SpecDescriptors = append(resultCRDDescription.SpecDescriptors, crdDescription.SpecDescriptors...)
+		crdDescriptions = append(crdDescriptions, crdDescription)
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return resultCRDDescription, nil
+	if len(crdDescriptions) == 0 && crdDescription == nil {
+		log.Debug("No CRD could be found for GVK.")
+		return nil, fmt.Errorf("no crd could be found for gvk")
+	} else if len(crdDescriptions) == 0 {
+		// use the crdDescription built from CRD annotations as fallback
+		return crdDescription, nil
+	}
+
+	return crdDescriptions[0], nil
 }
 
 // buildCRDDescriptionFromCRD builds a CRDDescription from annotations present in the CRD.

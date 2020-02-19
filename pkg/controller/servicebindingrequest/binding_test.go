@@ -18,8 +18,6 @@ import (
 
 // TestServiceBinder_Bind exercises scenarios regarding binding SBR and its related resources.
 func TestServiceBinder_Bind(t *testing.T) {
-	t.Skip("functionality is not ready yet")
-
 	// wantedAction represents an action issued by the component that is required to exist after it
 	// finished the operation
 	type wantedAction struct {
@@ -128,20 +126,24 @@ func TestServiceBinder_Bind(t *testing.T) {
 	db1 := f.AddMockedUnstructuredPostgresDatabaseCR("db1")
 	{
 		runtimeStatus := map[string]interface{}{
-			"dbConfigMap": "db1",
+			"dbConfigMap":   "db1",
+			"dbCredentials": "db1",
 		}
 		err := unstructured.SetNestedMap(db1.Object, runtimeStatus, "status")
 		require.NoError(t, err)
 	}
+	f.AddMockedSecret("db1")
 
 	db2 := f.AddMockedUnstructuredPostgresDatabaseCR("db2")
 	{
 		runtimeStatus := map[string]interface{}{
-			"dbConfigMap": "db2",
+			"dbConfigMap":   "db2",
+			"dbCredentials": "db2",
 		}
 		err := unstructured.SetNestedMap(db2.Object, runtimeStatus, "status")
 		require.NoError(t, err)
 	}
+	f.AddMockedSecret("db2")
 
 	// create the ServiceBindingRequest
 	sbrSingleService := &v1alpha1.ServiceBindingRequest{

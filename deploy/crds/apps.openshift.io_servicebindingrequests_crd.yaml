@@ -116,6 +116,28 @@ spec:
               - resourceRef
               - version
               type: object
+            backingServiceSelectors:
+              description: BackingServiceSelectors is used to identify multiple backing
+                services.
+              items:
+                description: BackingServiceSelector defines the selector based on
+                  resource name, version, and resource kind
+                properties:
+                  group:
+                    type: string
+                  kind:
+                    type: string
+                  resourceRef:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - kind
+                - resourceRef
+                - version
+                type: object
+              type: array
             customEnvVar:
               description: Custom env variables
               items:
@@ -226,7 +248,6 @@ spec:
               type: string
           required:
           - applicationSelector
-          - backingServiceSelector
           type: object
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

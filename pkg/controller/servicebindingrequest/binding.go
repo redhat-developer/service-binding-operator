@@ -186,7 +186,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus := b.SBR.Status.DeepCopy()
 
 	b.Logger.Info("Saving data on intermediary secret...")
-	secretObj, err := b.Secret.Commit(b.Data, nil)
+	secretObj, err := b.Secret.Commit(b.Data)
 	if err != nil {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
@@ -208,7 +208,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
-	if err = SetSBRAnnotations(b.DynClient, namespacedName, b.Objects); err != nil {
+	if err = SetSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
 		b.Logger.Error(err, "On setting annotations in related objects.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
@@ -220,7 +220,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	}
 
 	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(sbr.GetFinalizers(), Finalizer))
+	sbr.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
 	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
 		return NoRequeue(err)
 	}
@@ -302,17 +302,10 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// gather related secret, again only appending it if there's a value.
 	secret := NewSecret(options.DynClient, plan)
-	secretObj, found, err := secret.Get()
-	if err != nil {
-		return nil, err
-	}
-	if found {
-		objs = append(objs, secretObj)
-	}
 
 	return &ServiceBinder{
 		Logger:    options.Logger,
-		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.volumeKeys),
+		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),
 		DynClient: options.DynClient,
 		SBR:       options.SBR,
 		Objects:   objs,

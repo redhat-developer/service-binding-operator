@@ -46,7 +46,9 @@ func TestReconcilerReconcileError(t *testing.T) {
 		"environment": "reconciler",
 	}
 	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredPostgresDatabaseCR("test-using-secret")
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
@@ -54,15 +56,10 @@ func TestReconcilerReconcileError(t *testing.T) {
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 
-	// FIXME: decide this test's fate
-	// I'm not very sure what this test was about, but in the case the SBR definition contains
-	// references to objects that do not exist, the reconciliation process is supposed to be
-	// successful. Commented below was the original test.
-	//
-	// require.Error(t, err)
-	// require.True(t, res.Requeue)
-
-	require.NoError(t, err)
+	// currently this test passes because annotations present in the Databases CRD being currently
+	// used doesn't have a 'status' field in its definition; once it does and this code is updated (
+	// since the Postgres CRD is being imported to be used in tests) this test will fail.
+	require.Error(t, err)
 	require.True(t, res.Requeue)
 }
 

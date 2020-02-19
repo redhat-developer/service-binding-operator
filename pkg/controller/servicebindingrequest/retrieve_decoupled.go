@@ -42,13 +42,14 @@ func (r *Retriever) ReadBindableResourcesData(
 }
 
 func (r *Retriever) storeInto(cr *unstructured.Unstructured, key string, value []byte) {
-	// r.store(cr, k, v)
-	panic("implement me")
+	r.store(cr, key, value)
 }
 
 func (r *Retriever) copyFrom(u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
-	// r.read(u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
-	panic("implement me")
+	if err := r.read(u, path, fieldPath, descriptors); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ReadCRDDescriptionData reads data related to given crdDescription
