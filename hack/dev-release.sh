@@ -21,7 +21,7 @@ VERSION_NUMBER=`kubectl get csvs  -n=default -o jsonpath='{.items[*].spec.versio
 if [ "${VERSION_NUMBER}" = "${BUNDLE_VERSION}" ] ; then
     echo -e "OLM Bundle Version validation succeeded \n ";
 	kubectl get csvs -n=default -o jsonpath='{.items[*].metadata.annotations.alm-examples}' | cut -d "[" -f 2 | cut -d "]" -f 1 > output.json;
-	kubectl apply -f ./output.json;
+	kubectl apply -n=default -f ./output.json;
 	if [ $? = 0 ] ; then
 		echo "CSV alm example validation succeeded"
 	fi
