@@ -11,11 +11,11 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
+		"./pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
+		"./pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
 	}
 }
 
@@ -111,14 +111,14 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -130,19 +130,19 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec"),
+							Ref: ref("./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
+							Ref: ref("./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -183,13 +183,26 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BackingServiceSelector is used to identify the backing service operator.",
-							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+						},
+					},
+					"backingServiceSelectors": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BackingServiceSelectors is used to identify multiple backing services.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+									},
+								},
+							},
 						},
 					},
 					"applicationSelector": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator.",
-							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector"),
+							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
 					"detectBindingResources": {
@@ -200,11 +213,11 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"backingServiceSelector", "applicationSelector"},
+				Required: []string{"applicationSelector"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ApplicationSelector", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector", "k8s.io/api/core/v1.EnvVar"},
+			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "k8s.io/api/core/v1.EnvVar"},
 	}
 }
 
@@ -220,6 +233,19 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 							Description: "BindingStatus is the status of the service binding request.",
 							Type:        []string{"string"},
 							Format:      "",
+						},
+					},
+					"conditions": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Conditions describes the state of the operator's reconciliation functionality.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/openshift/custom-resource-status/conditions/v1.Condition"),
+									},
+								},
+							},
 						},
 					},
 					"secret": {
@@ -246,5 +272,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 				},
 			},
 		},
+		Dependencies: []string{
+			"github.com/openshift/custom-resource-status/conditions/v1.Condition"},
 	}
 }
