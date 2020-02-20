@@ -49,7 +49,7 @@ type ServiceBindingRequestSpec struct {
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request.
 	BindingStatus string `json:"bindingStatus,omitempty"`
-	// conditions describes the state of the operator's reconciliation functionality.
+	// Conditions describes the state of the operator's reconciliation functionality.
 	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
