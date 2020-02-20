@@ -159,7 +159,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				Reason:  reason,
 				Message: err.Error(),
 			})
-			_, updateErr := UpdateServiceBindingRequestStatus(r.dynClient, sbr)
+			_, updateErr := updateServiceBindingRequestStatus(r.dynClient, sbr)
 			if updateErr == nil {
 				return Done()
 			}
