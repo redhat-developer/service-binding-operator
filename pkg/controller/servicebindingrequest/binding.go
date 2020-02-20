@@ -74,9 +74,9 @@ type ServiceBinder struct {
 	Secret *Secret
 }
 
-// UpdateServiceBindingRequest execute update API call on a SBR request. It can return errors from
+// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
 // this action.
-func UpdateServiceBindingRequest(
+func updateServiceBindingRequest(
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
@@ -108,7 +108,7 @@ func UpdateServiceBindingRequest(
 func (b *ServiceBinder) updateServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
-	return UpdateServiceBindingRequest(b.DynClient, sbr)
+	return updateServiceBindingRequest(b.DynClient, sbr)
 }
 
 // Unbind removes the relationship between a Service Binding Request and its related objects.
@@ -143,7 +143,7 @@ func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 
 // UpdateServiceBindingRequestStatus execute update API call on a SBR Status. It can return errors from
 // this action.
-func UpdateServiceBindingRequestStatus(
+func updateServiceBindingRequestStatus(
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
@@ -186,7 +186,7 @@ func (b *ServiceBinder) updateStatusServiceBindingRequest(
 	// coping status over informed object
 	sbr.Status = *sbrStatus
 
-	return UpdateServiceBindingRequestStatus(b.DynClient, sbr)
+	return updateServiceBindingRequestStatus(b.DynClient, sbr)
 }
 
 // onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
