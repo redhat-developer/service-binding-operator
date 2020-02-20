@@ -37,6 +37,11 @@ type Plan struct {
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
 func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
+
+	if selector.Namespace != nil {
+		namespace = *selector.Namespace
+	}
+
 	// gvr is the plural guessed resource for the given selector
 	gvk := schema.GroupVersionKind{
 		Group:   selector.Group,
@@ -81,6 +86,7 @@ func (p *Planner) Plan() (*Plan, error) {
 
 	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
+
 		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 
 		// resolve the CRD using the service's GVK

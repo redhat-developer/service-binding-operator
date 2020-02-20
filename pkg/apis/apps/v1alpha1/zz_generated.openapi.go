@@ -95,6 +95,12 @@ func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCa
 							Format: "",
 						},
 					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 				Required: []string{"group", "version", "kind", "resourceRef"},
 			},

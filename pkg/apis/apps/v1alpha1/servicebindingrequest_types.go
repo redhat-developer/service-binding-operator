@@ -62,6 +62,8 @@ type ServiceBindingRequestStatus struct {
 type BackingServiceSelector struct {
 	metav1.GroupVersionKind `json:",inline"`
 	ResourceRef             string `json:"resourceRef"`
+	// +optional
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 // ApplicationSelector defines the selector based on labels and GVR

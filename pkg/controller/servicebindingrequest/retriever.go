@@ -172,7 +172,7 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 	log.Debug("Reading secret items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	secret, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
+	secret, err := r.client.Resource(gvr).Namespace(cr.GetNamespace()).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, it
 	log.Debug("Reading ConfigMap items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
-	u, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
+	u, err := r.client.Resource(gvr).Namespace(cr.GetNamespace()).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -254,37 +254,6 @@ func (r *Retriever) store(u *unstructured.Unstructured, key string, value []byte
 	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
-}
-
-// Retrieve loop and read data pointed by the references in plan instance. Also runs through
-// "bindable resources", gathering extra data. It can return error on retrieving and reading
-// resources.
-func (r *Retriever) Retrieve() (map[string][]byte, error) {
-	// read bindable data from the specified resources
-	if r.plan.SBR.Spec.DetectBindingResources {
-		err := r.ReadBindableResourcesData(&r.plan.SBR, r.plan.GetCRs())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// read bindable data from the CRDDescription found by the planner
-	for _, relatedResource := range r.plan.GetRelatedResources() {
-
-		err := r.ReadCRDDescriptionData(relatedResource.CR, relatedResource.CRDDescription)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// gather retriever's read data
-	var err error
-	retrievedData, err := r.Get()
-	if err != nil {
-		return nil, err
-	}
-
-	return retrievedData, nil
 }
 
 // NewRetriever instantiate a new retriever instance.
