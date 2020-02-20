@@ -80,7 +80,11 @@ kind: EtcdCluster
 metadata:
  name: etcd-demo
 spec:
+<<<<<<< HEAD
  size: 3
+=======
+ size: 5
+>>>>>>> upstream/master
  version: "3.2.13"
 ```
 

@@ -1,7 +1,5 @@
 .DEFAULT_GOAL := help
 
-.EXPORT_ALL_VARIABLES:
-
 # It's necessary to set this because some environments don't link sh -> bash.
 SHELL := /bin/bash
 
@@ -128,7 +126,7 @@ BUNDLE_VERSION ?= $(OPERATOR_VERSION)-$(COMMIT_COUNT)
 BASE_BUNDLE_VERSION ?= 0.0.23
 OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
-CSV_CREATION_TIMESTAMP ?= $(shell date '+%FT%T%Z')
+CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
 QUAY_TOKEN ?= ""
 QUAY_BUNDLE_TOKEN ?= ""
@@ -437,6 +435,8 @@ push-to-manifest-repo:
 	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 
 ## -- Target for pushing manifest bundle to quay application --
 .PHONY: push-bundle-to-quay
@@ -455,4 +455,4 @@ push-bundle-to-quay:
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
-	./hack/dev-release.sh
+	BUNDLE_VERSION=$(BUNDLE_VERSION) ./hack/dev-release.sh

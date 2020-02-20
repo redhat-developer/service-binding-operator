@@ -12,7 +12,7 @@ require (
 	github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
 	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20191115003340-16619cd27fa5
-	github.com/operator-framework/operator-sdk v0.15.1
+	github.com/operator-framework/operator-sdk v0.15.2
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0

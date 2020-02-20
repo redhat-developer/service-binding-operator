@@ -11,7 +11,7 @@ git:
 
 env:
   global:
-    - SDK_VERSION="0.15.1"
+    - SDK_VERSION="0.15.2"
     - GO111MODULE=on
     - USER="redhat-developer"
     - EMAIL="openshift-dev-services@redhat.com"
@@ -35,9 +35,9 @@ before_install:
 script:
   # Run merge-to-master-release
   - if [ "$TRAVIS_BRANCH" = "master" ]; then
-    make merge-to-master-release;
-    make push-to-manifest-repo;
-    make push-bundle-to-quay;
+    make merge-to-master-release &&
+    make push-to-manifest-repo &&
+    make push-bundle-to-quay || exit 1;
     fi
 
 after_success:

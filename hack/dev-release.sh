@@ -15,12 +15,13 @@ if [ ${RUNNING_STATUS} = "Running" ] ; then
 	echo "Operator marketplace pod is running"
 fi
 ./hack/check-crds.sh
+./hack/check-csvs.sh
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}
 VERSION_NUMBER=`kubectl get csvs  -n=default -o jsonpath='{.items[*].spec.version}'`
 if [ "${VERSION_NUMBER}" = "${BUNDLE_VERSION}" ] ; then
     echo -e "OLM Bundle Version validation succeeded \n ";
 	kubectl get csvs -n=default -o jsonpath='{.items[*].metadata.annotations.alm-examples}' | cut -d "[" -f 2 | cut -d "]" -f 1 > output.json;
-	kubectl apply -f ./output.json;
+	kubectl apply -n=default -f ./output.json;
 	if [ $? = 0 ] ; then
 		echo "CSV alm example validation succeeded"
 	fi
@@ -33,5 +34,6 @@ if [ "${VERSION_NUMBER}" = "${BUNDLE_VERSION}" ] ; then
 	exit 0
 else
 	echo -e "OLM Bundle validation failed \n"
+	echo "Version number: ${VERSION_NUMBER} \nBuild version: ${BUNDLE_VERSION}"
 	exit 1
 fi

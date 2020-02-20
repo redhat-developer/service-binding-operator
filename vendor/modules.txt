@@ -141,7 +141,7 @@ github.com/operator-framework/operator-lifecycle-manager/pkg/lib/operatorclient
 github.com/operator-framework/operator-lifecycle-manager/pkg/lib/operatorlister
 github.com/operator-framework/operator-lifecycle-manager/pkg/lib/ownerutil
 github.com/operator-framework/operator-lifecycle-manager/pkg/lib/version
-# github.com/operator-framework/operator-sdk v0.15.1
+# github.com/operator-framework/operator-sdk v0.15.2
 github.com/operator-framework/operator-sdk/internal/scaffold
 github.com/operator-framework/operator-sdk/internal/scaffold/input
 github.com/operator-framework/operator-sdk/internal/scaffold/internal/deps
@@ -154,7 +154,6 @@ github.com/operator-framework/operator-sdk/pkg/kube-metrics
 github.com/operator-framework/operator-sdk/pkg/leader
 github.com/operator-framework/operator-sdk/pkg/log/zap
 github.com/operator-framework/operator-sdk/pkg/metrics
-github.com/operator-framework/operator-sdk/pkg/restmapper
 github.com/operator-framework/operator-sdk/pkg/test
 github.com/operator-framework/operator-sdk/pkg/test/e2eutil
 github.com/operator-framework/operator-sdk/version
