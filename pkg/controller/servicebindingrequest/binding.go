@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -15,23 +17,29 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 const (
-	// bindingInProgress binding is in progress
-	bindingInProgress = "InProgress"
-	// bindingFail binding has failed
-	bindingFail = "Fail"
+	// BindingSuccess binding has succeeded
+	BindingSuccess = "BindingSuccess"
+	// BindingFail binding has failed
+	BindingFail = "BindingFail"
+	//Finalizer annotation used in finalizer steps
+	Finalizer = "finalizer.servicebindingrequest.openshift.io"
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
-	// Finalizer annotation used in finalizer steps
-	Finalizer = "finalizer.servicebindingrequest.openshift.io"
 )
 
 // GroupVersion represents the service binding request resource's group version.
 var GroupVersion = v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+
+// message converts the error to string for the Message field in the Status condition
+func (b *ServiceBinder) message(err error) string {
+	return err.Error()
+}
 
 // ServiceBinderOptions is BuildServiceBinder arguments.
 type ServiceBinderOptions struct {
@@ -60,7 +68,7 @@ type ServiceBinder struct {
 	Logger *log.Log
 	// Objects is a list of additional unstructured objects related to the Service Binding Request.
 	Objects []*unstructured.Unstructured
-	// SBR is the ServiceBindingRequest associated with binding..
+	// SBR is the ServiceBindingRequest associated with binding.
 	SBR *v1alpha1.ServiceBindingRequest
 	// Secret is the Secret associated with the Service Binding Request.
 	Secret *Secret
@@ -68,7 +76,8 @@ type ServiceBinder struct {
 
 // updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
 // this action.
-func (b *ServiceBinder) updateServiceBindingRequest(
+func updateServiceBindingRequest(
+	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
 ) (*v1alpha1.ServiceBindingRequest, error) {
 	u, err := converter.ToUnstructured(sbr)
@@ -76,10 +85,11 @@ func (b *ServiceBinder) updateServiceBindingRequest(
 		return nil, err
 	}
 
-	u, err = b.DynClient.
+	nsClient := dynClient.
 		Resource(GroupVersion).
-		Namespace(sbr.GetNamespace()).
-		Update(u, v1.UpdateOptions{})
+		Namespace(sbr.GetNamespace())
+
+	u, err = nsClient.Update(u, v1.UpdateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -89,7 +99,16 @@ func (b *ServiceBinder) updateServiceBindingRequest(
 	if err != nil {
 		return nil, err
 	}
+
 	return sbr, nil
+}
+
+// updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
+// this action.
+func (b *ServiceBinder) updateServiceBindingRequest(
+	sbr *v1alpha1.ServiceBindingRequest,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	return updateServiceBindingRequest(b.DynClient, sbr)
 }
 
 // Unbind removes the relationship between a Service Binding Request and its related objects.
@@ -122,6 +141,35 @@ func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 	return Done()
 }
 
+// UpdateServiceBindingRequestStatus execute update API call on a SBR Status. It can return errors from
+// this action.
+func updateServiceBindingRequestStatus(
+	dynClient dynamic.Interface,
+	sbr *v1alpha1.ServiceBindingRequest,
+) (*v1alpha1.ServiceBindingRequest, error) {
+	u, err := converter.ToUnstructured(sbr)
+	if err != nil {
+		return nil, err
+	}
+
+	nsClient := dynClient.
+		Resource(GroupVersion).
+		Namespace(sbr.GetNamespace())
+
+	u, err = nsClient.UpdateStatus(u, v1.UpdateOptions{})
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
+	if err != nil {
+		return nil, err
+	}
+
+	return sbr, nil
+}
+
 // updateStatusServiceBindingRequest updates the Service Binding Request's status field.
 func (b *ServiceBinder) updateStatusServiceBindingRequest(
 	sbr *v1alpha1.ServiceBindingRequest,
@@ -138,24 +186,7 @@ func (b *ServiceBinder) updateStatusServiceBindingRequest(
 	// coping status over informed object
 	sbr.Status = *sbrStatus
 
-	// converting object into unstructured
-	u, err := converter.ToUnstructured(sbr)
-	if err != nil {
-		return nil, err
-	}
-
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
-	resourceClient := b.DynClient.Resource(gr).Namespace(sbr.GetNamespace())
-	u, err = resourceClient.UpdateStatus(u, v1.UpdateOptions{})
-	if err != nil {
-		return nil, err
-	}
-
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, sbr)
-	if err != nil {
-		return nil, err
-	}
-	return sbr, nil
+	return updateServiceBindingRequestStatus(b.DynClient, sbr)
 }
 
 // onError comprise the update of ServiceBindingRequest status to set error flag, and inspect
@@ -166,17 +197,22 @@ func (b *ServiceBinder) onError(
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objs []*unstructured.Unstructured,
 ) (reconcile.Result, error) {
-	sbrStatus.BindingStatus = bindingFail
 
 	if objs != nil {
-		sbrStatus.BindingStatus = BindingSuccess
 		b.setApplicationObjects(sbrStatus, objs)
 	}
-
-	_, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type:    conditions.BindingReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  BindingFail,
+		Message: b.message(err),
+	})
+	sbrStatus.BindingStatus = BindingFail
+	newSbr, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
 	}
+	b.SBR = newSbr
 
 	return RequeueOnNotFound(err, requeueAfter)
 }
@@ -191,9 +227,6 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
-
-	// update status information
-	sbrStatus.BindingStatus = bindingInProgress
 	sbrStatus.Secret = secretObj.GetName()
 
 	updatedObjects, err := b.Binder.Bind()
@@ -201,9 +234,6 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		b.Logger.Error(err, "On binding application.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
-
-	// saving on status the list of objects that have been touched
-	sbrStatus.BindingStatus = BindingSuccess
 	b.setApplicationObjects(sbrStatus, updatedObjects)
 
 	// annotating objects related to binding
@@ -212,6 +242,12 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		b.Logger.Error(err, "On setting annotations in related objects.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
+
+	sbrStatus.BindingStatus = BindingSuccess
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type:   conditions.BindingReady,
+		Status: corev1.ConditionTrue,
+	})
 
 	// updating status of request instance
 	sbr, err := b.updateStatusServiceBindingRequest(b.SBR, sbrStatus)

@@ -1,6 +1,9 @@
 package servicebindingrequest
 
 import (
+	v1 "github.com/openshift/custom-resource-status/conditions/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -18,10 +21,6 @@ type Reconciler struct {
 	dynClient dynamic.Interface // kubernetes dynamic api client
 	scheme    *runtime.Scheme   // api scheme
 }
-
-const (
-	BindingSuccess = "Success"
-)
 
 // reconcilerLog local logger instance
 var reconcilerLog = log.NewLog("reconciler")
@@ -145,6 +144,26 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	bm, err := BuildServiceBinder(options)
 	if err != nil {
 		logger.Error(err, "Creating binding context")
+		if err == EmptyBackingServiceSelectorsErr || err == EmptyApplicationSelectorErr {
+			// TODO: find or create an error type containing suitable information to be propagated
+			var reason string
+			if err == EmptyBackingServiceSelectorsErr {
+				reason = "EmptyBackingServiceSelectors"
+			} else {
+				reason = "EmptyApplicationSelector"
+			}
+
+			v1.SetStatusCondition(&sbr.Status.Conditions, v1.Condition{
+				Type:    conditions.BindingReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  reason,
+				Message: err.Error(),
+			})
+			_, updateErr := updateServiceBindingRequestStatus(r.dynClient, sbr)
+			if updateErr == nil {
+				return Done()
+			}
+		}
 		return RequeueError(err)
 	}
 

@@ -80,7 +80,7 @@ kind: EtcdCluster
 metadata:
  name: etcd-demo
 spec:
- size: 5
+ size: 3
  version: "3.2.13"
 ```
 
