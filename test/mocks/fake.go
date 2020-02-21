@@ -34,28 +34,14 @@ type Fake struct {
 // AddMockedServiceBindingRequest add mocked object from ServiceBindingRequestMock.
 func (f *Fake) AddMockedServiceBindingRequest(
 	name string,
+	backingServiceNamespace *string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
-	f.objs = append(f.objs, sbr)
-	return sbr
-}
-
-// AddMockedServiceBindingRequestWithMultiNamespaces add mocked object from ServiceBindingRequestMock.
-func (f *Fake) AddMockedServiceBindingRequestWithMultiNamespaces(
-	name string,
-	backingServiceResourceRef string,
-	backingServiceNamespace string,
-	applicationResourceRef string,
-	applicationGVR schema.GroupVersionResource,
-	matchLabels map[string]string,
-) *v1alpha1.ServiceBindingRequest {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := MultiNamespaceServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, backingServiceNamespace, applicationResourceRef, applicationGVR, matchLabels)
+	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceNamespace, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
@@ -69,11 +55,12 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
 	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+	sbr := ServiceBindingRequestMock(f.ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
 
+// AddMockedUnstructuredServiceBindingRequest creates a mock ServiceBindingRequest object
 func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,
 	backingServiceResourceRef string,
@@ -122,16 +109,7 @@ func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
 }
 
 // AddMockedDatabaseCR add mocked object from DatabaseCRMock.
-func (f *Fake) AddMockedDatabaseCR(ref string) runtime.Object {
-	require.NoError(f.t, pgapis.AddToScheme(f.S))
-	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	mock := DatabaseCRMock(f.ns, ref)
-	f.objs = append(f.objs, mock)
-	return mock
-}
-
-// AddCrossNamespaceMockedDatabaseCR add mocked object from DatabaseCRMock.
-func (f *Fake) AddCrossNamespaceMockedDatabaseCR(ref string, namespace string) runtime.Object {
+func (f *Fake) AddMockedDatabaseCR(ref string, namespace string) runtime.Object {
 	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
 	mock := DatabaseCRMock(namespace, ref)

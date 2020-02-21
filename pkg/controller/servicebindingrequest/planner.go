@@ -36,12 +36,7 @@ type Plan struct {
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
-
-	if selector.Namespace != nil {
-		namespace = *selector.Namespace
-	}
-
+func (p *Planner) searchCR(selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
 	// gvr is the plural guessed resource for the given selector
 	gvk := schema.GroupVersionKind{
 		Group:   selector.Group,
@@ -49,8 +44,13 @@ func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSel
 		Kind:    selector.Kind,
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+
+	if selector.Namespace == nil {
+		return nil, errors.New("selector namespace is empty")
+	}
+
 	// delegate the search selector's namespaced resource client
-	return p.client.Resource(gvr).Namespace(namespace).Get(selector.ResourceRef, metav1.GetOptions{})
+	return p.client.Resource(gvr).Namespace(*selector.Namespace).Get(selector.ResourceRef, metav1.GetOptions{})
 }
 
 // CRDGVR is the plural GVR for Kubernetes CRDs.
@@ -104,7 +104,10 @@ func (p *Planner) Plan() (*Plan, error) {
 		}
 		p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
 
-		cr, err := p.searchCR(ns, s)
+		if s.Namespace == nil {
+			s.Namespace = &ns
+		}
+		cr, err := p.searchCR(s)
 		if err != nil {
 			return nil, err
 		}

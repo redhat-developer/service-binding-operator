@@ -430,6 +430,7 @@ func MultiNamespaceServiceBindingRequestMock(
 func ServiceBindingRequestMock(
 	ns string,
 	name string,
+	backingServiceNamespace *string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
@@ -457,6 +458,7 @@ func ServiceBindingRequestMock(
 			BackingServiceSelector: v1alpha1.BackingServiceSelector{
 				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
 				ResourceRef:      backingServiceResourceRef,
+				Namespace:        backingServiceNamespace,
 			},
 		},
 	}
@@ -472,7 +474,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+	sbr := ServiceBindingRequestMock(ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
