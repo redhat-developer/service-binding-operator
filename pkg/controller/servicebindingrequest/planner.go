@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	plannerLog = log.NewLog("planner")
+	plannerLog                 = log.NewLog("planner")
+	errBackingServiceNamespace = errors.New("backing Service Namespace is unspecified")
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
@@ -46,7 +47,7 @@ func (p *Planner) searchCR(selector v1alpha1.BackingServiceSelector) (*unstructu
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 
 	if selector.Namespace == nil {
-		return nil, errors.New("selector namespace is empty")
+		return nil, errBackingServiceNamespace
 	}
 
 	// delegate the search selector's namespaced resource client
