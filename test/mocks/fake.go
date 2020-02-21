@@ -45,6 +45,21 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	return sbr
 }
 
+// AddMockedServiceBindingRequestWithMultiNamespaces add mocked object from ServiceBindingRequestMock.
+func (f *Fake) AddMockedServiceBindingRequestWithMultiNamespaces(
+	name string,
+	backingServiceResourceRef string,
+	backingServiceNamespace string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+	matchLabels map[string]string,
+) *v1alpha1.ServiceBindingRequest {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr := MultiNamespaceServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, backingServiceNamespace, applicationResourceRef, applicationGVR, matchLabels)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
 // AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with DetectBindingResources.
 func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,
@@ -115,6 +130,15 @@ func (f *Fake) AddMockedDatabaseCR(ref string) runtime.Object {
 	return mock
 }
 
+// AddCrossNamespaceMockedDatabaseCR add mocked object from DatabaseCRMock.
+func (f *Fake) AddCrossNamespaceMockedDatabaseCR(ref string, namespace string) runtime.Object {
+	require.NoError(f.t, pgapis.AddToScheme(f.S))
+	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
+	mock := DatabaseCRMock(namespace, ref)
+	f.objs = append(f.objs, mock)
+	return mock
+}
+
 func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
 	require.NoError(f.t, pgapis.AddToScheme(f.S))
 	d, err := UnstructuredDatabaseCRMock(f.ns, ref)
@@ -169,6 +193,12 @@ func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) *unstructured
 // AddMockedSecret add mocked object from SecretMock.
 func (f *Fake) AddMockedSecret(name string) {
 	f.objs = append(f.objs, SecretMock(f.ns, name))
+}
+
+// AddNamespacedMockedSecret add mocked object from SecretMock in a namespace
+// which isn't necessarily same as that of the ServiceBindingRequest namespace.
+func (f *Fake) AddNamespacedMockedSecret(name string, namespace string) {
+	f.objs = append(f.objs, SecretMock(namespace, name))
 }
 
 // AddMockedUnstructuredConfigMap add mocked object from ConfigMapMock.
