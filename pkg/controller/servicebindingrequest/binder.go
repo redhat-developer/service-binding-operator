@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"time"
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -49,6 +50,30 @@ var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLa
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
+
+	var objList *unstructured.UnstructuredList = &unstructured.UnstructuredList{}
+
+	if b.sbr.Spec.Applications != nil {
+		for _, app := range *b.sbr.Spec.Applications {
+			gvr := schema.GroupVersionResource{
+				Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
+				Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
+				Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+			}
+			fieldName := make(map[string]string)
+			fieldName["metadata.name"] = app.ResourceRef
+			opts := metav1.ListOptions{
+				FieldSelector: fields.Set(fieldName).String(),
+			}
+			appObjList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+			if err != nil {
+				return nil, err
+			}
+			objList.Items = append(objList.Items, appObjList.Items...)
+		}
+	}
+
+	// TODO: Will be removed after ApplicationSelectors is deprecated
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
 		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
@@ -57,6 +82,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	var opts metav1.ListOptions
 
+	// TODO: Will be removed after spec.ApplicationSelectors is deprecated
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
 		fieldName := make(map[string]string)
@@ -73,10 +99,11 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		return nil, EmptyApplicationSelectorErr
 	}
 
-	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	appObjList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
+	objList.Items = append(objList.Items, appObjList.Items...)
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {

@@ -73,6 +73,47 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	return sbr
 }
 
+// Add new APIs
+
+// AddMockedServiceBindingRequestV1_1 add mocked object from ServiceBindingRequestMock.
+func (f *Fake) AddMockedServiceBindingRequestV1_1(
+	name string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+) *v1alpha1.ServiceBindingRequest {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr := ServiceBindingRequestMockAlphaV1_1(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
+// AddMockedServiceBindingRequestWithUnannotatedV1_1 add mocked object from ServiceBindingRequestMock with DetectBindingResources.
+func (f *Fake) AddMockedServiceBindingRequestWithUnannotatedV1_1(
+	name string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+) *v1alpha1.ServiceBindingRequest {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr := ServiceBindingRequestMockAlphaV1_1(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
+func (f *Fake) AddMockedUnstructuredServiceBindingRequestV1_1(
+	name string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+) *unstructured.Unstructured {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	sbr, err := UnstructuredServiceBindingRequestMockAlphaV1_1(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
 // AddMockedUnstructuredCSV add mocked unstructured CSV.
 func (f *Fake) AddMockedUnstructuredCSV(name string) {
 	require.NoError(f.t, olmv1alpha1.AddToScheme(f.S))

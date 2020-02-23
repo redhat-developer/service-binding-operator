@@ -11,11 +11,50 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
+		"./pkg/apis/apps/v1alpha1.Application":                 schema_pkg_apis_apps_v1alpha1_Application(ref),
 		"./pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
 		"./pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_Application(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "Application defines the selector based on labels and GVR",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"group": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"resource": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"resourceRef": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"group", "version", "resource"},
+			},
+		},
 	}
 }
 
@@ -182,13 +221,39 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelector is used to identify the backing service operator.",
+							Description: "BackingServiceSelector is used to identify the backing service operator. Deprecated.",
 							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+						},
+					},
+					"services": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Services are used to identify multiple backing services.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
+									},
+								},
+							},
+						},
+					},
+					"applications": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Applications are used to identify the application connecting to the backing service.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("./pkg/apis/apps/v1alpha1.Application"),
+									},
+								},
+							},
 						},
 					},
 					"backingServiceSelectors": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelectors is used to identify multiple backing services.",
+							Description: "BackingServiceSelectors is used to identify multiple backing services. Deprecated.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -201,7 +266,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"applicationSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator.",
+							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator. Deprecated.",
 							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
 						},
 					},
@@ -213,11 +278,10 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"applicationSelector"},
 			},
 		},
 		Dependencies: []string{
-			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "k8s.io/api/core/v1.EnvVar"},
+			"./pkg/apis/apps/v1alpha1.Application", "./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "k8s.io/api/core/v1.EnvVar"},
 	}
 }
 

@@ -36,7 +36,7 @@ spec:
           properties:
             applicationSelector:
               description: ApplicationSelector is used to identify the application
-                connecting to the backing service operator.
+                connecting to the backing service operator. Deprecated.
               properties:
                 group:
                   type: string
@@ -98,9 +98,30 @@ spec:
               - resource
               - version
               type: object
+            applications:
+              description: Applications are used to identify the application connecting
+                to the backing service.
+              items:
+                description: Application defines the selector based on labels and
+                  GVR
+                properties:
+                  group:
+                    type: string
+                  resource:
+                    type: string
+                  resourceRef:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - resource
+                - version
+                type: object
+              type: array
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
-                service operator.
+                service operator. Deprecated.
               properties:
                 group:
                   type: string
@@ -118,7 +139,7 @@ spec:
               type: object
             backingServiceSelectors:
               description: BackingServiceSelectors is used to identify multiple backing
-                services.
+                services. Deprecated.
               items:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
@@ -246,8 +267,27 @@ spec:
             mountPathPrefix:
               description: MountPathPrefix is the prefix for volume mount
               type: string
-          required:
-          - applicationSelector
+            services:
+              description: Services are used to identify multiple backing services.
+              items:
+                description: BackingServiceSelector defines the selector based on
+                  resource name, version, and resource kind
+                properties:
+                  group:
+                    type: string
+                  kind:
+                    type: string
+                  resourceRef:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - kind
+                - resourceRef
+                - version
+                type: object
+              type: array
           type: object
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

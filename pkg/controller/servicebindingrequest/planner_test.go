@@ -21,13 +21,73 @@ func TestPlannerNew(t *testing.T) {
 	ns := "planner"
 	name := "service-binding-request"
 	resourceRef := "db-testing"
+
+	f := mocks.NewFake(t, ns)
+
+	// This test is here to stay, we may rename the function after
+	// deprecated fields are removed completely.
+	sbr := f.AddMockedServiceBindingRequestV1_1(name, resourceRef, "", deploymentsGVR)
+
+	f.AddMockedUnstructuredCSV("cluster-service-version")
+	f.AddMockedDatabaseCR(resourceRef)
+	f.AddMockedUnstructuredDatabaseCRD()
+
+	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
+	require.NotNil(t, planner)
+
+	t.Run("searchCR", func(t *testing.T) {
+
+		for _, service := range *sbr.Spec.Services {
+			cr, err := planner.searchCR(ns, service)
+			require.NoError(t, err)
+			require.NotNil(t, cr)
+		}
+
+	})
+
+	t.Run("plan", func(t *testing.T) {
+		plan, err := planner.Plan()
+
+		require.NoError(t, err)
+		require.NotNil(t, plan)
+		require.NotEmpty(t, plan.RelatedResources)
+		require.Equal(t, ns, plan.Ns)
+		require.Equal(t, name, plan.Name)
+	})
+}
+
+func TestPlannerAnnotation(t *testing.T) {
+	ns := "planner"
+	name := "service-binding-request"
+	resourceRef := "db-testing"
+
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequestV1_1(name, resourceRef, "", deploymentsGVR)
+	f.AddMockedUnstructuredDatabaseCRD()
+	cr := f.AddMockedDatabaseCR("database")
+
+	planner = NewPlanner(context.TODO(), f.FakeDynClient(), sbr)
+	require.NotNil(t, planner)
+
+	t.Run("searchCRD", func(t *testing.T) {
+		crd, err := planner.searchCRD(cr.GetObjectKind().GroupVersionKind())
+
+		require.NoError(t, err)
+		require.NotNil(t, crd)
+	})
+}
+
+func TestPlannerDeprecacted(t *testing.T) {
+	ns := "planner"
+	name := "service-binding-request"
+	resourceRef := "db-testing"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "planner",
 	}
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, resourceRef, "", deploymentsGVR, matchLabels)
-	sbr.Spec.BackingServiceSelectors = []v1alpha1.BackingServiceSelector{
+	sbr.Spec.BackingServiceSelectors = &[]v1alpha1.BackingServiceSelector{
 		sbr.Spec.BackingServiceSelector,
 	}
 	f.AddMockedUnstructuredCSV("cluster-service-version")
@@ -55,7 +115,7 @@ func TestPlannerNew(t *testing.T) {
 	})
 }
 
-func TestPlannerAnnotation(t *testing.T) {
+func TestPlannerAnnotationDeprecated(t *testing.T) {
 	ns := "planner"
 	name := "service-binding-request"
 	resourceRef := "db-testing"

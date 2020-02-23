@@ -28,15 +28,29 @@ type ServiceBindingRequestSpec struct {
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
+	// Deprecated.
 	// +optional
 	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
+	// Services are used to identify multiple backing services.
+	// +optional
+	Services *[]BackingServiceSelector `json:"services,omitempty"`
+
+	// Applications are used to identify the application connecting to the
+	// backing service.
+	// +optional
+	Applications *[]Application `json:"applications,omitempty"`
+
 	// BackingServiceSelectors is used to identify multiple backing services.
-	BackingServiceSelectors []BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
+	// Deprecated.
+	// +optional
+	BackingServiceSelectors *[]BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
-	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
+	// Deprecated.
+	// +optional
+	ApplicationSelector *ApplicationSelector `json:"applicationSelector"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
@@ -69,6 +83,13 @@ type BackingServiceSelector struct {
 type ApplicationSelector struct {
 	// +optional
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
+	metav1.GroupVersionResource `json:",inline"`
+	ResourceRef                 string `json:"resourceRef,omitempty"`
+}
+
+// Application defines the selector based on labels and GVR
+// +k8s:openapi-gen=true
+type Application struct {
 	metav1.GroupVersionResource `json:",inline"`
 	ResourceRef                 string `json:"resourceRef,omitempty"`
 }

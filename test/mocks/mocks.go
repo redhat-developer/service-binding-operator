@@ -409,7 +409,7 @@ func ServiceBindingRequestMock(
 					Value: "spec.imagePath",
 				},
 			},
-			ApplicationSelector: v1alpha1.ApplicationSelector{
+			ApplicationSelector: &v1alpha1.ApplicationSelector{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 				ResourceRef:          applicationResourceRef,
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
@@ -434,6 +434,60 @@ func UnstructuredServiceBindingRequestMock(
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
 	sbr := ServiceBindingRequestMock(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
+}
+
+// Mocks with updated API
+
+// ServiceBindingRequestMockAlphaV1_1 return a binding-request mock of informed name and match labels.
+func ServiceBindingRequestMockAlphaV1_1(
+	ns string,
+	name string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+) *v1alpha1.ServiceBindingRequest {
+	sbr := &v1alpha1.ServiceBindingRequest{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			MountPathPrefix: "/var/redhat",
+			CustomEnvVar: []corev1.EnvVar{
+				{
+					Name:  "IMAGE_PATH",
+					Value: "spec.imagePath",
+				},
+			},
+			Applications: &[]v1alpha1.Application{
+				{
+					GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
+					ResourceRef:          applicationResourceRef,
+				},
+			},
+			DetectBindingResources: false,
+
+			Services: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+					ResourceRef:      backingServiceResourceRef,
+				},
+			},
+		},
+	}
+	return sbr
+}
+
+// UnstructuredServiceBindingRequestMockAlphaV1_1 returns a unstructured version of SBR.
+func UnstructuredServiceBindingRequestMockAlphaV1_1(
+	ns string,
+	name string,
+	backingServiceResourceRef string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+) (*unstructured.Unstructured, error) {
+	sbr := ServiceBindingRequestMockAlphaV1_1(ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 

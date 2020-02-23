@@ -1,10 +1,11 @@
 package servicebindingrequest
 
 import (
+	"testing"
+
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -199,7 +200,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "single-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			ApplicationSelector: v1alpha1.ApplicationSelector{
+			ApplicationSelector: &v1alpha1.ApplicationSelector{
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
@@ -210,7 +211,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -235,7 +236,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "multiple-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			ApplicationSelector: v1alpha1.ApplicationSelector{
+			ApplicationSelector: &v1alpha1.ApplicationSelector{
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
@@ -246,7 +247,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -278,8 +279,8 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "empty-app-selector",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			ApplicationSelector: v1alpha1.ApplicationSelector{},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			ApplicationSelector: &v1alpha1.ApplicationSelector{},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -303,7 +304,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "empty-bss",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			ApplicationSelector: v1alpha1.ApplicationSelector{
+			ApplicationSelector: &v1alpha1.ApplicationSelector{
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
@@ -314,7 +315,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{},
 		},
 		Status: v1alpha1.ServiceBindingRequestStatus{},
 	}
