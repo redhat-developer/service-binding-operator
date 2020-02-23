@@ -56,9 +56,9 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	if b.sbr.Spec.Applications != nil {
 		for _, app := range *b.sbr.Spec.Applications {
 			gvr := schema.GroupVersionResource{
-				Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
-				Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
-				Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+				Group:    app.GroupVersionResource.Group,
+				Version:  app.GroupVersionResource.Version,
+				Resource: app.GroupVersionResource.Resource,
 			}
 			fieldName := make(map[string]string)
 			fieldName["metadata.name"] = app.ResourceRef
@@ -69,8 +69,22 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 			if err != nil {
 				return nil, err
 			}
+
+			if len(appObjList.Items) == 0 {
+				return nil, k8serror.NewNotFound(
+					gvr.GroupResource(),
+					b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+				)
+			}
+
 			objList.Items = append(objList.Items, appObjList.Items...)
 		}
+	}
+
+	// TODO: Will be removed after ApplicationSelectors is deprecated
+	// Users of the updated API are allowed to skip b.sbr.Spec.ApplicationSelector
+	if b.sbr.Spec.ApplicationSelector == nil {
+		return objList, nil
 	}
 
 	// TODO: Will be removed after ApplicationSelectors is deprecated
