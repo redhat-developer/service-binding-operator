@@ -190,6 +190,42 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockedSecret("db2")
 
+	sbrWithApplications := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "multiple-sbr-with-applications-param",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+
+			Applications: &[]v1alpha1.Application{
+				{
+					GroupVersionResource: metav1.GroupVersionResource{
+						Group:    d.GetObjectKind().GroupVersionKind().Group,
+						Version:  d.GetObjectKind().GroupVersionKind().Version,
+						Resource: "deployments",
+					},
+					ResourceRef: d.GetName(),
+				},
+			},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{},
+	}
+
+	f.AddMockResource(sbrWithApplications)
+
 	// create the ServiceBindingRequest
 	sbrSingleService := &v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -464,4 +500,39 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 		},
 	}))
+
+	t.Run("multiple services with applications : bind golden path", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrWithApplications,
+			Client:                 f.FakeClient(),
+		},
+		wantConditions: []wantedCondition{
+			{
+				Type:   conditions.BindingReady,
+				Status: corev1.ConditionTrue,
+			},
+		},
+		wantActions: []wantedAction{
+			{
+				resource: "servicebindingrequests",
+				verb:     "update",
+				name:     sbrWithApplications.GetName(),
+			},
+			{
+				resource: "secrets",
+				verb:     "update",
+				name:     sbrWithApplications.GetName(),
+			},
+			{
+				resource: "databases",
+				verb:     "update",
+				name:     db1.GetName(),
+			},
+		},
+	}))
+
 }
