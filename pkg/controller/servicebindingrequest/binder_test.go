@@ -300,19 +300,11 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 
 	require.NotNil(t, binder)
 
-	updatedObjects, err := binder.Bind()
-	require.NoError(t, err)
-	require.Len(t, updatedObjects, 1)
+	t.Run("Knative service contract with service binding operator", func(t *testing.T) {
+		list, err := binder.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list.Items))
 
-	containersPath := []string{"spec", "template", "spec", "containers"}
-	containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
-	require.NoError(t, err)
-	require.True(t, found)
-	require.Len(t, containers, 1)
+	})
 
-	c := corev1.Container{}
-	u := containers[0].(map[string]interface{})
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
-	require.NoError(t, err)
-	require.Equal(t, name, c.EnvFrom[0].SecretRef.Name)
 }
