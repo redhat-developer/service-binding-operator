@@ -212,7 +212,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, "Fail", sbrOutput.Status.BindingStatus)
+	require.Equal(t, "BindingFail", sbrOutput.Status.BindingStatus)
 	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
 
 	// Reconcile with deployment
@@ -230,7 +230,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	d := appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
-	require.Equal(t, "Success", sbrOutput2.Status.BindingStatus)
+	require.Equal(t, "BindingSuccess", sbrOutput2.Status.BindingStatus)
 	require.Equal(t, 1, len(sbrOutput2.Status.ApplicationObjects))
 
 	// Update Credentials
@@ -251,7 +251,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	d = appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
-	require.Equal(t, "Success", sbrOutput3.Status.BindingStatus)
+	require.Equal(t, "BindingSuccess", sbrOutput3.Status.BindingStatus)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))
