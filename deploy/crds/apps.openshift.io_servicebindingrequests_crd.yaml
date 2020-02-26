@@ -246,8 +246,6 @@ spec:
             mountPathPrefix:
               description: MountPathPrefix is the prefix for volume mount
               type: string
-          required:
-          - applicationSelector
           type: object
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

@@ -172,6 +172,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return r.unbind(logger, bm)
 	}
 
+	if sbr.Spec.ApplicationSelector == nil {
+		// This is a supported flow where we only create managed binding
+		return Done()
+	}
 	logger.Info("Starting the bind of application(s) with backing service...")
 	return r.bind(logger, bm, sbrStatus)
 }
