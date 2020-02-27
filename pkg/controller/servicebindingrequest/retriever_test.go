@@ -195,14 +195,6 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
 	require.NotNil(t, retriever)
 
-	t.Run("retrieve", func(t *testing.T) {
-		_ = retriever.ReadCRDDescriptionData(cr, &crdDescription)
-		objs, err := retriever.Retrieve()
-		require.NoError(t, err)
-		require.NotEmpty(t, retriever.data)
-		require.True(t, len(objs) > 0)
-	})
-
 	t.Run("read", func(t *testing.T) {
 		// reading from configMap, from status attribute
 		err = retriever.read(cr, "spec", "dbConfigMap", []string{
