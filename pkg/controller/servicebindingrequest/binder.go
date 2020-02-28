@@ -501,10 +501,6 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 
 		if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
 
-			// If the user has specified a custom path to the field
-			// where the binding secret needs to be assigned, then
-			// the podspec assignments are skipped.
-
 			updatedObj, err = b.updateSpecContainers(&obj)
 			if err != nil {
 				return nil, err

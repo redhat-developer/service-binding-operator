@@ -4,9 +4,10 @@ import (
 	"testing"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,10 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	k8stesting "k8s.io/client-go/testing"
-
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // TestServiceBinder_Bind exercises scenarios regarding binding SBR and its related resources.

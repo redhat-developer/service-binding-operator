@@ -8,16 +8,13 @@ import (
 	"time"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
@@ -116,21 +113,28 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, "value", list[0].Value)
 	})
 
-	t.Run("update", func(t *testing.T) {
+	t.Run("update custom secret path ", func(t *testing.T) {
 		list, err := binder.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 
-		// before updating application objects, validate the
-		// initial value of the field which would eventually
-		// be overwritten by customSecretPath
+		updatedDeployment, err := binder.updateSecretField(&list.Items[0])
+		require.NoError(t, err)
+		require.NotNil(t, updatedDeployment)
+
 		customSecretPathSlice := strings.Split(customSecretPath, ".")
 
 		customSecretInMeta, found, err := unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, name, customSecretInMeta)
 
-		// Initially the name of the binding secret would not be
-		// set. "name" is the name of the binding secret
-		require.NotEqual(t, name, customSecretInMeta)
+	})
+
+	t.Run("update", func(t *testing.T) {
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
 
 		updatedObjects, err := binder.update(list)
 		require.NoError(t, err)
@@ -140,11 +144,6 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
-
-		customSecretInMeta, found, err = unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
-		require.NoError(t, err)
-		require.True(t, found)
-		require.Equal(t, name, customSecretInMeta)
 
 		c := corev1.Container{}
 		u := containers[0].(map[string]interface{})
@@ -188,6 +187,22 @@ func TestBinderNew(t *testing.T) {
 		require.Empty(t, c.EnvFrom)
 		// making sure no volume mounts are present
 		require.Nil(t, c.VolumeMounts)
+	})
+
+	t.Run("podspec-path-default", func(t *testing.T) {
+		containersPath := binder.getContainersPath()
+		expectedContainersPath := []string{"spec", "template", "spec", "containers"}
+		require.True(t, reflect.DeepEqual(containersPath, expectedContainersPath))
+
+		volumesPath := binder.getVolumesPath()
+		expectedVolumesPath := []string{"spec", "template", "spec", "volumes"}
+		require.True(t, reflect.DeepEqual(volumesPath, expectedVolumesPath))
+	})
+
+	t.Run("custom-path", func(t *testing.T) {
+		secretPath := binder.getSecretFieldPath()
+		expectedSecretPath := []string{"metadata", "clusterName"}
+		require.True(t, reflect.DeepEqual(secretPath, expectedSecretPath))
 	})
 }
 
@@ -337,47 +352,4 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 
 	})
 
-}
-
-func TestBinder_updateSecretField(t *testing.T) {
-	type fields struct {
-		ctx        context.Context
-		client     client.Client
-		dynClient  dynamic.Interface
-		sbr        *v1alpha1.ServiceBindingRequest
-		volumeKeys []string
-		logger     *log.Log
-	}
-	type args struct {
-		obj *unstructured.Unstructured
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    *unstructured.Unstructured
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			b := &Binder{
-				ctx:        tt.fields.ctx,
-				client:     tt.fields.client,
-				dynClient:  tt.fields.dynClient,
-				sbr:        tt.fields.sbr,
-				volumeKeys: tt.fields.volumeKeys,
-				logger:     tt.fields.logger,
-			}
-			got, err := b.updateSecretField(tt.args.obj)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Binder.updateSecretField() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Binder.updateSecretField() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
