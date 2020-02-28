@@ -523,6 +523,10 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 			Namespace: ns,
 			Name:      name,
 			Labels:    matchLabels,
+
+			// used by tests to write the binding secret
+			// to an arbitrary path.
+			ClusterName: "clusterNameNotInUse",
 		},
 		Spec: appsv1.DeploymentSpec{
 			Selector: &metav1.LabelSelector{

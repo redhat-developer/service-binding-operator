@@ -71,6 +71,35 @@ type ApplicationSelector struct {
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
 	metav1.GroupVersionResource `json:",inline"`
 	ResourceRef                 string `json:"resourceRef,omitempty"`
+
+	// BindingPath refers to the path in the application workload's schema
+	// where the binding workload would be referenced.
+	// +optional
+	BindingPath *BindingPath `json:"bindingPath,omitempty"`
+}
+
+// BindingPath defines the path to the field where the binding would be
+// embedded in the workload
+type BindingPath struct {
+	// PodSpecPath overrides the default podSpec path
+	// optional
+	PodSpecPath *PodSpecPath `json:"podSpecPath,omitempty"`
+
+	// CustomSecret defines the path to a string field where
+	// the secret needs to be assigned.
+	// +optional
+	CustomSecretPath *string `json:"customSecretPath,omitempty"`
+}
+
+// PodSpecPath overrides the default podSpec path
+type PodSpecPath struct {
+	// Containers defines the path to the corev1.Containers reference
+	// Example: "spec.template.spec.containers"
+	Containers string `json:"containers"`
+
+	// Containers defines the path to the corev1.Volumes reference
+	// Example: "spec.template.spec.volumes"
+	Volumes string `json:"volumes"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

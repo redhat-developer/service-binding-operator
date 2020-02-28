@@ -339,6 +339,15 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	// gather related secret, again only appending it if there's a value.
 	secret := NewSecret(options.DynClient, plan)
 
+	if options.SBR.Spec.ApplicationSelector.BindingPath == nil {
+		options.SBR.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+			PodSpecPath: &v1alpha1.PodSpecPath{
+				Containers: pathToContainers,
+				Volumes:    pathToVolumes,
+			},
+		}
+	}
+
 	return &ServiceBinder{
 		Logger:    options.Logger,
 		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),

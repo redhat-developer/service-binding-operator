@@ -55,12 +55,18 @@ func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallb
 							Format: "",
 						},
 					},
+					"bindingPath": {
+						SchemaProps: spec.SchemaProps{
+							Description: "BindingPath refers to the path in the application workload's schema where the binding workload would be referenced.",
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BindingPath"),
+						},
+					},
 				},
 				Required: []string{"group", "version", "resource"},
 			},
 		},
 		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
+			"./pkg/apis/apps/v1alpha1.BindingPath", "k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
 	}
 }
 
