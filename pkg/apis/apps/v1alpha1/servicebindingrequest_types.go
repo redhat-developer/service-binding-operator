@@ -82,7 +82,7 @@ type ApplicationSelector struct {
 // embedded in the workload
 type BindingPath struct {
 	// PodSpecPath overrides the default podSpec path
-	// optional
+	// +optional
 	PodSpecPath *PodSpecPath `json:"podSpecPath,omitempty"`
 
 	// CustomSecret defines the path to a string field where
