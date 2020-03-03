@@ -16,7 +16,6 @@ COPY build build
 COPY cmd cmd
 COPY deploy deploy
 COPY hack hack
-COPY manifests manifests
 COPY pkg pkg
 COPY test test
 COPY vendor vendor
@@ -29,12 +28,8 @@ COPY tools.go .
 ARG VERBOSE=2
 RUN make build
 
-#--------------------------------------------------------------------
 
-# On CI , use
-# FROM registry.svc.ci.openshift.org/ocp/ubi-minimal:7
-
-FROM registry.access.redhat.com/ubi7/ubi-minimal
+FROM registry.access.redhat.com/ubi8/ubi-minimal
 
 LABEL com.redhat.delivery.appregistry=true
 LABEL maintainer "Devtools <devtools@redhat.com>"

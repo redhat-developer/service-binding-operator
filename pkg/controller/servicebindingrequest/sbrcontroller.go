@@ -100,7 +100,7 @@ func updateFunc(logger *log.Log) func(updateEvent event.UpdateEvent) bool {
 		if isSecret || isConfigMap {
 			dataFieldsAreEqual, err := compareObjectFields(e.ObjectNew, e.ObjectOld, "data")
 			if err != nil {
-				logger.Error(err, "")
+				logger.Error(err, "error comparing object fields: %s", err.Error())
 				return false
 			}
 

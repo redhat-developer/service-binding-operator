@@ -11,9 +11,7 @@ spec:
     kind: Database
     version: v1alpha1
   applicationSelector:
-    matchLabels:
-      connects-to: postgres
-      environment: production
+    resourceRef: nodejs-rest-http-crud
     group: apps
     version: v1
     resource: deployments

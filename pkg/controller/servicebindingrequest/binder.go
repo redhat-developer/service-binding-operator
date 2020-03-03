@@ -2,18 +2,19 @@ package servicebindingrequest
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"time"
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,13 +44,15 @@ type Binder struct {
 	logger     *log.Log                        // logger instance
 }
 
+var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
+
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
-		Group:    b.sbr.Spec.ApplicationSelector.Group,
-		Version:  b.sbr.Spec.ApplicationSelector.Version,
-		Resource: b.sbr.Spec.ApplicationSelector.Resource,
+		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
+		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
+		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 	}
 
 	var opts metav1.ListOptions
@@ -61,13 +64,13 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		opts = metav1.ListOptions{
 			FieldSelector: fields.Set(fieldName).String(),
 		}
-	} else if b.sbr.Spec.ApplicationSelector.MatchLabels != nil {
-		matchLabels := b.sbr.Spec.ApplicationSelector.MatchLabels
+	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
+		matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
 		opts = metav1.ListOptions{
 			LabelSelector: labels.Set(matchLabels).String(),
 		}
 	} else {
-		return nil, fmt.Errorf("application ResourceRef or MatchLabel not found")
+		return nil, EmptyApplicationSelectorErr
 	}
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
@@ -77,9 +80,9 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		return nil, errors.NewNotFound(
+		return nil, k8serror.NewNotFound(
 			gvr.GroupResource(),
-			b.sbr.Spec.ApplicationSelector.Resource,
+			b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 		)
 	}
 	return objList, err
@@ -421,20 +424,21 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 	var (
 		aMap map[string]interface{}
 		bMap map[string]interface{}
-		ok   bool
+		aOk  bool
+		bOk  bool
 		err  error
 	)
 
-	if aMap, ok, err = unstructured.NestedMap(a.Object, fields...); err != nil {
+	if aMap, aOk, err = unstructured.NestedMap(a.Object, fields...); err != nil {
 		return false, err
-	} else if !ok {
-		return false, fmt.Errorf("original object doesn't have a 'spec' field")
 	}
 
-	if bMap, ok, err = unstructured.NestedMap(b.Object, fields...); err != nil {
+	if bMap, bOk, err = unstructured.NestedMap(b.Object, fields...); err != nil {
 		return false, err
-	} else if !ok {
-		return false, fmt.Errorf("original object doesn't have a 'spec' field")
+	}
+
+	if aOk != bOk {
+		return false, nil
 	}
 
 	result := cmp.DeepEqual(aMap, bMap)()

@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"math/rand"
 	"testing"
 	"time"
+
+	"github.com/coreos/etcd-operator/pkg/apis/etcd/v1beta2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	pgsqlapis "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
@@ -105,7 +106,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
 		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+			ServiceBindingRequest(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
 		})
 		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
 			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
@@ -377,10 +378,8 @@ func CreateSBR(
 // setSBRBackendGVK sets backend service selector
 func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind) {
 	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-		Group:       backendGVK.Group,
-		Version:     backendGVK.Version,
-		Kind:        backendGVK.Kind,
-		ResourceRef: resourceRef,
+		GroupVersionKind: metav1.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
+		ResourceRef:      resourceRef,
 	}
 }
 

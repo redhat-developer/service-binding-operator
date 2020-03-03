@@ -111,24 +111,33 @@ GOCOV_DIR ?= $(ARTIFACT_DIR)/test-coverage
 GOCOV_FILE_TEMPL ?= $(GOCOV_DIR)/REPLACE_TEST.txt
 GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
-GIT_COMMIT_ID = $(shell git rev-parse --short HEAD)
+GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.0.20
+OPERATOR_VERSION ?= 0.1.0
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
+OPERATOR_IMAGE_REL ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
 OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
+COMMIT_COUNT := $(shell git rev-list --count HEAD)
+BUNDLE_VERSION ?= $(OPERATOR_VERSION)-$(COMMIT_COUNT)
+BASE_BUNDLE_VERSION ?= 0.0.23
+OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
+CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
+CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
 QUAY_TOKEN ?= ""
+QUAY_BUNDLE_TOKEN ?= ""
 
-MANIFESTS_DIR ?= ./manifests
-MANIFESTS_TMP ?= ./tmp/manifests
-HACK_DIR ?= ./hack
-OUTPUT_DIR ?= ./out
+MANIFESTS_DIR ?= $(shell echo ${PWD})/manifests
+MANIFESTS_TMP ?= $(shell echo ${PWD})/tmp/manifests
+HACK_DIR ?= $(shell echo ${PWD})/hack
+OUTPUT_DIR ?= $(shell echo ${PWD})/out
+OLM_CATALOG_DIR ?= $(shell echo ${PWD})/deploy/olm-catalog
+CRDS_DIR ?= $(shell echo ${PWD})/deploy/crds
 LOGS_DIR ?= $(OUTPUT_DIR)/logs
-
 GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
 
 # -- Variables for uploading code coverage reports to Codecov.io --
@@ -145,7 +154,7 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 
 .PHONY: lint
 ## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
-lint: setup-venv lint-go-code lint-yaml courier
+lint: setup-venv lint-go-code lint-yaml
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
@@ -163,13 +172,6 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
-
-.PHONY: courier
-## Validate manifests using operator-courier
-courier:
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier flatten ./manifests $(OUTPUT_DIR)/manifests
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(OUTPUT_DIR)/manifests
 
 .PHONY: setup-venv
 ## Setup virtual environment
@@ -303,7 +305,7 @@ vendor: go.mod go.sum
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
-	operator-sdk olm-catalog gen-csv --csv-version=$(OPERATOR_VERSION) --verbose
+	operator-sdk generate csv --csv-version=$(OPERATOR_VERSION) --verbose
 
 generate-olm:
 	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
@@ -338,7 +340,7 @@ push-image: build-image
 .PHONY: local
 ## Local: Run operator locally
 local: deploy-clean deploy-rbac deploy-crds
-	$(Q)operator-sdk --verbose up local --operator-flags "$(ZAP_FLAGS)"
+	$(Q)operator-sdk --verbose run --local --operator-flags "$(ZAP_FLAGS)"
 
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
@@ -350,13 +352,13 @@ deploy-rbac:
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
-	$(Q)kubectl apply -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+	$(Q)kubectl apply -f deploy/crds/apps.openshift.io_servicebindingrequests_crd.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
 deploy-clean:
 	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
-	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml
+	$(Q)-kubectl delete -f deploy/crds/apps.openshift.io_servicebindingrequests_crd.yaml
 	$(Q)-kubectl delete -f deploy/operator.yaml
 	$(Q)-kubectl delete -f deploy/role_binding.yaml
 	$(Q)-kubectl delete -f deploy/role.yaml
@@ -408,3 +410,49 @@ consistent-crds-manifests-upstream:
 	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
 	servicebindingrequests.apps.openshift.io.crd.yaml
 
+## -- Target for merge to master dev release --
+.PHONY: merge-to-master-release
+## Make a dev release on every merge to master
+merge-to-master-release:
+	echo "${QUAY_TOKEN}" | docker login -u "redhat-developer+travis" --password-stdin quay.io
+	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
+	$(Q)docker build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
+	docker push "$(OPERATOR_IMAGE_REF)"
+
+
+## -- Target for pushing manifest bundle to service-binding-operator-manifest repo --
+.PHONY: push-to-manifest-repo
+## Push manifest bundle to service-binding-operator-manifest repo
+push-to-manifest-repo:
+	@rm -rf $(MANIFESTS_TMP) || true
+	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
+	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=$(BASE_BUNDLE_VERSION)
+	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
+	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
+	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
+	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,CSV_CREATION_TIMESTAMP,$(CSV_CREATION_TIMESTAMP),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_TMP)/*.yaml
+	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+
+## -- Target for pushing manifest bundle to quay application --
+.PHONY: push-bundle-to-quay
+## Push manifest bundle to quay application
+push-bundle-to-quay:
+	$(Q)python3.7 -m venv $(OUTPUT_DIR)/venv3
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier==2.1.2
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier --version
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(MANIFESTS_TMP)
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
+	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
+
+## -- Target for validating the operator --
+.PHONY: dev-release
+## validating the operator by installing new quay releases
+dev-release:
+	BUNDLE_VERSION=$(BUNDLE_VERSION) ./hack/dev-release.sh

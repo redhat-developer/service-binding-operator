@@ -46,7 +46,9 @@ func TestReconcilerReconcileError(t *testing.T) {
 		"environment": "reconciler",
 	}
 	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredPostgresDatabaseCR("test-using-secret")
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
@@ -54,15 +56,10 @@ func TestReconcilerReconcileError(t *testing.T) {
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 
-	// FIXME: decide this test's fate
-	// I'm not very sure what this test was about, but in the case the SBR definition contains
-	// references to objects that do not exist, the reconciliation process is supposed to be
-	// successful. Commented below was the original test.
-	//
-	// require.Error(t, err)
-	// require.True(t, res.Requeue)
-
-	require.NoError(t, err)
+	// currently this test passes because annotations present in the Databases CRD being currently
+	// used doesn't have a 'status' field in its definition; once it does and this code is updated (
+	// since the Postgres CRD is being imported to be used in tests) this test will fail.
+	require.Error(t, err)
 	require.True(t, res.Requeue)
 }
 
@@ -92,7 +89,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, "Success", sbrOutput.Status.BindingStatus)
+		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
 		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
 		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
@@ -139,7 +136,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, "Success", sbrOutput.Status.BindingStatus)
+		require.Equal(t, "BindingSuccess", sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))

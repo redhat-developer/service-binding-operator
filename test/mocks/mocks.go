@@ -232,7 +232,20 @@ func clusterServiceVersionMock(
 	strategy := olminstall.StrategyDetailsDeployment{
 		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
 			Name: "deployment",
-			Spec: appsv1.DeploymentSpec{},
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						name: "service-binding-operator",
+					},
+				},
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{
+							Command: []string{"service-binding-operator"},
+						}},
+					},
+				},
+			},
 		}},
 	}
 
@@ -397,20 +410,16 @@ func ServiceBindingRequestMock(
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
-				Group:       applicationGVR.Group,
-				Version:     applicationGVR.Version,
-				Resource:    applicationGVR.Resource,
-				ResourceRef: applicationResourceRef,
-				MatchLabels: matchLabels,
+				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
+				ResourceRef:          applicationResourceRef,
+				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
+			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+				ResourceRef:      backingServiceResourceRef,
+			},
 		},
-	}
-	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
-		Group:       CRDName,
-		Version:     CRDVersion,
-		Kind:        CRDKind,
-		ResourceRef: backingServiceResourceRef,
 	}
 	return sbr
 }
