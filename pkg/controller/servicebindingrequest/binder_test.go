@@ -309,3 +309,34 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	})
 
 }
+
+func TestBinderApplicationWithConflictingAppSelc(t *testing.T) {
+	t.Skip("Skipping test due unresolved bug #319.")
+	ns := "binder"
+	f := mocks.NewFake(t, ns)
+
+	name := "service-binding-request"
+	applicationResourceRef1 := "applicationResourceRef1"
+	applicationResourceRef2 := "applicationResourceRef2"
+	matchLabels2 := map[string]string{
+		"connects-to": "database",
+		"environment": "binder",
+	}
+	f.AddMockedUnstructuredDeployment(applicationResourceRef1, nil)
+	f.AddMockedUnstructuredDeployment(applicationResourceRef2, matchLabels2)
+	sbr1 := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", applicationResourceRef1, deploymentsGVR, matchLabels2)
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr1,
+		[]string{},
+	)
+	require.NotNil(t, binder)
+
+	t.Run("two applications with one backing service", func(t *testing.T) {
+		list, err := binder.search()
+		assert.Nil(t, err)
+		assert.Equal(t, 1, len(list.Items))
+	})
+}
