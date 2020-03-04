@@ -15,17 +15,22 @@ import (
 func (r *Retriever) Get() (map[string][]byte, error) {
 	// interpolating custom environment
 	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
-	values, err := envParser.Parse()
+	customVars, err := envParser.Parse()
 	if err != nil {
 		return nil, err
 	}
 
 	// convert values to a map[string][]byte
-	data := make(map[string][]byte)
-	for k, v := range values {
-		data[k] = []byte(v.(string))
+	result := make(map[string][]byte)
+	for k, v := range customVars {
+		result[k] = []byte(v.(string))
 	}
-	return data, nil
+
+	// include extracted data from related resources
+	for k, v := range r.data {
+		result[k] = v
+	}
+	return result, nil
 }
 
 // ReadBindableResourcesData reads all related resources of a given sbr
