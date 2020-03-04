@@ -73,22 +73,6 @@ func (r *Retriever) getCRKey(u *unstructured.Unstructured, section string, key s
 	return v, sectionMap, err
 }
 
-// CustomEnvParser parse informed data in order to interpolate with values provided by custom
-// environment component.
-func (r *Retriever) CustomEnvParser(data map[string][]byte) (map[string][]byte, error) {
-	// interpolating custom environment
-	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
-	values, err := envParser.Parse()
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range values {
-		data[k] = []byte(v.(string))
-	}
-	return data, nil
-}
-
 // read attributes from CR, where place means which top level key name contains the "path" actual
 // value, and parsing x-descriptors in order to either directly read CR data, or read items from
 // a secret.
