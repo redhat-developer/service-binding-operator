@@ -13,7 +13,7 @@ import (
 // Get returns the data read from related resources (see ReadBindableResourcesData and
 // ReadCRDDescriptionData).
 func (r *Retriever) Get() (map[string][]byte, error) {
-	return r.data, nil
+	return r.CustomEnvParser(r.data)
 }
 
 // ReadBindableResourcesData reads all related resources of a given sbr
