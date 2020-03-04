@@ -185,8 +185,7 @@ spec:
     kind: Binding
     resourceRef: mytranslator-binding
   applicationSelector:
-    matchLabels:
-      app: language-translator-nodejs
+    resourceRef: language-translator-nodejs
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
@@ -194,7 +193,7 @@ spec:
      - name: LANGUAGE_TRANSLATOR_URL
        value: '{{ index .status.secretName "url" }}'
      - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
-       value: '{{ index .status.secretName "apikey" }}'  
+       value: '{{ index .status.secretName "apikey" }}'     
 ```
 
 There are 3 interesting parts in the request:

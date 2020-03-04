@@ -10,8 +10,7 @@ spec:
     kind: Binding
     resourceRef: mytranslator-binding
   applicationSelector:
-    matchLabels:
-      app: language-translator-nodejs
+    resourceRef: language-translator-nodejs
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
