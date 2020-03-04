@@ -13,7 +13,24 @@ import (
 // Get returns the data read from related resources (see ReadBindableResourcesData and
 // ReadCRDDescriptionData).
 func (r *Retriever) Get() (map[string][]byte, error) {
-	return r.data, nil
+	// interpolating custom environment
+	envParser := NewCustomEnvParser(r.plan.SBR.Spec.CustomEnvVar, r.cache)
+	customVars, err := envParser.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	// convert values to a map[string][]byte
+	result := make(map[string][]byte)
+	for k, v := range customVars {
+		result[k] = []byte(v.(string))
+	}
+
+	// include extracted data from related resources
+	for k, v := range r.data {
+		result[k] = v
+	}
+	return result, nil
 }
 
 // ReadBindableResourcesData reads all related resources of a given sbr

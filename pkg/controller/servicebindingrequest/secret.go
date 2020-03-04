@@ -84,11 +84,7 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 
 // Commit will store informed data as a secret, commit it against the API server. It can forward
 // errors from custom environment parser component, or from the API server itself.
-func (s *Secret) Commit(data map[string][]byte) (*unstructured.Unstructured, error) {
-	payload, err := s.customEnvParser(data)
-	if err != nil {
-		return nil, err
-	}
+func (s *Secret) Commit(payload map[string][]byte) (*unstructured.Unstructured, error) {
 	return s.createOrUpdate(payload)
 }
 
