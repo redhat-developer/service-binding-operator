@@ -460,7 +460,7 @@ func ServiceBindingRequestMockAlphaV1_1(
 					Value: "spec.imagePath",
 				},
 			},
-			Applications: &[]v1alpha1.Application{
+			Applications: &[]v1alpha1.ApplicationSelector{
 				{
 					GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 					ResourceRef:          applicationResourceRef,

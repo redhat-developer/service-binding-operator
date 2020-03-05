@@ -200,7 +200,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 
-			Applications: &[]v1alpha1.Application{
+			Applications: &[]v1alpha1.ApplicationSelector{
 				{
 					GroupVersionResource: metav1.GroupVersionResource{
 						Group:    d.GetObjectKind().GroupVersionKind().Group,

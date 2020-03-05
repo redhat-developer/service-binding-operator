@@ -27,10 +27,8 @@ type ServiceBindingRequestSpec struct {
 	// +optional
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
-	// BackingServiceSelector is used to identify the backing service operator.
-	// Deprecated.
-	// +optional
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
+	// NOTE: Services & Applications will be made non-optional
+	// after deprecated fields are removed.
 
 	// Services are used to identify multiple backing services.
 	// +optional
@@ -39,7 +37,19 @@ type ServiceBindingRequestSpec struct {
 	// Applications are used to identify the application connecting to the
 	// backing service.
 	// +optional
-	Applications *[]Application `json:"applications,omitempty"`
+	Applications *[]ApplicationSelector `json:"applications,omitempty"`
+
+	// DetectBindingResources is flag used to bind all non-bindable variables from
+	// different subresources owned by backing operator CR.
+	// +optional
+	DetectBindingResources bool `json:"detectBindingResources"`
+
+	// The following fields are being deprecated
+
+	// BackingServiceSelector is used to identify the backing service operator.
+	// Deprecated.
+	// +optional
+	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
 	// BackingServiceSelectors is used to identify multiple backing services.
 	// Deprecated.
@@ -51,11 +61,6 @@ type ServiceBindingRequestSpec struct {
 	// Deprecated.
 	// +optional
 	ApplicationSelector *ApplicationSelector `json:"applicationSelector"`
-
-	// DetectBindingResources is flag used to bind all non-bindable variables from
-	// different subresources owned by backing operator CR.
-	// +optional
-	DetectBindingResources bool `json:"detectBindingResources"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
@@ -83,13 +88,6 @@ type BackingServiceSelector struct {
 type ApplicationSelector struct {
 	// +optional
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
-	metav1.GroupVersionResource `json:",inline"`
-	ResourceRef                 string `json:"resourceRef,omitempty"`
-}
-
-// Application defines the selector based on labels and GVR
-// +k8s:openapi-gen=true
-type Application struct {
 	metav1.GroupVersionResource `json:",inline"`
 	ResourceRef                 string `json:"resourceRef,omitempty"`
 }
