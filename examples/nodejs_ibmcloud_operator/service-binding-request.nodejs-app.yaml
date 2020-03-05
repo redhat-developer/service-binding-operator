@@ -15,7 +15,7 @@ spec:
     version: v1
     resource: deploymentconfigs
   customEnvVar:
-     - name: LANGUAGE_TRANSLATOR_URL
-       value: '{{ index .status.secretName "url" }}'
-     - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
-       value: '{{ index .status.secretName "apikey" }}'    
+    - name: LANGUAGE_TRANSLATOR_URL
+      value: '{{ index .status.secretName "url" }}'
+    - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
+      value: '{{ index .status.secretName "apikey" }}'
