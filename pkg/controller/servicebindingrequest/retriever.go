@@ -172,7 +172,7 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 	log.Debug("Reading secret items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	secret, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
+	secret, err := r.client.Resource(gvr).Namespace(cr.GetNamespace()).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, it
 	log.Debug("Reading ConfigMap items...")
 
 	gvr := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
-	u, err := r.client.Resource(gvr).Namespace(r.plan.Ns).Get(name, metav1.GetOptions{})
+	u, err := r.client.Resource(gvr).Namespace(cr.GetNamespace()).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

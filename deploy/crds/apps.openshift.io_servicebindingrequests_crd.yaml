@@ -17,7 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Expresses intent to bind an operator-backed service with a Deployment
+      description: ServiceBindingRequest expresses intent to bind an operator-backed
+        service with an application workload.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -174,6 +175,8 @@ spec:
                   type: string
                 kind:
                   type: string
+                namespace:
+                  type: string
                 resourceRef:
                   type: string
                 version:
@@ -194,6 +197,8 @@ spec:
                   group:
                     type: string
                   kind:
+                    type: string
+                  namespace:
                     type: string
                   resourceRef:
                     type: string
@@ -324,6 +329,8 @@ spec:
                     type: string
                   kind:
                     type: string
+                  namespace:
+                    type: string
                   resourceRef:
                     type: string
                   version:
@@ -339,11 +346,28 @@ spec:
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
-            applicationObjects:
+            applications:
               description: ApplicationObjects contains all the application objects
                 filtered by label
               items:
-                type: string
+                description: BoundApplication defines the application workloads to
+                  which the binding secret has injected.
+                properties:
+                  group:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - kind
+                - version
+                type: object
               type: array
             bindingStatus:
               description: BindingStatus is the status of the service binding request.
