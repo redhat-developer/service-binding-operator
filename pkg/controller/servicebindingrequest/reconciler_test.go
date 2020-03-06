@@ -2,11 +2,14 @@ package servicebindingrequest
 
 import (
 	"context"
-	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -91,8 +94,17 @@ func TestApplicationSelectorByName(t *testing.T) {
 
 		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
-		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
-		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
+		expectedStatus := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: namespacedName.Name,
+			},
+		}
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
 	})
 }
 
@@ -140,8 +152,17 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
-		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
-		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
+		expectedStatus := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: namespacedName.Name,
+			},
+		}
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
 	})
 }
 

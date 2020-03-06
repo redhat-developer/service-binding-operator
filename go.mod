@@ -25,6 +25,7 @@ require (
 	k8s.io/code-generator v0.0.0
 	k8s.io/gengo v0.0.0-20191010091904-7fa3014cb28f
 	k8s.io/kube-openapi v0.0.0-20190918143330-0270cf2f1c1d
+	k8s.io/kubernetes v1.16.2
 	knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67 // indirect
 	knative.dev/serving v0.9.0
 	sigs.k8s.io/controller-runtime v0.4.0
