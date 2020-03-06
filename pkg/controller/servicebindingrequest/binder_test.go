@@ -161,6 +161,42 @@ func TestBinderNew(t *testing.T) {
 	})
 }
 
+func TestEmptyApplicationSelectors(t *testing.T) {
+
+	ns := "binder"
+	name := "service-binding-request"
+
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", deploymentsGVR, map[string]string{})
+	sbr.Spec.ApplicationSelector = nil
+	sbr.Spec.Applications = nil
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	t.Run("search no app specified", func(t *testing.T) {
+		list, err := binder.search()
+		require.Error(t, err)
+		require.Nil(t, list)
+	})
+
+	sbr = f.AddMockedServiceBindingRequest(name, "foo", "app", deploymentsGVR, map[string]string{})
+	f.AddMockedUnstructuredDeployment("bar", map[string]string{})
+	binder.sbr = sbr
+
+	require.NotNil(t, binder)
+	t.Run("search app not found", func(t *testing.T) {
+		list, err := binder.search()
+		require.Error(t, err)
+		require.Nil(t, list)
+	})
+}
+
 func TestBinderAppendEnvVar(t *testing.T) {
 	envName := "lastbound"
 	envList := []corev1.EnvVar{

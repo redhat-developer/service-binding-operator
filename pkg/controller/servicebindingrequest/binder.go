@@ -52,80 +52,61 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 
 	var objList *unstructured.UnstructuredList = &unstructured.UnstructuredList{}
+	var appSelectors = []v1alpha1.ApplicationSelector{}
+	var err error
 
 	if b.sbr.Spec.Applications != nil {
-		for _, app := range *b.sbr.Spec.Applications {
-			gvr := schema.GroupVersionResource{
-				Group:    app.GroupVersionResource.Group,
-				Version:  app.GroupVersionResource.Version,
-				Resource: app.GroupVersionResource.Resource,
-			}
-			fieldName := make(map[string]string)
-			fieldName["metadata.name"] = app.ResourceRef
-			opts := metav1.ListOptions{
-				FieldSelector: fields.Set(fieldName).String(),
-			}
-			appObjList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
-			if err != nil {
-				return nil, err
-			}
-
-			if len(appObjList.Items) == 0 {
-				return nil, k8serror.NewNotFound(
-					gvr.GroupResource(),
-					b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-				)
-			}
-
-			objList.Items = append(objList.Items, appObjList.Items...)
-		}
+		appSelectors = append(appSelectors, *b.sbr.Spec.Applications...)
 	}
 
-	// TODO: Will be removed after ApplicationSelectors is deprecated
-	// Users of the updated API are allowed to skip b.sbr.Spec.ApplicationSelector
-	if b.sbr.Spec.ApplicationSelector == nil {
-		return objList, nil
+	// TODO: Deprecation, will be removed
+	if b.sbr.Spec.ApplicationSelector != nil {
+		appSelectors = append(appSelectors, *b.sbr.Spec.ApplicationSelector)
 	}
 
-	// TODO: Will be removed after ApplicationSelectors is deprecated
-	gvr := schema.GroupVersionResource{
-		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
-		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
-		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-	}
-
-	var opts metav1.ListOptions
-
-	// TODO: Will be removed after spec.ApplicationSelectors is deprecated
-	// If Application name is present
-	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
-		fieldName := make(map[string]string)
-		fieldName["metadata.name"] = b.sbr.Spec.ApplicationSelector.ResourceRef
-		opts = metav1.ListOptions{
-			FieldSelector: fields.Set(fieldName).String(),
-		}
-	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
-		matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
-		opts = metav1.ListOptions{
-			LabelSelector: labels.Set(matchLabels).String(),
-		}
-	} else {
+	if len(appSelectors) == 0 {
 		return nil, EmptyApplicationSelectorErr
 	}
 
-	appObjList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
-	if err != nil {
-		return nil, err
-	}
-	objList.Items = append(objList.Items, appObjList.Items...)
+	for _, app := range appSelectors {
 
-	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
-	if len(objList.Items) == 0 {
-		return nil, k8serror.NewNotFound(
-			gvr.GroupResource(),
-			b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-		)
+		var opts metav1.ListOptions
+		gvr := schema.GroupVersionResource{
+			Group:    app.GroupVersionResource.Group,
+			Version:  app.GroupVersionResource.Version,
+			Resource: app.GroupVersionResource.Resource,
+		}
+
+		if app.ResourceRef != "" {
+			fieldName := make(map[string]string)
+			fieldName["metadata.name"] = app.ResourceRef
+			opts = metav1.ListOptions{
+				FieldSelector: fields.Set(fieldName).String(),
+			}
+		} else if app.LabelSelector != nil {
+			matchLabels := app.LabelSelector.MatchLabels
+			opts = metav1.ListOptions{
+				LabelSelector: labels.Set(matchLabels).String(),
+			}
+		}
+		appObjList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(appObjList.Items) == 0 {
+			return nil, k8serror.NewNotFound(
+				gvr.GroupResource(),
+				app.GroupVersionResource.Resource,
+			)
+		}
+		objList.Items = append(objList.Items, appObjList.Items...)
 	}
+
+	if len(objList.Items) == 0 {
+		return nil, EmptyApplicationSelectorErr
+	}
+
 	return objList, err
 }
 
