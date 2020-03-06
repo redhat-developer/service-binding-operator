@@ -78,6 +78,8 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 // Add new APIs
 
 // AddMockedServiceBindingRequestV1_1 add mocked object from ServiceBindingRequestMock.
+// This function returns a ServiceBindingRequest with the newer API
+// consisting of "applications" & "services".
 func (f *Fake) AddMockedServiceBindingRequestV1_1(
 	name string,
 	backingServiceResourceRef string,
@@ -91,6 +93,8 @@ func (f *Fake) AddMockedServiceBindingRequestV1_1(
 }
 
 // AddMockedServiceBindingRequestWithUnannotatedV1_1 add mocked object from ServiceBindingRequestMock with DetectBindingResources.
+// This function returns a ServiceBindingRequest with the newer API
+// consisting of "applications" & "services".
 func (f *Fake) AddMockedServiceBindingRequestWithUnannotatedV1_1(
 	name string,
 	backingServiceResourceRef string,
@@ -103,6 +107,9 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotatedV1_1(
 	return sbr
 }
 
+// AddMockedUnstructuredServiceBindingRequestV1_1 creates a mock ServiceBindingRequest object
+// This function returns a ServiceBindingRequest with the newer API
+// consisting of "applications" & "services".
 func (f *Fake) AddMockedUnstructuredServiceBindingRequestV1_1(
 	name string,
 	backingServiceResourceRef string,

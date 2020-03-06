@@ -478,9 +478,9 @@ func UnstructuredServiceBindingRequestMock(
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
-// Mocks with updated API
-
 // ServiceBindingRequestMockAlphaV1_1 return a binding-request mock of informed name and match labels.
+// This function returns a ServiceBindingRequest with the newer API
+// consisting of "applications" & "services".
 func ServiceBindingRequestMockAlphaV1_1(
 	ns string,
 	name string,
@@ -522,6 +522,8 @@ func ServiceBindingRequestMockAlphaV1_1(
 }
 
 // UnstructuredServiceBindingRequestMockAlphaV1_1 returns a unstructured version of SBR.
+// This function returns a ServiceBindingRequest with the newer API
+// consisting of "applications" & "services".
 func UnstructuredServiceBindingRequestMockAlphaV1_1(
 	ns string,
 	name string,
