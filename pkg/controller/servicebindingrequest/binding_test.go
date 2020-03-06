@@ -321,7 +321,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
