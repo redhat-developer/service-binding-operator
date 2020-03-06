@@ -106,7 +106,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Expresses intent to bind an operator-backed service with a Deployment",
+				Description: "ServiceBindingRequest Expresses intent to bind an operator-backed service with a Deployment",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -255,15 +255,14 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 							Format:      "",
 						},
 					},
-					"applicationObjects": {
+					"applications": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ApplicationObjects contains all the application objects filtered by label",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Ref: ref("./pkg/apis/apps/v1alpha1.BoundApplication"),
 									},
 								},
 							},
@@ -273,6 +272,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/openshift/custom-resource-status/conditions/v1.Condition"},
+			"./pkg/apis/apps/v1alpha1.BoundApplication", "github.com/openshift/custom-resource-status/conditions/v1.Condition"},
 	}
 }

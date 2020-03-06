@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
@@ -270,11 +269,21 @@ func (b *ServiceBinder) setApplicationObjects(
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objs []*unstructured.Unstructured,
 ) {
-	names := []string{}
+	boundApps := []v1alpha1.BoundApplication{}
 	for _, obj := range objs {
-		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
+		boundApp := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   obj.GroupVersionKind().Group,
+				Version: obj.GroupVersionKind().Version,
+				Kind:    obj.GetKind(),
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: obj.GetName(),
+			},
+		}
+		boundApps = append(boundApps, boundApp)
 	}
-	sbrStatus.ApplicationObjects = names
+	sbrStatus.ApplicationObjects = boundApps
 }
 
 // buildPlan creates a new plan.
