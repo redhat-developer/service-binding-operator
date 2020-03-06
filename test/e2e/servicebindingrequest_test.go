@@ -358,7 +358,7 @@ func CreateSBR(
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
-		namespacedName.Namespace, namespacedName.Name, resourceRef, "", applicationGVR, matchLabels)
+		namespacedName.Namespace, namespacedName.Name, nil, resourceRef, "", applicationGVR, matchLabels)
 
 	// This function call explicitly modifies default SBR created by
 	// the mock

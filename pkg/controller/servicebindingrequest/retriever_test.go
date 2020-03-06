@@ -14,14 +14,18 @@ func TestRetriever(t *testing.T) {
 	var retriever *Retriever
 
 	ns := "testing"
+	backingServiceNs := "backing-servicec-ns"
 	crName := "db-testing"
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
-	f.AddMockedSecret("db-credentials")
+	f.AddNamespacedMockedSecret("db-credentials", backingServiceNs)
 
 	crdDescription := mocks.CRDDescriptionMock()
-	cr, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
+	cr, err := mocks.UnstructuredDatabaseCRMock(backingServiceNs, crName)
+	require.NoError(t, err)
+
+	crInSameNamespace, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
 	require.NoError(t, err)
 
 	plan := &Plan{
@@ -31,6 +35,10 @@ func TestRetriever(t *testing.T) {
 			{
 				CRDDescription: &crdDescription,
 				CR:             cr,
+			},
+			{
+				CRDDescription: &crdDescription,
+				CR:             crInSameNamespace,
 			},
 		},
 	}
@@ -164,7 +172,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
 	f.AddMockedUnstructuredConfigMap(crName)
-	f.AddMockedDatabaseCR(crName)
+	f.AddMockedDatabaseCR(crName, ns)
 
 	crdDescription := mocks.CRDDescriptionConfigMapMock()
 

@@ -107,6 +107,8 @@ spec:
                   type: string
                 kind:
                   type: string
+                namespace:
+                  type: string
                 resourceRef:
                   type: string
                 version:
@@ -127,6 +129,8 @@ spec:
                   group:
                     type: string
                   kind:
+                    type: string
+                  namespace:
                     type: string
                   resourceRef:
                     type: string

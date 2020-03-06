@@ -37,6 +37,11 @@ func (in *ApplicationSelector) DeepCopy() *ApplicationSelector {
 func (in *BackingServiceSelector) DeepCopyInto(out *BackingServiceSelector) {
 	*out = *in
 	out.GroupVersionKind = in.GroupVersionKind
+	if in.Namespace != nil {
+		in, out := &in.Namespace, &out.Namespace
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 
@@ -139,11 +144,13 @@ func (in *ServiceBindingRequestSpec) DeepCopyInto(out *ServiceBindingRequestSpec
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	out.BackingServiceSelector = in.BackingServiceSelector
+	in.BackingServiceSelector.DeepCopyInto(&out.BackingServiceSelector)
 	if in.BackingServiceSelectors != nil {
 		in, out := &in.BackingServiceSelectors, &out.BackingServiceSelectors
 		*out = make([]BackingServiceSelector, len(*in))
-		copy(*out, *in)
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
 	}
 	in.ApplicationSelector.DeepCopyInto(&out.ApplicationSelector)
 	return
