@@ -106,7 +106,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ServiceBindingRequest Expresses intent to bind an operator-backed service with a Deployment",
+				Description: "ServiceBindingRequest expresses intent to bind an operator-backed service with an application workload.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {

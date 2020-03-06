@@ -17,8 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: ServiceBindingRequest Expresses intent to bind an operator-backed
-        service with a Deployment
+      description: ServiceBindingRequest expresses intent to bind an operator-backed
+        service with an application workload.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation

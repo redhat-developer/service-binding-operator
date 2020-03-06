@@ -83,7 +83,8 @@ type ApplicationSelector struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ServiceBindingRequest Expresses intent to bind an operator-backed service with a Deployment
+// ServiceBindingRequest expresses intent to bind an operator-backed service with
+// an application workload.
 // +k8s:openapi-gen=true
 // +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding Request"
 // +kubebuilder:subresource:status
