@@ -2,11 +2,12 @@ package servicebindingrequest
 
 import (
 	"encoding/base64"
+	"strings"
+	"testing"
+
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -239,6 +240,13 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "single-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
+			BindingReferenceType: &v1alpha1.BindingReferenceType{
+				GroupVersionKind: metav1.GroupVersionKind{
+					Group:   "",
+					Version: "v1",
+					Kind:    ConfigMapKind,
+				},
+			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,

@@ -173,6 +173,11 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Format:      "",
 						},
 					},
+					"bindingRef": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("./pkg/apis/apps/v1alpha1.BindingReferenceType"),
+						},
+					},
 					"customEnvVar": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Custom env variables",
@@ -223,7 +228,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "k8s.io/api/core/v1.EnvVar"},
+			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "./pkg/apis/apps/v1alpha1.BindingReferenceType", "k8s.io/api/core/v1.EnvVar"},
 	}
 }
 

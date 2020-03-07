@@ -8,11 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -160,6 +162,71 @@ func TestBinderNew(t *testing.T) {
 		// making sure no volume mounts are present
 		require.Nil(t, c.VolumeMounts)
 	})
+}
+
+func TestBinderConfigMap(t *testing.T) {
+	ns := "binder"
+	name := "service-binding-request"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "binder",
+	}
+	f := mocks.NewFake(t, ns)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredDeployment("ref", matchLabels)
+
+	sbr.Spec.BindingReferenceType = &v1alpha1.BindingReferenceType{
+		GroupVersionKind: metav1.GroupVersionKind{
+			Version: "v1",
+			Kind:    "ConfigMap",
+		},
+	}
+
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+
+	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
+		secretName := "secret"
+		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
+		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
+
+		list := binder.appendEnvFrom(envFrom, secretName)
+		require.Equal(t, 1, len(list))
+		require.Equal(t, secretName, list[0].ConfigMapRef.Name)
+
+		list = binder.removeEnvFrom(envFrom, secretName)
+		require.Equal(t, 0, len(list))
+	})
+
+	sbr.Spec.BindingReferenceType = nil
+
+	binder = NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
+		secretName := "secret"
+		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
+		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
+
+		list := binder.appendEnvFrom(envFrom, secretName)
+		require.Equal(t, 0, len(list))
+
+		list = binder.removeEnvFrom(envFrom, secretName)
+		require.Equal(t, 0, len(list))
+	})
+
 }
 
 func TestBinderAppendEnvVar(t *testing.T) {

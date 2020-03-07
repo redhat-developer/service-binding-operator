@@ -1,6 +1,8 @@
 package servicebindingrequest
 
 import (
+	err "errors"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -41,8 +43,8 @@ func (s *Secret) customEnvParser(data map[string][]byte) (map[string][]byte, err
 }
 
 // buildResourceClient creates a resource client to handle corev1/secret resource.
-func (s *Secret) buildResourceClient() dynamic.ResourceInterface {
-	gvr := corev1.SchemeGroupVersion.WithResource(SecretResource)
+func (s *Secret) buildResourceClient(resource string) dynamic.ResourceInterface {
+	gvr := corev1.SchemeGroupVersion.WithResource(resource)
 	return s.client.Resource(gvr).Namespace(s.plan.Ns)
 }
 
@@ -52,21 +54,62 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 	ns := s.plan.Ns
 	name := s.plan.Name
 	logger := s.logger.WithValues("Namespace", ns, "Name", name)
-	secretObj := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Data: payload,
+
+	var bindingRef interface{}
+	gvk := corev1.SchemeGroupVersion.WithKind(SecretKind)
+	resource := SecretResource
+
+	if s.plan.SBR.Spec.BindingReferenceType == nil {
+		return nil, err.New("BindingReference is empty")
 	}
 
-	gvk := corev1.SchemeGroupVersion.WithKind(SecretKind)
-	u, err := converter.ToUnstructuredAsGVK(secretObj, gvk)
+	gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.BindingReferenceType.Kind)
+	if s.plan.SBR.Spec.BindingReferenceType.Kind == ConfigMapKind {
+		resource = ConfigMapResource
+	}
+
+	objectMeta := metav1.ObjectMeta{
+		Namespace: ns,
+		Name:      name,
+	}
+
+	/*
+		// panic: cannot deep copy map[string][]uint8 [recovered]
+		// panic: cannot deep copy map[string][]uint8
+
+		u := &unstructured.Unstructured{}
+
+		u.Object = map[string]interface{}{
+			"data": map[string][]byte{},
+		}
+		u.SetName(name)
+		u.SetNamespace(ns)
+		u.SetAPIVersion("v1")
+		u.SetKind("Secret")
+
+	*/
+
+	bindingRef = &corev1.Secret{
+		ObjectMeta: objectMeta,
+		Data:       payload,
+	}
+	if resource == ConfigMapResource {
+		payloadAsString := map[string]string{}
+		for index, element := range payload {
+			payloadAsString[index] = string(element)
+		}
+		bindingRef = &corev1.ConfigMap{
+			ObjectMeta: objectMeta,
+			Data:       payloadAsString,
+		}
+	}
+
+	u, err := converter.ToUnstructuredAsGVK(bindingRef, gvk)
 	if err != nil {
 		return nil, err
 	}
 
-	resourceClient := s.buildResourceClient()
+	resourceClient := s.buildResourceClient(resource)
 
 	logger.Debug("Attempt to create secret...")
 	_, err = resourceClient.Create(u, metav1.CreateOptions{})
@@ -91,7 +134,14 @@ func (s *Secret) Commit(payload map[string][]byte) (*unstructured.Unstructured, 
 // Get an unstructured object from the secret handled by this component. It can return errors in case
 // the API server does.
 func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
-	resourceClient := s.buildResourceClient()
+	resource := SecretResource
+	if s.plan.SBR.Spec.BindingReferenceType != nil {
+		if s.plan.SBR.Spec.BindingReferenceType.Kind == ConfigMapKind {
+			resource = ConfigMapResource
+		}
+	}
+
+	resourceClient := s.buildResourceClient(resource)
 	u, err := resourceClient.Get(s.plan.Name, metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, false, err
@@ -101,7 +151,13 @@ func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
 
 // Delete the secret represented by this component. It can return error when the API server does.
 func (s *Secret) Delete() error {
-	resourceClient := s.buildResourceClient()
+	resource := SecretResource
+	if s.plan.SBR.Spec.BindingReferenceType != nil {
+		if s.plan.SBR.Spec.BindingReferenceType.Kind == ConfigMapKind {
+			resource = ConfigMapResource
+		}
+	}
+	resourceClient := s.buildResourceClient(resource)
 	err := resourceClient.Delete(s.plan.Name, &metav1.DeleteOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return err

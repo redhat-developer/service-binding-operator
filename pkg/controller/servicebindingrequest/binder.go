@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"time"
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -303,31 +304,67 @@ func (b *Binder) appendEnvVar(
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
-func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) []corev1.EnvFromSource {
+
+	if b.sbr.Spec.BindingReferenceType == nil {
+		return envList
+	}
+	dataType := b.sbr.Spec.BindingReferenceType.Kind
+
 	for _, env := range envList {
-		if env.SecretRef.Name == secret {
-			b.logger.Debug("Directive 'envFrom' is already present!")
-			// secret name is already referenced
-			return envList
+		if dataType == ConfigMapKind {
+			if env.ConfigMapRef.Name == binddata {
+				b.logger.Debug("Directive 'envFrom' is already present!")
+				return envList
+			}
+		} else {
+			if env.SecretRef.Name == binddata {
+				b.logger.Debug("Directive 'envFrom' is already present!")
+				// secret name is already referenced
+				return envList
+			}
+		}
+	}
+
+	dataRef := corev1.EnvFromSource{
+		SecretRef: &corev1.SecretEnvSource{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: binddata,
+			},
+		},
+	}
+
+	if dataType == ConfigMapKind {
+		dataRef = corev1.EnvFromSource{
+			ConfigMapRef: &corev1.ConfigMapEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: binddata,
+				},
+			},
 		}
 	}
 
 	b.logger.Debug("Adding 'envFrom' directive...")
-	return append(envList, corev1.EnvFromSource{
-		SecretRef: &corev1.SecretEnvSource{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: secret,
-			},
-		},
-	})
+	return append(envList, dataRef)
 }
 
 // removeEnvFrom remove bind related entry from slice of "EnvFromSource".
-func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, data string) []corev1.EnvFromSource {
 	var cleanEnvList []corev1.EnvFromSource
+	dataType := SecretKind
+	if b.sbr.Spec.BindingReferenceType == nil {
+		return envList
+	}
+
 	for _, env := range envList {
-		if env.SecretRef.Name != secret {
-			cleanEnvList = append(cleanEnvList, env)
+		if dataType == ConfigMapKind {
+			if env.ConfigMapRef.Name != data {
+				cleanEnvList = append(cleanEnvList, env)
+			}
+		} else {
+			if env.SecretRef.Name != data {
+				cleanEnvList = append(cleanEnvList, env)
+			}
 		}
 	}
 	return cleanEnvList

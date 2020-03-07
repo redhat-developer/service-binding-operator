@@ -24,6 +24,8 @@ type ServiceBindingRequestSpec struct {
 	// +optional
 	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
+	BindingReferenceType *BindingReferenceType `json:"bindingRef,omitempty"`
+
 	// Custom env variables
 	// +optional
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
@@ -43,6 +45,12 @@ type ServiceBindingRequestSpec struct {
 	// different subresources owned by backing operator CR.
 	// +optional
 	DetectBindingResources bool `json:"detectBindingResources"`
+}
+
+// BindingReferenceType defines the kubernetets object which holds
+// the binding data
+type BindingReferenceType struct {
+	metav1.GroupVersionKind `json:",inline"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

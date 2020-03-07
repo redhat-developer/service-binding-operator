@@ -18,8 +18,14 @@ const (
 	ClusterServiceVersionKind = "ClusterServiceVersion"
 	// SecretResource defines the resource name for Secrets.
 	SecretResource = "secrets"
+	// ConfigMapResource defines the resource name for ConfigMaps.
+	ConfigMapResource = "configmaps"
+
 	// SecretKind defines the name of Secret kind.
 	SecretKind = "Secret"
+
+	// ConfigMapKind defines the name of Secret kind.
+	ConfigMapKind = "ConfigMap"
 )
 
 // RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
