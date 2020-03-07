@@ -56,14 +56,13 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 	logger := s.logger.WithValues("Namespace", ns, "Name", name)
 
 	var bindingRef interface{}
-	gvk := corev1.SchemeGroupVersion.WithKind(SecretKind)
 	resource := SecretResource
 
 	if s.plan.SBR.Spec.BindingReferenceType == nil {
 		return nil, err.New("BindingReference is empty")
 	}
 
-	gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.BindingReferenceType.Kind)
+	gvk := corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.BindingReferenceType.Kind)
 	if s.plan.SBR.Spec.BindingReferenceType.Kind == ConfigMapKind {
 		resource = ConfigMapResource
 	}
