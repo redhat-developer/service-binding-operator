@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	k8sError "k8s.io/apimachinery/pkg/api/errors"
+
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 
@@ -97,37 +99,52 @@ func (p *Planner) Plan() (*Plan, error) {
 		crd, err := p.searchCRD(bssGVK)
 
 		if err != nil {
-			p.logger.Debug("**** !!!! NOT A CRD ***************")
-			err = nil
+			if k8sError.IsNotFound(err) {
+				p.logger.Debug("CRD not found, probably a common Kube resource")
+				err = nil
+				isCustomResource = false
+			}
+			p.logger.Debug("CRD not found, probably a common Kube resource")
+
 			isCustomResource = false
 		}
 
+		if s.Namespace == nil {
+			s.Namespace = &ns
+		}
+
+		cr, err := p.searchCR(s)
+		if err != nil {
+			return nil, err
+		}
+
 		crdDescription := &olmv1alpha1.CRDDescription{}
+
 		if isCustomResource {
+
+			// Parse annotations from the OLM descriptors or the CRD
+
 			p.logger.Debug("Resolved CRD", "CRD", crd)
 
 			// resolve the CRDDescription based on the service's GVK and the resolved CRD
 			olm := NewOLM(p.client, ns)
-			crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
+			crdDescription, err = olm.SelectCRDByGVK(bssGVK, crd)
 			if err != nil {
 				return nil, err
 			}
 			p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
-		}
-		if s.Namespace == nil {
-			s.Namespace = &ns
-		}
-		cr, err := p.searchCR(s)
-		if err != nil {
-			p.logger.Error(err, "**** OOOOPS NOT A CR as well ***************")
-			return nil, err
-		}
 
-		if !isCustomResource {
-			p.logger.Debug("****.. still NOT A CRD ***************")
-			crdDescription = &olmv1alpha1.CRDDescription{}
-		}
+		} else {
 
+			// Parse annotations from the CR
+
+			crdDescription, err = buildCRDDescriptionFromCR(bssGVK, cr)
+			if err != nil {
+				p.logger.Error(err, "**** OOOOPS couldn't use annotations ***************")
+				return nil, err
+			}
+
+		}
 		r := &RelatedResource{
 			CRDDescription: crdDescription,
 			CR:             cr,

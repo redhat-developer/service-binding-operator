@@ -186,7 +186,7 @@ func TestBinderApplicationName(t *testing.T) {
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
-	f.AddMockedUnstructuredDeployment("applicationResourceRef", nil)
+	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
 		context.TODO(),

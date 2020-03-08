@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
@@ -320,8 +319,6 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	// append all SBR related CRs
 	objs = append(objs, rs...)
 
-	fmt.Println("*((((( CRs appended")
-
 	// retriever is responsible for gathering data related to the given plan.
 	retriever := NewRetriever(options.DynClient, plan, options.EnvVarPrefix)
 
@@ -333,8 +330,6 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 		}
 	}
 
-	fmt.Println("*((((( CRs appended... detech")
-
 	// read bindable data from the CRDDescription found by the planner
 	for _, r := range plan.GetRelatedResources() {
 		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
@@ -342,8 +337,6 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 			return nil, err
 		}
 	}
-
-	fmt.Println("*((((( CRs appended... detech.,related")
 
 	// gather retriever's read data
 	// TODO: do not return error
