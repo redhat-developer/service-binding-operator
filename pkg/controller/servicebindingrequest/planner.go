@@ -134,17 +134,15 @@ func (p *Planner) Plan() (*Plan, error) {
 			}
 			p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
 
-		} else {
-
-			// Parse annotations from the CR
-
-			crdDescription, err = buildCRDDescriptionFromCR(bssGVK, cr)
-			if err != nil {
-				p.logger.Error(err, "**** OOOOPS couldn't use annotations ***************")
-				return nil, err
-			}
-
 		}
+
+		// Parse annotations from the CR or kubernetes object
+
+		crdDescription, err = buildCRDDescriptionFromCR(cr, crdDescription)
+		if err != nil {
+			return nil, err
+		}
+
 		r := &RelatedResource{
 			CRDDescription: crdDescription,
 			CR:             cr,

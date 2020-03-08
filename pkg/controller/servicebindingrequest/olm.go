@@ -211,18 +211,21 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 }
 
 // buildCRDDescriptionFromCRbuilds a CRDDescription from annotations present in the CR.
-func buildCRDDescriptionFromCR(gvk schema.GroupVersionKind, cr *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
+func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) (*olmv1alpha1.CRDDescription, error) {
 	var (
 		err error
 	)
 
+	gvk := schema.GroupVersionKind{
+		Kind:    cr.GetKind(),
+		Version: cr.GroupVersionKind().Version,
+		Group:   cr.GroupVersionKind().Group,
+	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 
-	crdDescription := &olmv1alpha1.CRDDescription{
-		Name:    gvr.Resource + "." + gvr.Group,
-		Kind:    gvk.Kind,
-		Version: gvr.Resource,
-	}
+	crdDescription.Name = gvr.Resource + "." + gvr.Group
+	crdDescription.Kind = cr.GetKind()
+	crdDescription.Version = cr.GroupVersionKind().Version
 
 	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
 	if err != nil {
