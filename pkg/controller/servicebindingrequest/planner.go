@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 
-	k8sError "k8s.io/apimachinery/pkg/api/errors"
-
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 
@@ -92,57 +90,48 @@ func (p *Planner) Plan() (*Plan, error) {
 	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
 
-		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
-
-		isCustomResource := true
-		// resolve the CRD using the service's GVK
-		crd, err := p.searchCRD(bssGVK)
-
-		if err != nil {
-			if k8sError.IsNotFound(err) {
-				p.logger.Debug("CRD not found, probably a common Kube resource")
-				err = nil
-				isCustomResource = false
-			}
-			p.logger.Debug("CRD not found, probably a common Kube resource")
-
-			isCustomResource = false
-		}
-
 		if s.Namespace == nil {
 			s.Namespace = &ns
 		}
 
+		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
+
+		crdDescription := &olmv1alpha1.CRDDescription{}
+
+		// Start with looking up if the resource exists
+		// If yes, errors during lookups of the CRD and
+		// the CRD could be ignored.
 		cr, err := p.searchCR(s)
 		if err != nil {
 			return nil, err
 		}
 
-		crdDescription := &olmv1alpha1.CRDDescription{}
-
-		if isCustomResource {
-
-			// Parse annotations from the OLM descriptors or the CRD
-
-			p.logger.Debug("Resolved CRD", "CRD", crd)
-
-			// resolve the CRDDescription based on the service's GVK and the resolved CRD
-			olm := NewOLM(p.client, ns)
-			crdDescription, err = olm.SelectCRDByGVK(bssGVK, crd)
-			if err != nil {
-				return nil, err
-			}
-			p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
-
+		// resolve the CRD using the service's GVK
+		crd, err := p.searchCRD(bssGVK)
+		if err != nil {
+			// expected this to work, but didn't
+			// if k8sError.IsNotFound(err) {...}
+			p.logger.Error(err, "Probably not a CRD")
 		}
 
-		// Parse annotations from the CR or kubernetes object
+		p.logger.Debug("Resolved CRD", "CRD", crd)
 
+		olm := NewOLM(p.client, ns)
+
+		// Parse annotations from the OLM descriptors or the CRD
+		crdDescription, err = olm.SelectCRDByGVK(bssGVK, crd)
+		if err != nil {
+			p.logger.Error(err, "Probably not an OLM operator")
+		}
+		p.logger.Debug("Tentatively resolved CRDDescription", "CRDDescription", crdDescription)
+
+		// Parse ( and override ) annotations from the CR or kubernetes object
 		crdDescription, err = buildCRDDescriptionFromCR(cr, crdDescription)
 		if err != nil {
 			return nil, err
 		}
 
+		p.logger.Debug("Computed CRDDescription", "CRDDescription", crdDescription)
 		r := &RelatedResource{
 			CRDDescription: crdDescription,
 			CR:             cr,
