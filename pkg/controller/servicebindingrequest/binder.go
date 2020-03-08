@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"time"
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -75,7 +76,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		return nil, err
+		return objList, err
 	}
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
