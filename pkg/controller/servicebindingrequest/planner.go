@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -90,27 +92,40 @@ func (p *Planner) Plan() (*Plan, error) {
 
 		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 
+		isCustomResource := true
 		// resolve the CRD using the service's GVK
 		crd, err := p.searchCRD(bssGVK)
-		if err != nil {
-			return nil, err
-		}
-		p.logger.Debug("Resolved CRD", "CRD", crd)
 
-		// resolve the CRDDescription based on the service's GVK and the resolved CRD
-		olm := NewOLM(p.client, ns)
-		crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
 		if err != nil {
-			return nil, err
+			p.logger.Debug("**** !!!! NOT A CRD ***************")
+			err = nil
+			isCustomResource = false
 		}
-		p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
 
+		crdDescription := &olmv1alpha1.CRDDescription{}
+		if isCustomResource {
+			p.logger.Debug("Resolved CRD", "CRD", crd)
+
+			// resolve the CRDDescription based on the service's GVK and the resolved CRD
+			olm := NewOLM(p.client, ns)
+			crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
+			if err != nil {
+				return nil, err
+			}
+			p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
+		}
 		if s.Namespace == nil {
 			s.Namespace = &ns
 		}
 		cr, err := p.searchCR(s)
 		if err != nil {
+			p.logger.Error(err, "**** OOOOPS NOT A CR as well ***************")
 			return nil, err
+		}
+
+		if !isCustomResource {
+			p.logger.Debug("****.. still NOT A CRD ***************")
+			crdDescription = &olmv1alpha1.CRDDescription{}
 		}
 
 		r := &RelatedResource{

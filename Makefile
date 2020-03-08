@@ -339,7 +339,7 @@ push-image: build-image
 
 .PHONY: local
 ## Local: Run operator locally
-local: deploy-clean deploy-rbac deploy-crds
+local: 
 	$(Q)operator-sdk --verbose run --local --operator-flags "$(ZAP_FLAGS)"
 
 .PHONY: deploy-rbac
