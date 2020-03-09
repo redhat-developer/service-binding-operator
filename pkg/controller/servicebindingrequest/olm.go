@@ -200,11 +200,11 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 	}
 
 	if specDescriptor != nil {
-		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, *specDescriptor)
+		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
 	}
 
 	if statusDescriptor != nil {
-		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, *statusDescriptor)
+		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
 	}
 
 	return crdDescription, nil
@@ -223,6 +223,10 @@ func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *ol
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 
+	if crdDescription == nil {
+		crdDescription = &olmv1alpha1.CRDDescription{}
+	}
+
 	crdDescription.Name = gvr.Resource + "." + gvr.Group
 	crdDescription.Kind = cr.GetKind()
 	crdDescription.Version = cr.GroupVersionKind().Version
@@ -233,11 +237,11 @@ func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *ol
 	}
 
 	if specDescriptor != nil {
-		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, *specDescriptor)
+		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
 	}
 
 	if statusDescriptor != nil {
-		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, *statusDescriptor)
+		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
 	}
 
 	return crdDescription, nil
@@ -246,12 +250,12 @@ func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *ol
 // buildDescriptorsFromAnnotations builds two descriptors collection, one for spec descriptors and
 // another for status descriptors.
 func buildDescriptorsFromAnnotations(annotations map[string]string) (
-	*olmv1alpha1.SpecDescriptor,
-	*olmv1alpha1.StatusDescriptor,
+	[]olmv1alpha1.SpecDescriptor,
+	[]olmv1alpha1.StatusDescriptor,
 	error,
 ) {
-	var currentSpecDescriptor *olmv1alpha1.SpecDescriptor
-	var currentStatusDescriptor *olmv1alpha1.StatusDescriptor
+	var currentSpecDescriptor []olmv1alpha1.SpecDescriptor
+	var currentStatusDescriptor []olmv1alpha1.StatusDescriptor
 
 	acc := make(map[string][]string)
 
@@ -285,15 +289,15 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 		sort.Strings(descriptors)
 		path := strings.Split(fieldPath, ".")
 		if path[0] == "status" {
-			currentStatusDescriptor = &olmv1alpha1.StatusDescriptor{
+			currentStatusDescriptor = append(currentStatusDescriptor, olmv1alpha1.StatusDescriptor{
 				Path:         path[1],
 				XDescriptors: descriptors,
-			}
+			})
 		} else if path[0] == "spec" {
-			currentSpecDescriptor = &olmv1alpha1.SpecDescriptor{
+			currentSpecDescriptor = append(currentSpecDescriptor, olmv1alpha1.SpecDescriptor{
 				Path:         path[1],
 				XDescriptors: descriptors,
-			}
+			})
 		}
 	}
 
