@@ -30,10 +30,10 @@ type ServiceBindingRequestSpec struct {
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	// +optional
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
+	BackingServiceSelector *BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
 	// BackingServiceSelectors is used to identify multiple backing services.
-	BackingServiceSelectors []BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
+	BackingServiceSelectors *[]BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
