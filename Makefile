@@ -113,7 +113,7 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.1.0
+OPERATOR_VERSION ?= 0.1.1
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_IMAGE_REL ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
@@ -123,7 +123,7 @@ OPERATOR_IMAGE_BUILDER ?= buildah
 OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
 COMMIT_COUNT := $(shell git rev-list --count HEAD)
 BUNDLE_VERSION ?= $(OPERATOR_VERSION)-$(COMMIT_COUNT)
-BASE_BUNDLE_VERSION ?= 0.0.23
+BASE_BUNDLE_VERSION ?= 0.1.0
 OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
@@ -456,3 +456,9 @@ push-bundle-to-quay:
 ## validating the operator by installing new quay releases
 dev-release:
 	BUNDLE_VERSION=$(BUNDLE_VERSION) ./hack/dev-release.sh
+
+## -- Target to validate release --
+.PHONY: validate-release
+## validate the operator by installing the releases
+validate-release:
+	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) ./hack/validate-release.sh
