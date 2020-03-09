@@ -116,9 +116,6 @@ func TestAnnotationParsing(t *testing.T) {
 		require.Len(t, crdDescription.StatusDescriptors, 2)
 		require.Len(t, crdDescription.SpecDescriptors, 2)
 
-		require.Equal(t, "dbName", crdDescription.SpecDescriptors[0].Path)
-		require.Equal(t, "binding:env:attribute:spec.dbName", crdDescription.SpecDescriptors[0].XDescriptors[0])
-
 		expected := map[string]string{
 			"dbName":        "binding:env:attribute:spec.dbName",
 			"image":         "binding:env:attribute:spec.image",
