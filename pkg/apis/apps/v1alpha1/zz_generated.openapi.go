@@ -188,7 +188,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelector is used to identify the backing service operator.",
+							Description: "BackingServiceSelector is used to identify the backing service operator. Deprecation Notice: In the upcoming release, this field would be depcreated. It would be mandatory to set \"backingServiceSelector\"",
 							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
 						},
 					},

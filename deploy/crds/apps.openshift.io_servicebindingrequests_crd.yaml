@@ -100,8 +100,9 @@ spec:
               - version
               type: object
             backingServiceSelector:
-              description: BackingServiceSelector is used to identify the backing
-                service operator.
+              description: 'BackingServiceSelector is used to identify the backing
+                service operator. Deprecation Notice: In the upcoming release, this
+                field would be depcreated. It would be mandatory to set "backingServiceSelector"'
               properties:
                 group:
                   type: string
