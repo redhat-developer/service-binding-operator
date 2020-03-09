@@ -102,7 +102,7 @@ spec:
             backingServiceSelector:
               description: 'BackingServiceSelector is used to identify the backing
                 service operator. Deprecation Notice: In the upcoming release, this
-                field would be depcreated. It would be mandatory to set "backingServiceSelector"'
+                field would be depcreated. It would be mandatory to set "backingServiceSelectors".'
               properties:
                 group:
                   type: string
@@ -122,7 +122,8 @@ spec:
               type: object
             backingServiceSelectors:
               description: BackingServiceSelectors is used to identify multiple backing
-                services.
+                services. This would be made a required field after 'BackingServiceSelector'
+                is removed.
               items:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
