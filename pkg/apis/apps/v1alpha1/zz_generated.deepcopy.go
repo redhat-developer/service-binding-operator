@@ -144,12 +144,20 @@ func (in *ServiceBindingRequestSpec) DeepCopyInto(out *ServiceBindingRequestSpec
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	in.BackingServiceSelector.DeepCopyInto(&out.BackingServiceSelector)
+	if in.BackingServiceSelector != nil {
+		in, out := &in.BackingServiceSelector, &out.BackingServiceSelector
+		*out = new(BackingServiceSelector)
+		(*in).DeepCopyInto(*out)
+	}
 	if in.BackingServiceSelectors != nil {
 		in, out := &in.BackingServiceSelectors, &out.BackingServiceSelectors
-		*out = make([]BackingServiceSelector, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
+		*out = new([]BackingServiceSelector)
+		if **in != nil {
+			in, out := *in, *out
+			*out = make([]BackingServiceSelector, len(*in))
+			for i := range *in {
+				(*in)[i].DeepCopyInto(&(*out)[i])
+			}
 		}
 	}
 	in.ApplicationSelector.DeepCopyInto(&out.ApplicationSelector)

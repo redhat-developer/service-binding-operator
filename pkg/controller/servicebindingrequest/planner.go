@@ -76,9 +76,12 @@ var EmptyBackingServiceSelectorsErr = errors.New("backing service selectors are 
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	ns := p.sbr.GetNamespace()
-	selectors := append([]v1alpha1.BackingServiceSelector{}, p.sbr.Spec.BackingServiceSelectors...)
-	if (p.sbr.Spec.BackingServiceSelector != v1alpha1.BackingServiceSelector{}) {
-		selectors = append(selectors, p.sbr.Spec.BackingServiceSelector)
+	var selectors []v1alpha1.BackingServiceSelector
+	if p.sbr.Spec.BackingServiceSelector != nil {
+		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelector)
+	}
+	if p.sbr.Spec.BackingServiceSelectors != nil {
+		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelectors...)
 	}
 
 	if len(selectors) == 0 {
