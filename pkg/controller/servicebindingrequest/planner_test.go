@@ -31,8 +31,8 @@ func TestPlanner(t *testing.T) {
 	}
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, resourceRef, "", deploymentsGVR, matchLabels)
-	sbr.Spec.BackingServiceSelectors = []v1alpha1.BackingServiceSelector{
-		sbr.Spec.BackingServiceSelector,
+	sbr.Spec.BackingServiceSelectors = &[]v1alpha1.BackingServiceSelector{
+		*sbr.Spec.BackingServiceSelector,
 	}
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	f.AddMockedDatabaseCR(resourceRef, ns)
@@ -44,7 +44,7 @@ func TestPlanner(t *testing.T) {
 	// Out of the box, our mocks don't set the namespace
 	// ensure SearchCR fails.
 	t.Run("search CR with namespace not set", func(t *testing.T) {
-		cr, err := planner.searchCR(sbr.Spec.BackingServiceSelector)
+		cr, err := planner.searchCR(*sbr.Spec.BackingServiceSelector)
 		require.Error(t, err)
 		require.Nil(t, cr)
 	})
@@ -64,7 +64,7 @@ func TestPlanner(t *testing.T) {
 	// The searchCR contract only cares about the backingServiceNamespace
 	sbr.Spec.BackingServiceSelector.Namespace = &ns
 	t.Run("searchCR", func(t *testing.T) {
-		cr, err := planner.searchCR(sbr.Spec.BackingServiceSelector)
+		cr, err := planner.searchCR(*sbr.Spec.BackingServiceSelector)
 		require.NoError(t, err)
 		require.NotNil(t, cr)
 	})
@@ -92,7 +92,7 @@ func TestPlannerWithExplicitBackingServiceNamespace(t *testing.T) {
 	require.NotNil(t, planner)
 
 	t.Run("searchCR", func(t *testing.T) {
-		cr, err := planner.searchCR(sbr.Spec.BackingServiceSelector)
+		cr, err := planner.searchCR(*sbr.Spec.BackingServiceSelector)
 		require.NoError(t, err)
 		require.NotNil(t, cr)
 	})

@@ -2,11 +2,12 @@ package servicebindingrequest
 
 import (
 	"encoding/base64"
+	"strings"
+	"testing"
+
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -250,7 +251,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -284,7 +285,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -330,7 +331,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -363,7 +364,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			ApplicationSelector: v1alpha1.ApplicationSelector{},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -398,7 +399,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{},
 		},
 		Status: v1alpha1.ServiceBindingRequestStatus{},
 	}
