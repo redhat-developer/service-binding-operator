@@ -192,18 +192,12 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 		return nil, err
 	}
 
-	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
 	if err != nil {
 		return nil, err
 	}
-
-	if specDescriptor != nil {
-		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
-	}
-
-	if statusDescriptor != nil {
-		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
-	}
+	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
+	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
 
 	return crdDescription, nil
 }
