@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 
-	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,8 +95,6 @@ func (p *Planner) Plan() (*Plan, error) {
 
 		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 
-		crdDescription := &olmv1alpha1.CRDDescription{}
-
 		// Start with looking up if the resource exists
 		// If yes, errors during lookups of the CRD and
 		// the CRD could be ignored.
@@ -119,7 +116,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		olm := NewOLM(p.client, ns)
 
 		// Parse annotations from the OLM descriptors or the CRD
-		crdDescription, err = olm.SelectCRDByGVK(bssGVK, crd)
+		crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
 		if err != nil {
 			p.logger.Error(err, "Probably not an OLM operator")
 		}

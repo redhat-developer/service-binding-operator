@@ -134,6 +134,7 @@ func TestAnnotationParsing(t *testing.T) {
 		}
 		crdDescription, err = buildCRDDescriptionFromCR(cr, crdDescription)
 
+		require.NoError(t, err)
 		require.Equal(t, "dbName", crdDescription.SpecDescriptors[0].Path)
 		require.Equal(t, "binding:env:attribute:spec.dbName", crdDescription.SpecDescriptors[0].XDescriptors[0])
 

@@ -210,7 +210,7 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 	return crdDescription, nil
 }
 
-// buildCRDDescriptionFromCRbuilds a CRDDescription from annotations present in the CR.
+// buildCRDDescriptionFromCR builds a CRDDescription from annotations present in the CR.
 func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) (*olmv1alpha1.CRDDescription, error) {
 	var (
 		err error
