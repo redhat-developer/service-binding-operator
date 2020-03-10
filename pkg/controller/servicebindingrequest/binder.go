@@ -314,12 +314,12 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) 
 	for _, env := range envList {
 		if dataType == ConfigMapKind {
 			if env.ConfigMapRef.Name == binddata {
-				b.logger.Debug("Directive 'envFrom' is already present!")
+				b.logger.Debug("The configmap is already associated in the 'envFrom' directive.")
 				return envList
 			}
 		} else {
 			if env.SecretRef.Name == binddata {
-				b.logger.Debug("Directive 'envFrom' is already present!")
+				b.logger.Debug("The secret is already associated in the 'envFrom' directive.")
 				// secret name is already referenced
 				return envList
 			}
