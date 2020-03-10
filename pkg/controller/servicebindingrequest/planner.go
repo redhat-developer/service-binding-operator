@@ -83,6 +83,9 @@ func (p *Planner) Plan() (*Plan, error) {
 	if p.sbr.Spec.BackingServiceSelectors != nil {
 		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelectors...)
 	}
+	if p.sbr.Spec.Services != nil {
+		selectors = append(selectors, *p.sbr.Spec.Services...)
+	}
 
 	if len(selectors) == 0 {
 		return nil, EmptyBackingServiceSelectorsErr
