@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -213,6 +214,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "BindingFail", sbrOutput.Status.BindingStatus)
+	require.Equal(t, v1.ConditionStatus("False"), sbrOutput.Status.Conditions[0].Status)
 	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
 
 	// Reconcile with deployment
@@ -224,13 +226,15 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
-	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
-	require.NoError(t, err)
-
 	d := appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
+	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
 	require.Equal(t, "BindingSuccess", sbrOutput2.Status.BindingStatus)
+	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
+	require.Equal(t, v1.ConditionStatus("True"), sbrOutput2.Status.Conditions[0].Status)
 	require.Equal(t, 1, len(sbrOutput2.Status.ApplicationObjects))
 
 	// Update Credentials
@@ -252,6 +256,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
 	require.Equal(t, "BindingSuccess", sbrOutput3.Status.BindingStatus)
+	require.Equal(t, v1.ConditionStatus("True"), sbrOutput3.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))
