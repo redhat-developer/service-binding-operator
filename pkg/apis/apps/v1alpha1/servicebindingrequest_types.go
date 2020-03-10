@@ -49,11 +49,15 @@ type ServiceBindingRequestSpec struct {
 
 	// BackingServiceSelector is used to identify the backing service operator.
 	// Deprecated.
+	// In the upcoming release, this field would be depcreated. It would be mandatory
+	// to set "backingServiceSelectors".
 	// +optional
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
+	BackingServiceSelector *BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
 	// BackingServiceSelectors is used to identify multiple backing services.
 	// Deprecated.
+	// This would be made a required field after 'BackingServiceSelector'
+	// is removed.
 	// +optional
 	BackingServiceSelectors *[]BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
 

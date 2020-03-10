@@ -144,6 +144,7 @@ func (in *ServiceBindingRequestSpec) DeepCopyInto(out *ServiceBindingRequestSpec
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+<<<<<<< HEAD
 	if in.Services != nil {
 		in, out := &in.Services, &out.Services
 		*out = new([]BackingServiceSelector)
@@ -167,6 +168,13 @@ func (in *ServiceBindingRequestSpec) DeepCopyInto(out *ServiceBindingRequestSpec
 		}
 	}
 	in.BackingServiceSelector.DeepCopyInto(&out.BackingServiceSelector)
+=======
+	if in.BackingServiceSelector != nil {
+		in, out := &in.BackingServiceSelector, &out.BackingServiceSelector
+		*out = new(BackingServiceSelector)
+		(*in).DeepCopyInto(*out)
+	}
+>>>>>>> 58ea511ea0dabc67c2d05cff8ed422807bf278c9
 	if in.BackingServiceSelectors != nil {
 		in, out := &in.BackingServiceSelectors, &out.BackingServiceSelectors
 		*out = new([]BackingServiceSelector)
