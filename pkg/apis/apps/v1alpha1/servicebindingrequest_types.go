@@ -24,7 +24,10 @@ type ServiceBindingRequestSpec struct {
 	// +optional
 	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
-	BindingReferenceType *BindingReferenceType `json:"bindingRef,omitempty"`
+	// BindingReference is used to specify whether the binding object type
+	// is a Secret or a Configmap
+	// +optional
+	BindingReference *BindingReference `json:"binding,omitempty"`
 
 	// Custom env variables
 	// +optional
@@ -47,10 +50,10 @@ type ServiceBindingRequestSpec struct {
 	DetectBindingResources bool `json:"detectBindingResources"`
 }
 
-// BindingReferenceType defines the kubernetets object which holds
+// BindingReference defines the kubernetets object which holds
 // the binding data
-type BindingReferenceType struct {
-	metav1.GroupVersionKind `json:",inline"`
+type BindingReference struct {
+	ObjectType metav1.GroupVersionKind `json:"objectType,omitempty"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

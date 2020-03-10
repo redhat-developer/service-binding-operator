@@ -74,8 +74,8 @@ func TestConfigMapNew(t *testing.T) {
 
 	matchLabels := map[string]string{}
 	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", "", deploymentsGVR, matchLabels)
-	sbr.Spec.BindingReferenceType = &v1alpha1.BindingReferenceType{
-		GroupVersionKind: metav1.GroupVersionKind{
+	sbr.Spec.BindingReference = &v1alpha1.BindingReference{
+		ObjectType: metav1.GroupVersionKind{
 			Version: "v1",
 			Kind:    "ConfigMap",
 		},

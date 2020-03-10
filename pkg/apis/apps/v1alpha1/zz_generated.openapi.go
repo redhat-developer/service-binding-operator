@@ -173,9 +173,10 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 							Format:      "",
 						},
 					},
-					"bindingRef": {
+					"binding": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("./pkg/apis/apps/v1alpha1.BindingReferenceType"),
+							Description: "BindingReference is used to specify whether the binding object type is a Secret or a Configmap",
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BindingReference"),
 						},
 					},
 					"customEnvVar": {
@@ -228,7 +229,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 			},
 		},
 		Dependencies: []string{
-			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "./pkg/apis/apps/v1alpha1.BindingReferenceType", "k8s.io/api/core/v1.EnvVar"},
+			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "./pkg/apis/apps/v1alpha1.BindingReference", "k8s.io/api/core/v1.EnvVar"},
 	}
 }
 

@@ -143,20 +143,26 @@ spec:
                 - version
                 type: object
               type: array
-            bindingRef:
-              description: BindingReferenceType defines the kubernetets object which
-                holds the binding data
+            binding:
+              description: BindingReference is used to specify whether the binding
+                object type is a Secret or a Configmap
               properties:
-                group:
-                  type: string
-                kind:
-                  type: string
-                version:
-                  type: string
-              required:
-              - group
-              - kind
-              - version
+                objectType:
+                  description: GroupVersionKind unambiguously identifies a kind.  It
+                    doesn't anonymously include GroupVersion to avoid automatic coersion.  It
+                    doesn't use a GroupVersion to avoid custom marshalling
+                  properties:
+                    group:
+                      type: string
+                    kind:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - group
+                  - kind
+                  - version
+                  type: object
               type: object
             customEnvVar:
               description: Custom env variables

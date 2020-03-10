@@ -449,8 +449,8 @@ func ServiceBindingRequestMock(
 					Value: "spec.imagePath",
 				},
 			},
-			BindingReferenceType: &v1alpha1.BindingReferenceType{
-				GroupVersionKind: metav1.GroupVersionKind{
+			BindingReference: &v1alpha1.BindingReference{
+				ObjectType: metav1.GroupVersionKind{
 					Version: "v1",
 					Kind:    "Secret",
 				},

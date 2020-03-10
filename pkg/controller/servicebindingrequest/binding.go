@@ -220,9 +220,9 @@ func (b *ServiceBinder) onError(
 func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus := b.SBR.Status.DeepCopy()
 
-	if b.Secret.plan.SBR.Spec.BindingReferenceType == nil {
-		b.Secret.plan.SBR.Spec.BindingReferenceType = &v1alpha1.BindingReferenceType{
-			GroupVersionKind: v1.GroupVersionKind{
+	if b.Secret.plan.SBR.Spec.BindingReference == nil {
+		b.Secret.plan.SBR.Spec.BindingReference = &v1alpha1.BindingReference{
+			ObjectType: v1.GroupVersionKind{
 				Kind:    SecretKind,
 				Version: "v1",
 			},
