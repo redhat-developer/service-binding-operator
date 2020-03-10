@@ -1,33 +1,37 @@
-package nodejs_postgresql
+package examples_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
-	"github.com/redhat-developer/service-binding-operator/util"
+	"github.com/redhat-developer/service-binding-operator/test/examples/util"
+	"github.com/stretchr/testify/require"
 )
 
-var Path = "$GOPATH/src/github.com/redhat-developer/service-binding-operator/examples/nodejs_postgresql"
+var exampleName = "nodejs_postgresql"
 var ns = "openshift-operators"
 var ipName, ipStatus, podName, podStatus string
 
+var clusterAvailable = false
+
 func TestSetDir(t *testing.T) {
-	util.SetDir(Path)
+	examplePath := fmt.Sprintf("%s/%s", util.GetExamplesDir(t), exampleName)
+	util.SetDir(t, examplePath)
+	res := strings.TrimSpace(util.Run("pwd").Stdout())
+	require.Equal(t, examplePath, res)
 }
 
 //Logs the oc status
 func TestGetOCStatus(t *testing.T) {
 	t.Log("--- Getting OC Status ---")
-	ocStatus := util.MustSucceed("oc", "status").Stdout()
-	t.Logf(" ---> OC Status is '%v' ", ocStatus)
-	//ocStatus:=util.GetOCStatus()
-	if strings.Contains(ocStatus, "svc/openshift - kubernetes.default.svc.cluster.local") != true {
-		//t.Logf("Unable to connect to the cluster because of the following message \n %s", ocStatus)
-		t.Fatalf("Unable to connect to the cluster because of the following message \n %s", ocStatus)
-		//t.FailNow()
-	}
+	result := util.Run("oc", "status")
+	ocStatus := result.ExitCode
 
-	t.Logf(" *** Connected to cluster *** '%s'", ocStatus)
+	require.Equal(t, ocStatus, 0, "'oc status' is %d", ocStatus)
+	//clusterAvailable = true
+
+	t.Log(" *** Connected to cluster *** ")
 }
 
 //Logs out the output of command make install-service-binding-operator
@@ -35,34 +39,42 @@ func TestMakeInstallServiceBindingOperator(t *testing.T) {
 	//	log.Printf("--- CMD executed is make install-service-binding-operator --- %s \n", util.MustSucceed(
 	//"make", "install-service-binding-operator").Stdout())
 
+	checkClusterAvailable(t)
+
 	t.Log("Installing serivice binding operator into the cluster...")
-	res := util.MustSucceed("make", "install-service-binding-operator")
+	res := util.Run("make", "install-service-binding-operator")
 	//log.Printf("--- CMD executed is make install-service-binding-operator --- %s \n", res)
 	t.Log("--- CMD executed is make install-service-binding-operator --- ")
 	t.Logf("-> Status of install-service-binding-operator is %s", res)
 
 	// with openshift-operators namespace, capture the install plan
 	t.Log("Get install plan name from the cluster...")
-	ipName := util.MustSucceed("oc", "get", "ip", "-n", ns)
+	ipName := util.Run("oc", "get", "ip", "-n", ns)
 	t.Log("--- CMD executed is  oc get ip -n openshift-operators --- ")
 	t.Logf("Install plan-ip name is %s", ipName)
 
 	//oc get ip -n openshift-operators <<Name>> -o jsonpath='{.status.phase}'
 	t.Log(" Fetching the status of install plan ")
-	ipStatus := util.MustSucceed("oc", "get", "ip", "-n", ns, "-o", "jsonpath='{.status.phase}'")
+	ipStatus := util.Run("oc", "get", "ip", "-n", ns, "-o", "jsonpath='{.status.phase}'")
 	t.Log("--- CMD executed is  oc get ip -n openshift-operators <<Name>> -o jsonpath='{.status.phase}' --- ")
 	t.Logf("-> Status of Install plan-ip is %s", ipStatus)
 
 	//oc get pods -n openshift-operator
 	t.Log("Fetching the pod name of the running pod")
-	podName := util.MustSucceed("oc", "get", "pods", "-n", ns)
+	podName := util.Run("oc", "get", "pods", "-n", ns)
 	t.Log("--- CMD executed is  oc get pods -n openshift-operator --- ")
 	t.Logf("-> Pod name is %s", podName)
 
 	//oc get pod <<Name of pod(from step 4)>> -n openshift-operators -o jsonpath='{.status.phase}'
 	t.Log("Fetching the status of running pod")
-	podStatus := util.MustSucceed("oc", "get", "pods", "-n", ns)
+	podStatus := util.Run("oc", "get", "pods", "-n", ns)
 	t.Log("--- CMD executed is  oc get pod $pods -n $ns -o jsonpath='{.status.phase}' --- ")
 	t.Logf("Pod status is %s", podStatus)
 
+}
+
+func checkClusterAvailable(t *testing.T) {
+	if !clusterAvailable {
+		t.Skip("Cluster is not available, skipping")
+	}
 }
