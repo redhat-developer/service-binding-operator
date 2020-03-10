@@ -77,7 +77,7 @@ func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 
 // Add new APIs
 
-// AddMockedServiceBindingRequestV1_1 add mocked object from ServiceBindingRequestMock.
+// AddMockedServiceBindingRequestV1_1 adds a mocked object from ServiceBindingRequestMockV1_1.
 // This function returns a ServiceBindingRequest with the newer API
 // consisting of "applications" & "services".
 func (f *Fake) AddMockedServiceBindingRequestV1_1(

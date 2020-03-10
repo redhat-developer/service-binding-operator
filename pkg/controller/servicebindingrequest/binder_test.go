@@ -190,7 +190,6 @@ func TestEmptyApplicationSelectors(t *testing.T) {
 	f.AddMockedUnstructuredDeployment("bar", map[string]string{})
 	binder.sbr = sbr
 
-	require.NotNil(t, binder)
 	t.Run("search app not found", func(t *testing.T) {
 		list, err := binder.search()
 		require.Error(t, err)
