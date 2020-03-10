@@ -192,18 +192,12 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 		return nil, err
 	}
 
-	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
 	if err != nil {
 		return nil, err
 	}
-
-	if specDescriptor != nil {
-		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, *specDescriptor)
-	}
-
-	if statusDescriptor != nil {
-		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, *statusDescriptor)
-	}
+	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
+	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
 
 	return crdDescription, nil
 }
@@ -211,12 +205,12 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 // buildDescriptorsFromAnnotations builds two descriptors collection, one for spec descriptors and
 // another for status descriptors.
 func buildDescriptorsFromAnnotations(annotations map[string]string) (
-	*olmv1alpha1.SpecDescriptor,
-	*olmv1alpha1.StatusDescriptor,
+	[]olmv1alpha1.SpecDescriptor,
+	[]olmv1alpha1.StatusDescriptor,
 	error,
 ) {
-	var currentSpecDescriptor *olmv1alpha1.SpecDescriptor
-	var currentStatusDescriptor *olmv1alpha1.StatusDescriptor
+	var specDescriptors []olmv1alpha1.SpecDescriptor
+	var statusDescriptors []olmv1alpha1.StatusDescriptor
 
 	acc := make(map[string][]string)
 
@@ -250,19 +244,19 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 		sort.Strings(descriptors)
 		path := strings.Split(fieldPath, ".")
 		if path[0] == "status" {
-			currentStatusDescriptor = &olmv1alpha1.StatusDescriptor{
+			statusDescriptors = append(statusDescriptors, olmv1alpha1.StatusDescriptor{
 				Path:         path[1],
 				XDescriptors: descriptors,
-			}
+			})
 		} else if path[0] == "spec" {
-			currentSpecDescriptor = &olmv1alpha1.SpecDescriptor{
+			specDescriptors = append(specDescriptors, olmv1alpha1.SpecDescriptor{
 				Path:         path[1],
 				XDescriptors: descriptors,
-			}
+			})
 		}
 	}
 
-	return currentSpecDescriptor, currentStatusDescriptor, nil
+	return specDescriptors, statusDescriptors, nil
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.
