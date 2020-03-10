@@ -17,7 +17,8 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: Expresses intent to bind an operator-backed service with a Deployment
+      description: ServiceBindingRequest expresses intent to bind an operator-backed
+        service with an application workload.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -99,12 +100,15 @@ spec:
               - version
               type: object
             backingServiceSelector:
-              description: BackingServiceSelector is used to identify the backing
-                service operator.
+              description: 'BackingServiceSelector is used to identify the backing
+                service operator. Deprecation Notice: In the upcoming release, this
+                field would be depcreated. It would be mandatory to set "backingServiceSelectors".'
               properties:
                 group:
                   type: string
                 kind:
+                  type: string
+                namespace:
                   type: string
                 resourceRef:
                   type: string
@@ -118,7 +122,8 @@ spec:
               type: object
             backingServiceSelectors:
               description: BackingServiceSelectors is used to identify multiple backing
-                services.
+                services. This would be made a required field after 'BackingServiceSelector'
+                is removed.
               items:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
@@ -126,6 +131,8 @@ spec:
                   group:
                     type: string
                   kind:
+                    type: string
+                  namespace:
                     type: string
                   resourceRef:
                     type: string
@@ -250,11 +257,28 @@ spec:
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
-            applicationObjects:
+            applications:
               description: ApplicationObjects contains all the application objects
                 filtered by label
               items:
-                type: string
+                description: BoundApplication defines the application workloads to
+                  which the binding secret has injected.
+                properties:
+                  group:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - kind
+                - version
+                type: object
               type: array
             bindingStatus:
               description: BindingStatus is the status of the service binding request.

@@ -3,6 +3,7 @@ package v1alpha1
 import (
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,11 +29,17 @@ type ServiceBindingRequestSpec struct {
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
+	// Deprecation Notice:
+	// In the upcoming release, this field would be depcreated. It would be mandatory
+	// to set "backingServiceSelectors".
 	// +optional
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
+	BackingServiceSelector *BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
 	// BackingServiceSelectors is used to identify multiple backing services.
-	BackingServiceSelectors []BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
+	// This would be made a required field after 'BackingServiceSelector'
+	// is removed.
+	// +optional
+	BackingServiceSelectors *[]BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
@@ -55,7 +62,7 @@ type ServiceBindingRequestStatus struct {
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
-	ApplicationObjects []string `json:"applicationObjects,omitempty"`
+	ApplicationObjects []BoundApplication `json:"applications,omitempty"`
 }
 
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
@@ -63,6 +70,15 @@ type ServiceBindingRequestStatus struct {
 type BackingServiceSelector struct {
 	metav1.GroupVersionKind `json:",inline"`
 	ResourceRef             string `json:"resourceRef"`
+	// +optional
+	Namespace *string `json:"namespace,omitempty"`
+}
+
+// BoundApplication defines the application workloads to which the binding secret has
+// injected.
+type BoundApplication struct {
+	metav1.GroupVersionKind `json:",inline"`
+	v1.LocalObjectReference `json:",inline"`
 }
 
 // ApplicationSelector defines the selector based on labels and GVR
@@ -76,7 +92,8 @@ type ApplicationSelector struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Expresses intent to bind an operator-backed service with a Deployment
+// ServiceBindingRequest expresses intent to bind an operator-backed service with
+// an application workload.
 // +k8s:openapi-gen=true
 // +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding Request"
 // +kubebuilder:subresource:status

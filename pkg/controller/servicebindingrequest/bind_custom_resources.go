@@ -47,7 +47,7 @@ func NewDetectBindableResources(
 func (b DetectBindableResources) GetOwnedResources() ([]unstructured.Unstructured, error) {
 	var subResources []unstructured.Unstructured
 	for _, resource := range b.resourcesToCheck {
-		lst, err := b.client.Resource(resource).List(v1.ListOptions{})
+		lst, err := b.client.Resource(resource).Namespace(b.cr.GetNamespace()).List(v1.ListOptions{})
 		if err != nil {
 			return subResources, err
 		}

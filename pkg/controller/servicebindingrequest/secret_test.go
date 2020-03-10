@@ -21,7 +21,7 @@ func TestSecretNew(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 
 	matchLabels := map[string]string{}
-	sbr := mocks.ServiceBindingRequestMock(ns, name, "", "", deploymentsGVR, matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", "", deploymentsGVR, matchLabels)
 
 	plan := &Plan{
 		Ns:   ns,

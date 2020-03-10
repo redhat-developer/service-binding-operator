@@ -2,13 +2,14 @@ package servicebindingrequest
 
 import (
 	"context"
-	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -93,8 +94,17 @@ func TestApplicationSelectorByName(t *testing.T) {
 
 		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
-		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
-		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
+		expectedStatus := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: namespacedName.Name,
+			},
+		}
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
 	})
 }
 
@@ -142,8 +152,17 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
-		expectedStatus := fmt.Sprintf("%s/%s", reconcilerNs, reconcilerName)
-		require.Equal(t, expectedStatus, sbrOutput.Status.ApplicationObjects[0])
+		expectedStatus := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: namespacedName.Name,
+			},
+		}
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
 	})
 }
 
@@ -214,7 +233,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "BindingFail", sbrOutput.Status.BindingStatus)
-	require.Equal(t, v1.ConditionStatus("False"), sbrOutput.Status.Conditions[0].Status)
+	require.Equal(t, corev1.ConditionStatus("False"), sbrOutput.Status.Conditions[0].Status)
 	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
 
 	// Reconcile with deployment
@@ -234,7 +253,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	require.Equal(t, "BindingSuccess", sbrOutput2.Status.BindingStatus)
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
-	require.Equal(t, v1.ConditionStatus("True"), sbrOutput2.Status.Conditions[0].Status)
+	require.Equal(t, corev1.ConditionStatus("True"), sbrOutput2.Status.Conditions[0].Status)
 	require.Equal(t, 1, len(sbrOutput2.Status.ApplicationObjects))
 
 	// Update Credentials
@@ -256,7 +275,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
 	require.Equal(t, "BindingSuccess", sbrOutput3.Status.BindingStatus)
-	require.Equal(t, v1.ConditionStatus("True"), sbrOutput3.Status.Conditions[0].Status)
+	require.Equal(t, corev1.ConditionStatus("True"), sbrOutput3.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))

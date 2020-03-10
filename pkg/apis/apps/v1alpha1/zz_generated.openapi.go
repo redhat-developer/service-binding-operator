@@ -95,6 +95,12 @@ func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCa
 							Format: "",
 						},
 					},
+					"namespace": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 				},
 				Required: []string{"group", "version", "kind", "resourceRef"},
 			},
@@ -106,7 +112,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "Expresses intent to bind an operator-backed service with a Deployment",
+				Description: "ServiceBindingRequest expresses intent to bind an operator-backed service with an application workload.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
@@ -182,13 +188,13 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"backingServiceSelector": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelector is used to identify the backing service operator.",
+							Description: "BackingServiceSelector is used to identify the backing service operator. Deprecation Notice: In the upcoming release, this field would be depcreated. It would be mandatory to set \"backingServiceSelectors\".",
 							Ref:         ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BackingServiceSelector"),
 						},
 					},
 					"backingServiceSelectors": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelectors is used to identify multiple backing services.",
+							Description: "BackingServiceSelectors is used to identify multiple backing services. This would be made a required field after 'BackingServiceSelector' is removed.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -254,15 +260,14 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 							Format:      "",
 						},
 					},
-					"applicationObjects": {
+					"applications": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ApplicationObjects contains all the application objects filtered by label",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
+										Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BoundApplication"),
 									},
 								},
 							},
@@ -272,6 +277,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/openshift/custom-resource-status/conditions/v1.Condition"},
+			"github.com/openshift/custom-resource-status/conditions/v1.Condition", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BoundApplication"},
 	}
 }

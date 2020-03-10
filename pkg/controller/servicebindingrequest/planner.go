@@ -15,7 +15,8 @@ import (
 )
 
 var (
-	plannerLog = log.NewLog("planner")
+	plannerLog                 = log.NewLog("planner")
+	errBackingServiceNamespace = errors.New("backing Service Namespace is unspecified")
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
@@ -36,7 +37,7 @@ type Plan struct {
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
+func (p *Planner) searchCR(selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
 	// gvr is the plural guessed resource for the given selector
 	gvk := schema.GroupVersionKind{
 		Group:   selector.Group,
@@ -44,8 +45,13 @@ func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSel
 		Kind:    selector.Kind,
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+
+	if selector.Namespace == nil {
+		return nil, errBackingServiceNamespace
+	}
+
 	// delegate the search selector's namespaced resource client
-	return p.client.Resource(gvr).Namespace(namespace).Get(selector.ResourceRef, metav1.GetOptions{})
+	return p.client.Resource(gvr).Namespace(*selector.Namespace).Get(selector.ResourceRef, metav1.GetOptions{})
 }
 
 // CRDGVR is the plural GVR for Kubernetes CRDs.
@@ -70,9 +76,12 @@ var EmptyBackingServiceSelectorsErr = errors.New("backing service selectors are 
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	ns := p.sbr.GetNamespace()
-	selectors := append([]v1alpha1.BackingServiceSelector{}, p.sbr.Spec.BackingServiceSelectors...)
-	if (p.sbr.Spec.BackingServiceSelector != v1alpha1.BackingServiceSelector{}) {
-		selectors = append(selectors, p.sbr.Spec.BackingServiceSelector)
+	var selectors []v1alpha1.BackingServiceSelector
+	if p.sbr.Spec.BackingServiceSelector != nil {
+		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelector)
+	}
+	if p.sbr.Spec.BackingServiceSelectors != nil {
+		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelectors...)
 	}
 
 	if len(selectors) == 0 {
@@ -81,6 +90,7 @@ func (p *Planner) Plan() (*Plan, error) {
 
 	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
+
 		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 
 		// resolve the CRD using the service's GVK
@@ -98,7 +108,10 @@ func (p *Planner) Plan() (*Plan, error) {
 		}
 		p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
 
-		cr, err := p.searchCR(ns, s)
+		if s.Namespace == nil {
+			s.Namespace = &ns
+		}
+		cr, err := p.searchCR(s)
 		if err != nil {
 			return nil, err
 		}

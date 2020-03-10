@@ -38,7 +38,7 @@ func TestBinderNew(t *testing.T) {
 		"environment": "binder",
 	}
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", deploymentsGVR, matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := NewBinder(
@@ -53,6 +53,7 @@ func TestBinderNew(t *testing.T) {
 
 	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
 		"service-binding-request-with-ref",
+		nil,
 		"ref",
 		"ref",
 		deploymentsGVR,
@@ -184,7 +185,7 @@ func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
@@ -208,7 +209,7 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
 	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
 
 	binder := NewBinder(
@@ -240,7 +241,7 @@ func TestBindTwoApplications(t *testing.T) {
 		"environment": "binder",
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef1", matchLabels1)
-	sbr1 := f.AddMockedServiceBindingRequest(name1, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
+	sbr1 := f.AddMockedServiceBindingRequest(name1, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
 	binder1 := NewBinder(
 		context.TODO(),
 		f.FakeClient(),
@@ -256,7 +257,7 @@ func TestBindTwoApplications(t *testing.T) {
 		"environment": "demo",
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef2", matchLabels2)
-	sbr2 := f.AddMockedServiceBindingRequest(name2, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
+	sbr2 := f.AddMockedServiceBindingRequest(name2, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
 	binder2 := NewBinder(
 		context.TODO(),
 		f.FakeClient(),
@@ -287,7 +288,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	gvr := knativev1.SchemeGroupVersion.WithResource("services") // Group/Version/Resource for sbr
-	sbr := f.AddMockedServiceBindingRequest(name, "", "knative-app", gvr, matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "", "knative-app", gvr, matchLabels)
 	f.AddMockedUnstructuredKnativeService("knative-app", matchLabels)
 
 	binder := NewBinder(
