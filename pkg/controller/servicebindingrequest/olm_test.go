@@ -122,6 +122,9 @@ func TestAnnotationParsing(t *testing.T) {
 			"dbCredentials": "binding:env:object:secret:db.password",
 			"dbConfigMap":   "binding:env:object:configmap:db.host",
 		}
+		for _, value := range crdDescription.SpecDescriptors {
+			require.Equal(t, expected[value.Path], value.XDescriptors[0])
+		}
 
 		for _, value := range crdDescription.StatusDescriptors {
 			require.Equal(t, expected[value.Path], value.XDescriptors[0])
