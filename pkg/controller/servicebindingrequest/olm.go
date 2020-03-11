@@ -7,7 +7,6 @@ import (
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -194,55 +193,12 @@ func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CR
 		return nil, err
 	}
 
-	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(crd.GetAnnotations())
 	if err != nil {
 		return nil, err
 	}
-
-	if specDescriptor != nil {
-		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
-	}
-
-	if statusDescriptor != nil {
-		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
-	}
-
-	return crdDescription, nil
-}
-
-// buildCRDDescriptionFromCR builds a CRDDescription from annotations present in the CR.
-func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) (*olmv1alpha1.CRDDescription, error) {
-	var (
-		err error
-	)
-
-	gvk := schema.GroupVersionKind{
-		Kind:    cr.GetKind(),
-		Version: cr.GroupVersionKind().Version,
-		Group:   cr.GroupVersionKind().Group,
-	}
-	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
-
-	if crdDescription == nil {
-		crdDescription = &olmv1alpha1.CRDDescription{}
-	}
-
-	crdDescription.Name = gvr.Resource + "." + gvr.Group
-	crdDescription.Kind = cr.GetKind()
-	crdDescription.Version = cr.GroupVersionKind().Version
-
-	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
-	if err != nil {
-		return nil, err
-	}
-
-	if specDescriptor != nil {
-		crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
-	}
-
-	if statusDescriptor != nil {
-		crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
-	}
+	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
+	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
 
 	return crdDescription, nil
 }
@@ -254,8 +210,8 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 	[]olmv1alpha1.StatusDescriptor,
 	error,
 ) {
-	var currentSpecDescriptor []olmv1alpha1.SpecDescriptor
-	var currentStatusDescriptor []olmv1alpha1.StatusDescriptor
+	var specDescriptors []olmv1alpha1.SpecDescriptor
+	var statusDescriptors []olmv1alpha1.StatusDescriptor
 
 	acc := make(map[string][]string)
 
@@ -289,19 +245,19 @@ func buildDescriptorsFromAnnotations(annotations map[string]string) (
 		sort.Strings(descriptors)
 		path := strings.Split(fieldPath, ".")
 		if path[0] == "status" {
-			currentStatusDescriptor = append(currentStatusDescriptor, olmv1alpha1.StatusDescriptor{
+			statusDescriptors = append(statusDescriptors, olmv1alpha1.StatusDescriptor{
 				Path:         path[1],
 				XDescriptors: descriptors,
 			})
 		} else if path[0] == "spec" {
-			currentSpecDescriptor = append(currentSpecDescriptor, olmv1alpha1.SpecDescriptor{
+			specDescriptors = append(specDescriptors, olmv1alpha1.SpecDescriptor{
 				Path:         path[1],
 				XDescriptors: descriptors,
 			})
 		}
 	}
 
-	return currentSpecDescriptor, currentStatusDescriptor, nil
+	return specDescriptors, statusDescriptors, nil
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.
