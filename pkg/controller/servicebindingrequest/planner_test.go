@@ -7,13 +7,13 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
-	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	logf "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 var planner *Planner
 
 func init() {
-	logf.SetLogger(logf.ZapLogger(true))
+	logf.Logger(true)
 }
 
 func TestPlanner(t *testing.T) {
