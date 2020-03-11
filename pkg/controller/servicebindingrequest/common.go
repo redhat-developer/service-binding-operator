@@ -24,6 +24,9 @@ const (
 	// SecretKind defines the name of Secret kind.
 	SecretKind = "Secret"
 
+	// V1 defines the API version "v1"
+	V1 = "v1"
+
 	// ConfigMapKind defines the name of Secret kind.
 	ConfigMapKind = "ConfigMap"
 )

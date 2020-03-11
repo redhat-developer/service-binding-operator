@@ -1,8 +1,6 @@
 package servicebindingrequest
 
 import (
-	err "errors"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -48,22 +46,26 @@ func (s *Secret) buildResourceClient(resource string) dynamic.ResourceInterface 
 	return s.client.Resource(gvr).Namespace(s.plan.Ns)
 }
 
-// createOrUpdate will take informed payload and either create a new secret or update an existing
-// one. It can return error when Kubernetes client does.
+// createOrUpdate will take informed payload and create/update the binding secret/configmap
+// one.
+// If the spec.BindingReference is nil,
+// Returns an error when the Kubernetes client returns an error.
 func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
 	ns := s.plan.Ns
 	name := s.plan.Name
 	logger := s.logger.WithValues("Namespace", ns, "Name", name)
 
 	var bindingRef interface{}
+
+	// Default binding resource type is Secret
 	resource := SecretResource
+	gvk := corev1.SchemeGroupVersion.WithKind(SecretKind)
 
-	if s.plan.SBR.Spec.BindingReference == nil {
-		return nil, err.New("BindingReference is empty")
-	}
-
-	gvk := corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.BindingReference.ObjectType.Kind)
-	if s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
+	// Only if otherwise specified as configmap, we'll use a binding
+	// configmaps
+	if s.plan.SBR.Spec.BindingReference != nil &&
+		s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
+		gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.BindingReference.ObjectType.Kind)
 		resource = ConfigMapResource
 	}
 
@@ -110,13 +112,13 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 
 	resourceClient := s.buildResourceClient(resource)
 
-	logger.Debug("Attempt to create secret...")
+	logger.Debug("Attempt to create secret/configmap...")
 	_, err = resourceClient.Create(u, metav1.CreateOptions{})
 	if err != nil && !errors.IsAlreadyExists(err) {
 		return nil, err
 	}
 
-	logger.Debug("Secret already exists, updating contents instead...")
+	logger.Debug("Secret/configmap already exists, updating contents instead...")
 	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
 	if err != nil {
 		return nil, err

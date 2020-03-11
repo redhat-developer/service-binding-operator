@@ -90,7 +90,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
-// to find data in informed Unstructured object.
+// to find bindData in informed Unstructured object.
 func (b *Binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface{}, error) {
 	log := b.logger.WithValues("Volumes.NestedPath", volumesPath)
 	log.Debug("Reading volumes definitions...")
@@ -223,7 +223,7 @@ func (b *Binder) updateSpecContainers(
 }
 
 // removeSpecContainers find and edit containers resource subset, removing bind related entries
-// from the object. It can return error on extracting data, editing steps and final editing of to be
+// from the object. It can return error on extracting bindData, editing steps and final editing of to be
 // returned object.
 func (b *Binder) removeSpecContainers(
 	obj *unstructured.Unstructured,
@@ -304,7 +304,7 @@ func (b *Binder) appendEnvVar(
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
-func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) []corev1.EnvFromSource {
+func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, bindData string) []corev1.EnvFromSource {
 
 	if b.sbr.Spec.BindingReference == nil {
 		return envList
@@ -313,12 +313,12 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) 
 
 	for _, env := range envList {
 		if dataType == ConfigMapKind {
-			if env.ConfigMapRef.Name == binddata {
+			if env.ConfigMapRef.Name == bindData {
 				b.logger.Debug("The configmap is already associated in the 'envFrom' directive.")
 				return envList
 			}
 		} else {
-			if env.SecretRef.Name == binddata {
+			if env.SecretRef.Name == bindData {
 				b.logger.Debug("The secret is already associated in the 'envFrom' directive.")
 				// secret name is already referenced
 				return envList
@@ -329,7 +329,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) 
 	dataRef := corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: binddata,
+				Name: bindData,
 			},
 		},
 	}
@@ -338,7 +338,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) 
 		dataRef = corev1.EnvFromSource{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: binddata,
+					Name: bindData,
 				},
 			},
 		}
@@ -349,7 +349,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, binddata string) 
 }
 
 // removeEnvFrom remove bind related entry from slice of "EnvFromSource".
-func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, data string) []corev1.EnvFromSource {
+func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, bindData string) []corev1.EnvFromSource {
 	var cleanEnvList []corev1.EnvFromSource
 	dataType := SecretKind
 	if b.sbr.Spec.BindingReference == nil {
@@ -358,11 +358,11 @@ func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, data string) []co
 
 	for _, env := range envList {
 		if dataType == ConfigMapKind {
-			if env.ConfigMapRef.Name != data {
+			if env.ConfigMapRef.Name != bindData {
 				cleanEnvList = append(cleanEnvList, env)
 			}
 		} else {
-			if env.SecretRef.Name != data {
+			if env.SecretRef.Name != bindData {
 				cleanEnvList = append(cleanEnvList, env)
 			}
 		}
@@ -428,7 +428,7 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	name := b.sbr.GetName()
 	mountPath := b.sbr.Spec.MountPathPrefix
 	if mountPath == "" {
-		mountPath = "/var/data"
+		mountPath = "/var/bindData"
 	}
 
 	for _, v := range volumeMounts {

@@ -193,15 +193,15 @@ func TestBinderConfigMap(t *testing.T) {
 	require.NotNil(t, binder)
 
 	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
-		secretName := "secret"
+		configMapName := "bindingConfigMap"
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
 		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
 
-		list := binder.appendEnvFrom(envFrom, secretName)
+		list := binder.appendEnvFrom(envFrom, configMapName)
 		require.Equal(t, 1, len(list))
-		require.Equal(t, secretName, list[0].ConfigMapRef.Name)
+		require.Equal(t, configMapName, list[0].ConfigMapRef.Name)
 
-		list = binder.removeEnvFrom(envFrom, secretName)
+		list = binder.removeEnvFrom(envFrom, configMapName)
 		require.Equal(t, 0, len(list))
 	})
 

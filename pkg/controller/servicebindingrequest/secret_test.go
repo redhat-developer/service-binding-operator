@@ -64,6 +64,25 @@ func TestSecretNew(t *testing.T) {
 		assert.True(t, found)
 		assertNamespacedName(t, u, ns, name)
 	})
+
+	// if BindingReference is nil, the createOrUpdate(..)
+	// ensures that we default to "Secret"
+
+	sbr.Spec.BindingReference = nil
+
+	plan = &Plan{
+		Ns:   ns,
+		Name: name,
+		SBR:  *sbr,
+	}
+
+	s = NewSecret(f.FakeDynClient(), plan)
+	t.Run("createOrUpdate", func(t *testing.T) {
+		u, err := s.createOrUpdate(data)
+		assert.NoError(t, err)
+		assertNamespacedName(t, u, ns, name)
+		assert.Equal(t, SecretKind, u.GetKind())
+	})
 }
 
 func TestConfigMapNew(t *testing.T) {
