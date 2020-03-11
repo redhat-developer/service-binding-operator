@@ -11,8 +11,9 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-// Secret represents the data collected by this operator, and later handled as a secret.
-type Secret struct {
+// BindingDataHandler represents the binding data accumulated from backing
+// services, and later persisted as a secret or a configMap.
+type BindingDataHandler struct {
 	logger *log.Log          // logger instance
 	client dynamic.Interface // Kubernetes API client
 	plan   *Plan             // plan instance
@@ -20,7 +21,7 @@ type Secret struct {
 
 // customEnvParser parse informed data in order to interpolate with values provided by custom
 // environment component.
-func (s *Secret) customEnvParser(data map[string][]byte) (map[string][]byte, error) {
+func (s *BindingDataHandler) customEnvParser(data map[string][]byte) (map[string][]byte, error) {
 	// transforming input into format expected by custom environment parser
 	cache := make(map[string]interface{})
 	for k, v := range data {
@@ -41,7 +42,7 @@ func (s *Secret) customEnvParser(data map[string][]byte) (map[string][]byte, err
 }
 
 // buildResourceClient creates a resource client to handle corev1/secret resource.
-func (s *Secret) buildResourceClient(resource string) dynamic.ResourceInterface {
+func (s *BindingDataHandler) buildResourceClient(resource string) dynamic.ResourceInterface {
 	gvr := corev1.SchemeGroupVersion.WithResource(resource)
 	return s.client.Resource(gvr).Namespace(s.plan.Ns)
 }
@@ -50,7 +51,7 @@ func (s *Secret) buildResourceClient(resource string) dynamic.ResourceInterface 
 // one.
 // If the spec.BindingReference is nil,
 // Returns an error when the Kubernetes client returns an error.
-func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
+func (s *BindingDataHandler) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
 	ns := s.plan.Ns
 	name := s.plan.Name
 	logger := s.logger.WithValues("Namespace", ns, "Name", name)
@@ -73,22 +74,6 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 		Namespace: ns,
 		Name:      name,
 	}
-
-	/*
-		// panic: cannot deep copy map[string][]uint8 [recovered]
-		// panic: cannot deep copy map[string][]uint8
-
-		u := &unstructured.Unstructured{}
-
-		u.Object = map[string]interface{}{
-			"data": map[string][]byte{},
-		}
-		u.SetName(name)
-		u.SetNamespace(ns)
-		u.SetAPIVersion("v1")
-		u.SetKind("Secret")
-
-	*/
 
 	bindingRef = &corev1.Secret{
 		ObjectMeta: objectMeta,
@@ -128,13 +113,13 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 
 // Commit will store informed data as a secret, commit it against the API server. It can forward
 // errors from custom environment parser component, or from the API server itself.
-func (s *Secret) Commit(payload map[string][]byte) (*unstructured.Unstructured, error) {
+func (s *BindingDataHandler) Commit(payload map[string][]byte) (*unstructured.Unstructured, error) {
 	return s.createOrUpdate(payload)
 }
 
 // Get an unstructured object from the secret handled by this component. It can return errors in case
 // the API server does.
-func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
+func (s *BindingDataHandler) Get() (*unstructured.Unstructured, bool, error) {
 	resource := SecretResource
 	if s.plan.SBR.Spec.BindingReference != nil {
 		if s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
@@ -151,7 +136,7 @@ func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
 }
 
 // Delete the secret represented by this component. It can return error when the API server does.
-func (s *Secret) Delete() error {
+func (s *BindingDataHandler) Delete() error {
 	resource := SecretResource
 	if s.plan.SBR.Spec.BindingReference != nil {
 		if s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
@@ -166,9 +151,10 @@ func (s *Secret) Delete() error {
 	return nil
 }
 
-// NewSecret instantiate a new Secret.
-func NewSecret(client dynamic.Interface, plan *Plan) *Secret {
-	return &Secret{
+// NewBindingDataHandler instantiates a new referrence to a BindingDataHandler object
+// that would be used for operations on the binding configmap/secret.
+func NewBindingDataHandler(client dynamic.Interface, plan *Plan) *BindingDataHandler {
+	return &BindingDataHandler{
 		logger: log.NewLog("secret"),
 		client: client,
 		plan:   plan,

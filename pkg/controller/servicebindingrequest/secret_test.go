@@ -32,7 +32,7 @@ func TestSecretNew(t *testing.T) {
 	}
 	data := map[string][]byte{"key": []byte("value")}
 
-	s := NewSecret(f.FakeDynClient(), plan)
+	s := NewBindingDataHandler(f.FakeDynClient(), plan)
 
 	t.Run("customEnvParser", func(t *testing.T) {
 		customData, err := s.customEnvParser(data)
@@ -76,7 +76,7 @@ func TestSecretNew(t *testing.T) {
 		SBR:  *sbr,
 	}
 
-	s = NewSecret(f.FakeDynClient(), plan)
+	s = NewBindingDataHandler(f.FakeDynClient(), plan)
 	t.Run("createOrUpdate", func(t *testing.T) {
 		u, err := s.createOrUpdate(data)
 		assert.NoError(t, err)
@@ -107,7 +107,7 @@ func TestConfigMapNew(t *testing.T) {
 	}
 	data := map[string][]byte{"key": []byte("value")}
 
-	s := NewSecret(f.FakeDynClient(), plan)
+	s := NewBindingDataHandler(f.FakeDynClient(), plan)
 
 	t.Run("customEnvParser", func(t *testing.T) {
 		customData, err := s.customEnvParser(data)

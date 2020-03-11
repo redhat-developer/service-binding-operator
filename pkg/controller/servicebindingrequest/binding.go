@@ -70,7 +70,7 @@ type ServiceBinder struct {
 	// SBR is the ServiceBindingRequest associated with binding.
 	SBR *v1alpha1.ServiceBindingRequest
 	// Secret is the Secret associated with the Service Binding Request.
-	Secret *Secret
+	bindingDataHandler *BindingDataHandler
 }
 
 // updateServiceBindingRequest execute update API call on a SBR request. It can return errors from
@@ -126,7 +126,7 @@ func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 	}
 
 	logger.Info("Deleting intermediary secret")
-	if err := b.Secret.Delete(); err != nil {
+	if err := b.bindingDataHandler.Delete(); err != nil {
 		logger.Error(err, "On deleting intermediary secret.")
 		return RequeueError(err)
 	}
@@ -220,8 +220,8 @@ func (b *ServiceBinder) onError(
 func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus := b.SBR.Status.DeepCopy()
 
-	if b.Secret.plan.SBR.Spec.BindingReference == nil {
-		b.Secret.plan.SBR.Spec.BindingReference = &v1alpha1.BindingReference{
+	if b.bindingDataHandler.plan.SBR.Spec.BindingReference == nil {
+		b.bindingDataHandler.plan.SBR.Spec.BindingReference = &v1alpha1.BindingReference{
 			ObjectType: v1.GroupVersionKind{
 				Kind:    SecretKind,
 				Version: "v1",
@@ -230,7 +230,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	}
 
 	b.Logger.Info("Saving data on intermediary secret...")
-	secretObj, err := b.Secret.Commit(b.Data)
+	secretObj, err := b.bindingDataHandler.Commit(b.Data)
 	if err != nil {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
@@ -355,15 +355,15 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	}
 
 	// gather related secret, again only appending it if there's a value.
-	secret := NewSecret(options.DynClient, plan)
+	bindindDataHandler := NewBindingDataHandler(options.DynClient, plan)
 
 	return &ServiceBinder{
-		Logger:    options.Logger,
-		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),
-		DynClient: options.DynClient,
-		SBR:       options.SBR,
-		Objects:   objs,
-		Data:      retrievedData,
-		Secret:    secret,
+		Logger:             options.Logger,
+		Binder:             NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),
+		DynClient:          options.DynClient,
+		SBR:                options.SBR,
+		Objects:            objs,
+		Data:               retrievedData,
+		bindingDataHandler: bindindDataHandler,
 	}, nil
 }
