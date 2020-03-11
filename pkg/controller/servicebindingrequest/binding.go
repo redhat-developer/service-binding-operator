@@ -7,7 +7,8 @@ import (
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -88,7 +89,7 @@ func updateServiceBindingRequest(
 		Resource(GroupVersion).
 		Namespace(sbr.GetNamespace())
 
-	u, err = nsClient.Update(u, v1.UpdateOptions{})
+	u, err = nsClient.Update(u, metav1.UpdateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -155,7 +156,7 @@ func updateServiceBindingRequestStatus(
 		Resource(GroupVersion).
 		Namespace(sbr.GetNamespace())
 
-	u, err = nsClient.UpdateStatus(u, v1.UpdateOptions{})
+	u, err = nsClient.UpdateStatus(u, metav1.UpdateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -222,7 +223,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	if b.bindingDataHandler.plan.SBR.Spec.BindingReference == nil {
 		b.bindingDataHandler.plan.SBR.Spec.BindingReference = &v1alpha1.BindingReference{
-			ObjectType: v1.GroupVersionKind{
+			ObjectType: metav1.GroupVersionKind{
 				Kind:    SecretKind,
 				Version: "v1",
 			},
@@ -230,12 +231,21 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	}
 
 	b.Logger.Info("Saving data on intermediary secret...")
-	secretObj, err := b.bindingDataHandler.Commit(b.Data)
+	bindingData, err := b.bindingDataHandler.Commit(b.Data)
 	if err != nil {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
-	sbrStatus.Secret = secretObj.GetName()
+	sbrStatus.BindingData = v1alpha1.BindingData{
+		GroupVersionKind: metav1.GroupVersionKind{
+			Group:   bindingData.GroupVersionKind().Group,
+			Version: bindingData.GroupVersionKind().Version,
+			Kind:    bindingData.GroupVersionKind().Kind,
+		},
+		LocalObjectReference: v1.LocalObjectReference{
+			Name: bindingData.GetName(),
+		},
+	}
 
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {
@@ -246,7 +256,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
-	if err = SetSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
+	if err = SetSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, bindingData)); err != nil {
 		b.Logger.Error(err, "On setting annotations in related objects.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
@@ -281,7 +291,7 @@ func (b *ServiceBinder) setApplicationObjects(
 	boundApps := []v1alpha1.BoundApplication{}
 	for _, obj := range objs {
 		boundApp := v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   obj.GroupVersionKind().Group,
 				Version: obj.GroupVersionKind().Version,
 				Kind:    obj.GetKind(),

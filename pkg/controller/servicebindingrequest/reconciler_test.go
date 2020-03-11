@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -108,6 +109,75 @@ func TestApplicationSelectorByName(t *testing.T) {
 	})
 }
 
+func TestReconcilerReconcileUsingConfigMap(t *testing.T) {
+
+	ctx := context.TODO()
+
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+
+	backingServiceResourceRef := "test-using-configmap"
+	backingServiceNs := reconcilerNs
+
+	f := mocks.NewFake(t, reconcilerNs)
+	sbr := mocks.ServiceBindingRequestMock(reconcilerNs, reconcilerName, &backingServiceNs, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	sbr.Spec.BindingReference = &v1alpha1.BindingReference{
+		ObjectType: metav1.GroupVersionKind{
+			Group:   "",
+			Version: "v1",
+			Kind:    "ConfigMap",
+		},
+	}
+	f.AddMockedServiceBindingRequestRef(sbr)
+
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+	f.AddMockedSecret("db-credentials")
+
+	fakeClient := f.FakeClient()
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+
+	res, err := reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	d := appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+
+	containers := d.Spec.Template.Spec.Containers
+	require.Equal(t, 1, len(containers))
+	require.Equal(t, 1, len(containers[0].EnvFrom))
+	require.Nil(t, containers[0].EnvFrom[0].SecretRef)
+	require.Equal(t, reconcilerName, containers[0].EnvFrom[0].ConfigMapRef.Name)
+
+	namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	require.Equal(t, "BindingSuccess", sbrOutput.Status.BindingStatus)
+	require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
+	require.Equal(t, "ConfigMap", sbrOutput.Status.BindingData.GroupVersionKind.Kind)
+
+	require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+	expectedStatus := v1alpha1.BoundApplication{
+		GroupVersionKind: v1.GroupVersionKind{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+		},
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: namespacedName.Name,
+		},
+	}
+	require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
+}
+
 // TestReconcilerReconcileUsingSecret test the reconciliation process using a secret, expected to be
 // the regular approach.
 func TestReconcilerReconcileUsingSecret(t *testing.T) {
@@ -149,7 +219,8 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, "BindingSuccess", sbrOutput.Status.BindingStatus)
-		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
+		require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
+		require.Equal(t, "Secret", sbrOutput.Status.BindingData.GroupVersionKind.Kind)
 
 		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
 		expectedStatus := v1alpha1.BoundApplication{

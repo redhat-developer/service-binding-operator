@@ -333,8 +333,24 @@ spec:
                 type: object
               type: array
             secret:
-              description: Secret is the name of the intermediate secret
-              type: string
+              description: BindingData represents the object where binding information
+                is persisted. Either a Secret or a ConfigMap
+              properties:
+                group:
+                  type: string
+                kind:
+                  type: string
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
+                  type: string
+                version:
+                  type: string
+              required:
+              - group
+              - kind
+              - version
+              type: object
           type: object
       type: object
   version: v1alpha1

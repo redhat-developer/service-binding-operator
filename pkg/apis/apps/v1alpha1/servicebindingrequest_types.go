@@ -56,6 +56,13 @@ type BindingReference struct {
 	ObjectType metav1.GroupVersionKind `json:"objectType,omitempty"`
 }
 
+// BindingData represents the object where binding information is persisted.
+// Either a Secret or a ConfigMap
+type BindingData struct {
+	metav1.GroupVersionKind `json:",inline"`
+	v1.LocalObjectReference `json:",inline"`
+}
+
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
@@ -63,8 +70,9 @@ type ServiceBindingRequestStatus struct {
 	BindingStatus string `json:"bindingStatus,omitempty"`
 	// Conditions describes the state of the operator's reconciliation functionality.
 	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
-	// Secret is the name of the intermediate secret
-	Secret string `json:"secret,omitempty"`
+	// BindingData represents the object where binding information is persisted.
+	// Either a Secret or a ConfigMap
+	BindingData BindingData `json:"secret,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
 	ApplicationObjects []BoundApplication `json:"applications,omitempty"`
 }

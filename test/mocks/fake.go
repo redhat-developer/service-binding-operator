@@ -46,6 +46,12 @@ func (f *Fake) AddMockedServiceBindingRequest(
 	return sbr
 }
 
+// AddMockedServiceBindingRequestRef add mocked object from ServiceBindingRequestMock.
+func (f *Fake) AddMockedServiceBindingRequestRef(sbr runtime.Object) {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	f.objs = append(f.objs, sbr)
+}
+
 // AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with DetectBindingResources.
 func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	name string,

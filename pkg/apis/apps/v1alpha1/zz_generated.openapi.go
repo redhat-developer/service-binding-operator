@@ -262,9 +262,8 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 					},
 					"secret": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Secret is the name of the intermediate secret",
-							Type:        []string{"string"},
-							Format:      "",
+							Description: "BindingData represents the object where binding information is persisted. Either a Secret or a ConfigMap",
+							Ref:         ref("./pkg/apis/apps/v1alpha1.BindingData"),
 						},
 					},
 					"applications": {
@@ -284,6 +283,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"./pkg/apis/apps/v1alpha1.BoundApplication", "github.com/openshift/custom-resource-status/conditions/v1.Condition"},
+			"./pkg/apis/apps/v1alpha1.BindingData", "./pkg/apis/apps/v1alpha1.BoundApplication", "github.com/openshift/custom-resource-status/conditions/v1.Condition"},
 	}
 }
