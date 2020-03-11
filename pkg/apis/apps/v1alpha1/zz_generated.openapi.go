@@ -175,7 +175,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 					},
 					"binding": {
 						SchemaProps: spec.SchemaProps{
-							Description: "BindingReference is used to specify whether the binding object type is a Secret or a Configmap",
+							Description: "Binding is used to specify whether the binding object type is a Secret or a Configmap",
 							Ref:         ref("./pkg/apis/apps/v1alpha1.BindingReference"),
 						},
 					},
@@ -260,7 +260,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 							},
 						},
 					},
-					"secret": {
+					"bindingData": {
 						SchemaProps: spec.SchemaProps{
 							Description: "BindingData represents the object where binding information is persisted. Either a Secret or a ConfigMap",
 							Ref:         ref("./pkg/apis/apps/v1alpha1.BindingData"),

@@ -24,10 +24,10 @@ type ServiceBindingRequestSpec struct {
 	// +optional
 	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
 
-	// BindingReference is used to specify whether the binding object type
+	// Binding is used to specify whether the binding object type
 	// is a Secret or a Configmap
 	// +optional
-	BindingReference *BindingReference `json:"binding,omitempty"`
+	Binding *BindingReference `json:"binding,omitempty"`
 
 	// Custom env variables
 	// +optional
@@ -76,7 +76,7 @@ type ServiceBindingRequestStatus struct {
 	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
 	// BindingData represents the object where binding information is persisted.
 	// Either a Secret or a ConfigMap
-	BindingData BindingData `json:"secret,omitempty"`
+	BindingData BindingData `json:"bindingData,omitempty"`
 	// ApplicationObjects contains all the application objects filtered by label
 	ApplicationObjects []BoundApplication `json:"applications,omitempty"`
 }
