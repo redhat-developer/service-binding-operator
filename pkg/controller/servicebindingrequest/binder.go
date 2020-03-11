@@ -306,10 +306,10 @@ func (b *Binder) appendEnvVar(
 // part of the list or appended.
 func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, bindData string) []corev1.EnvFromSource {
 
-	if b.sbr.Spec.BindingReference == nil {
+	if b.sbr.Spec.Binding == nil {
 		return envList
 	}
-	dataType := b.sbr.Spec.BindingReference.ObjectType.Kind
+	dataType := b.sbr.Spec.Binding.ObjectType.Kind
 
 	for _, env := range envList {
 		if dataType == ConfigMapKind {
@@ -352,7 +352,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, bindData string) 
 func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, bindData string) []corev1.EnvFromSource {
 	var cleanEnvList []corev1.EnvFromSource
 	dataType := SecretKind
-	if b.sbr.Spec.BindingReference == nil {
+	if b.sbr.Spec.Binding == nil {
 		return envList
 	}
 

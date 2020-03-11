@@ -175,7 +175,7 @@ func TestBinderConfigMap(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
-	sbr.Spec.BindingReference = &v1alpha1.BindingReference{
+	sbr.Spec.Binding = &v1alpha1.BindingReference{
 		ObjectType: metav1.GroupVersionKind{
 			Version: "v1",
 			Kind:    "ConfigMap",
@@ -205,7 +205,7 @@ func TestBinderConfigMap(t *testing.T) {
 		require.Equal(t, 0, len(list))
 	})
 
-	sbr.Spec.BindingReference = nil
+	sbr.Spec.Binding = nil
 
 	binder = NewBinder(
 		context.TODO(),

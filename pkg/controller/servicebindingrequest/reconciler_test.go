@@ -123,7 +123,7 @@ func TestReconcilerReconcileUsingConfigMap(t *testing.T) {
 
 	f := mocks.NewFake(t, reconcilerNs)
 	sbr := mocks.ServiceBindingRequestMock(reconcilerNs, reconcilerName, &backingServiceNs, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
-	sbr.Spec.BindingReference = &v1alpha1.BindingReference{
+	sbr.Spec.Binding = &v1alpha1.BindingReference{
 		ObjectType: metav1.GroupVersionKind{
 			Group:   "",
 			Version: "v1",

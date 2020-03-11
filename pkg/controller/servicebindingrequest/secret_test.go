@@ -68,7 +68,7 @@ func TestSecretNew(t *testing.T) {
 	// if BindingReference is nil, the createOrUpdate(..)
 	// ensures that we default to "Secret"
 
-	sbr.Spec.BindingReference = nil
+	sbr.Spec.Binding = nil
 
 	plan = &Plan{
 		Ns:   ns,
@@ -93,7 +93,7 @@ func TestConfigMapNew(t *testing.T) {
 
 	matchLabels := map[string]string{}
 	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", "", deploymentsGVR, matchLabels)
-	sbr.Spec.BindingReference = &v1alpha1.BindingReference{
+	sbr.Spec.Binding = &v1alpha1.BindingReference{
 		ObjectType: metav1.GroupVersionKind{
 			Version: "v1",
 			Kind:    "ConfigMap",

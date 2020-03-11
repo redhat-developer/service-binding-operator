@@ -64,9 +64,9 @@ func (s *BindingDataHandler) createOrUpdate(payload map[string][]byte) (*unstruc
 
 	// Only if otherwise specified as configmap, we'll use a binding
 	// configmaps
-	if s.plan.SBR.Spec.BindingReference != nil &&
-		s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
-		gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.BindingReference.ObjectType.Kind)
+	if s.plan.SBR.Spec.Binding != nil &&
+		s.plan.SBR.Spec.Binding.ObjectType.Kind == ConfigMapKind {
+		gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.Binding.ObjectType.Kind)
 		resource = ConfigMapResource
 	}
 
@@ -121,8 +121,8 @@ func (s *BindingDataHandler) Commit(payload map[string][]byte) (*unstructured.Un
 // the API server does.
 func (s *BindingDataHandler) Get() (*unstructured.Unstructured, bool, error) {
 	resource := SecretResource
-	if s.plan.SBR.Spec.BindingReference != nil {
-		if s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
+	if s.plan.SBR.Spec.Binding != nil {
+		if s.plan.SBR.Spec.Binding.ObjectType.Kind == ConfigMapKind {
 			resource = ConfigMapResource
 		}
 	}
@@ -138,8 +138,8 @@ func (s *BindingDataHandler) Get() (*unstructured.Unstructured, bool, error) {
 // Delete the secret represented by this component. It can return error when the API server does.
 func (s *BindingDataHandler) Delete() error {
 	resource := SecretResource
-	if s.plan.SBR.Spec.BindingReference != nil {
-		if s.plan.SBR.Spec.BindingReference.ObjectType.Kind == ConfigMapKind {
+	if s.plan.SBR.Spec.Binding != nil {
+		if s.plan.SBR.Spec.Binding.ObjectType.Kind == ConfigMapKind {
 			resource = ConfigMapResource
 		}
 	}

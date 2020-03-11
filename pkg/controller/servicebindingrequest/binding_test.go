@@ -240,7 +240,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "single-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			BindingReference: &v1alpha1.BindingReference{
+			Binding: &v1alpha1.BindingReference{
 				ObjectType: metav1.GroupVersionKind{
 					Group:   "",
 					Version: "v1",
