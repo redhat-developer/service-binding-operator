@@ -59,7 +59,11 @@ type BindingReference struct {
 // BindingData represents the object where binding information is persisted.
 // Either a Secret or a ConfigMap
 type BindingData struct {
+	// Contains the details of the kubernetes object type containing
+	// the persisted data.
 	metav1.GroupVersionKind `json:",inline"`
+
+	// Name of the secret/configmap containing the persisted binding data.
 	v1.LocalObjectReference `json:",inline"`
 }
 
