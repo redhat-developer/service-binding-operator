@@ -43,6 +43,7 @@ type ServiceBindingRequestSpec struct {
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
+	// +optional
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from
