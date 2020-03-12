@@ -208,7 +208,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 
 func TestReconcilerGenericBinding(t *testing.T) {
 	ctx := context.TODO()
-	backingServiceResourceRef := "test-using-volumes"
+	backingServiceResourceRef := "backingService1"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "reconciler",
