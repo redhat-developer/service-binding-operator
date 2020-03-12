@@ -15,9 +15,10 @@ var ipName, ipStatus, podName, podStatus string
 
 var clusterAvailable = false
 
-func TestSetDir(t *testing.T) {
-	examplePath := fmt.Sprintf("%s/%s", util.GetExamplesDir(t), exampleName)
-	util.SetDir(t, examplePath)
+//TestSetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
+func TestSetExampleDir(t *testing.T) {
+	examplePath := fmt.Sprintf("%s/%s", util.GetExamplesDir(), exampleName)
+	util.SetDir(examplePath)
 	res := strings.TrimSpace(util.Run("pwd").Stdout())
 	require.Equal(t, examplePath, res)
 }
@@ -29,7 +30,7 @@ func TestGetOCStatus(t *testing.T) {
 	ocStatus := result.ExitCode
 
 	require.Equal(t, ocStatus, 0, "'oc status' is %d", ocStatus)
-	//clusterAvailable = true
+	clusterAvailable = true
 
 	t.Log(" *** Connected to cluster *** ")
 }
