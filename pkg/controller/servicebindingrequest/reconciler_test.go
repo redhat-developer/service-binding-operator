@@ -276,3 +276,78 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 		require.Equal(t, reconcilerName, volumes[0].VolumeSource.Secret.SecretName)
 	})
 }
+
+func TestReconcilerGenericBinding(t *testing.T) {
+	ctx := context.TODO()
+	backingServiceResourceRef := "backingService1"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedSecret("db-credentials")
+
+	fakeClient := f.FakeClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+
+	// Reconcile without deployment
+	res, err := reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.True(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	require.Equal(t, "BindingFail", sbrOutput.Status.BindingStatus)
+	require.Equal(t, corev1.ConditionFalse, sbrOutput.Status.Conditions[0].Status)
+	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
+
+	// Reconcile with deployment
+	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+
+	fakeClient = f.FakeClient()
+	reconciler = &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	res, err = reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	d := appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+
+	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	require.Equal(t, "BindingSuccess", sbrOutput2.Status.BindingStatus)
+	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
+	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
+	require.Equal(t, 1, len(sbrOutput2.Status.ApplicationObjects))
+
+	// Update Credentials
+	s := corev1.Secret{}
+	secretNamespaced := types.NamespacedName{Namespace: reconcilerNs, Name: "db-credentials"}
+	require.NoError(t, fakeClient.Get(ctx, secretNamespaced, &s))
+	s.Data["password"] = []byte("abc123")
+	require.NoError(t, fakeClient.Update(ctx, &s))
+
+	reconciler = &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	res, err = reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	sbrOutput3, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	d = appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+
+	require.Equal(t, "BindingSuccess", sbrOutput3.Status.BindingStatus)
+	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
+	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
+	require.Equal(t, s.Data["password"], []byte("abc123"))
+	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))
+}

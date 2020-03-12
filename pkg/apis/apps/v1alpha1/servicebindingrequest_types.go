@@ -34,14 +34,21 @@ type ServiceBindingRequestSpec struct {
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// BackingServiceSelector is used to identify the backing service operator.
+	// Deprecation Notice:
+	// In the upcoming release, this field would be depcreated. It would be mandatory
+	// to set "backingServiceSelectors".
 	// +optional
-	BackingServiceSelector BackingServiceSelector `json:"backingServiceSelector,omitempty"`
+	BackingServiceSelector *BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
 	// BackingServiceSelectors is used to identify multiple backing services.
-	BackingServiceSelectors []BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
+	// This would be made a required field after 'BackingServiceSelector'
+	// is removed.
+	// +optional
+	BackingServiceSelectors *[]BackingServiceSelector `json:"backingServiceSelectors,omitempty"`
 
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
+	// +optional
 	ApplicationSelector ApplicationSelector `json:"applicationSelector"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from

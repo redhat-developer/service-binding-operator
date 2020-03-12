@@ -416,7 +416,7 @@ func MultiNamespaceServiceBindingRequestMock(
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
-			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+			BackingServiceSelector: &v1alpha1.BackingServiceSelector{
 				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
 				ResourceRef:      backingServiceResourceRef,
 				Namespace:        &backingServiceNamespace,
@@ -461,7 +461,7 @@ func ServiceBindingRequestMock(
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
-			BackingServiceSelector: v1alpha1.BackingServiceSelector{
+			BackingServiceSelector: &v1alpha1.BackingServiceSelector{
 				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
 				ResourceRef:      backingServiceResourceRef,
 				Namespace:        backingServiceNamespace,

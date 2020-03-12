@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -73,5 +74,60 @@ func TestOLMNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, gvks, 1)
 		assertGVKs(t, gvks)
+	})
+}
+
+func TestAnnotationParsing(t *testing.T) {
+	annotations := map[string]interface{}{
+		"servicebindingoperator.redhat.io/status.dbCredentials-db.password": "binding:env:object:secret",
+		"servicebindingoperator.redhat.io/spec.dbName":                      "binding:env:attribute",
+		"servicebindingoperator.redhat.io/spec.image":                       "binding:env:attribute",
+		"servicebindingoperator.redhat.io/status.dbConfigMap-db.host":       "binding:env:object:configmap",
+	}
+	crd := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "apiextensions.k8s.io/v1beta1",
+			"kind":       "CustomResourceDefinition",
+			"metadata":   map[string]interface{}{},
+			"spec": map[string]interface{}{
+				"names": map[string]interface{}{
+					"kind": "Carp",
+				},
+				"group":   "app.dev",
+				"version": "v1",
+			},
+			"status": map[string]interface{}{},
+		},
+	}
+	t.Run("Build CSV from CRD - no annotations", func(t *testing.T) {
+		crdDescription, err := buildCRDDescriptionFromCRD(crd)
+		require.NoError(t, err)
+		require.Len(t, crdDescription.SpecDescriptors, 0)
+		require.Len(t, crdDescription.StatusDescriptors, 0)
+	})
+
+	t.Run("Build CSV from CRD", func(t *testing.T) {
+		crd.Object["metadata"] = map[string]interface{}{
+			"annotations": annotations,
+		}
+		crdDescription, err := buildCRDDescriptionFromCRD(crd)
+		require.NoError(t, err)
+
+		require.Len(t, crdDescription.StatusDescriptors, 2)
+		require.Len(t, crdDescription.SpecDescriptors, 2)
+
+		expected := map[string]string{
+			"dbName":        "binding:env:attribute:spec.dbName",
+			"image":         "binding:env:attribute:spec.image",
+			"dbCredentials": "binding:env:object:secret:db.password",
+			"dbConfigMap":   "binding:env:object:configmap:db.host",
+		}
+		for _, value := range crdDescription.SpecDescriptors {
+			require.Equal(t, expected[value.Path], value.XDescriptors[0])
+		}
+
+		for _, value := range crdDescription.StatusDescriptors {
+			require.Equal(t, expected[value.Path], value.XDescriptors[0])
+		}
 	})
 }
