@@ -215,7 +215,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	}
 	f := mocks.NewFake(t, reconcilerNs)
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
-	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedSecret("db-credentials")
