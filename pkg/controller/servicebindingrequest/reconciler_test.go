@@ -323,7 +323,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "BindingSuccess", sbrOutput2.Status.BindingStatus)
-	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
+	require.Equal(t, reconcilerName, sbrOutput2.Status.BindingData.Name)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
 	require.Equal(t, 1, len(sbrOutput2.Status.ApplicationObjects))
 
@@ -347,7 +347,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	require.Equal(t, "BindingSuccess", sbrOutput3.Status.BindingStatus)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
-	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
+	require.Equal(t, reconcilerName, sbrOutput3.Status.BindingData.Name)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))
 }
