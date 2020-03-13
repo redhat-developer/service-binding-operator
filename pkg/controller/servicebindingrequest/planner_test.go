@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	v12 "github.com/openshift/api/route/v1"
+	routev1 "github.com/openshift/api/route/v1"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -149,7 +149,7 @@ func TestPlannerWithCRAnnotations(t *testing.T) {
 	routeCR.Annotations = annotations
 	route, err := runtime.DefaultUnstructuredConverter.ToUnstructured(routeCR)
 	require.NoError(t, err)
-	f.S.AddKnownTypes(v12.SchemeGroupVersion, &v12.Route{})
+	f.S.AddKnownTypes(routev1.SchemeGroupVersion, &routev1.Route{})
 	f.AddMockResource(&unstructured.Unstructured{Object: route})
 
 	sbr := &v1alpha1.ServiceBindingRequest{
@@ -162,7 +162,7 @@ func TestPlannerWithCRAnnotations(t *testing.T) {
 				GroupVersionResource: metav1.GroupVersionResource{Group: "g", Version: "v", Resource: "r"},
 				ResourceRef:          "app",
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{Group: "", Version: "v1", Kind: "Route"},
 					ResourceRef:      routeCR.GetName(),
@@ -185,7 +185,7 @@ func TestPlannerWithCRAnnotations(t *testing.T) {
 		require.Equal(t, "binding:env:attribute:spec.host", plan.RelatedResources[0].CRDDescription.SpecDescriptors[0].XDescriptors[0])
 	})
 
-	sbr.Spec.BackingServiceSelectors = []v1alpha1.BackingServiceSelector{
+	sbr.Spec.BackingServiceSelectors = &[]v1alpha1.BackingServiceSelector{
 		{
 			GroupVersionKind: metav1.GroupVersionKind{Group: "", Version: "v1", Kind: "Route"},
 			ResourceRef:      "non-existent",
