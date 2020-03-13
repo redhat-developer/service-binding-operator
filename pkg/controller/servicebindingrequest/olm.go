@@ -174,7 +174,7 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 }
 
 // buildCRDDescriptionFromCR builds a CRDDescription from annotations present in the CR.
-func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) (*olmv1alpha1.CRDDescription, error) {
+func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	var (
 		err error
 	)
@@ -186,23 +186,19 @@ func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *ol
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 
-	if crdDescription == nil {
-		crdDescription = &olmv1alpha1.CRDDescription{}
-	}
-
 	crdDescription.Name = gvr.Resource + "." + gvr.Group
 	crdDescription.Kind = cr.GetKind()
 	crdDescription.Version = cr.GroupVersionKind().Version
 
 	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
 	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
 
-	return crdDescription, nil
+	return nil
 }
 
 // buildCRDDescriptionFromCRD builds a CRDDescription from annotations present in the CRD.

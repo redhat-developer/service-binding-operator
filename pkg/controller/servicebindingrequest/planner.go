@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
@@ -126,7 +127,10 @@ func (p *Planner) Plan() (*Plan, error) {
 		p.logger.Debug("Tentatively resolved CRDDescription", "CRDDescription", crdDescription)
 
 		// Parse ( and override ) annotations from the CR or kubernetes object
-		crdDescription, err = buildCRDDescriptionFromCR(cr, crdDescription)
+		if crdDescription == nil {
+			crdDescription = &olmv1alpha1.CRDDescription{}
+		}
+		err = buildCRDDescriptionFromCR(cr, crdDescription)
 		if err != nil {
 			return nil, err
 		}

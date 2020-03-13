@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -131,8 +132,9 @@ func TestAnnotationParsing(t *testing.T) {
 				"status":     map[string]interface{}{},
 			},
 		}
-		crdDescription, err = buildCRDDescriptionFromCR(cr, crdDescription)
+		err = buildCRDDescriptionFromCR(cr, crdDescription)
 
+		require.Nil(t, err)
 		require.Equal(t, "dbName", crdDescription.SpecDescriptors[0].Path)
 		require.Equal(t, "binding:env:attribute:spec.dbName", crdDescription.SpecDescriptors[0].XDescriptors[0])
 
@@ -178,7 +180,8 @@ func TestAnnotationParsing(t *testing.T) {
 				"status": map[string]interface{}{},
 			},
 		}
-		crdDescription, err := buildCRDDescriptionFromCR(cr, nil)
+		crdDescription := &olmv1alpha1.CRDDescription{}
+		err := buildCRDDescriptionFromCR(cr, crdDescription)
 		require.NotNil(t, crdDescription)
 		require.NoError(t, err)
 
