@@ -315,7 +315,6 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
 		expectedStatus := v1alpha1.BoundApplication{
 			GroupVersionKind: v1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
@@ -326,6 +325,10 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 				Name: applicationResourceRef2,
 			},
 		}
+
+		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
+		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
+		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
 	})
 }
