@@ -261,7 +261,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.Referenc
 						},
 					},
 				},
-				Required: []string{"applicationSelector"},
 			},
 		},
 		Dependencies: []string{

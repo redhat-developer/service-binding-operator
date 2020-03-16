@@ -64,6 +64,7 @@ type ServiceBindingRequestSpec struct {
 	// ApplicationSelector is used to identify the application connecting to the
 	// backing service operator.
 	// Deprecated.
+	// +optional
 	ApplicationSelector *ApplicationSelector `json:"applicationSelector"`
 }
 
