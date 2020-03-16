@@ -195,13 +195,9 @@ func (in *ServiceBindingRequestStatus) DeepCopyInto(out *ServiceBindingRequestSt
 	*out = *in
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
-		*out = new([]conditionsv1.Condition)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]conditionsv1.Condition, len(*in))
-			for i := range *in {
-				(*in)[i].DeepCopyInto(&(*out)[i])
-			}
+		*out = make([]conditionsv1.Condition, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Applications != nil {

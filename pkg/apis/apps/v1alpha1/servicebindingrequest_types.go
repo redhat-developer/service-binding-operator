@@ -55,7 +55,7 @@ type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request.
 	BindingStatus string `json:"bindingStatus"`
 	// Conditions describes the state of the operator's reconciliation functionality.
-	Conditions *[]conditionsv1.Condition `json:"conditions"`
+	Conditions []conditionsv1.Condition `json:"conditions"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
 	// ApplicationObjects contains all the application objects filtered by label
