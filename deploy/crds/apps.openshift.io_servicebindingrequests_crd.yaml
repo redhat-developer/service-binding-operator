@@ -257,7 +257,7 @@ spec:
         status:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
-            applicationObjects:
+            applications:
               description: ApplicationObjects contains all the application objects
                 filtered by label
               items:
@@ -315,7 +315,7 @@ spec:
               description: Secret is the name of the intermediate secret
               type: string
           required:
-          - applicationObjects
+          - applications
           - bindingStatus
           - conditions
           - secret
