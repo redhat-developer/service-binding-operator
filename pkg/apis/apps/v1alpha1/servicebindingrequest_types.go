@@ -46,7 +46,7 @@ type ServiceBindingRequestSpec struct {
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
 	// +optional
-	DetectBindingResources bool `json:"detectBindingResources, omitempty"`
+	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
@@ -59,7 +59,7 @@ type ServiceBindingRequestStatus struct {
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
 	// ApplicationObjects contains all the application objects filtered by label
-	Applications *[]BoundApplication `json:"applications"`
+	Applications []BoundApplication `json:"applications"`
 }
 
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind

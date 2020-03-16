@@ -202,12 +202,8 @@ func (in *ServiceBindingRequestStatus) DeepCopyInto(out *ServiceBindingRequestSt
 	}
 	if in.Applications != nil {
 		in, out := &in.Applications, &out.Applications
-		*out = new([]BoundApplication)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]BoundApplication, len(*in))
-			copy(*out, *in)
-		}
+		*out = make([]BoundApplication, len(*in))
+		copy(*out, *in)
 	}
 	return
 }
