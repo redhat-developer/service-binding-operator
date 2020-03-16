@@ -18,9 +18,10 @@ const (
 )
 
 var (
-	workingDirOp       icmd.CmdOp = nil
-	kubeConfig                    = os.Getenv("KUBECONFIG")
-	defaultEnvironment            = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
+	workingDirPath, _ = os.Getwd()
+	workingDirOp      = icmd.Dir(workingDirPath)
+	kubeConfig        = os.Getenv("KUBECONFIG")
+	environment       = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
 )
 
 //Run runs a command with timeout
@@ -28,7 +29,7 @@ func Run(cmd ...string) *icmd.Result {
 	currentCmd := icmd.Cmd{
 		Command: cmd,
 		Timeout: Timeout,
-		Env:     defaultEnvironment,
+		Env:     environment,
 	}
 
 	if workingDirOp != nil {

@@ -29,6 +29,15 @@ func TestGetOCStatus(t *testing.T) {
 	result := util.Run("oc", "status")
 	ocStatus := result.ExitCode
 
+	var output string
+	if ocStatus == 0 {
+		output = result.Stdout()
+	} else {
+		output = result.Stderr()
+	}
+
+	fmt.Printf("OUTPUT: %s", output)
+
 	require.Equal(t, ocStatus, 0, "'oc status' is %d", ocStatus)
 	clusterAvailable = true
 
