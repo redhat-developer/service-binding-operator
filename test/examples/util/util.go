@@ -18,9 +18,12 @@ const (
 )
 
 var (
-	workingDirOp       icmd.CmdOp = nil
-	kubeConfig                    = os.Getenv("KUBECONFIG")
-	defaultEnvironment            = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
+	wd, _        = os.Getwd()
+	workingDirOp = icmd.Dir(wd)
+
+	//workingDirOp       icmd.CmdOp = nil
+	kubeConfig         = os.Getenv("KUBECONFIG")
+	defaultEnvironment = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
 )
 
 //Run runs a command with timeout
@@ -67,4 +70,19 @@ func GetExamplesDir() string {
 		log.Fatalf("Failed to get the working dir.")
 	}
 	return path.Clean(fmt.Sprintf("%s/../../examples", wd))
+}
+
+//get output
+func GetOutput(exitCode int, res *icmd.Result, cmd string) string {
+
+	var output string
+	if exitCode == 0 {
+		output = res.Stdout()
+	} else {
+		output = res.Stderr()
+	}
+	fmt.Printf("CMD executed is %s", cmd)
+	fmt.Printf("OUTPUT: %s \n", output)
+	return output
+
 }

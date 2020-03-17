@@ -29,7 +29,9 @@ func TestGetOCStatus(t *testing.T) {
 	result := util.Run("oc", "status")
 	ocStatus := result.ExitCode
 
-	require.Equal(t, ocStatus, 0, "'oc status' is %d", ocStatus)
+	util.GetOutput(ocStatus, result, "OC Status")
+
+	require.Equal(t, ocStatus, 1, "'oc status' is %d", ocStatus)
 	clusterAvailable = true
 
 	t.Log(" *** Connected to cluster *** ")
@@ -46,7 +48,8 @@ func TestMakeInstallServiceBindingOperator(t *testing.T) {
 	res := util.Run("make", "install-service-binding-operator")
 	//log.Printf("--- CMD executed is make install-service-binding-operator --- %s \n", res)
 	t.Log("--- CMD executed is make install-service-binding-operator --- ")
-	t.Logf("-> Status of install-service-binding-operator is %s", res)
+
+	t.Logf("-> Status of install-service-binding-operator is %s", res.Stdout())
 
 	// with openshift-operators namespace, capture the install plan
 	t.Log("Get install plan name from the cluster...")
