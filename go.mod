@@ -1,6 +1,6 @@
 module github.com/redhat-developer/service-binding-operator
 
-go 1.13
+go 1.14
 
 require (
 	cloud.google.com/go v0.45.1 // indirect
