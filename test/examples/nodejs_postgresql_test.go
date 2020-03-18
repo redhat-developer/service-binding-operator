@@ -11,6 +11,8 @@ import (
 
 var exampleName = "nodejs_postgresql"
 var ns = "openshift-operators"
+var oprName = "service-binding-operator"
+var expStatus = "Complete"
 var ipName, ipStatus, podName, podStatus string
 
 var clusterAvailable = false
@@ -26,54 +28,43 @@ func TestSetExampleDir(t *testing.T) {
 //Logs the oc status
 func TestGetOCStatus(t *testing.T) {
 	t.Log("--- Getting OC Status ---")
-	result := util.Run("oc", "status")
-	ocStatus := result.ExitCode
-
-	util.GetOutput(ocStatus, result, "OC Status")
-
-	require.Equal(t, ocStatus, 1, "'oc status' is %d", ocStatus)
+	util.GetOutput(util.Run("oc", "status"), "oc status")
 	clusterAvailable = true
-
 	t.Log(" *** Connected to cluster *** ")
 }
 
 //Logs out the output of command make install-service-binding-operator
 func TestMakeInstallServiceBindingOperator(t *testing.T) {
-	//	log.Printf("--- CMD executed is make install-service-binding-operator --- %s \n", util.MustSucceed(
-	//"make", "install-service-binding-operator").Stdout())
 
 	checkClusterAvailable(t)
 
 	t.Log("Installing serivice binding operator into the cluster...")
-	res := util.Run("make", "install-service-binding-operator")
-	//log.Printf("--- CMD executed is make install-service-binding-operator --- %s \n", res)
-	t.Log("--- CMD executed is make install-service-binding-operator --- ")
+	res := util.GetOutput(util.Run("make", "install-service-binding-operator"), "CMD: make install-service-binding-operator")
 
-	t.Logf("-> Status of install-service-binding-operator is %s", res.Stdout())
+	resExp := strings.TrimSpace(strings.Split(res, "subscription.operators.coreos.com/service-binding-operator")[1])
+	fmt.Printf("subscription output is %s \n", resExp)
+
+	require.Containsf(t, []string{"created", "unchanged"}, resExp, "list does not contain %s while installing service binding operator", resExp)
 
 	// with openshift-operators namespace, capture the install plan
-	t.Log("Get install plan name from the cluster...")
-	ipName := util.Run("oc", "get", "ip", "-n", ns)
-	t.Log("--- CMD executed is  oc get ip -n openshift-operators --- ")
-	t.Logf("Install plan-ip name is %s", ipName)
+	t.Log("Get install plan name from the cluster...\n")
+	ipName := util.GetOutput(util.Run("oc", "get", "subscription", oprName, "-n", ns, "-o", `jsonpath={.status.installplan.name}`), "CMD: oc get subscription service-binding-operator -n openshift-operators -o jsonpath='{.status.installplan.name}'")
+	t.Logf("-> Install plan-ip name is %s \n", ipName)
 
-	//oc get ip -n openshift-operators <<Name>> -o jsonpath='{.status.phase}'
+	//// with openshift-operators namespace, capture the install plan status
 	t.Log(" Fetching the status of install plan ")
-	ipStatus := util.Run("oc", "get", "ip", "-n", ns, "-o", "jsonpath='{.status.phase}'")
-	t.Log("--- CMD executed is  oc get ip -n openshift-operators <<Name>> -o jsonpath='{.status.phase}' --- ")
-	t.Logf("-> Status of Install plan-ip is %s", ipStatus)
+	ipStatus := util.GetOutput(util.Run("oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`), "CMD: oc get ip -n openshift-operators <<Name>> -o jsonpath='{.status.phase}")
+	require.Equal(t, ipStatus, expStatus, "'install plan status' is %d \n", ipStatus)
 
 	//oc get pods -n openshift-operator
 	t.Log("Fetching the pod name of the running pod")
-	podName := util.Run("oc", "get", "pods", "-n", ns)
-	t.Log("--- CMD executed is  oc get pods -n openshift-operator --- ")
-	t.Logf("-> Pod name is %s", podName)
+	podName := util.GetOutput(util.Run("oc", "get", "pods", "-n", ns, "-o", "jsonpath={.items[*].metadata.name}"), "CMD: oc get pods -n openshift-operators -o jsonpath={.items[*]}.metadata.name")
+	t.Logf("-> Pod name is %s \n", podName)
 
 	//oc get pod <<Name of pod(from step 4)>> -n openshift-operators -o jsonpath='{.status.phase}'
 	t.Log("Fetching the status of running pod")
-	podStatus := util.Run("oc", "get", "pods", "-n", ns)
-	t.Log("--- CMD executed is  oc get pod $pods -n $ns -o jsonpath='{.status.phase}' --- ")
-	t.Logf("Pod status is %s", podStatus)
+	podStatus := util.GetOutput(util.Run("oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`), "CMD: oc get pods $podName -n $ns -o jsonpath='{.status.phase}")
+	require.Equal(t, podStatus, "Running", "pod status is %d \n", podStatus)
 
 }
 
