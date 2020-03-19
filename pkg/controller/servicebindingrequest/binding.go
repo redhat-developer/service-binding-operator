@@ -220,15 +220,6 @@ func (b *ServiceBinder) onError(
 func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus := b.SBR.Status.DeepCopy()
 
-	if b.bindingDataHandler.plan.SBR.Spec.Binding == nil {
-		b.bindingDataHandler.plan.SBR.Spec.Binding = &v1alpha1.BindingReference{
-			ObjectType: metav1.GroupVersionKind{
-				Kind:    SecretKind,
-				Version: "v1",
-			},
-		}
-	}
-
 	b.Logger.Info("Saving data on intermediary secret...")
 	bindingData, err := b.bindingDataHandler.Commit(b.Data)
 	if err != nil {
