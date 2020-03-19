@@ -190,13 +190,13 @@ func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *ol
 	crdDescription.Kind = cr.GetKind()
 	crdDescription.Version = cr.GroupVersionKind().Version
 
-	specDescriptor, statusDescriptor, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
 	if err != nil {
 		return err
 	}
 
-	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptor...)
-	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptor...)
+	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
+	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
 
 	return nil
 }

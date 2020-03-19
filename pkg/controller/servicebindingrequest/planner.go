@@ -93,6 +93,8 @@ func (p *Planner) Plan() (*Plan, error) {
 	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
 
+		var crdDescription *olmv1alpha1.CRDDescription
+
 		if s.Namespace == nil {
 			s.Namespace = &ns
 		}
@@ -113,18 +115,20 @@ func (p *Planner) Plan() (*Plan, error) {
 			// expected this to work, but didn't
 			// if k8sError.IsNotFound(err) {...}
 			p.logger.Error(err, "Probably not a CRD")
+
+		} else {
+
+			p.logger.Debug("Resolved CRD", "CRD", crd)
+
+			olm := NewOLM(p.client, ns)
+
+			// Parse annotations from the OLM descriptors or the CRD
+			crdDescription, err = olm.SelectCRDByGVK(bssGVK, crd)
+			if err != nil {
+				p.logger.Error(err, "Probably not an OLM operator")
+			}
+			p.logger.Debug("Tentatively resolved CRDDescription", "CRDDescription", crdDescription)
 		}
-
-		p.logger.Debug("Resolved CRD", "CRD", crd)
-
-		olm := NewOLM(p.client, ns)
-
-		// Parse annotations from the OLM descriptors or the CRD
-		crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
-		if err != nil {
-			p.logger.Error(err, "Probably not an OLM operator")
-		}
-		p.logger.Debug("Tentatively resolved CRDDescription", "CRDDescription", crdDescription)
 
 		// Parse ( and override ) annotations from the CR or kubernetes object
 		if crdDescription == nil {

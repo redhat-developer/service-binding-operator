@@ -23,7 +23,6 @@ func NewCustomEnvParser(envMap []corev1.EnvVar, cache map[string]interface{}) *C
 
 // Parse interpolates and caches the templates in EnvMap.
 func (c *CustomEnvParser) Parse() (map[string]interface{}, error) {
-
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
 		tmpl, err := template.New("set").Parse(v.Value)
