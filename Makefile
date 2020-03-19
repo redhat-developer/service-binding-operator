@@ -102,6 +102,8 @@ GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
+OS ?= linux
+ARCH ?= amd64
 
 # This variable is for artifacts to be archived by Prow jobs at OpenShift CI
 # The actual value will be set by the OpenShift CI accordingly
@@ -283,7 +285,7 @@ test-e2e-olm-ci:
 build: out/operator
 
 out/operator:
-	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
+	$(Q)GOARCH=$(ARCH) GOOS=$(OS) go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
