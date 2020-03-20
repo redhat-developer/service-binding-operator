@@ -9,13 +9,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var exampleName = "nodejs_postgresql"
-var ns = "openshift-operators"
-var oprName = "service-binding-operator"
-var expStatus = "Complete"
-var ipName, ipStatus, podName, podStatus string
+var (
+	exampleName = "nodejs_postgresql"
+	ns          = "openshift-operators"
+	oprName     = "service-binding-operator"
+	expStatus   = "Complete"
 
-var clusterAvailable = false
+	ipName, ipStatus, podName, podStatus string
+	clusterAvailable                     = false
+
+	pkgManifest = "db-operators"
+)
 
 //TestSetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
 func TestSetExampleDir(t *testing.T) {
@@ -58,13 +62,29 @@ func TestMakeInstallServiceBindingOperator(t *testing.T) {
 
 	//oc get pods -n openshift-operator
 	t.Log("Fetching the pod name of the running pod")
-	podName := util.GetOutput(util.Run("oc", "get", "pods", "-n", ns, "-o", "jsonpath={.items[*].metadata.name}"), "CMD: oc get pods -n openshift-operators -o jsonpath={.items[*]}.metadata.name")
+	pods := util.GetOutput(util.Run("oc", "get", "pods", "-n", ns, "-o", "jsonpath={.items[*].metadata.name}"), "CMD: oc get pods -n openshift-operators -o jsonpath={.items[*]}.metadata.name")
+
+	podName := util.GetPodNameFromLst(pods, oprName)
+	require.Containsf(t, podName, oprName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
 	t.Logf("-> Pod name is %s \n", podName)
 
 	//oc get pod <<Name of pod(from step 4)>> -n openshift-operators -o jsonpath='{.status.phase}'
 	t.Log("Fetching the status of running pod")
 	podStatus := util.GetOutput(util.Run("oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`), "CMD: oc get pods $podName -n $ns -o jsonpath='{.status.phase}")
 	require.Equal(t, podStatus, "Running", "pod status is %d \n", podStatus)
+
+}
+
+func TestMakeInstallBackingServiceOperator(t *testing.T) {
+	checkClusterAvailable(t)
+
+	t.Log("Installing backing service operator into the cluster...")
+	res := util.GetOutput(util.Run("make", "install-backing-db-operator-source"), "CMD: make install-backing-db-operator-source")
+
+	resExp := strings.TrimSpace(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1])
+	fmt.Printf("db operator installation output is %s \n", resExp)
+
+	require.Containsf(t, []string{"created", "unchanged"}, resExp, "list does not contain %s while installing db service operator", resExp)
 
 }
 

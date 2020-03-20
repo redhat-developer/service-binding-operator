@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"gotest.tools/v3/icmd"
@@ -55,6 +56,20 @@ func GetExamplesDir() string {
 		log.Fatalf("Failed to get the working dir.")
 	}
 	return path.Clean(fmt.Sprintf("%s/../../examples", wd))
+}
+
+//GetPodNameFromLst returns specific name of the pod from the pod list
+func GetPodNameFromLst(pods, oprName string) string {
+	item := ""
+	lstArr := strings.Split(pods, " ")
+	for _, item := range lstArr {
+		if strings.Contains(item, oprName) {
+			fmt.Printf("item matched as %s \n", item)
+			return item
+			//break
+		}
+	}
+	return item
 }
 
 //GetOutput returns the output using Stdout()
