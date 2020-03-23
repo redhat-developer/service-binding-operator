@@ -462,10 +462,6 @@ push-bundle-quay:
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(SBR_MANIFESTS)
 	$(Q)$(OUTPUT_DIR)./venv3/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 
-.PHONY: aa
-aa:
-	echo $(SBR_MANIFESTS)
-
 ## -- Target for validating the operator --
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
