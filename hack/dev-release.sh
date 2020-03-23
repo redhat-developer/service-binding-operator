@@ -7,6 +7,8 @@ OPERATOR_SOURCE="./test/operator-hub/operator_source.yaml"
 SUBSCRIPTION="./test/operator-hub/subscription.yaml"
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}
 
+sed -i -e "s,REPLACE_CSV_VERSION,service-binding-operator.v${BUNDLE_VERSION},g" ${SUBSCRIPTION}
+
 kubectl apply -f ${OPERATOR_SOURCE}
 # Subscribing to the operator
 kubectl apply -f ${SUBSCRIPTION}
