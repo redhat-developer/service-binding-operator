@@ -458,7 +458,7 @@ prepare-bundle-to-quay:
 ## -- Target to push bundle to quay
 .PHONY: push-bundle-to-quay
 ## Push manifest bundle to quay application
-push-bundle-quay:
+push-bundle-to-quay:
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(SBR_MANIFESTS)
 	$(Q)$(OUTPUT_DIR)./venv3/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 
