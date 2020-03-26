@@ -397,7 +397,7 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		}
 
 		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
-		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
+		require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
 	})
