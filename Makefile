@@ -99,9 +99,14 @@ GO_PACKAGE_ORG_NAME ?= $(shell basename $$(dirname $$PWD))
 GO_PACKAGE_REPO_NAME ?= $(shell basename $$PWD)
 GO_PACKAGE_PATH ?= github.com/${GO_PACKAGE_ORG_NAME}/${GO_PACKAGE_REPO_NAME}
 
+PROJECT_DIR ?= $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+SBR_MANIFESTS ?= ${PROJECT_DIR}service-binding-operator-manifests
+
 CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
+OS ?= linux
+ARCH ?= amd64
 
 # This variable is for artifacts to be archived by Prow jobs at OpenShift CI
 # The actual value will be set by the OpenShift CI accordingly
@@ -113,7 +118,7 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.1.0
+OPERATOR_VERSION ?= 0.1.1
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
 OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
 OPERATOR_IMAGE_REL ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
@@ -283,7 +288,7 @@ test-e2e-olm-ci:
 build: out/operator
 
 out/operator:
-	$(Q)GOARCH=amd64 GOOS=linux go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
+	$(Q)GOARCH=$(ARCH) GOOS=$(OS) go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
@@ -438,18 +443,24 @@ push-to-manifest-repo:
 	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 
-## -- Target for pushing manifest bundle to quay application --
-.PHONY: push-bundle-to-quay
-## Push manifest bundle to quay application
-push-bundle-to-quay:
+## -- Target for preparing manifest bundle to quay application --
+.PHONY: prepare-bundle-to-quay
+## Prepare manifest bundle to quay application
+prepare-bundle-to-quay:
 	$(Q)python3.7 -m venv $(OUTPUT_DIR)/venv3
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier==2.1.2
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier --version
 	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(MANIFESTS_TMP)
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
+
+## -- Target to push bundle to quay
+.PHONY: push-bundle-to-quay
+## Push manifest bundle to quay application
+push-bundle-to-quay:
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(SBR_MANIFESTS)
+	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 
 ## -- Target for validating the operator --
 .PHONY: dev-release

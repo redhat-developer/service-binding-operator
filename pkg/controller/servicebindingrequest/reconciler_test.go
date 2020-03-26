@@ -351,3 +351,54 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))
 }
+
+//TestReconcilerReconcileWithConflictingAppSelc tests when sbr has conflicting ApplicationSel such as MatchLabels=App1 and ResourceRef=App2 it should prioritise the ResourceRef
+func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
+	backingServiceResourceRef := "backingServiceRef"
+	applicationResourceRef1 := "applicationResourceRef1"
+	matchLabels1 := map[string]string{
+		"connects-to": "database",
+		"environment": "testing",
+	}
+	applicationResourceRef2 := "applicationResourceRef2"
+
+	f := mocks.NewFake(t, reconcilerNs)
+
+	f.AddMockedUnstructuredDeployment(applicationResourceRef1, matchLabels1)
+	f.AddMockedUnstructuredDeployment(applicationResourceRef2, nil)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef2, deploymentsGVR, matchLabels1)
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedSecret("db-credentials")
+
+	fakeClient := f.FakeClient()
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+
+	t.Run("test-reconciler-reconcile-with-conflicting-application-selector", func(t *testing.T) {
+
+		res, err := reconciler.Reconcile(reconcileRequest())
+		require.NoError(t, err)
+		require.False(t, res.Requeue)
+
+		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		require.NoError(t, err)
+
+		expectedStatus := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: applicationResourceRef2,
+			},
+		}
+
+		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
+		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
+		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
+	})
+}
