@@ -16,6 +16,9 @@ RUNNING_STATUS=`kubectl get pods -n openshift-marketplace | grep "example-operat
 if [ ${RUNNING_STATUS} = "Running" ] ; then
 	echo "Operator marketplace pod is running"
 fi
+INSTALL_PLAN=`kubectl get subscriptions service-binding-operator -n openshift-operators -o jsonpath='{.status.installPlanRef.name}'`
+kubectl patch installplan ${INSTALL_PLAN} -n openshift-operators --type merge --patch '{"spec": {"approved": true}}'
+
 ./hack/check-crds.sh
 ./hack/check-csvs.sh
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}
