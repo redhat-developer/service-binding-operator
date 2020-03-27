@@ -4,7 +4,6 @@ function check_installplan () {
     local install_plan=`kubectl get subscriptions service-binding-operator -n openshift-operators -o jsonpath='{.status.installPlanRef.name}'`
 
     for i in  {1..120} ; do
-        echo ${install_plan}
         if [[ ${install_plan} != "" ]] ; then
             return 0
         fi
