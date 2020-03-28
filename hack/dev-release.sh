@@ -12,9 +12,10 @@ sed -i -e "s,REPLACE_CSV_VERSION,service-binding-operator.v${BUNDLE_VERSION},g" 
 kubectl apply -f ${OPERATOR_SOURCE}
 # Subscribing to the operator
 kubectl apply -f ${SUBSCRIPTION}
+./hack/check-operatorsource-pods.sh
 RUNNING_STATUS=`kubectl get pods -n openshift-marketplace | grep "example-operators" | awk '{print $3}'`
-if [ ${RUNNING_STATUS} = "Running" ] ; then
-	echo "Operator marketplace pod is running"
+if [ ${RUNNING_STATUS} != "Running" ] ; then
+	echo "Operator marketplace pod is not running"
 fi
 ./hack/check-installplan.sh
 INSTALL_PLAN=`kubectl get subscriptions service-binding-operator -n openshift-operators -o jsonpath='{.status.installPlanRef.name}'`
