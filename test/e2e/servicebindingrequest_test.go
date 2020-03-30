@@ -26,7 +26,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -195,8 +195,13 @@ func assertSBRStatus(
 	}
 
 	for i, condition := range sbr.Status.Conditions {
-		if condition.Type != conditions.BindingReady && condition.Status != corev1.ConditionTrue {
-			return fmt.Errorf("Condition.Type and Condition.Status is '%s' and '%s' instead of '%s' and '%s'", sbr.Status.Conditions[i].Type, sbr.Status.Conditions[i].Status, conditions.BindingReady, corev1.ConditionTrue)
+		if condition.Type != servicebindingrequest.BindingReady && condition.Status != corev1.ConditionTrue {
+			return fmt.Errorf(
+				"Condition.Type and Condition.Status is '%s' and '%s' instead of '%s' and '%s'",
+				sbr.Status.Conditions[i].Type,
+				sbr.Status.Conditions[i].Status,
+				servicebindingrequest.BindingReady,
+				corev1.ConditionTrue)
 		}
 	}
 	return nil
@@ -216,7 +221,7 @@ func assertSBRSecret(
 
 	for k, v := range assertKeys {
 		if _, contains := sbrSecret.Data[k]; !contains {
-			return nil, fmt.Errorf("can't find DATABASE_SECRET_USER in data")
+			return nil, fmt.Errorf("can't find %q in data", k)
 		}
 		actual := sbrSecret.Data[k]
 		expected := []byte(v)
@@ -300,9 +305,18 @@ func CreateDB(
 	require.NoError(t, f.Client.Create(ctx, db, cleanupOpts))
 
 	t.Logf("Updating Database '%#v' status, adding 'DBCredentials'", namespacedName)
-	require.NoError(t, f.Client.Get(ctx, namespacedName, db))
-	db.Status.DBCredentials = secretName
-	require.NoError(t, f.Client.Status().Update(ctx, db))
+	require.Eventually(t, func() bool {
+		if err := f.Client.Get(ctx, namespacedName, db); err != nil {
+			t.Logf("get error: %s", err)
+			return false
+		}
+		db.Status.DBCredentials = secretName
+		if err := f.Client.Status().Update(ctx, db); err != nil {
+			t.Logf("update error: %s", err)
+			return false
+		}
+		return true
+	}, 10*time.Second, 1*time.Second)
 
 	t.Log("Creating Database credentials secret mock object...")
 	dbSecret := mocks.SecretMock(ns, secretName)
@@ -375,10 +389,16 @@ func CreateSBR(
 }
 
 // setSBRBackendGVK sets backend service selector
-func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind) {
+func setSBRBackendGVK(
+	sbr *v1alpha1.ServiceBindingRequest,
+	resourceRef string,
+	backendGVK schema.GroupVersionKind,
+	envVarPrefix string,
+) {
 	sbr.Spec.BackingServiceSelector = &v1alpha1.BackingServiceSelector{
 		GroupVersionKind: metav1.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
 		ResourceRef:      resourceRef,
+		EnvVarPrefix:     &envVarPrefix,
 	}
 }
 
@@ -532,7 +552,10 @@ func serviceBindingRequestTest(
 				deploymentsGVR,
 				matchLabels,
 				func(sbr *v1alpha1.ServiceBindingRequest) {
-					setSBRBackendGVK(sbr, resourceRef, v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind))
+					setSBRBackendGVK(sbr, resourceRef,
+						v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind),
+						"ETCDCLUSTER",
+					)
 					setSBRBindUnannotated(sbr, true)
 				})
 		case EtcdClusterStep:
@@ -549,6 +572,18 @@ func serviceBindingRequestTest(
 	t.Log("Inspecting SBR status...")
 	inspectSBRStatus(todoCtx, t, f, sbrNamespacedName)
 
+	require.Eventually(t, func() bool {
+		// checking intermediary secret contents, right after deployment the secrets must be in place
+		intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
+		sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
+		if err != nil {
+			// it can be that assertSBRSecret returns nil until service configuration values can be
+			// collected.
+			t.Logf("binding secret contents are invalid: %v", sbrSecret)
+			return false
+		}
+		return true
+	}, 60*time.Second, 2*time.Second)
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)

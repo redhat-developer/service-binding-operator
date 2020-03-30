@@ -2,7 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
@@ -16,7 +16,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
@@ -45,22 +44,48 @@ type ServiceBinderOptions struct {
 	Logger                 *log.Log
 	DynClient              dynamic.Interface
 	DetectBindingResources bool
-	EnvVarPrefix           string
 	SBR                    *v1alpha1.ServiceBindingRequest
 	Client                 client.Client
+	Objects                []*unstructured.Unstructured
+	EnvVars                map[string][]byte
+	EnvVarPrefix           string
+	Binding                *Binding
 }
 
-// Valid returns whether the options are valid.
-func (o *ServiceBinderOptions) Valid() bool {
-	return o.SBR != nil && o.DynClient != nil && o.Client != nil
+// ErrInvalidServiceBinderOptions is returned when ServiceBinderOptions contains an invalid value.
+type ErrInvalidServiceBinderOptions string
+
+func (e ErrInvalidServiceBinderOptions) Error() string {
+	return fmt.Sprintf("option %q is missing", string(e))
+}
+
+// Valid returns an error if the receiver is invalid, nil otherwise.
+func (o *ServiceBinderOptions) Valid() error {
+	if o.SBR == nil {
+		return ErrInvalidServiceBinderOptions("SBR")
+	}
+
+	if o.DynClient == nil {
+		return ErrInvalidServiceBinderOptions("DynClient")
+	}
+
+	if o.Client == nil {
+		return ErrInvalidServiceBinderOptions("Client")
+	}
+
+	if o.Binding == nil {
+		return ErrInvalidServiceBinderOptions("Binding")
+	}
+
+	return nil
 }
 
 // ServiceBinder manages binding for a Service Binding Request and associated objects.
 type ServiceBinder struct {
 	// Binder is responsible for interacting with the cluster and apply binding related changes.
 	Binder *Binder
-	// Data is the collection of all data read by the manager.
-	Data map[string][]byte
+	// EnvVars contains the environment variables to bind.
+	EnvVars map[string][]byte
 	// DynClient is the Kubernetes dynamic client used to interact with the cluster.
 	DynClient dynamic.Interface
 	// Logger provides logging facilities for internal components.
@@ -113,6 +138,12 @@ func (b *ServiceBinder) updateServiceBindingRequest(
 // Unbind removes the relationship between a Service Binding Request and its related objects.
 func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 	logger := b.Logger.WithName("Unbind")
+
+	// when finalizer is not found anymore, it can be safely removed
+	if !containsStringSlice(b.SBR.GetFinalizers(), Finalizer) {
+		logger.Info("Resource can be safely deleted!")
+		return Done()
+	}
 
 	logger.Info("Cleaning related objects from operator's annotations...")
 	if err := RemoveAndUpdateSBRAnnotations(b.DynClient, b.Objects); err != nil {
@@ -201,7 +232,7 @@ func (b *ServiceBinder) onError(
 		b.setApplicationObjects(sbrStatus, objs)
 	}
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:    conditions.BindingReady,
+		Type:    BindingReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  BindingFail,
 		Message: b.message(err),
@@ -220,7 +251,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus := b.SBR.Status.DeepCopy()
 
 	b.Logger.Info("Saving data on intermediary secret...")
-	secretObj, err := b.Secret.Commit(b.Data)
+	secretObj, err := b.Secret.Commit(b.EnvVars)
 	if err != nil {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
@@ -242,7 +273,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	}
 
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   conditions.BindingReady,
+		Type:   BindingReady,
 		Status: corev1.ConditionTrue,
 	})
 
@@ -284,85 +315,66 @@ func (b *ServiceBinder) setApplicationObjects(
 	sbrStatus.Applications = boundApps
 }
 
-// buildPlan creates a new plan.
-func buildPlan(
+// BuildServiceBinder creates a new binding manager according to options.
+func BuildServiceBinder(
 	ctx context.Context,
-	dynClient dynamic.Interface,
-	sbr *v1alpha1.ServiceBindingRequest,
-) (*Plan, error) {
-	planner := NewPlanner(ctx, dynClient, sbr)
-	return planner.Plan()
+	options *ServiceBinderOptions,
+) (
+	*ServiceBinder,
+	error,
+) {
+	if err := options.Valid(); err != nil {
+		return nil, err
+	}
+
+	// FIXME(isuttonl): review whether it is possible to move Secret.Commit() and Secret.Delete() to
+	// ServiceBinder.
+	secret := NewSecret(
+		options.DynClient,
+		options.SBR.GetNamespace(),
+		options.SBR.GetName(),
+	)
+
+	// FIXME(isuttonl): review whether binder can be lazily created in Bind() and Unbind(); also
+	// consider renaming to ResourceBinder
+	binder := NewBinder(
+		ctx,
+		options.Client,
+		options.DynClient,
+		options.SBR,
+		options.Binding.VolumeKeys,
+	)
+
+	return &ServiceBinder{
+		Logger:    options.Logger,
+		Binder:    binder,
+		DynClient: options.DynClient,
+		SBR:       options.SBR,
+		Objects:   options.Objects,
+		EnvVars:   options.Binding.EnvVars,
+		Secret:    secret,
+	}, nil
 }
 
-// InvalidOptionsErr is returned when ServiceBinderOptions are not valid.
-var InvalidOptionsErr = errors.New("invalid options")
+type Binding struct {
+	EnvVars    map[string][]byte
+	VolumeKeys []string
+}
 
-// BuildServiceBinder creates a new binding manager according to options.
-func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
-
-	var isSBRDeleting bool
-	if options.SBR != nil && options.SBR.GetDeletionTimestamp() != nil {
-		isSBRDeleting = true
-	}
-
-	if !options.Valid() {
-		return nil, InvalidOptionsErr
-	}
-
-	// objs groups all extra objects related to the informed SBR
-	objs := make([]*unstructured.Unstructured, 0)
-
-	// plan is a source of information regarding the binding process
-	ctx := context.Background()
-	plan, err := buildPlan(ctx, options.DynClient, options.SBR)
+func buildBinding(
+	client dynamic.Interface,
+	customEnvVar []corev1.EnvVar,
+	svcCtxs ServiceContextList,
+	globalEnvVarPrefix string,
+) (*Binding, error) {
+	envVars, volumeKeys, err := NewRetriever(client).
+		ProcessServiceContexts(globalEnvVarPrefix, svcCtxs, customEnvVar)
 	if err != nil {
 		return nil, err
 	}
 
-	rs := plan.GetCRs()
-	// append all SBR related CRs
-	objs = append(objs, rs...)
-
-	// retriever is responsible for gathering data related to the given plan.
-	retriever := NewRetriever(options.DynClient, plan, options.EnvVarPrefix)
-
-	// read bindable data from the specified resources
-	if options.DetectBindingResources {
-		err := retriever.ReadBindableResourcesData(&plan.SBR, plan.GetRelatedResources())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// read bindable data from the CRDDescription found by the planner
-	for _, r := range plan.GetRelatedResources() {
-		err = retriever.ReadCRDDescriptionData(r.EnvVarPrefix, r.CR, r.CRDDescription)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	var retrievedData map[string][]byte
-
-	if !isSBRDeleting {
-		// gather retriever's read data
-		// TODO: do not return error
-		retrievedData, err = retriever.Get()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// gather related secret, again only appending it if there's a value.
-	secret := NewSecret(options.DynClient, plan)
-
-	return &ServiceBinder{
-		Logger:    options.Logger,
-		Binder:    NewBinder(ctx, options.Client, options.DynClient, options.SBR, retriever.VolumeKeys),
-		DynClient: options.DynClient,
-		SBR:       options.SBR,
-		Objects:   objs,
-		Data:      retrievedData,
-		Secret:    secret,
+	return &Binding{
+		EnvVars:    envVars,
+		VolumeKeys: volumeKeys,
 	}, nil
 }

@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
+	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
@@ -43,30 +45,6 @@ func reconcileRequest() reconcile.Request {
 	}
 }
 
-func TestReconcilerReconcileError(t *testing.T) {
-	backingServiceResourceRef := "test-using-secret"
-	matchLabels := map[string]string{
-		"connects-to": "database",
-		"environment": "reconciler",
-	}
-	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredDatabaseCRD()
-	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
-	f.AddMockedUnstructuredPostgresDatabaseCR("test-using-secret")
-
-	fakeClient := f.FakeClient()
-	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
-
-	res, err := reconciler.Reconcile(reconcileRequest())
-
-	// currently this test passes because annotations present in the Databases CRD being currently
-	// used doesn't have a 'status' field in its definition; once it does and this code is updated (
-	// since the Postgres CRD is being imported to be used in tests) this test will fail.
-	require.Error(t, err)
-	require.True(t, res.Requeue)
-}
-
 // TestApplicationSelectorByName tests discovery of application by name
 func TestApplicationSelectorByName(t *testing.T) {
 	backingServiceResourceRef := "backingServiceRef"
@@ -77,11 +55,18 @@ func TestApplicationSelectorByName(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, nil)
-	f.AddMockedSecret("db-credentials")
+	f.AddMockedUnstructuredSecret("db-credentials")
+
+	restMapper := testutils.BuildTestRESTMapper()
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+	reconciler := &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  fakeDynClient,
+		scheme:     f.S,
+	}
 
 	t.Run("test-application-selector-by-name", func(t *testing.T) {
 
@@ -93,7 +78,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, conditions.BindingReady, sbrOutput.Status.Conditions[0].Type)
+		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
@@ -125,11 +110,18 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
-	f.AddMockedSecret("db-credentials")
+	f.AddMockedUnstructuredSecret("db-credentials")
+
+	restMapper := testutils.BuildTestRESTMapper()
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+	reconciler := &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  fakeDynClient,
+		scheme:     f.S,
+	}
 
 	t.Run("reconcile-using-secret", func(t *testing.T) {
 		res, err := reconciler.Reconcile(reconcileRequest())
@@ -150,7 +142,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, conditions.BindingReady, sbrOutput.Status.Conditions[0].Type)
+		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
@@ -182,10 +174,17 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
-	f.AddMockedSecret("db-credentials")
+	f.AddMockedUnstructuredSecret("db-credentials")
+
+	restMapper := testutils.BuildTestRESTMapper()
 
 	fakeClient := f.FakeClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	reconciler := &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  f.FakeDynClient(),
+		scheme:     f.S,
+	}
 
 	t.Run("reconcile-using-volume", func(t *testing.T) {
 		res, err := reconciler.Reconcile(reconcileRequest())
@@ -221,10 +220,17 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
-	f.AddMockedSecret("db-credentials")
+	f.AddMockedUnstructuredSecret("db-credentials")
+
+	restMapper := testutils.BuildTestRESTMapper()
 
 	fakeClient := f.FakeClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	reconciler := &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  f.FakeDynClient(),
+		scheme:     f.S,
+	}
 
 	// Reconcile without deployment
 	res, err := reconciler.Reconcile(reconcileRequest())
@@ -235,15 +241,27 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, conditions.BindingReady, sbrOutput.Status.Conditions[0].Type)
-	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
-	require.Equal(t, 0, len(sbrOutput.Status.Applications))
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput.Status.Conditions,
+			BindingReady,
+			corev1.ConditionTrue,
+		),
+		"Ready condition should exist and true; existing conditions: %+v",
+		sbrOutput.Status.Conditions,
+	)
+	require.Len(t, sbrOutput.Status.Applications, 0)
 
 	// Reconcile with deployment
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 
 	fakeClient = f.FakeClient()
-	reconciler = &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	reconciler = &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  f.FakeDynClient(),
+		scheme:     f.S,
+	}
 	res, err = reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
@@ -254,7 +272,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, conditions.BindingReady, sbrOutput2.Status.Conditions[0].Type)
+	require.Equal(t, BindingReady, sbrOutput2.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
@@ -266,7 +284,13 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	s.Data["password"] = []byte("abc123")
 	require.NoError(t, fakeClient.Update(ctx, &s))
 
-	reconciler = &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	reconciler = &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  f.FakeDynClient(),
+		scheme:     f.S,
+	}
+
 	res, err = reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
@@ -277,7 +301,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	d = appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
-	require.Equal(t, conditions.BindingReady, sbrOutput3.Status.Conditions[0].Type)
+	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
@@ -301,11 +325,19 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef2, deploymentsGVR, matchLabels1)
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
-	f.AddMockedSecret("db-credentials")
+	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+
+	restMapper := testutils.BuildTestRESTMapper()
+
+	reconciler := &Reconciler{
+		client:     fakeClient,
+		dynClient:  fakeDynClient,
+		scheme:     f.S,
+		RestMapper: restMapper,
+	}
 
 	t.Run("test-reconciler-reconcile-with-conflicting-application-selector", func(t *testing.T) {
 
@@ -328,7 +360,7 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, conditions.BindingReady, sbrOutput.Status.Conditions[0].Type)
+		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -342,8 +374,15 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	f.AddMockedUnstructuredServiceBindingRequestWithoutApplication(reconcilerName, backingServiceResourceRef)
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 
+	restMapper := testutils.BuildTestRESTMapper()
+
 	fakeClient := f.FakeClient()
-	reconciler := &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	reconciler := &Reconciler{
+		RestMapper: restMapper,
+		client:     fakeClient,
+		dynClient:  f.FakeDynClient(),
+		scheme:     f.S,
+	}
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
@@ -353,7 +392,7 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, conditions.BindingReady, sbrOutput.Status.Conditions[0].Type)
+	require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 	// Currently the Conditions[0].Status would be true as application's absence won't cause error
 	// TODO New steps to conditions to be introduced - InjectionReady, CollectionReady
 	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)

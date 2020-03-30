@@ -65,7 +65,7 @@ var (
 		Path:        "dbConfigMap",
 		XDescriptors: []string{
 			"urn:alm:descriptor:io.kubernetes:ConfigMap",
-			"binding:env:object:configmap:user",
+			"binding:env:object:configmap:username",
 			"binding:env:object:configmap:password",
 		},
 	}
@@ -77,7 +77,7 @@ var (
 		Path:        "dbCredentials",
 		XDescriptors: []string{
 			"urn:alm:descriptor:io.kubernetes:Secret",
-			"binding:env:object:secret:user",
+			"binding:env:object:secret:username",
 			"binding:env:object:secret:password",
 		},
 	}
@@ -89,7 +89,7 @@ var (
 		Path:        "dbCredentials",
 		XDescriptors: []string{
 			"urn:alm:descriptor:io.kubernetes:Secret",
-			"binding:volumemount:secret:user",
+			"binding:volumemount:secret:username",
 			"binding:volumemount:secret:password",
 		},
 	}
@@ -159,6 +159,11 @@ func PostgresDatabaseCRMock(ns, name string) PostgresDatabase {
 			Username: "redhatdeveloper",
 		},
 	}
+}
+
+func UnstructuredSecretMock(ns, name string) (*unstructured.Unstructured, error) {
+	s := SecretMock(ns, name)
+	return converter.ToUnstructured(&s)
 }
 
 func UnstructuredPostgresDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
@@ -404,12 +409,7 @@ func MultiNamespaceServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar: []corev1.EnvVar{
-				{
-					Name:  "IMAGE_PATH",
-					Value: "spec.imagePath",
-				},
-			},
+			CustomEnvVar:    []corev1.EnvVar{},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 				ResourceRef:          applicationResourceRef,
@@ -443,12 +443,7 @@ func ServiceBindingRequestMock(
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar: []corev1.EnvVar{
-				{
-					Name:  "IMAGE_PATH",
-					Value: "spec.imagePath",
-				},
-			},
+			CustomEnvVar:    []corev1.EnvVar{},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 				ResourceRef:          applicationResourceRef,
