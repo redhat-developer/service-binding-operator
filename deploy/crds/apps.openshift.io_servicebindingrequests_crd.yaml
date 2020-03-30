@@ -314,6 +314,11 @@ spec:
             secret:
               description: Secret is the name of the intermediate secret
               type: string
+          required:
+          - applications
+          - bindingStatus
+          - conditions
+          - secret
           type: object
       type: object
   version: v1alpha1
