@@ -1,9 +1,8 @@
 #!/bin/bash
 
 function check_pod () {
-    local running_status=`kubectl get pods -n openshift-marketplace | grep "example-operators" | awk '{print $3}'`
-
     for i in  {1..120} ; do
+        local running_status=`kubectl get pods -n openshift-marketplace | grep "example-operators" | awk '{print $3}'`
         if [[ ${running_status} == "Running" ]] ; then
             return 0
         fi
