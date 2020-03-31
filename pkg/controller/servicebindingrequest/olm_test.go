@@ -5,10 +5,15 @@ import (
 	"strings"
 	"testing"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	k8stesting "k8s.io/client-go/testing"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -25,6 +30,35 @@ func assertGVKs(t *testing.T, gvks []schema.GroupVersionKind) {
 		require.NotEmpty(t, gvk.Version)
 		require.NotEmpty(t, gvk.Kind)
 	}
+}
+
+func TestOLMWithoutCSVCRD(t *testing.T) {
+	ns := "controller"
+	f := mocks.NewFake(t, ns)
+	client := f.FakeDynClient()
+	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
+
+	// the original FakeDynClient would not return error for unknown resource
+	// prepend our reactor to mock a not found error like a real API server
+	client.PrependReactor("*", "*", func(action k8stesting.Action) (bool, runtime.Object, error) {
+		if gvr.String() == action.GetResource().String() {
+			return true, nil, errors.NewNotFound(gvr.GroupResource(), "the server could not find the requested resource")
+		}
+		return false, nil, nil
+	})
+	olm := NewOLM(client, ns)
+
+	t.Run("listCSVs without CSV CRD installed", func(t *testing.T) {
+		resourceClient := client.Resource(gvr).Namespace(ns)
+		objs, err := resourceClient.List(metav1.ListOptions{})
+		require.Error(t, err)
+		require.True(t, errors.IsNotFound(err))
+		require.Nil(t, objs)
+
+		csvs, err := olm.listCSVs()
+		require.NoError(t, err)
+		require.Len(t, csvs, 0)
+	})
 }
 
 func TestOLMNew(t *testing.T) {

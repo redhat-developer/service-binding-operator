@@ -27,100 +27,8 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"./pkg/apis/apps/v1alpha1.ApplicationSelector":         schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref),
-		"./pkg/apis/apps/v1alpha1.BackingServiceSelector":      schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
-		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec":   schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref),
 		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
-	}
-}
-
-func schema_pkg_apis_apps_v1alpha1_ApplicationSelector(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ApplicationSelector defines the selector based on labels and GVR",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"labelSelector": {
-						SchemaProps: spec.SchemaProps{
-							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"),
-						},
-					},
-					"group": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"resource": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"resourceRef": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-				Required: []string{"group", "version", "resource"},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/apimachinery/pkg/apis/meta/v1.LabelSelector"},
-	}
-}
-
-func schema_pkg_apis_apps_v1alpha1_BackingServiceSelector(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "BackingServiceSelector defines the selector based on resource name, version, and resource kind",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"group": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"version": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"resourceRef": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"namespace": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-				},
-				Required: []string{"group", "version", "kind", "resourceRef"},
-			},
-		},
 	}
 }
 
@@ -165,106 +73,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 		},
 		Dependencies: []string{
 			"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"mountPathPrefix": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MountPathPrefix is the prefix for volume mount",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"envVarPrefix": {
-						SchemaProps: spec.SchemaProps{
-							Description: "EnvVarPrefix is the prefix for environment variables",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"customEnvVar": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Custom env variables",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/api/core/v1.EnvVar"),
-									},
-								},
-							},
-						},
-					},
-					"services": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Services are used to identify multiple backing services.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
-									},
-								},
-							},
-						},
-					},
-					"applications": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Applications are used to identify the application connecting to the backing service.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
-									},
-								},
-							},
-						},
-					},
-					"detectBindingResources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "DetectBindingResources is flag used to bind all non-bindable variables from different subresources owned by backing operator CR.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"backingServiceSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelector is used to identify the backing service operator. Deprecated. In the upcoming release, this field would be depcreated. It would be mandatory to set \"backingServiceSelectors\".",
-							Ref:         ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
-						},
-					},
-					"backingServiceSelectors": {
-						SchemaProps: spec.SchemaProps{
-							Description: "BackingServiceSelectors is used to identify multiple backing services. Deprecated. This would be made a required field after 'BackingServiceSelector' is removed.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("./pkg/apis/apps/v1alpha1.BackingServiceSelector"),
-									},
-								},
-							},
-						},
-					},
-					"applicationSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ApplicationSelector is used to identify the application connecting to the backing service operator. Deprecated.",
-							Ref:         ref("./pkg/apis/apps/v1alpha1.ApplicationSelector"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"./pkg/apis/apps/v1alpha1.ApplicationSelector", "./pkg/apis/apps/v1alpha1.BackingServiceSelector", "k8s.io/api/core/v1.EnvVar"},
 	}
 }
 
@@ -316,6 +124,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 						},
 					},
 				},
+				Required: []string{"bindingStatus", "conditions", "secret", "applications"},
 			},
 		},
 		Dependencies: []string{

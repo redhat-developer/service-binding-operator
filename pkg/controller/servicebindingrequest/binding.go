@@ -283,7 +283,7 @@ func (b *ServiceBinder) setApplicationObjects(
 		}
 		boundApps = append(boundApps, boundApp)
 	}
-	sbrStatus.ApplicationObjects = boundApps
+	sbrStatus.Applications = boundApps
 }
 
 // buildPlan creates a new plan.

@@ -6,7 +6,8 @@ metadata:
   namespace: openshift-operators
 spec:
   channel: alpha
-  installPlanApproval: Automatic
+  installPlanApproval: Manual
   name: service-binding-operator
   source: example-operators
   sourceNamespace: openshift-marketplace
+  startingCSV: REPLACE_CSV_VERSION

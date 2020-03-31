@@ -7,13 +7,20 @@ OPERATOR_SOURCE="./test/operator-hub/operator_source.yaml"
 SUBSCRIPTION="./test/operator-hub/subscription.yaml"
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}
 
+sed -i -e "s,REPLACE_CSV_VERSION,service-binding-operator.v${BUNDLE_VERSION},g" ${SUBSCRIPTION}
+
 kubectl apply -f ${OPERATOR_SOURCE}
 # Subscribing to the operator
 kubectl apply -f ${SUBSCRIPTION}
+./hack/check-operatorsource-pods.sh
 RUNNING_STATUS=`kubectl get pods -n openshift-marketplace | grep "example-operators" | awk '{print $3}'`
-if [ ${RUNNING_STATUS} = "Running" ] ; then
-	echo "Operator marketplace pod is running"
+if [ ${RUNNING_STATUS} != "Running" ] ; then
+	echo "Operator marketplace pod is not running"
 fi
+./hack/check-installplan.sh
+INSTALL_PLAN=`kubectl get subscriptions service-binding-operator -n openshift-operators -o jsonpath='{.status.installPlanRef.name}'`
+kubectl patch installplan ${INSTALL_PLAN} -n openshift-operators --type merge --patch '{"spec": {"approved": true}}'
+
 ./hack/check-crds.sh
 ./hack/check-csvs.sh
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}

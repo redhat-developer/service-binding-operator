@@ -32,12 +32,6 @@ func TestSecretNew(t *testing.T) {
 
 	s := NewSecret(f.FakeDynClient(), plan)
 
-	t.Run("customEnvParser", func(t *testing.T) {
-		customData, err := s.customEnvParser(data)
-		assert.NoError(t, err)
-		assert.NotNil(t, customData)
-	})
-
 	t.Run("createOrUpdate", func(t *testing.T) {
 		u, err := s.createOrUpdate(data)
 		assert.NoError(t, err)
