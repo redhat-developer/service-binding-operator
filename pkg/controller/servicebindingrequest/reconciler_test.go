@@ -94,7 +94,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 		require.NoError(t, err)
 
 		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
-		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
 			GroupVersionKind: v1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
@@ -105,7 +105,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 				Name: namespacedName.Name,
 			},
 		}
-		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
 }
 
@@ -222,7 +222,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
 		require.Equal(t, "Secret", sbrOutput.Status.BindingData.GroupVersionKind.Kind)
 
-		require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
 			GroupVersionKind: v1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
@@ -233,7 +233,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 				Name: namespacedName.Name,
 			},
 		}
-		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
 }
 
@@ -305,7 +305,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	require.Equal(t, "BindingFail", sbrOutput.Status.BindingStatus)
 	require.Equal(t, corev1.ConditionFalse, sbrOutput.Status.Conditions[0].Status)
-	require.Equal(t, 0, len(sbrOutput.Status.ApplicationObjects))
+	require.Equal(t, 0, len(sbrOutput.Status.Applications))
 
 	// Reconcile with deployment
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
@@ -325,7 +325,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.Equal(t, "BindingSuccess", sbrOutput2.Status.BindingStatus)
 	require.Equal(t, reconcilerName, sbrOutput2.Status.BindingData.Name)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
-	require.Equal(t, 1, len(sbrOutput2.Status.ApplicationObjects))
+	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 
 	// Update Credentials
 	s := corev1.Secret{}
@@ -349,7 +349,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.BindingData.Name)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
-	require.Equal(t, 1, len(sbrOutput3.Status.ApplicationObjects))
+	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
 }
 
 //TestReconcilerReconcileWithConflictingAppSelc tests when sbr has conflicting ApplicationSel such as MatchLabels=App1 and ResourceRef=App2 it should prioritise the ResourceRef
@@ -399,6 +399,6 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		require.Equal(t, BindingSuccess, sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
-		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
 }

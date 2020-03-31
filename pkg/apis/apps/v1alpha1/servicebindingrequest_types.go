@@ -10,12 +10,10 @@ import (
 // Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
-// +k8s:openapi-gen=true
 type ServiceBindingRequestSpec struct {
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags:
 	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
-
 	// MountPathPrefix is the prefix for volume mount
 	// +optional
 	MountPathPrefix string `json:"mountPathPrefix,omitempty"`
@@ -54,7 +52,7 @@ type ServiceBindingRequestSpec struct {
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
 	// +optional
-	DetectBindingResources bool `json:"detectBindingResources"`
+	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
 }
 
 // BindingReference defines the kubernetets object which holds
@@ -78,18 +76,17 @@ type BindingData struct {
 // +k8s:openapi-gen=true
 type ServiceBindingRequestStatus struct {
 	// BindingStatus is the status of the service binding request.
-	BindingStatus string `json:"bindingStatus,omitempty"`
+	BindingStatus string `json:"bindingStatus"`
 	// Conditions describes the state of the operator's reconciliation functionality.
-	Conditions []conditionsv1.Condition `json:"conditions,omitempty"`
+	Conditions []conditionsv1.Condition `json:"conditions"`
 	// BindingData represents the object where binding information is persisted.
 	// Either a Secret or a ConfigMap
-	BindingData BindingData `json:"bindingData,omitempty"`
+	BindingData BindingData `json:"bindingData"`
 	// ApplicationObjects contains all the application objects filtered by label
-	ApplicationObjects []BoundApplication `json:"applications,omitempty"`
+	Applications []BoundApplication `json:"applications"`
 }
 
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
-// +k8s:openapi-gen=true
 type BackingServiceSelector struct {
 	metav1.GroupVersionKind `json:",inline"`
 	ResourceRef             string `json:"resourceRef"`
@@ -100,12 +97,11 @@ type BackingServiceSelector struct {
 // BoundApplication defines the application workloads to which the binding secret has
 // injected.
 type BoundApplication struct {
-	metav1.GroupVersionKind `json:",inline"`
-	v1.LocalObjectReference `json:",inline"`
+	metav1.GroupVersionKind     `json:",inline"`
+	corev1.LocalObjectReference `json:",inline"`
 }
 
 // ApplicationSelector defines the selector based on labels and GVR
-// +k8s:openapi-gen=true
 type ApplicationSelector struct {
 	// +optional
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
@@ -118,8 +114,8 @@ type ApplicationSelector struct {
 // ServiceBindingRequest expresses intent to bind an operator-backed service with
 // an application workload.
 // +k8s:openapi-gen=true
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding Request"
 // +kubebuilder:subresource:status
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding Request"
 // +kubebuilder:resource:path=servicebindingrequests,shortName=sbr;sbrs
 type ServiceBindingRequest struct {
 	metav1.TypeMeta   `json:",inline"`

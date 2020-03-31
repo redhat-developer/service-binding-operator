@@ -42,7 +42,10 @@ func (o *OLM) listCSVs() ([]unstructured.Unstructured, error) {
 	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := o.client.Resource(gvr).Namespace(o.ns)
 	csvs, err := resourceClient.List(metav1.ListOptions{})
-	if err != nil {
+	if err != nil && errors.IsNotFound(err) {
+		log.Warning("ClusterServiceVersions CRD is not installed")
+		return nil, nil
+	} else if err != nil {
 		log.Error(err, "during listing CSV objects from cluster")
 		return nil, err
 	}
