@@ -164,7 +164,7 @@ func TestReconcilerReconcileUsingConfigMap(t *testing.T) {
 	require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
 	require.Equal(t, "ConfigMap", sbrOutput.Status.BindingData.GroupVersionKind.Kind)
 
-	require.Equal(t, 1, len(sbrOutput.Status.ApplicationObjects))
+	require.Equal(t, 1, len(sbrOutput.Status.Applications))
 	expectedStatus := v1alpha1.BoundApplication{
 		GroupVersionKind: v1.GroupVersionKind{
 			Group:   deploymentsGVR.Group,
@@ -175,7 +175,7 @@ func TestReconcilerReconcileUsingConfigMap(t *testing.T) {
 			Name: namespacedName.Name,
 		},
 	}
-	require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.ApplicationObjects[0]))
+	require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 }
 
 // TestReconcilerReconcileUsingSecret test the reconciliation process using a secret, expected to be
