@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -87,10 +87,12 @@ func TestConfigMapNew(t *testing.T) {
 
 	matchLabels := map[string]string{}
 	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", "", deploymentsGVR, matchLabels)
-	sbr.Spec.Binding = &v1alpha1.BindingReference{
-		ObjectType: metav1.GroupVersionKind{
-			Version: "v1",
-			Kind:    "ConfigMap",
+
+	versionOne := "v1"
+	sbr.Spec.Binding = &v1alpha1.BindingData{
+		TypedLocalObjectReference: v1.TypedLocalObjectReference{
+			APIGroup: &versionOne,
+			Kind:     "ConfigMap",
 		},
 	}
 

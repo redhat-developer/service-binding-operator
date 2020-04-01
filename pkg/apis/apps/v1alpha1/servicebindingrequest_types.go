@@ -25,7 +25,7 @@ type ServiceBindingRequestSpec struct {
 	// Binding is used to specify whether the binding object type
 	// is a Secret or a Configmap
 	// +optional
-	Binding *BindingReference `json:"binding,omitempty"`
+	Binding *BindingData `json:"binding,omitempty"`
 
 	// Custom env variables
 	// +optional
@@ -55,21 +55,12 @@ type ServiceBindingRequestSpec struct {
 	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
 }
 
-// BindingReference defines the kubernetets object which holds
-// the binding data
-type BindingReference struct {
-	ObjectType metav1.GroupVersionKind `json:"objectType,omitempty"`
-}
-
 // BindingData represents the object where binding information is persisted.
 // Either a Secret or a ConfigMap
 type BindingData struct {
 	// Contains the details of the kubernetes object type containing
 	// the persisted data.
-	metav1.GroupVersionKind `json:",inline"`
-
-	// Name of the secret/configmap containing the persisted binding data.
-	v1.LocalObjectReference `json:",inline"`
+	v1.TypedLocalObjectReference `json:",inline"`
 }
 
 // ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest

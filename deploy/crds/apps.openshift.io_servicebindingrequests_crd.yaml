@@ -149,22 +149,20 @@ spec:
               description: Binding is used to specify whether the binding object type
                 is a Secret or a Configmap
               properties:
-                objectType:
-                  description: GroupVersionKind unambiguously identifies a kind.  It
-                    doesn't anonymously include GroupVersion to avoid automatic coersion.  It
-                    doesn't use a GroupVersion to avoid custom marshalling
-                  properties:
-                    group:
-                      type: string
-                    kind:
-                      type: string
-                    version:
-                      type: string
-                  required:
-                  - group
-                  - kind
-                  - version
-                  type: object
+                apiGroup:
+                  description: APIGroup is the group for the resource being referenced.
+                    If APIGroup is not specified, the specified Kind must be in the
+                    core API group. For any other third-party types, APIGroup is required.
+                  type: string
+                kind:
+                  description: Kind is the type of resource being referenced
+                  type: string
+                name:
+                  description: Name is the name of resource being referenced
+                  type: string
+              required:
+              - kind
+              - name
               type: object
             customEnvVar:
               description: Custom env variables
@@ -308,20 +306,20 @@ spec:
               description: BindingData represents the object where binding information
                 is persisted. Either a Secret or a ConfigMap
               properties:
-                group:
+                apiGroup:
+                  description: APIGroup is the group for the resource being referenced.
+                    If APIGroup is not specified, the specified Kind must be in the
+                    core API group. For any other third-party types, APIGroup is required.
                   type: string
                 kind:
+                  description: Kind is the type of resource being referenced
                   type: string
                 name:
-                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-                    TODO: Add other useful fields. apiVersion, kind, uid?'
-                  type: string
-                version:
+                  description: Name is the name of resource being referenced
                   type: string
               required:
-              - group
               - kind
-              - version
+              - name
               type: object
             bindingStatus:
               description: BindingStatus is the status of the service binding request.

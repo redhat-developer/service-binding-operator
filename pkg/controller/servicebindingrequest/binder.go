@@ -309,7 +309,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, bindData string) 
 	if b.sbr.Spec.Binding == nil {
 		return envList
 	}
-	dataType := b.sbr.Spec.Binding.ObjectType.Kind
+	dataType := b.sbr.Spec.Binding.Kind
 
 	for _, env := range envList {
 		if dataType == ConfigMapKind {

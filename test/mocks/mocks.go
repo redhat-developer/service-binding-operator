@@ -12,6 +12,7 @@ import (
 	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -436,6 +437,7 @@ func ServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBindingRequest {
+	versionOne := "v1"
 	sbr := &v1alpha1.ServiceBindingRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -449,10 +451,10 @@ func ServiceBindingRequestMock(
 					Value: "spec.imagePath",
 				},
 			},
-			Binding: &v1alpha1.BindingReference{
-				ObjectType: metav1.GroupVersionKind{
-					Version: "v1",
-					Kind:    "Secret",
+			Binding: &v1alpha1.BindingData{
+				TypedLocalObjectReference: v1.TypedLocalObjectReference{
+					APIGroup: &versionOne,
+					Kind:     "Secret",
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{
