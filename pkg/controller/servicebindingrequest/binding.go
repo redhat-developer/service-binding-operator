@@ -3,10 +3,12 @@ package servicebindingrequest
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -226,14 +228,12 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
+	bindingDataAPIGroup := fmt.Sprintf("%s/%s", bindingData.GroupVersionKind().Group, bindingData.GroupVersionKind().Version)
 	sbrStatus.BindingData = v1alpha1.BindingData{
-		GroupVersionKind: metav1.GroupVersionKind{
-			Group:   bindingData.GroupVersionKind().Group,
-			Version: bindingData.GroupVersionKind().Version,
-			Kind:    bindingData.GroupVersionKind().Kind,
-		},
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: bindingData.GetName(),
+		TypedLocalObjectReference: v1.TypedLocalObjectReference{
+			APIGroup: &bindingDataAPIGroup,
+			Kind:     bindingData.GetKind(),
+			Name:     bindingData.GetName(),
 		},
 	}
 

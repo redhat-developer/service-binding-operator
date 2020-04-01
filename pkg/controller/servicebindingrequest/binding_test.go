@@ -11,6 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -230,6 +231,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockedSecret("db2")
 
+	versionOne := "v1"
 	// create the ServiceBindingRequest
 	sbrSingleService := &v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -240,11 +242,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "single-sbr",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			Binding: &v1alpha1.BindingReference{
-				ObjectType: metav1.GroupVersionKind{
-					Group:   "",
-					Version: "v1",
-					Kind:    ConfigMapKind,
+			Binding: &v1alpha1.BindingData{
+				TypedLocalObjectReference: v1.TypedLocalObjectReference{
+					APIGroup: &versionOne,
+					Kind:     ConfigMapKind,
 				},
 			},
 			ApplicationSelector: v1alpha1.ApplicationSelector{

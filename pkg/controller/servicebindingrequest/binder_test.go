@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
@@ -175,10 +175,11 @@ func TestBinderConfigMap(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
-	sbr.Spec.Binding = &v1alpha1.BindingReference{
-		ObjectType: metav1.GroupVersionKind{
-			Version: "v1",
-			Kind:    "ConfigMap",
+	versionOne := "v1"
+	sbr.Spec.Binding = &v1alpha1.BindingData{
+		TypedLocalObjectReference: v1.TypedLocalObjectReference{
+			APIGroup: &versionOne,
+			Kind:     "ConfigMap",
 		},
 	}
 

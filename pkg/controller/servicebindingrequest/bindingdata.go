@@ -43,8 +43,8 @@ func (s *BindingDataHandler) createOrUpdate(payload map[string][]byte) (*unstruc
 	// Only if otherwise specified as configmap, we'll use a binding
 	// configmaps
 	if s.plan.SBR.Spec.Binding != nil &&
-		s.plan.SBR.Spec.Binding.ObjectType.Kind == ConfigMapKind {
-		gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.Binding.ObjectType.Kind)
+		s.plan.SBR.Spec.Binding.Kind == ConfigMapKind {
+		gvk = corev1.SchemeGroupVersion.WithKind(s.plan.SBR.Spec.Binding.Kind)
 		resource = ConfigMapResource
 	}
 
@@ -100,7 +100,7 @@ func (s *BindingDataHandler) Commit(payload map[string][]byte) (*unstructured.Un
 func (s *BindingDataHandler) Get() (*unstructured.Unstructured, bool, error) {
 	resource := SecretResource
 	if s.plan.SBR.Spec.Binding != nil {
-		if s.plan.SBR.Spec.Binding.ObjectType.Kind == ConfigMapKind {
+		if s.plan.SBR.Spec.Binding.Kind == ConfigMapKind {
 			resource = ConfigMapResource
 		}
 	}
@@ -117,7 +117,7 @@ func (s *BindingDataHandler) Get() (*unstructured.Unstructured, bool, error) {
 func (s *BindingDataHandler) Delete() error {
 	resource := SecretResource
 	if s.plan.SBR.Spec.Binding != nil {
-		if s.plan.SBR.Spec.Binding.ObjectType.Kind == ConfigMapKind {
+		if s.plan.SBR.Spec.Binding.Kind == ConfigMapKind {
 			resource = ConfigMapResource
 		}
 	}

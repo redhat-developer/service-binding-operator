@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -123,11 +122,12 @@ func TestReconcilerReconcileUsingConfigMap(t *testing.T) {
 
 	f := mocks.NewFake(t, reconcilerNs)
 	sbr := mocks.ServiceBindingRequestMock(reconcilerNs, reconcilerName, &backingServiceNs, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
-	sbr.Spec.Binding = &v1alpha1.BindingReference{
-		ObjectType: metav1.GroupVersionKind{
-			Group:   "",
-			Version: "v1",
-			Kind:    "ConfigMap",
+
+	versionOne := "v1"
+	sbr.Spec.Binding = &v1alpha1.BindingData{
+		TypedLocalObjectReference: corev1.TypedLocalObjectReference{
+			APIGroup: &versionOne,
+			Kind:     "ConfigMap",
 		},
 	}
 	f.AddMockedServiceBindingRequestRef(sbr)
@@ -162,7 +162,7 @@ func TestReconcilerReconcileUsingConfigMap(t *testing.T) {
 
 	require.Equal(t, "BindingSuccess", sbrOutput.Status.BindingStatus)
 	require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
-	require.Equal(t, "ConfigMap", sbrOutput.Status.BindingData.GroupVersionKind.Kind)
+	require.Equal(t, "ConfigMap", sbrOutput.Status.BindingData.Kind)
 
 	require.Equal(t, 1, len(sbrOutput.Status.Applications))
 	expectedStatus := v1alpha1.BoundApplication{
@@ -220,7 +220,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		require.Equal(t, "BindingSuccess", sbrOutput.Status.BindingStatus)
 		require.Equal(t, reconcilerName, sbrOutput.Status.BindingData.Name)
-		require.Equal(t, "Secret", sbrOutput.Status.BindingData.GroupVersionKind.Kind)
+		require.Equal(t, "Secret", sbrOutput.Status.BindingData.Kind)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
