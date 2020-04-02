@@ -66,6 +66,7 @@ type BackingServiceSelector struct {
 	metav1.GroupVersionKind `json:",inline"`
 	ResourceRef             string `json:"resourceRef"`
 	// +optional
+	Id        string  `json:"id,omitempty"`
 	Namespace *string `json:"namespace,omitempty"`
 }
 

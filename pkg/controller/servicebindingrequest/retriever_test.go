@@ -16,6 +16,8 @@ func TestRetriever(t *testing.T) {
 	ns := "testing"
 	backingServiceNs := "backing-servicec-ns"
 	crName := "db-testing"
+	crId1 := "testingCrId1"
+	crId2 := "testingCrId2"
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
@@ -35,10 +37,12 @@ func TestRetriever(t *testing.T) {
 			{
 				CRDDescription: &crdDescription,
 				CR:             cr,
+				Id:             crId1,
 			},
 			{
 				CRDDescription: &crdDescription,
 				CR:             crInSameNamespace,
+				Id:             crId2,
 			},
 		},
 	}
@@ -49,14 +53,14 @@ func TestRetriever(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("getCRKey", func(t *testing.T) {
-		imageName, _, err := retriever.getCRKey(cr, "spec", "imageName")
+		imageName, _, err := retriever.getCRKey(crId1, cr, "spec", "imageName")
 		require.NoError(t, err)
 		require.Equal(t, "postgres", imageName)
 	})
 
 	t.Run("read", func(t *testing.T) {
 		// reading from secret, from status attribute
-		err := retriever.read(cr, "status", "dbCredentials", []string{
+		err := retriever.read(crId1, cr, "status", "dbCredentials", []string{
 			"binding:env:object:secret:user",
 			"binding:env:object:secret:password",
 		})
@@ -67,7 +71,7 @@ func TestRetriever(t *testing.T) {
 		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
 
 		// reading from spec attribute
-		err = retriever.read(cr, "spec", "image", []string{
+		err = retriever.read(crId1, cr, "spec", "image", []string{
 			"binding:env:attribute",
 		})
 		require.NoError(t, err)
@@ -85,7 +89,7 @@ func TestRetriever(t *testing.T) {
 	t.Run("readSecret", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret(cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readSecret(crId1, cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		require.NoError(t, err)
 
 		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
@@ -103,7 +107,7 @@ func TestRetriever(t *testing.T) {
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret(cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readSecret(crId1, cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		require.NoError(t, err)
 
 		require.Contains(t, retriever.data, "DATABASE_SECRET_USER")
@@ -117,6 +121,7 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 
 	ns := "testing"
 	crName := "db-testing"
+	crId := "testingCrId1"
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
@@ -133,6 +138,7 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 			{
 				CRDDescription: &crdDescription,
 				CR:             cr,
+				Id:             crId,
 			},
 		},
 	}
@@ -143,7 +149,7 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 	require.NotNil(t, retriever)
 
 	t.Run("Second level", func(t *testing.T) {
-		imageName, _, err := retriever.getCRKey(cr, "spec", "image.name")
+		imageName, _, err := retriever.getCRKey(crId, cr, "spec", "image.name")
 		require.NoError(t, err)
 		require.Equal(t, "postgres", imageName)
 	})
@@ -151,12 +157,12 @@ func TestRetrieverWithNestedCRKey(t *testing.T) {
 	t.Run("Second level error", func(t *testing.T) {
 		// FIXME: if attribute isn't available in CR we would not throw any error.
 		t.Skip()
-		_, _, err := retriever.getCRKey(cr, "spec", "image..name")
+		_, _, err := retriever.getCRKey(crId, cr, "spec", "image..name")
 		require.NotNil(t, err)
 	})
 
 	t.Run("Third level", func(t *testing.T) {
-		something, _, err := retriever.getCRKey(cr, "spec", "image.third.something")
+		something, _, err := retriever.getCRKey(crId, cr, "spec", "image.third.something")
 		require.NoError(t, err)
 		require.Equal(t, "somevalue", something)
 	})
@@ -168,6 +174,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 
 	ns := "testing"
 	crName := "db-testing"
+	crId := "testingCrId1"
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
@@ -186,6 +193,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 			{
 				CRDDescription: &crdDescription,
 				CR:             cr,
+				Id:             crId,
 			},
 		},
 	}
@@ -197,7 +205,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 
 	t.Run("read", func(t *testing.T) {
 		// reading from configMap, from status attribute
-		err = retriever.read(cr, "spec", "dbConfigMap", []string{
+		err = retriever.read(crId, cr, "spec", "dbConfigMap", []string{
 			"binding:env:object:configmap:user",
 			"binding:env:object:configmap:password",
 		})
@@ -216,7 +224,7 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap(cr, crName, []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readConfigMap(crId, cr, crName, []string{"user", "password"}, "spec", "dbConfigMap")
 		require.NoError(t, err)
 
 		require.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))

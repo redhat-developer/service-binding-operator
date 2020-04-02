@@ -62,25 +62,25 @@ func (r *Retriever) storeInto(cr *unstructured.Unstructured, key string, value [
 	r.store(cr, key, value)
 }
 
-func (r *Retriever) copyFrom(u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
-	if err := r.read(u, path, fieldPath, descriptors); err != nil {
+func (r *Retriever) copyFrom(id string, u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
+	if err := r.read(id, u, path, fieldPath, descriptors); err != nil {
 		return err
 	}
 	return nil
 }
 
 // ReadCRDDescriptionData reads data related to given crdDescription
-func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
+func (r *Retriever) ReadCRDDescriptionData(id string, u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range crdDescription.SpecDescriptors {
-		if err := r.copyFrom(u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+		if err := r.copyFrom(id, u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}
 
 	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range crdDescription.StatusDescriptors {
-		if err := r.copyFrom(u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+		if err := r.copyFrom(id, u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}

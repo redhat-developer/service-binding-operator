@@ -11,11 +11,11 @@ import (
 // CustomEnvParser is responsible to interpolate a given EnvVar containing templates.
 type CustomEnvParser struct {
 	EnvMap []corev1.EnvVar
-	Cache  map[string]interface{}
+	Cache  map[string]map[string]interface{}
 }
 
 // NewCustomEnvParser returns a new CustomEnvParser.
-func NewCustomEnvParser(envMap []corev1.EnvVar, cache map[string]interface{}) *CustomEnvParser {
+func NewCustomEnvParser(envMap []corev1.EnvVar, cache map[string]map[string]interface{}) *CustomEnvParser {
 	return &CustomEnvParser{
 		EnvMap: envMap,
 		Cache:  cache,

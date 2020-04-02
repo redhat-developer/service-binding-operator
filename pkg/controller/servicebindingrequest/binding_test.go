@@ -229,7 +229,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		require.NoError(t, err)
 	}
 	f.AddMockedSecret("db2")
-
+	testCrId := "testCrId"
 	// create the ServiceBindingRequest
 	sbrSingleService := &v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -259,6 +259,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
 					},
 					ResourceRef: db1.GetName(),
+					Id:          testCrId,
 				},
 			},
 		},
@@ -293,16 +294,17 @@ func TestServiceBinder_Bind(t *testing.T) {
 						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
 					},
 					ResourceRef: db1.GetName(),
+					Id:          testCrId,
 				},
 			},
 			CustomEnvVar: []corev1.EnvVar{
 				{
 					Name:  "MY_DB_NAME",
-					Value: `{{ .status.dbName }}`,
+					Value: `{{ .testCrId.status.dbName }}`,
 				},
 				{
 					Name:  "MY_DB_CONNECTIONIP",
-					Value: `{{ .status.dbConnectionIP }}`,
+					Value: `{{ .testCrId.status.dbConnectionIP }}`,
 				},
 			},
 		},

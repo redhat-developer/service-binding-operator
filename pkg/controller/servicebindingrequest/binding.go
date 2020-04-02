@@ -330,7 +330,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the CRDDescription found by the planner
 	for _, r := range plan.GetRelatedResources() {
-		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
+		err = retriever.ReadCRDDescriptionData(r.Id, r.CR, r.CRDDescription)
 		if err != nil {
 			return nil, err
 		}

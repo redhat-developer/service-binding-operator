@@ -114,6 +114,8 @@ spec:
                   type: string
                 version:
                   type: string
+                id:
+                  type: string
               required:
               - group
               - kind
@@ -138,11 +140,14 @@ spec:
                     type: string
                   version:
                     type: string
+                  id:
+                    type: string
                 required:
                 - group
                 - kind
                 - resourceRef
                 - version
+                - id
                 type: object
               type: array
             customEnvVar:

@@ -8,14 +8,16 @@ import (
 )
 
 func TestCustomEnvPath_Parse(t *testing.T) {
-	cache := map[string]interface{}{
-		"spec": map[string]interface{}{
-			"dbName": "database-name",
-		},
-		"status": map[string]interface{}{
-			"creds": map[string]interface{}{
-				"user": "database-user",
-				"pass": "database-pass",
+	cache := map[string]map[string]interface{}{
+		"testCrId": map[string]interface{}{
+			"spec": map[string]interface{}{
+				"dbName": "database-name",
+			},
+			"status": map[string]interface{}{
+				"creds": map[string]interface{}{
+					"user": "database-user",
+					"pass": "database-pass",
+				},
 			},
 		},
 	}
@@ -23,11 +25,11 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 	envMap := []corev1.EnvVar{
 		corev1.EnvVar{
 			Name:  "JDBC_CONNECTION_STRING",
-			Value: `{{ .spec.dbName }}:{{ .status.creds.user }}@{{ .status.creds.pass }}`,
+			Value: `{{ .testCrId.spec.dbName }}:{{ .testCrId.status.creds.user }}@{{ .testCrId.status.creds.pass }}`,
 		},
 		corev1.EnvVar{
 			Name:  "ANOTHER_STRING",
-			Value: `{{ .spec.dbName }}_{{ .status.creds.user }}`,
+			Value: `{{ .testCrId.spec.dbName }}_{{ .testCrId.status.creds.user }}`,
 		},
 	}
 	customEnvPath := NewCustomEnvParser(envMap, cache)
@@ -43,11 +45,13 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 }
 
 func TestCustomEnvPath_Parse_exampleCase(t *testing.T) {
-	cache := map[string]interface{}{
-		"status": map[string]interface{}{
-			"dbConfigMap": map[string]interface{}{
-				"db.user":     "database-user",
-				"db.password": "database-pass",
+	cache := map[string]map[string]interface{}{
+		"testCrId": map[string]interface{}{
+			"status": map[string]interface{}{
+				"dbConfigMap": map[string]interface{}{
+					"db.user":     "database-user",
+					"db.password": "database-pass",
+				},
 			},
 		},
 	}
@@ -55,11 +59,11 @@ func TestCustomEnvPath_Parse_exampleCase(t *testing.T) {
 	envMap := []corev1.EnvVar{
 		corev1.EnvVar{
 			Name:  "JDBC_USERNAME",
-			Value: `{{ index .status.dbConfigMap "db.user" }}`,
+			Value: `{{ index .testCrId.status.dbConfigMap "db.user" }}`,
 		},
 		corev1.EnvVar{
 			Name:  "JDBC_PASSWORD",
-			Value: `{{ index .status.dbConfigMap "db.password" }}`,
+			Value: `{{ index .testCrId.status.dbConfigMap "db.password" }}`,
 		},
 	}
 
@@ -76,14 +80,16 @@ func TestCustomEnvPath_Parse_exampleCase(t *testing.T) {
 }
 
 func TestCustomEnvPath_Parse_ToJson(t *testing.T) {
-	cache := map[string]interface{}{
-		"spec": map[string]interface{}{
-			"dbName": "database-name",
-		},
-		"status": map[string]interface{}{
-			"creds": map[string]interface{}{
-				"user": "database-user",
-				"pass": "database-pass",
+	cache := map[string]map[string]interface{}{
+		"testCrId": map[string]interface{}{
+			"spec": map[string]interface{}{
+				"dbName": "database-name",
+			},
+			"status": map[string]interface{}{
+				"creds": map[string]interface{}{
+					"user": "database-user",
+					"pass": "database-pass",
+				},
 			},
 		},
 	}
@@ -95,19 +101,19 @@ func TestCustomEnvPath_Parse_ToJson(t *testing.T) {
 		},
 		corev1.EnvVar{
 			Name:  "spec",
-			Value: `{{ json .spec }}`,
+			Value: `{{ json .testCrId.spec }}`,
 		},
 		corev1.EnvVar{
 			Name:  "status",
-			Value: `{{ json .status }}`,
+			Value: `{{ json .testCrId.status }}`,
 		},
 		corev1.EnvVar{
 			Name:  "creds",
-			Value: `{{ json .status.creds }}`,
+			Value: `{{ json .testCrId.status.creds }}`,
 		},
 		corev1.EnvVar{
 			Name:  "dbName",
-			Value: `{{ json .spec.dbName }}`,
+			Value: `{{ json .testCrId.spec.dbName }}`,
 		},
 		corev1.EnvVar{
 			Name:  "notExist",
@@ -121,7 +127,7 @@ func TestCustomEnvPath_Parse_ToJson(t *testing.T) {
 		t.Fail()
 	}
 	str := values["root"]
-	require.Equal(t, `{"spec":{"dbName":"database-name"},"status":{"creds":{"pass":"database-pass","user":"database-user"}}}`, str, "root path json string is not matching")
+	require.Equal(t, `{"testCrId":{"spec":{"dbName":"database-name"},"status":{"creds":{"pass":"database-pass","user":"database-user"}}}}`, str, "root path json string is not matching")
 	str2 := values["spec"]
 	require.Equal(t, `{"dbName":"database-name"}`, str2, "spec json string is not matching")
 	str3 := values["status"]

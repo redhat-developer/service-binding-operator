@@ -149,6 +149,7 @@ func (p *Planner) Plan() (*Plan, error) {
 		r := &RelatedResource{
 			CRDDescription: crdDescription,
 			CR:             cr,
+			Id:             s.Id,
 		}
 		relatedResources = append(relatedResources, r)
 		p.logger.Debug("Resolved related resource", "RelatedResource", r)
