@@ -116,6 +116,8 @@ spec:
                   type: string
                 id:
                   type: string
+                envVarPrefix:
+                  type: string
               required:
               - group
               - kind
@@ -141,6 +143,8 @@ spec:
                   version:
                     type: string
                   id:
+                    type: string
+                  envVarPrefix:
                     type: string
                 required:
                 - group

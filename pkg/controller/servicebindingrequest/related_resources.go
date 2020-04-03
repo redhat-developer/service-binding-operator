@@ -10,6 +10,7 @@ type RelatedResource struct {
 	CRDDescription *v1alpha1.CRDDescription
 	CR             *unstructured.Unstructured
 	Id             string
+	EnvVarPrefix   string
 }
 
 // RelatedResources contains a collection of SBR related resources.
