@@ -66,6 +66,22 @@ type BackingServiceSelector struct {
 	metav1.GroupVersionKind `json:",inline"`
 	ResourceRef             string `json:"resourceRef"`
 	// +optional
+	// The id is provided by user to identify the backing service in the custom env var tempalte.
+	// Below is an example:
+	// backingServiceSelectors:
+	//   - group: postgres.dev
+	// 	   kind: Service
+	// 	   resourceRef: user-db
+	// 	   version: v1beta1
+	// 	   id: X
+	//   - group: postgres.dev
+	// 	   kind: Credentials
+	// 	   resourceRef: admin-creds
+	// 	   version: v1beta1
+	// 	   id: Y
+	// customEnvVar:
+	// 	- name: CONNECTION_URL
+	// 	value: {{  X.status.username }} / {{ Y.status.url }}
 	Id        string  `json:"id,omitempty"`
 	Namespace *string `json:"namespace,omitempty"`
 }
