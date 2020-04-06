@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"strings"
 	"time"
@@ -17,18 +18,18 @@ import (
 const (
 	//Timeout defines the amount of time we should spend waiting for the resource when condition is true
 	Timeout       = 10 * time.Minute
-	retryInterval = 1 * time.Second
-	retryTimeout  = 30 * time.Second
+	retryInterval = 2 * time.Second
+	retryTimeout  = 60 * time.Second
 )
 
 var (
-	workingDirPath, _                = os.Getwd()
-	workingDirOp                     = icmd.Dir(workingDirPath)
-	kubeConfig                       = os.Getenv("KUBECONFIG")
-	environment                      = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
-	checkFlag                        = false
-	cntr                             int
-	ipName, dbOprRes, output, subRes string
+	workingDirPath, _                                             = os.Getwd()
+	workingDirOp                                                  = icmd.Dir(workingDirPath)
+	kubeConfig                                                    = os.Getenv("KUBECONFIG")
+	environment                                                   = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
+	checkFlag                                                     = false
+	cntr                                                          int
+	ipName, dbOprRes, output, subRes, pjtRes, ipStatus, podStatus string
 )
 
 //Run runs a command with timeout
@@ -38,7 +39,7 @@ func Run(cmd ...string) *icmd.Result {
 		Timeout: Timeout,
 		Env:     environment,
 	}
-
+	fmt.Printf("=> Command to execute: %v \n", currentCmd)
 	if workingDirOp != nil {
 		return icmd.RunCmd(currentCmd, workingDirOp)
 	}
@@ -65,82 +66,119 @@ func GetExamplesDir() string {
 }
 
 //GetPodNameFromLst returns specific name of the pod from the pod list
-func GetPodNameFromLst(pods, oprName string) string {
+func GetPodNameFromLst(pods, srchItem string) (bool, string) {
 	item := ""
+	checkFlag := false
 	lstArr := strings.Split(pods, " ")
 	for _, item := range lstArr {
-		if strings.Contains(item, oprName) {
+		if strings.Contains(item, srchItem) {
+			if strings.Contains(srchItem, "-build") {
+				fmt.Printf("item matched as %s \n", item)
+				checkFlag = true
+				return checkFlag, item
+			}
+			return true, item
+		}
+		checkFlag = false
+	}
+	return checkFlag, item
+}
+
+//GetOutput returns the output using Stdout()
+func GetOutput(res *icmd.Result, cmd string) string {
+	exitCode := res.ExitCode
+	if exitCode == 0 || exitCode == 127 {
+		output = res.Stdout()
+	} else {
+		output = res.Stderr()
+	}
+	//fmt.Printf("Executed CMD: %s \n", cmd)
+	fmt.Printf("OUTPUT: %s \n", output)
+	return output
+}
+
+//GetPjtCreationRes returns specific name of the pod from the pod list
+func GetPjtCreationRes(pjtRes string, pjt string) string {
+	item := ""
+	lstArr := strings.Split(pjtRes, "\n")
+	for _, item := range lstArr {
+		if strings.Contains(item, pjt) {
 			fmt.Printf("item matched as %s \n", item)
 			return item
-			//break
 		}
 	}
 	return item
 }
 
-//GetOutput returns the output using Stdout()
-func GetOutput(res *icmd.Result, cmd string) string {
-
-	exitCode := res.ExitCode
-	if exitCode == 0 {
-		output = res.Stdout()
-	} else {
-		output = res.Stderr()
-	}
-	fmt.Printf("Executed CMD: %s \n", cmd)
-	fmt.Printf("OUTPUT: %s \n", output)
-
-	return output
-
-}
-
-//WaitForIPNameAvailability returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
-func WaitForIPNameAvailability(oprName string, ns string) string {
+//GetCmdResult retrieves the info about build
+func GetCmdResult(status string, item ...string) string {
+	var res string
 	cntr = 0
 	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
-		checkFlag, ipName = checkIPNameAvailability(oprName, ns)
-		if ipName != "" {
+		checkFlag, res = execCmd(item...)
+		if checkFlag {
+			if status != "" {
+				if strings.Contains(res, status) {
+					return true, nil
+				}
+				return false, nil
+			}
 			return true, nil
 		}
 		return false, nil
 	})
-
-	return ipName
+	return res
 }
 
-//WaitForDbOprAvailability returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
-func WaitForDbOprAvailability(manifest string) string {
-	cntr = 0
-	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
-		checkFlag, dbOprRes = checkdbOprAvailability(manifest)
-		if dbOprRes != "" {
-			return true, nil
-		}
-		return false, nil
-	})
-
-	return dbOprRes
-}
-
-//checkIPNameAvailability returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
-func checkIPNameAvailability(oprName string, ns string) (bool, string) {
+//execCmd returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
+func execCmd(item ...string) (bool, string) {
 	cntr++
-	fmt.Printf("Get install plan name from the cluster...iteration %v \n", cntr)
-	ipName := GetOutput(Run("oc", "get", "subscription", oprName, "-n", ns, "-o", `jsonpath={.status.installplan.name}`), "oc get subscription service-binding-operator -n openshift-operators -o jsonpath='{.status.installplan.name}'")
-	if ipName != "" {
+	var cmdRes string
+	checkFlag := false
+	fmt.Printf("Get result of the command...iteration %v \n", cntr)
+	//fmt.Printf("Command executed: %v \n", item)
+	cmdRes = GetOutput(Run(item...), "")
+	if cmdRes != "" {
 		checkFlag = true
 	}
-	return checkFlag, ipName
+	return checkFlag, cmdRes
 }
 
-//checkIPNameAvailability returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
-func checkdbOprAvailability(manifest string) (bool, string) {
+//GetExecCmdResult retrieves the info about build
+func GetExecCmdResult(status string, item ...string) string {
+	var res string
+	cntr = 0
+	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+		checkFlag, res = executeExecCmd(item...)
+		if checkFlag {
+			if status != "" {
+				if strings.Contains(res, status) {
+					return true, nil
+				}
+				return false, nil
+			}
+			return true, nil
+		}
+		return false, nil
+	})
+	return res
+}
 
+//executeExecCmd returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
+func executeExecCmd(item ...string) (bool, string) {
 	cntr++
-	fmt.Printf("Get db operator subscription from the cluster...iteration %v \n", cntr)
-	dbOprRes := GetOutput(Run("make", "install-backing-db-operator-subscription"), "make install-backing-db-operator-subscription")
-	if dbOprRes != "" && strings.Contains(dbOprRes, manifest) {
-		checkFlag = true		
+	var cmdRes string
+	checkFlag := false
+	fmt.Printf("Get result of the command...iteration %v \n", cntr)
+	//fmt.Printf("Command executed: %v \n", item)
+	out, err := exec.Command("curlCMD", item...).Output()
+	if err != nil {
+		fmt.Println("Error!")
+		log.Fatal(err)
 	}
-	return checkFlag, dbOprRes
+
+	if string(out) != "" {
+		checkFlag = true
+	}
+	return checkFlag, cmdRes
 }

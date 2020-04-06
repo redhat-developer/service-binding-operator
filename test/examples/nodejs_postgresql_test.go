@@ -14,7 +14,10 @@ var (
 	exampleName = "nodejs_postgresql"
 	ns          = "openshift-operators"
 	oprName     = "service-binding-operator"
-	expStatus   = "Complete"
+	pjt         = "service-binding-demo"
+
+	nodeJsApp = "https://github.com/pmacik/nodejs-rest-http-crud"
+	appName   = "nodejs-rest-http-crud"
 
 	ipName, ipStatus, podName, podStatus, dbOprRes string
 	clusterAvailable                               = false
@@ -57,69 +60,225 @@ func TestMakeInstallServiceBindingOperator(t *testing.T) {
 	require.Containsf(t, []string{"created", "unchanged", "configured"}, resExp, "list does not contain %s while installing service binding operator", resExp)
 
 	// with openshift-operators namespace, capture the install plan
-	ipName = util.WaitForIPNameAvailability(oprName, ns)
+	t.Log(" Fetching the status of install plan name ")
+	ipName = util.GetCmdResult("", "oc", "get", "subscription", oprName, "-n", ns, "-o", `jsonpath={.status.installplan.name}`)
 	t.Logf("-> Install plan-ip name is %s \n", ipName)
 
-	//// with openshift-operators namespace, capture the install plan status
-	t.Log(" Fetching the status of install plan ")
-	ipStatus := util.GetOutput(util.Run("oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`), "oc get ip -n openshift-operators <<Name>> -o jsonpath='{.status.phase}")
-	require.Equal(t, ipStatus, expStatus, "'install plan status' is %d \n", ipStatus)
+	//// with openshift-operators namespace, capture the install plan status of db-operators
+	t.Log(" Fetching the status of install plan status ")
+	ipStatus = util.GetCmdResult("Complete", "oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`)
+	t.Logf("-> Install plan-ip name is %s \n", ipStatus)
 
 	//oc get pods -n openshift-operator
 	t.Log("Fetching the pod name of the running pod")
-	pods := util.GetOutput(util.Run("oc", "get", "pods", "-n", ns, "-o", "jsonpath={.items[*].metadata.name}"), "oc get pods -n openshift-operators -o jsonpath={.items[*]}.metadata.name")
+	pods := util.GetCmdResult("", "oc", "get", "pods", "-n", ns, "-o", `jsonpath={.items[*].metadata.name}`)
 	require.NotEmptyf(t, pods, "", "There are number of pods listed in a cluster %s \n", pods)
 
-	podName := util.GetPodNameFromLst(pods, oprName)
-	require.Containsf(t, podName, oprName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
-	t.Logf("-> Pod name is %s \n", podName)
+	checkFlag, podName := util.GetPodNameFromLst(pods, oprName)
+	if checkFlag {
+		require.Containsf(t, podName, oprName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
+		t.Logf("-> Pod name is %s \n", podName)
+	}
 
-	//oc get pod <<Name of pod(from step 4)>> -n openshift-operators -o jsonpath='{.status.phase}'
 	t.Log("Fetching the status of running pod")
-	podStatus := util.GetOutput(util.Run("oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`), "oc get pods $podName -n $ns -o jsonpath='{.status.phase}'")
-	require.Equal(t, podStatus, "Running", "pod status is %d \n", podStatus)
+	podStatus = util.GetCmdResult("Running", "oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`)
+	t.Logf("-> Pod name is %s \n", podStatus)
+	require.Equal(t, "Running", podStatus, "'pod plan status' is %d \n", podStatus)
 
 }
 
 func TestMakeInstallBackingServiceOperator(t *testing.T) {
 	checkClusterAvailable(t)
 
-	t.Log("Installing backing service operator into the cluster...")
+	t.Log("Installing backing service operator source into the cluster...")
 	res := util.GetOutput(util.Run("make", "install-backing-db-operator-source"), "make install-backing-db-operator-source")
 	resExp := strings.TrimSpace(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1])
-	fmt.Printf("db operator installation output is %s \n", resExp)
-	require.Containsf(t, []string{"created", "unchanged"}, resExp, "list does not contain %s while installing db service operator", resExp)
+	fmt.Printf("db operator installation source output is %s \n", resExp)
+	require.Containsf(t, []string{"created", "unchanged"}, resExp, "list does not contain %s while installing db service operator source", resExp)
 
 	//with this command 'oc get packagemanifest | grep db-operators' make sure there is an entry to the package manifest
-	t.Log("Get install plan name from the cluster...\n")
-	manifest := util.GetOutput(util.Run("oc", "get", "packagemanifest", pkgManifest, "-o", `jsonpath={.metadata.name}`), "CMD: oc get packagemanifest db-operators -o jsonpath='{.metadata.name}'")
+	t.Log("get the package manifest for db-operators...\n")
+	manifest := util.GetCmdResult(pkgManifest, "oc", "get", "packagemanifest", pkgManifest, "-o", `jsonpath={.metadata.name}`)
 	t.Logf("-> %s has an entry in the package manifest \n", manifest)
 	require.NotEmptyf(t, manifest, "", "There are number of manifest listed in a cluster %s \n", manifest)
 
 	//Install the subscription using this command: make install-backing-db-operator-subscription
-	t.Log("Installing backing service db subscription into the cluster...")
-
-	//Get db-operatos name from the package manifest
-	dbOprRes = util.WaitForDbOprAvailability(manifest)
+	t.Log("Installing backing service operator subscription into the cluster...")
+	dbOprRes := util.GetOutput(util.Run("make", "install-backing-db-operator-subscription"), "make install-backing-db-operator-subscription")
 	subRes := strings.TrimSpace(strings.Split(dbOprRes, "subscription.operators.coreos.com/db-operators")[1])
 	t.Logf("subscription output is %s \n", subRes)
-	require.Containsf(t, []string{"created", "unchanged"}, subRes, "list does not contain %s while installing backing service db operator", subRes)
 
-	//pods := util.GetLstOfPods(ns)
+	// with openshift-operators namespace, capture the install plan
+	ipName = util.GetCmdResult("", "oc", "get", "subscription", pkgManifest, "-n", ns, "-o", `jsonpath={.status.installplan.name}`)
+	t.Logf("-> Pod name is %s \n", ipName)
+
+	//// with openshift-operators namespace, capture the install plan status of db-operators
+	t.Log(" Fetching the status of install plan ")
+	ipStatus = util.GetCmdResult("Complete", "oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`)
+	t.Logf("-> Pod name is %s \n", ipStatus)
+	require.Equal(t, ipStatus, "Complete", "'install plan status' is %d \n", ipStatus)
 
 	//oc get pods -n openshift-operator
 	t.Log("Fetching the pod name of the running pod")
-	pods := util.GetOutput(util.Run("oc", "get", "pods", "-n", ns, "-o", "jsonpath={.items[*].metadata.name}"), "oc get pods -n openshift-operators -o jsonpath={.items[*]}.metadata.name")
+	pods := util.GetCmdResult("", "oc", "get", "pods", "-n", ns, "-o", `jsonpath={.items[*].metadata.name}`)
 	require.NotEmptyf(t, pods, "", "There are number of pods listed in a cluster %s \n", pods)
 
-	podName := util.GetPodNameFromLst(pods, bckSvc)
-	require.Containsf(t, podName, bckSvc, "list does not contain %s pod from the list of pods running service binding operator in the cluster", bckSvc)
-	t.Logf("-> Pod name is %s \n", podName)
-
+	checkFlag, podName := util.GetPodNameFromLst(pods, bckSvc)
+	if checkFlag {
+		require.Containsf(t, podName, bckSvc, "list does not contain %s pod from the list of pods running service binding operator in the cluster", bckSvc)
+		t.Logf("-> Pod name is %s \n", podName)
+	}
 	//oc get pod <<Name of pod(from step 4)>> -n openshift-operators -o jsonpath='{.status.phase}'
 	t.Log("Fetching the status of running pod")
-	podStatus := util.GetOutput(util.Run("oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`), "oc get pods $podName -n $ns -o jsonpath='{.status.phase}'")
-	require.Equal(t, podStatus, "Running", "pod status is %d \n", podStatus)
+	podStatus := util.GetCmdResult("Running", "oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`)
+	require.Equal(t, "Running", podStatus, "pod status is %d \n", podStatus)
+}
+
+func TestCreatePorject(t *testing.T) {
+
+	var createPjtRes string
+
+	checkClusterAvailable(t)
+
+	t.Log("Creating a project into the cluster...")
+	res := util.GetOutput(util.Run("make", "create-project"), "make create-project")
+	require.NotEmptyf(t, res, "", "Pjt not created because of this - %s \n", res)
+	createPjtRes = util.GetPjtCreationRes(res, pjt)
+	require.Containsf(t, createPjtRes, pjt, "Pjt - %s is not created because of %s", pjt, res)
+
+	t.Logf("-> Project created - %s \n", createPjtRes)
+	//with this command 'oc get project service-binding-demo -o jsonpath='{.metadata.name}' creates an new project
+	t.Log("Get the name of project added to the cluster...\n")
+	getPjt := util.GetCmdResult("", "oc", "get", "project", pjt, "-o", `jsonpath={.metadata.name}`)
+
+	t.Logf("-> Project created - %s \n", getPjt)
+	require.Equal(t, getPjt, pjt, "Pjt created is %d \n", getPjt)
+
+	//with this command 'oc get project service-binding-demo -o jsonpath='{.status.phase}' creates an new project
+	t.Log("Get the status of the project added to the cluster...\n")
+	pjtStatus := util.GetCmdResult("Active", "oc", "get", "project", pjt, "-o", `jsonpath={.status.phase}`)
+
+	t.Logf("-> Project created %s has the status %s \n", pjt, pjtStatus)
+	require.Equal(t, "Active", pjtStatus, "Pjt status is %d \n", pjtStatus)
+
+	t.Log(" Setting the project to service-binding-demo ")
+	pjtRes := util.GetCmdResult("", "oc", "project", pjt)
+	t.Logf("Project/Namespace set is %s", pjtRes)
+}
+
+func TestImportNodeJSApp(t *testing.T) {
+
+	checkClusterAvailable(t)
+
+	var name, svc string
+
+	t.Log("import an nodejs app to bind with backing service...")
+
+	nodeJsAppArg := "nodejs~" + nodeJsApp
+	t.Log(" Fetching the build config name of the app ")
+	app := util.GetCmdResult("", "oc", "new-app", nodeJsAppArg, "--name", appName, "-n", pjt)
+	//require.Contains(t, appName, bc, "Build config name is %d \n", bc)
+	t.Logf("-> App info - %s \n", app)
+
+	t.Log(" Fetching the build config name of the app ")
+	bc := util.GetCmdResult("", "oc", "get", "bc", "-o", `jsonpath={.items[*].metadata.name}`)
+	require.Contains(t, appName, bc, "Build config name is %d \n", bc)
+
+	t.Log(" Fetching the buid info - name of the app ")
+	buildName := util.GetCmdResult("", "oc", "get", "build", "-o", `jsonpath={.items[*].metadata.name}`)
+	require.Contains(t, buildName, bc, "Build config name is %d \n", buildName)
+	t.Logf(" Buid name of an app %s", buildName)
+	t.Log(" Fetching the buid status of the app ")
+	buildStatus := util.GetCmdResult("Complete", "oc", "get", "build", buildName, "-o", `jsonpath={.status.phase}`)
+	require.Equal(t, "Complete", buildStatus, "Build status of config name %d is %d \n", buildName, buildStatus)
+	t.Logf(" Buid status of an app %s", buildStatus)
+	t.Log(" Fetching the list of pod for the build of an app ")
+	expBuildPodName := buildName + "-build"
+	buildPods := util.GetCmdResult("", "oc", "get", "pods", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
+	require.NotEmptyf(t, buildPods, "", "There are number of build pods listed in a cluster %s \n", buildPods)
+	t.Logf(" List of pods running in the cluster - %s", buildPods)
+	t.Log(" Fetching the build pod name from the list of pods ")
+	checkFlag, buildPodName := util.GetPodNameFromLst(buildPods, expBuildPodName)
+	require.Equal(t, true, checkFlag, "List does not contain the pod")
+	require.Containsf(t, expBuildPodName, buildPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", buildPodName)
+	t.Logf("-> Pod name is %s \n", buildPodName)
+
+	t.Log("Fetching the status of running build pod")
+	buildPodStatus := util.GetCmdResult("Succeeded", "oc", "get", "pods", buildPodName, "-n", pjt, "-o", `jsonpath={.status.phase}`)
+	require.Equal(t, "Succeeded", buildPodStatus, "Build pod status is %d \n", buildPodStatus)
+
+	t.Log("Fetching the deployment resource pod name from the list of pods")
+	expBuildPodName = bc + "-1-deploy"
+	checkFlag, deploymentBuildPodName := util.GetPodNameFromLst(buildPods, expBuildPodName)
+	require.Equal(t, true, checkFlag, "List does not contain the pod")
+	require.Containsf(t, deploymentBuildPodName, expBuildPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", deploymentBuildPodName)
+	t.Logf("-> deployment build Pod name is %s \n", deploymentBuildPodName)
+
+	t.Log("Fetching the status of running deployment resource pod")
+	deploymentPodStatus := util.GetCmdResult("Succeeded", "oc", "get", "pods", deploymentBuildPodName, "-n", pjt, "-o", `jsonpath={.status.phase}`)
+	require.Equal(t, "Succeeded", deploymentPodStatus, "Build pod status is %d \n", deploymentPodStatus)
+	t.Logf("-> Deployment pods status is %s \n", deploymentPodStatus)
+
+	//t.Log(" Fetching the deployment name of the app ")
+	//deploymentName := util.GetCmdResult("", "oc", "get", "deployment", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
+	//require.Equal(t, bc, deploymentName, "Deployment name is %d \n", deploymentName)
+	//t.Logf("-> Deployment name is %s \n", deploymentName)
+
+	//oc expose svc/nodejs-rest-http-crud --name=nodejs-rest-http-crud
+	t.Log(" Exposing an app ")
+	svc = "svc/" + bc
+	name = "--name=" + bc
+	exposeRes := util.GetCmdResult("", "oc", "expose", svc, name)
+	t.Logf("app exposed result is %s", exposeRes)
+
+	t.Log(" Fetching the route of an app ")
+	route := util.GetCmdResult("", "oc", "get", "route", bc, "-n", pjt, "-o", `jsonpath={.status.ingress[0].host}`)
+	t.Logf("-> ROUTE - %s \n", route)
+
+	host := "http://" + route
+	t.Log(" Fetching the curl operation result using the route ")
+	curlRes := util.GetExecCmdResult("", "curl", "-L", "--silent", "-XGET", host, "|", "grep", "h1")
+
+	require.Containsf(t, "Node.js Crud Application (DB:", curlRes, "page does not contain %s ", curlRes)
+	t.Logf("-> CURL Operation Result - %s \n", curlRes)
+}
+
+func TestCreateBackingDbInstance(t *testing.T) {
+	checkClusterAvailable(t)
+
+	t.Log("Creating Backing DB instance for backing service to connect with the app...")
+	res := util.GetOutput(util.Run("make", "create-backing-db-instance"), "make create-backing-db-instance")
+	resExp := strings.TrimSpace(strings.Split(res, "subscription.operators.coreos.com/service-binding-operator")[1])
+	fmt.Printf("Result of created backing DB instance is %s \n", resExp)
+	require.Containsf(t, []string{"created", "unchanged", "configured"}, resExp, "list does not contain %s while installing service binding operator", resExp)
+
+	//oc get db db-demo -o jsonpath='{.status.dbConnectionIP}'
+	db := util.GetCmdResult("", "oc", "get", "db-demo", "-o", "jsonpath={.status.dbConnectionIP}")
+	t.Logf("-> DB Operation Result - %s \n", db)
+
+	t.Log("Fetching the status of running pod")
+	dbPodStatus := util.GetCmdResult("Succeeded", "oc", "get", "pods", db, "-n", pjt, "-o", `jsonpath={.status.phase}`)
+	require.Equal(t, "Succeeded", dbPodStatus, "Build pod status is %d \n", dbPodStatus)
+	t.Logf("-> DB pods status is %s \n", dbPodStatus)
+
+}
+
+func CreateServiceBindingRequest(t *testing.T) {
+	checkClusterAvailable(t)
+
+	//dbPodStatus := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`)
+	//dbPodStatus := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
+
+	t.Log("Creating Backing DB instance for backing service to connect with the app...")
+	res := util.GetOutput(util.Run("make", "create-service-binding-request"), "make create-service-binding-request")
+	resExp := strings.TrimSpace(strings.Split(res, "subscription.operators.coreos.com/service-binding-operator")[1])
+	fmt.Printf("Result of created backing DB instance is %s \n", resExp)
+
+	//sbrStatus := util.GetCmdResult("", "oc", "get", "sbr", servBindReq, "-n", pjt, "-o", `jsonpath={.status.bindingStatus}`)
+	//secret := util.GetCmdResult("", "oc", "get", "sbr", servBindReq, "-n", pjt, "-o", `jsonpath={.status.secret}`)
+
+	//env := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`)
+	//envFrom := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
 
 }
 
