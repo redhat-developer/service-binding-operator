@@ -42,14 +42,16 @@ type ServiceBindingRequestSpec struct {
 
 	// The following fields are being deprecated
 
-	// BackingServiceSelector is used to identify the backing service operator.
+	// BackingServiceSelector is used to identify the backing service operator
+	// or other Kubernetes resource.
 	// Deprecated.
 	// In the upcoming release, this field would be depcreated. It would be mandatory
 	// to set "backingServiceSelectors".
 	// +optional
 	BackingServiceSelector *BackingServiceSelector `json:"backingServiceSelector,omitempty"`
 
-	// BackingServiceSelectors is used to identify multiple backing services.
+	// BackingServiceSelectors is used to identify multiple backing services
+	// or any other Kubernetes resource.
 	// Deprecated.
 	// This would be made a required field after 'BackingServiceSelector'
 	// is removed.

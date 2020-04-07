@@ -169,8 +169,9 @@ spec:
               type: array
             backingServiceSelector:
               description: BackingServiceSelector is used to identify the backing
-                service operator. Deprecated. In the upcoming release, this field
-                would be depcreated. It would be mandatory to set "backingServiceSelectors".
+                service operator or other Kubernetes resource. Deprecated. In the
+                upcoming release, this field would be depcreated. It would be mandatory
+                to set "backingServiceSelectors".
               properties:
                 group:
                   type: string
@@ -190,8 +191,8 @@ spec:
               type: object
             backingServiceSelectors:
               description: BackingServiceSelectors is used to identify multiple backing
-                services. Deprecated. This would be made a required field after 'BackingServiceSelector'
-                is removed.
+                services or any other Kubernetes resource. Deprecated. This would
+                be made a required field after 'BackingServiceSelector' is removed.
               items:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
