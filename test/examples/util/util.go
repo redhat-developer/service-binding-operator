@@ -17,9 +17,9 @@ import (
 
 const (
 	//Timeout defines the amount of time we should spend waiting for the resource when condition is true
-	Timeout       = 10 * time.Minute
-	retryInterval = 2 * time.Second
-	retryTimeout  = 60 * time.Second
+	CmdTimeout    = 10 * time.Minute
+	retryInterval = 5 * time.Second
+	retryTimeout  = 3 * time.Minute
 )
 
 var (
@@ -36,7 +36,7 @@ var (
 func Run(cmd ...string) *icmd.Result {
 	currentCmd := icmd.Cmd{
 		Command: cmd,
-		Timeout: Timeout,
+		Timeout: CmdTimeout,
 		Env:     environment,
 	}
 	fmt.Printf("=> Command to execute: %v \n", currentCmd)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/test/examples/util"
 	"github.com/stretchr/testify/require"
+	"github.com/tebeka/selenium"
 )
 
 var (
@@ -37,12 +38,12 @@ func TestNodeJSPostgreSQL(t *testing.T) {
 	t.Run("set-example-dir", SetExampleDir)
 	t.Run("get-oc-status", GetOCStatus)
 
-	t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
-	t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
+	//t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
+	//t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
 	t.Run("create-project", CreatePorject)
 	t.Run("import-nodejs-app", ImportNodeJSApp)
-	t.Run("create-backing-db-instance", CreateBackingDbInstance)
-	t.Run("createservice-binding-request", CreateServiceBindingRequest)
+	//t.Run("create-backing-db-instance", CreateBackingDbInstance)
+	//t.Run("createservice-binding-request", CreateServiceBindingRequest)
 }
 
 //SetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
@@ -255,11 +256,14 @@ func ImportNodeJSApp(t *testing.T) {
 	t.Logf("-> ROUTE - %s \n", route)
 
 	host := "http://" + route
-	t.Log(" Fetching the curl operation result using the route ")
+	checkNodeJSAppFrontend(t, host, "(DB: N/A)")
+
+	/*t.Log(" Fetching the curl operation result using the route ")
 	curlRes := util.GetExecCmdResult("", "curl", "-L", "--silent", "-XGET", host, "|", "grep", "h1")
 
 	require.Containsf(t, "Node.js Crud Application (DB:", curlRes, "page does not contain %s ", curlRes)
-	t.Logf("-> CURL Operation Result - %s \n", curlRes)
+	t.Logf("-> CURL Operation Result - %s \n", curlRes)*/
+
 }
 
 func CreateBackingDbInstance(t *testing.T) {
@@ -305,4 +309,60 @@ func checkClusterAvailable(t *testing.T) {
 	if !clusterAvailable {
 		t.Skip("Cluster is not available, skipping")
 	}
+}
+
+func checkNodeJSAppFrontend(t *testing.T, startURL string, expectedHeader string) {
+	wd, svc := initSelenium(t)
+
+	defer svc.Stop()
+	defer wd.Quit()
+
+	err := wd.Get(startURL)
+	require.NoErrorf(t, err, "Unable to open app page: %s", startURL)
+	header := findElementBy(t, wd, selenium.ByTagName, "h1")
+
+	headerText, err := header.Text()
+	require.NoError(t, err, "Unable to get the page header")
+
+	require.Contains(t, headerText, expectedHeader)
+}
+
+func initSelenium(t *testing.T) (selenium.WebDriver, *selenium.Service) {
+	chromedriverPath := "chromedriver"
+	chromedriverPort := 9515
+
+	service, err := selenium.NewChromeDriverService(chromedriverPath, chromedriverPort)
+	checkErr(t, err)
+
+	chromeOptions := map[string]interface{}{
+		"args": []string{
+			"--no-cache",
+			"--no-sandbox",
+			"--headless",
+			"--window-size=1920,1080",
+			"--window-position=0,0",
+		},
+	}
+
+	caps := selenium.Capabilities{
+		"browserName":   "chrome",
+		"chromeOptions": chromeOptions,
+	}
+
+	wd, err := selenium.NewRemote(caps, fmt.Sprintf("http://localhost:%d/wd/hub", chromedriverPort))
+	checkErr(t, err)
+	return wd, service
+}
+
+// CheckErr checks for errors and logging it to log as Fatal if not nil
+func checkErr(t *testing.T, err error) {
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func findElementBy(t *testing.T, wd selenium.WebDriver, by string, selector string) selenium.WebElement {
+	elem, err := wd.FindElement(by, selector)
+	checkErr(t, err)
+	return elem
 }

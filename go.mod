@@ -16,6 +16,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
+	github.com/tebeka/selenium v0.9.9
 	gopkg.in/yaml.v2 v2.2.4
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.0.2
