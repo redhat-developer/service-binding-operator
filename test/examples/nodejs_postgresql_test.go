@@ -32,8 +32,21 @@ const (
 	retryTimeout  = 10 * time.Second
 )
 
-//TestSetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
-func TestSetExampleDir(t *testing.T) {
+func TestNodeJSPostgreSQL(t *testing.T) {
+
+	t.Run("set-example-dir", SetExampleDir)
+	t.Run("get-oc-status", GetOCStatus)
+
+	t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
+	t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
+	t.Run("create-project", CreatePorject)
+	t.Run("import-nodejs-app", ImportNodeJSApp)
+	t.Run("create-backing-db-instance", CreateBackingDbInstance)
+	t.Run("createservice-binding-request", CreateServiceBindingRequest)
+}
+
+//SetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
+func SetExampleDir(t *testing.T) {
 	examplePath := fmt.Sprintf("%s/%s", util.GetExamplesDir(), exampleName)
 	util.SetDir(examplePath)
 	res := strings.TrimSpace(util.Run("pwd").Stdout())
@@ -41,7 +54,7 @@ func TestSetExampleDir(t *testing.T) {
 }
 
 //Logs the oc status
-func TestGetOCStatus(t *testing.T) {
+func GetOCStatus(t *testing.T) {
 	t.Log("--- Getting OC Status ---")
 	util.GetOutput(util.Run("oc", "status"), "oc status")
 	clusterAvailable = true
@@ -49,7 +62,7 @@ func TestGetOCStatus(t *testing.T) {
 }
 
 //Logs out the output of command make install-service-binding-operator
-func TestMakeInstallServiceBindingOperator(t *testing.T) {
+func MakeInstallServiceBindingOperator(t *testing.T) {
 
 	checkClusterAvailable(t)
 
@@ -87,14 +100,15 @@ func TestMakeInstallServiceBindingOperator(t *testing.T) {
 
 }
 
-func TestMakeInstallBackingServiceOperator(t *testing.T) {
+func MakeInstallBackingServiceOperator(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Installing backing service operator source into the cluster...")
 	res := util.GetOutput(util.Run("make", "install-backing-db-operator-source"), "make install-backing-db-operator-source")
+	//resExp := strings.TrimSpace(strings.Split(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1], "Waiting")[0])
 	resExp := strings.TrimSpace(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1])
 	fmt.Printf("db operator installation source output is %s \n", resExp)
-	require.Containsf(t, []string{"created", "unchanged"}, resExp, "list does not contain %s while installing db service operator source", resExp)
+	require.True(t, strings.Contains(resExp, "created") || strings.Contains(resExp, "unchanged"), "Output %s does not contain created or unchanged while installing db service operator source", resExp)
 
 	//with this command 'oc get packagemanifest | grep db-operators' make sure there is an entry to the package manifest
 	t.Log("get the package manifest for db-operators...\n")
@@ -132,9 +146,14 @@ func TestMakeInstallBackingServiceOperator(t *testing.T) {
 	t.Log("Fetching the status of running pod")
 	podStatus := util.GetCmdResult("Running", "oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`)
 	require.Equal(t, "Running", podStatus, "pod status is %d \n", podStatus)
+
+	//oc get crd | grep database
+	t.Log("Checking the backing service's CRD is installed")
+	crd := util.GetCmdResult("databases.postgresql.baiju.dev", "oc", "get", "crd", "databases.postgresql.baiju.dev")
+	require.NotEmpty(t, crd, "packing service CRD not found")
 }
 
-func TestCreatePorject(t *testing.T) {
+func CreatePorject(t *testing.T) {
 
 	var createPjtRes string
 
@@ -166,7 +185,7 @@ func TestCreatePorject(t *testing.T) {
 	t.Logf("Project/Namespace set is %s", pjtRes)
 }
 
-func TestImportNodeJSApp(t *testing.T) {
+func ImportNodeJSApp(t *testing.T) {
 
 	checkClusterAvailable(t)
 
@@ -243,7 +262,7 @@ func TestImportNodeJSApp(t *testing.T) {
 	t.Logf("-> CURL Operation Result - %s \n", curlRes)
 }
 
-func TestCreateBackingDbInstance(t *testing.T) {
+func CreateBackingDbInstance(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Creating Backing DB instance for backing service to connect with the app...")
