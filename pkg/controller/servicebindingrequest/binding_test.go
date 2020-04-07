@@ -504,7 +504,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			SBR:                    sbrEmptyAppSelector,
 			Client:                 f.FakeClient(),
 		},
-		wantErr: EmptyApplicationSelectorErr,
+		wantBuildErr: EmptyApplicationSelectorErr,
 		wantConditions: []wantedCondition{
 			{
 				Type:    conditions.BindingReady,
