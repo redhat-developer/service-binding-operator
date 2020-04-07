@@ -315,7 +315,6 @@ spec:
               description: Secret is the name of the intermediate secret
               type: string
           required:
-          - applications
           - bindingStatus
           - conditions
           - secret
