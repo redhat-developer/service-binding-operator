@@ -114,7 +114,7 @@ func GetPjtCreationRes(pjtRes string, pjt string) string {
 func GetCmdResult(status string, item ...string) string {
 	var res string
 	cntr = 0
-	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
 		checkFlag, res = execCmd(item...)
 		if checkFlag {
 			if status != "" {
@@ -127,6 +127,9 @@ func GetCmdResult(status string, item ...string) string {
 		}
 		return false, nil
 	})
+	if err != nil {
+		return ""
+	}
 	return res
 }
 
