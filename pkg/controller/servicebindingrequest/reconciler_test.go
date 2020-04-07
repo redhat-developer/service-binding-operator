@@ -331,3 +331,26 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
 }
+
+// TestEmptyApplicationSelector tests that Status is successfully updated when ApplicationSelector is missing
+func TestEmptyApplicationSelector(t *testing.T) {
+	backingServiceResourceRef := "backingService1"
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequestWithoutApplication(reconcilerName, backingServiceResourceRef)
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+
+	fakeClient := f.FakeClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+
+	res, err := reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.True(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	require.Equal(t, "BindingFail", sbrOutput.Status.BindingStatus)
+	require.Equal(t, corev1.ConditionFalse, sbrOutput.Status.Conditions[0].Status)
+	require.Equal(t, 0, len(sbrOutput.Status.Applications))
+}

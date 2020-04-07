@@ -60,6 +60,19 @@ func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
 	return sbr
 }
 
+// AddMockedUnstructuredServiceBindingRequestWithoutApplication creates a mock ServiceBindingRequest object
+func (f *Fake) AddMockedUnstructuredServiceBindingRequestWithoutApplication(
+	name string,
+	backingServiceResourceRef string,
+) *unstructured.Unstructured {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	var emptyGVR = schema.GroupVersionResource{}
+	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, "", emptyGVR, nil)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
 // AddMockedUnstructuredServiceBindingRequest creates a mock ServiceBindingRequest object
 func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
 	name string,

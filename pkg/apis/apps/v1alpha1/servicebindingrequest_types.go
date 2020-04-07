@@ -59,7 +59,8 @@ type ServiceBindingRequestStatus struct {
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
 	// ApplicationObjects contains all the application objects filtered by label
-	Applications []BoundApplication `json:"applications"`
+	// +optional
+	Applications []BoundApplication `json:"applications,omitempty"`
 }
 
 // BackingServiceSelector defines the selector based on resource name, version, and resource kind
