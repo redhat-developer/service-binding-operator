@@ -8,6 +8,8 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -172,6 +174,34 @@ func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 	}
 
 	return crdDescriptions[0], nil
+}
+
+// buildCRDDescriptionFromCR builds a CRDDescription from annotations present in the CR.
+func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
+	var (
+		err error
+	)
+
+	gvk := schema.GroupVersionKind{
+		Kind:    cr.GetKind(),
+		Version: cr.GroupVersionKind().Version,
+		Group:   cr.GroupVersionKind().Group,
+	}
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+
+	crdDescription.Name = gvr.Resource + "." + gvr.Group
+	crdDescription.Kind = cr.GetKind()
+	crdDescription.Version = cr.GroupVersionKind().Version
+
+	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
+	if err != nil {
+		return err
+	}
+
+	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
+	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
+
+	return nil
 }
 
 // buildCRDDescriptionFromCRD builds a CRDDescription from annotations present in the CRD.
