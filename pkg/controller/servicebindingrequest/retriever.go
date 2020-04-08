@@ -197,7 +197,6 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
 		// making sure key name has a secret reference
-		r.store(cr, fmt.Sprintf("configMap_%s", k), data)
 		r.store(cr, fmt.Sprintf("secret_%s", k), data)
 	}
 
