@@ -5,7 +5,7 @@
 This scenario illustrates binding an imported application to an in-cluster operated managed PostgreSQL Database.
 
 Note that this example app is configured to operate with OpenShift 4.3 or newer. To use this example
-app with OpenShift 4.2, replace references to Deployments with DeploymentConfigs.
+app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
 
 ## Actions to Perform by Users in 2 Roles
 
