@@ -5,6 +5,10 @@ import (
 )
 
 const (
-	// BindingReady indicates that the binding succeeded
-	BindingReady conditionsv1.ConditionType = "Ready"
+	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
+	CollectionReady conditionsv1.ConditionType = "CollectionReady"
+	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
+	InjectionReady conditionsv1.ConditionType = "InjectionReady"
+	// BindingReady indicates readiness to bind
+	BindingReady conditionsv1.ConditionType = "BindingReady"
 )

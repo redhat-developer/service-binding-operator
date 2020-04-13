@@ -154,7 +154,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			}
 
 			v1.SetStatusCondition(&sbr.Status.Conditions, v1.Condition{
-				Type:    conditions.BindingReady,
+				Type:    conditions.InjectionReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  reason,
 				Message: err.Error(),
