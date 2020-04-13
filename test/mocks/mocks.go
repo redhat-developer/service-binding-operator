@@ -369,6 +369,21 @@ func SecretMock(ns, name string) *corev1.Secret {
 	}
 }
 
+// SecretMock returns a Secret based on PostgreSQL operator usage.
+func SecretMockWithData(ns, name string, data map[string][]byte) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: ns,
+			Name:      name,
+		},
+		Data: data,
+	}
+}
+
 // ConfigMapMock returns a dummy config-map object.
 func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 	return &corev1.ConfigMap{

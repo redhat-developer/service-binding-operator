@@ -192,6 +192,12 @@ func (f *Fake) AddNamespacedMockedSecret(name string, namespace string) {
 	f.objs = append(f.objs, SecretMock(namespace, name))
 }
 
+// AddNamespacedMockedSecretWithData add mocked object from SecretMock in a namespace
+// which isn't necessarily same as that of the ServiceBindingRequest namespace.
+func (f *Fake) AddNamespacedMockedSecretWithData(name string, namespace string, data map[string][]byte) {
+	f.objs = append(f.objs, SecretMockWithData(namespace, name, data))
+}
+
 // AddMockedUnstructuredConfigMap add mocked object from ConfigMapMock.
 func (f *Fake) AddMockedUnstructuredConfigMap(name string) {
 	mock := ConfigMapMock(f.ns, name)
