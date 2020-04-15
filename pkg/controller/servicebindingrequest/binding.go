@@ -206,7 +206,6 @@ func (b *ServiceBinder) onError(
 		Reason:  BindingFail,
 		Message: b.message(err),
 	})
-	sbrStatus.BindingStatus = BindingFail
 	newSbr, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
@@ -242,7 +241,6 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
 
-	sbrStatus.BindingStatus = BindingSuccess
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   conditions.BindingReady,
 		Status: corev1.ConditionTrue,
