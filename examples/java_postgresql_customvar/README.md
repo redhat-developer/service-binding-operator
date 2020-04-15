@@ -211,7 +211,6 @@ spec:
 
 | Field | Description |
 |-------|-------------|
-| BindingStatus | The binding status of Service Binding Request |
 | Secret | The name of the intermediate secret |
 
 That's it, folks!
