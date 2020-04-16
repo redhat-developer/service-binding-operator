@@ -39,7 +39,7 @@ and install a `alpha` version.
 Alternatively, you can perform the same task with this make command:
 
 ``` shell
-make install-service-binding-operator
+make install-service-binding-operator-community
 ```
 
 This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
