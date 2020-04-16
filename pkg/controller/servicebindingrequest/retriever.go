@@ -259,21 +259,34 @@ func (r *Retriever) readConfigMap(id string, envPrefix string, cr *unstructured.
 func (r *Retriever) store(envPrefix string, u *unstructured.Unstructured, key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
 	key = strings.ReplaceAll(key, ".", "_")
-	finalPrefix := ""
-	if r.bindingPrefix != "" {
-		finalPrefix = r.bindingPrefix
-		if envPrefix != "" {
-			finalPrefix = finalPrefix + "_" + envPrefix
+	// finalPrefix := ""
+	// if r.bindingPrefix != "" {
+	// 	finalPrefix = r.bindingPrefix
+	// 	if envPrefix != "" {
+	// 		finalPrefix = finalPrefix + "_" + envPrefix
+	// 	}
+	// } else {
+	// 	if envPrefix != "" {
+	// 		finalPrefix = envPrefix
+	// 	}
+	// }
+	// if finalPrefix == "" {
+	// 	key = fmt.Sprintf("%s_%s", u.GetKind(), key)
+	// } else {
+	// 	key = fmt.Sprintf("%s_%s", finalPrefix, key)
+	// }
+	if envPrefix == "" {
+		if r.bindingPrefix == "" {
+			key = fmt.Sprintf("%s_%s", u.GetKind(), key)
+		} else {
+			key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, u.GetKind(), key)
 		}
 	} else {
-		if envPrefix != "" {
-			finalPrefix = envPrefix
+		if r.bindingPrefix == "" {
+			key = fmt.Sprintf("%s_%s", envPrefix, key)
+		} else {
+			key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, envPrefix, key)
 		}
-	}
-	if finalPrefix == "" {
-		// key = fmt.Sprintf("%s_%s", u.GetKind(), key)
-	} else {
-		key = fmt.Sprintf("%s_%s", finalPrefix, key)
 	}
 	key = strings.ToUpper(key)
 	r.data[key] = value
