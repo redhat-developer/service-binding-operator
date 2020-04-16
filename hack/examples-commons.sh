@@ -36,8 +36,11 @@ function uninstall_operator_source {
 
 function get_current_csv {
     PACKAGE_NAME=$1
-    CHANNEL=$2
-    oc get packagemanifest $PACKAGE_NAME -o jsonpath='{.status.channels[?(@.name == "'$CHANNEL'")].currentCSV}'
+    CATALOG=$2
+    CHANNEL=$3
+
+    #oc get packagemanifest $PACKAGE_NAME -o jsonpath='{.status.channels[?(@.name == "'$CHANNEL'")].currentCSV}'
+    oc get packagemanifests -o json | jq -r '.items[] | select(.metadata.name=="'$PACKAGE_NAME'") | select(.status.catalogSource=="'$CATALOG'").status.channels[] | select(.name=="'$CHANNEL'").currentCSV'
 }
 
 function print_operator_subscription {
@@ -45,7 +48,7 @@ function print_operator_subscription {
     OPSRC_NAME=$2
     CHANNEL=$3
 
-    CSV_VERSION=$(get_current_csv $PACKAGE_NAME $CHANNEL)
+    CSV_VERSION=$(get_current_csv $PACKAGE_NAME $OPSRC_NAME $CHANNEL)
     sed -e 's,REPLACE_CSV_VERSION,'$CSV_VERSION',g' $HACK_YAMLS/subscription.template.yaml \
     | sed -e 's,REPLACE_CHANNEL,'$CHANNEL',g' \
     | sed -e 's,REPLACE_OPSRC_NAME,'$OPSRC_NAME',g' \
@@ -53,7 +56,7 @@ function print_operator_subscription {
 }
 
 function install_operator_subscription {
-    if [[ ! -z $(oc get packagemanifest | grep $1) ]]; then
+    if [[ ! -z $(get_current_csv $1 $2 $3) ]]; then
         print_operator_subscription $1 $2 $3 | oc apply --wait -f -
     else
         echo "ERROR: packagemanifest $1 not found";
@@ -67,8 +70,10 @@ function uninstall_operator_subscription {
 
 function wait_for_packagemanifest {
     PACKAGE_NAME=$1
+    OPSRC_NAME=$2
+    CHANNEL=$3
     i=1
-    while [[ -z "$(oc get packagemanifest | grep $PACKAGE_NAME)" ]] && [ $i -le 5 ]; do
+    while [[ -z "$(get_current_csv $1 $2 $3)" ]] && [ $i -le 10 ]; do
         echo "Waiting for package install to complete..."
         sleep 5
         i=$(($i+1))
@@ -77,9 +82,10 @@ function wait_for_packagemanifest {
 
 function uninstall_current_csv {
     PACKAGE_NAME=$1
-    CHANNEL=$2
+    OPSRC_NAME=$2
+    CHANNEL=$3
 
-    oc delete csv $(get_current_csv $PACKAGE_NAME $CHANNEL) -n openshift-operators --ignore-not-found=true
+    oc delete csv $(get_current_csv $PACKAGE_NAME $OPSRC_NAME $CHANNEL) -n openshift-operators --ignore-not-found=true
 }
 
 ## Backing DB (PostgreSQL) Operator
@@ -88,9 +94,10 @@ function install_postgresql_operator_source {
     OPSRC_NAMESPACE=pmacik
     OPSRC_NAME=db-operators
     PACKAGE_NAME=db-operators
+    CHANNEL=stable
 
     install_operator_source $OPSRC_NAMESPACE $OPSRC_NAME
-    wait_for_packagemanifest $PACKAGE_NAME
+    wait_for_packagemanifest $PACKAGE_NAME $OPSRC_NAME $CHANNEL
 }
 
 function uninstall_postgresql_operator_source {
@@ -114,7 +121,7 @@ function uninstall_postgresql_operator_subscription {
     CHANNEL=stable
 
     uninstall_operator_subscription $NAME $OPSRC_NAME $CHANNEL
-    uninstall_current_csv $NAME $CHANNEL
+    uninstall_current_csv $NAME $OPSRC_NAME $CHANNEL
 }
 
 function install_postgresql_db_instance {
@@ -127,7 +134,8 @@ function uninstall_postgresql_db_instance {
 
 ## Service Binding Operator
 
-function install_service_binding_operator_subscription {
+### Community operators
+function install_service_binding_operator_subscription_community {
     NAME=service-binding-operator
     OPSRC_NAME=community-operators
     CHANNEL=alpha
@@ -135,14 +143,51 @@ function install_service_binding_operator_subscription {
     install_operator_subscription $NAME $OPSRC_NAME $CHANNEL
 }
 
-function uninstall_service_binding_operator_subscription {
+function uninstall_service_binding_operator_subscription_community {
     NAME=service-binding-operator
     OPSRC_NAME=community-operators
     CHANNEL=alpha
 
     uninstall_operator_subscription $NAME $OPSRC_NAME $CHANNEL
-    uninstall_current_csv $NAME $CHANNEL
+    uninstall_current_csv $NAME $OPSRC_NAME $CHANNEL
 }
+
+### Latest master
+function install_service_binding_operator_source_master {
+    OPSRC_NAMESPACE=redhat-developer
+    OPSRC_NAME=redhat-developer-operators
+    PACKAGE_NAME=service-binding-operator
+    CHANNEL=alpha
+
+    install_operator_source $OPSRC_NAMESPACE $OPSRC_NAME
+    wait_for_packagemanifest $PACKAGE_NAME $OPSRC_NAME $CHANNEL
+}
+
+function uninstall_service_binding_operator_source_master {
+    OPSRC_NAMESPACE=redhat-developer
+    OPSRC_NAME=redhat-developer-operators
+
+    uninstall_operator_source $OPSRC_NAMESPACE $OPSRC_NAME
+}
+
+function install_service_binding_operator_subscription_master {
+    NAME=service-binding-operator
+    OPSRC_NAME=redhat-developer-operators
+    CHANNEL=alpha
+
+    install_operator_subscription $NAME $OPSRC_NAME $CHANNEL
+}
+
+function uninstall_service_binding_operator_subscription_master {
+    NAME=service-binding-operator
+    OPSRC_NAME=redhat-developer-operators
+    CHANNEL=alpha
+
+    uninstall_operator_subscription $NAME $OPSRC_NAME $CHANNEL
+    uninstall_current_csv $NAME $OPSRC_NAME $CHANNEL
+}
+
+
 
 ## Serverless Operator
 
@@ -160,7 +205,7 @@ function uninstall_serverless_operator_subscription {
     CHANNEL=techpreview
 
     uninstall_operator_subscription $NAME $OPSRC_NAME $CHANNEL
-    uninstall_current_csv $NAME $CHANNEL
+    uninstall_current_csv $NAME $OPSRC_NAME $CHANNEL
 }
 
 ## Service Mesh Operator
@@ -179,7 +224,7 @@ function uninstall_service_mesh_operator_subscription {
     CHANNEL=1.0
 
     uninstall_operator_subscription $NAME $OPSRC_NAME $CHANNEL
-    uninstall_current_csv $NAME $CHANNEL
+    uninstall_current_csv $NAME $OPSRC_NAME $CHANNEL
 }
 
 ## Knative Serving

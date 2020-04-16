@@ -82,23 +82,55 @@ help: ## Credit: https://gist.github.com/prwhite/8168133#gistcomment-2749866
 
 ## --- Service Binding Operator ---
 
-.PHONY: install-service-binding-operator-subscription
+## ---- Community version ----
+
+.PHONY: install-service-binding-operator-subscription-community
 ## Install the Service Binding Operator Subscription
-install-service-binding-operator-subscription:
-	${Q}${EC} install_service_binding_operator_subscription
+install-service-binding-operator-subscription-community:
+	${Q}${EC} install_service_binding_operator_subscription_community
 
-.PHONY: install-service-binding-operator
+.PHONY: install-service-binding-operator-community
 ## Install the Service Binding Operator
-install-service-binding-operator: install-service-binding-operator-subscription
+install-service-binding-operator-community: install-service-binding-operator-subscription-community
 
-.PHONY: uninstall-service-binding-operator-subscription
+.PHONY: uninstall-service-binding-operator-subscription-community
 ## Uninstall the Service Binding Operator Subscription
-uninstall-service-binding-operator-subscription:
-	${Q}${EC} uninstall_service_binding_operator_subscription
+uninstall-service-binding-operator-subscription-community:
+	${Q}${EC} uninstall_service_binding_operator_subscription_community
 
-.PHONY: uninstall-service-binding-operator
+.PHONY: uninstall-service-binding-operator-community
 ## Uninstall the Service Binding Operator
-uninstall-service-binding-operator: uninstall-service-binding-operator-subscription
+uninstall-service-binding-operator-community: uninstall-service-binding-operator-subscription-community
+
+## ---- Latest master ----
+
+.PHONY: install-service-binding-operator-source-master
+## Install the Service Binding Operator Source for latest master
+install-service-binding-operator-source-master:
+	${Q}${EC} install_service_binding_operator_source_master
+
+.PHONY: uninstall-service-binding-operator-source-master
+## Uninstall the Service Binding Operator Source for latest master
+uninstall-service-binding-operator-source-master:
+	${Q}${EC} uninstall_service_binding_operator_source_master
+
+.PHONY: install-service-binding-operator-subscription-master
+## Install the Service Binding Operator Subscription for latest master
+install-service-binding-operator-subscription-master:
+	${Q}${EC} install_service_binding_operator_subscription_master
+
+.PHONY: install-service-binding-operator-master
+## Install the Service Binding Operator for latest master
+install-service-binding-operator-master: install-service-binding-operator-source-master install-service-binding-operator-subscription-master
+
+.PHONY: uninstall-service-binding-operator-subscription-master
+## Uninstall the Service Binding Operator Subscription for latest master
+uninstall-service-binding-operator-subscription-master:
+	${Q}${EC} uninstall_service_binding_operator_subscription_master
+
+.PHONY: uninstall-service-binding-operator-master
+## Uninstall the Service Binding Operator for latest master
+uninstall-service-binding-operator-master: uninstall-service-binding-operator-subscription-master uninstall-service-binding-operator-source-master
 
 ## --- Backing Service DB (PostgreSQL) Operator ---
 
