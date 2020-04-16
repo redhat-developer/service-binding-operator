@@ -45,6 +45,7 @@ type Binder struct {
 }
 
 var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
+var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
@@ -75,15 +76,13 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		err1 := errors.New("newfounderr")
-		return nil, err1
+		return nil, ApplicationNotFound
 
 	}
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		err1 := errors.New("newfounderr")
-		return nil, err1
+		return nil, ApplicationNotFound
 	}
 	return objList, err
 }
@@ -528,15 +527,8 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *Binder) Unbind() error {
 	objs, err := b.search()
 	if err != nil {
-		// gvr := schema.GroupVersionResource{
-		// 	Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
-		// 	Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
-		// 	Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-		// }
-		err1 := errors.New("newfounderr")
-		fmt.Println("WARNINGGGGGGGGGGGGGGG")
-		if err != err1 {
-			return err // the resource selected for deletion was already deleted
+		if err != ApplicationNotFound {
+			return err
 		}
 		return nil
 	}
