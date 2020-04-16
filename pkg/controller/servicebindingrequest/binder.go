@@ -12,7 +12,6 @@ import (
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
-	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,15 +75,15 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		return nil, err
+		err1 := errors.New("newfounderr")
+		return nil, err1
+
 	}
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		return nil, k8serror.NewNotFound(
-			gvr.GroupResource(),
-			b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-		)
+		err1 := errors.New("newfounderr")
+		return nil, err1
 	}
 	return objList, err
 }
@@ -529,7 +528,17 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *Binder) Unbind() error {
 	objs, err := b.search()
 	if err != nil {
-		return err
+		// gvr := schema.GroupVersionResource{
+		// 	Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
+		// 	Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
+		// 	Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+		// }
+		err1 := errors.New("newfounderr")
+		fmt.Println("WARNINGGGGGGGGGGGGGGG")
+		if err != err1 {
+			return err // the resource selected for deletion was already deleted
+		}
+		return nil
 	}
 	return b.remove(objs)
 }
