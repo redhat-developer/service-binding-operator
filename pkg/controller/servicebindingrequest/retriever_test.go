@@ -56,24 +56,24 @@ func TestRetriever(t *testing.T) {
 
 	t.Run("read", func(t *testing.T) {
 		// reading from secret, from status attribute
-		err := retriever.read(cr, "status", "dbCredentials", []string{
+		err := retriever.read("TEST_PREFIX", cr, "status", "dbCredentials", []string{
 			"binding:env:object:secret:user",
 			"binding:env:object:secret:password",
 		})
 		require.NoError(t, err)
 
 		t.Logf("retriever.data '%#v'", retriever.data)
-		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
-		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_SECRET_USER")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_SECRET_PASSWORD")
 
 		// reading from spec attribute
-		err = retriever.read(cr, "spec", "image", []string{
+		err = retriever.read("TEST_PREFIX", cr, "spec", "image", []string{
 			"binding:env:attribute",
 		})
 		require.NoError(t, err)
 
 		t.Logf("retriever.data '%#v'", retriever.data)
-		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_IMAGE")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_IMAGE")
 
 	})
 
@@ -85,25 +85,58 @@ func TestRetriever(t *testing.T) {
 	t.Run("readSecret", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret(cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readSecret("TEST_PREFIX", cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		require.NoError(t, err)
+
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_SECRET_USER")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_SECRET_PASSWORD")
+	})
+
+	t.Run("store", func(t *testing.T) {
+		retriever.store("TEST_PREFIX", cr, "test", []byte("test"))
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_TEST")
+		require.Equal(t, []byte("test"), retriever.data["SERVICE_BINDING_TEST_PREFIX_TEST"])
+	})
+
+	t.Run("non-empty SBR prefix and non-empty service prefix", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+		require.NotNil(t, retriever)
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("TEST_PREFIX", cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		require.NoError(t, err)
+
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_SECRET_USER")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_SECRET_PASSWORD")
+	})
+	t.Run("non-empty SBR prefix and empty service prefix", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "SERVICE_BINDING")
+		require.NotNil(t, retriever)
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("", cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		require.NoError(t, err)
 
 		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_USER")
 		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_SECRET_PASSWORD")
 	})
-
-	t.Run("store", func(t *testing.T) {
-		retriever.store(cr, "test", []byte("test"))
-		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_TEST")
-		require.Equal(t, []byte("test"), retriever.data["SERVICE_BINDING_DATABASE_TEST"])
-	})
-
-	t.Run("empty prefix", func(t *testing.T) {
+	t.Run("empty SBR prefix and non-empty service prefix", func(t *testing.T) {
 		retriever = NewRetriever(fakeDynClient, plan, "")
 		require.NotNil(t, retriever)
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readSecret(cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readSecret("TEST_PREFIX", cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
+		require.NoError(t, err)
+
+		require.Contains(t, retriever.data, "TEST_PREFIX_SECRET_USER")
+		require.Contains(t, retriever.data, "TEST_PREFIX_SECRET_PASSWORD")
+	})
+	t.Run("empty SBR prefix and empty service prefix", func(t *testing.T) {
+		retriever = NewRetriever(fakeDynClient, plan, "")
+		require.NotNil(t, retriever)
+		retriever.data = make(map[string][]byte)
+
+		err := retriever.readSecret("", cr, "db-credentials", []string{"user", "password"}, "spec", "dbConfigMap")
 		require.NoError(t, err)
 
 		require.Contains(t, retriever.data, "DATABASE_SECRET_USER")
@@ -197,15 +230,15 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 
 	t.Run("read", func(t *testing.T) {
 		// reading from configMap, from status attribute
-		err = retriever.read(cr, "spec", "dbConfigMap", []string{
+		err = retriever.read("TEST_PREFIX", cr, "spec", "dbConfigMap", []string{
 			"binding:env:object:configmap:user",
 			"binding:env:object:configmap:password",
 		})
 		require.NoError(t, err)
 
 		t.Logf("retriever.data '%#v'", retriever.data)
-		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_CONFIGMAP_USER")
-		require.Contains(t, retriever.data, "SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_CONFIGMAP_USER")
+		require.Contains(t, retriever.data, "SERVICE_BINDING_TEST_PREFIX_CONFIGMAP_PASSWORD")
 	})
 
 	t.Run("extractConfigMapItemName", func(t *testing.T) {
@@ -216,10 +249,10 @@ func TestRetrieverWithConfigMap(t *testing.T) {
 	t.Run("readConfigMap", func(t *testing.T) {
 		retriever.data = make(map[string][]byte)
 
-		err := retriever.readConfigMap(cr, crName, []string{"user", "password"}, "spec", "dbConfigMap")
+		err := retriever.readConfigMap("TEST_PREFIX", cr, crName, []string{"user", "password"}, "spec", "dbConfigMap")
 		require.NoError(t, err)
 
-		require.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_USER"))
-		require.Contains(t, retriever.data, ("SERVICE_BINDING_DATABASE_CONFIGMAP_PASSWORD"))
+		require.Contains(t, retriever.data, ("SERVICE_BINDING_TEST_PREFIX_CONFIGMAP_USER"))
+		require.Contains(t, retriever.data, ("SERVICE_BINDING_TEST_PREFIX_CONFIGMAP_PASSWORD"))
 	})
 }
