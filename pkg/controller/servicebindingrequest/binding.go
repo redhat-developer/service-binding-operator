@@ -299,6 +299,12 @@ var InvalidOptionsErr = errors.New("invalid options")
 
 // BuildServiceBinder creates a new binding manager according to options.
 func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
+
+	var isSBRDeleting bool
+	if options.SBR != nil && options.SBR.GetDeletionTimestamp() != nil {
+		isSBRDeleting = true
+	}
+
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
@@ -336,11 +342,15 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 		}
 	}
 
-	// gather retriever's read data
-	// TODO: do not return error
-	retrievedData, err := retriever.Get()
-	if err != nil {
-		return nil, err
+	var retrievedData map[string][]byte
+
+	if !isSBRDeleting {
+		// gather retriever's read data
+		// TODO: do not return error
+		retrievedData, err = retriever.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// gather related secret, again only appending it if there's a value.
