@@ -114,6 +114,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
+		if err == ApplicationNotFound {
+			logger.Info("SBR deleted after application deletion")
+			return Done()
+		}
 		logger.Error(err, "On retrieving service-binding-request instance.")
 		return DoneOnNotFound(err)
 	}
@@ -149,6 +153,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			var reason string
 			if err == EmptyBackingServiceSelectorsErr {
 				reason = "EmptyBackingServiceSelectors"
+			} else if err == ApplicationNotFound {
+				reason = "ApplicationUnavailable"
 			} else {
 				reason = "EmptyApplicationSelector"
 			}

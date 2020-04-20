@@ -540,7 +540,10 @@ func (b *Binder) Unbind() error {
 func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
-		return nil, err
+		if err != ApplicationNotFound {
+			return nil, err
+		}
+		return nil, nil
 	}
 	return b.update(objs)
 }
