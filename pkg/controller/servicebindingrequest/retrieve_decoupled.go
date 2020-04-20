@@ -58,29 +58,29 @@ func (r *Retriever) ReadBindableResourcesData(
 	return nil
 }
 
-func (r *Retriever) storeInto(envPrefix string, cr *unstructured.Unstructured, key string, value []byte) {
-	r.store(envPrefix, cr, key, value)
+func (r *Retriever) storeInto(envVarPrefix *string, cr *unstructured.Unstructured, key string, value []byte) {
+	r.store(envVarPrefix, cr, key, value)
 }
 
-func (r *Retriever) copyFrom(envPrefix string, u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
-	if err := r.read(envPrefix, u, path, fieldPath, descriptors); err != nil {
+func (r *Retriever) copyFrom(envVarPrefix *string, u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
+	if err := r.read(envVarPrefix, u, path, fieldPath, descriptors); err != nil {
 		return err
 	}
 	return nil
 }
 
 // ReadCRDDescriptionData reads data related to given crdDescription
-func (r *Retriever) ReadCRDDescriptionData(envPrefix string, u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
+func (r *Retriever) ReadCRDDescriptionData(envVarPrefix *string, u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range crdDescription.SpecDescriptors {
-		if err := r.copyFrom(envPrefix, u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+		if err := r.copyFrom(envVarPrefix, u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}
 
 	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range crdDescription.StatusDescriptors {
-		if err := r.copyFrom(envPrefix, u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+		if err := r.copyFrom(envVarPrefix, u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}

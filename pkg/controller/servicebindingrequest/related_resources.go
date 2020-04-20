@@ -9,7 +9,7 @@ import (
 type RelatedResource struct {
 	CRDDescription *v1alpha1.CRDDescription
 	CR             *unstructured.Unstructured
-	EnvVarPrefix   string
+	EnvVarPrefix   *string
 }
 
 // RelatedResources contains a collection of SBR related resources.
