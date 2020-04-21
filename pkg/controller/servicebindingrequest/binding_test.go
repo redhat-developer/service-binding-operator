@@ -83,6 +83,39 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantResult *reconcile.Result
 	}
 
+	assertSchemaPathResolution := func(args args, sb ServiceBinder) func(*testing.T) {
+		return func(t *testing.T) {
+			providedBindingPath := args.options.SBR.Spec.ApplicationSelector.BindingPath
+			computedBindingPath := sb.SBR.Spec.ApplicationSelector.BindingPath
+
+			if providedBindingPath != nil {
+
+				// user has provided BindingPath information explicitly
+				require.True(t, providedBindingPath.PodSpecPath != nil ||
+					providedBindingPath.CustomSecretPath != nil)
+
+				// ensure the provided values have not been adulterated.
+				if providedBindingPath.PodSpecPath != nil {
+					require.Equal(t, providedBindingPath.PodSpecPath.Containers,
+						computedBindingPath.PodSpecPath.Containers)
+					require.Equal(t, providedBindingPath.PodSpecPath.Volumes,
+						computedBindingPath.PodSpecPath.Volumes)
+
+				} else if computedBindingPath.CustomSecretPath != nil {
+					// ensure the provided values have not been adulterated.
+					require.Equal(t, providedBindingPath.CustomSecretPath,
+						computedBindingPath.CustomSecretPath)
+				}
+			} else {
+				// user has NOT provided BindingPath information explicitly
+
+				require.Equal(t, defaultPathToContainers, computedBindingPath.PodSpecPath.Containers)
+				require.Equal(t, defaultPathToVolumes, computedBindingPath.PodSpecPath.Volumes)
+				require.Nil(t, computedBindingPath.CustomSecretPath)
+			}
+		}
+	}
+
 	// assertBind exercises the bind functionality
 	assertBind := func(args args) func(*testing.T) {
 		return func(t *testing.T) {
@@ -187,35 +220,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 					}
 				}
 			}
-
-			providedBindingPath := args.options.SBR.Spec.ApplicationSelector.BindingPath
-			computedBindingPath := sb.SBR.Spec.ApplicationSelector.BindingPath
-
-			if providedBindingPath != nil {
-
-				// user has provided BindingPath information explicitly
-				require.True(t, providedBindingPath.PodSpecPath != nil ||
-					providedBindingPath.CustomSecretPath != nil)
-
-				// ensure the provided values have not been adulterated.
-				if providedBindingPath.PodSpecPath != nil {
-					require.Equal(t, providedBindingPath.PodSpecPath.Containers,
-						computedBindingPath.PodSpecPath.Containers)
-					require.Equal(t, providedBindingPath.PodSpecPath.Volumes,
-						computedBindingPath.PodSpecPath.Volumes)
-
-				} else if computedBindingPath.CustomSecretPath != nil {
-					// ensure the provided values have not been adulterated.
-					require.Equal(t, providedBindingPath.CustomSecretPath,
-						computedBindingPath.CustomSecretPath)
-				}
-			} else {
-				// user has NOT provided BindingPath information explicitly
-
-				require.Equal(t, defaultPathToContainers, computedBindingPath.PodSpecPath.Containers)
-				require.Equal(t, defaultPathToVolumes, computedBindingPath.PodSpecPath.Volumes)
-				require.Nil(t, computedBindingPath.CustomSecretPath)
-			}
+			assertSchemaPathResolution(args, *sb)
 		}
 	}
 
