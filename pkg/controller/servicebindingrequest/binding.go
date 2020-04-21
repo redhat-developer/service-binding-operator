@@ -359,8 +359,8 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 	if options.SBR.Spec.ApplicationSelector.BindingPath == nil {
 		options.SBR.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
 			PodSpecPath: &v1alpha1.PodSpecPath{
-				Containers: pathToContainers,
-				Volumes:    pathToVolumes,
+				Containers: defaultPathToContainers,
+				Volumes:    defaultPathToVolumes,
 			},
 		}
 	}

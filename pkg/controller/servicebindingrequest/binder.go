@@ -32,11 +32,11 @@ var (
 	// to find containers on supported objects
 	// Used as []string{"spec", "template", "spec", "containers"}
 
-	pathToContainers = "spec.template.spec.containers"
+	defaultPathToContainers = "spec.template.spec.containers"
 
 	// logical path to find volumes on supported objects
 	// used as []string{"spec", "template", "spec", "volumes"}
-	pathToVolumes = "spec.template.spec.volumes"
+	defaultPathToVolumes = "spec.template.spec.volumes"
 )
 
 // ChangeTriggerEnv hijacking environment in order to trigger a change

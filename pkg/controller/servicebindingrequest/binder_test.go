@@ -35,23 +35,72 @@ func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	return nil
 }
 
+func TestBindingCustomSecretPath(t *testing.T) {
+	ns := "custombinder"
+	name := "service-binding-request-custom"
+	matchLabels := map[string]string{
+		"appx": "x",
+	}
+
+	f := mocks.NewFake(t, ns)
+	sbrSecretPath := f.AddMockedServiceBindingRequest(name, &ns, "ref-custom-podspec", "deployment", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredDeployment("deployment", matchLabels)
+
+	customSecretPath := "metadata.clusterName"
+	sbrSecretPath.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+		PodSpecPath: &v1alpha1.PodSpecPath{
+			Containers: defaultPathToContainers,
+			Volumes:    defaultPathToVolumes,
+		},
+		CustomSecretPath: &customSecretPath,
+	}
+	binderForsbrSecretPath := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbrSecretPath,
+		[]string{},
+	)
+	require.NotNil(t, binderForsbrSecretPath)
+
+	t.Run("custom-path", func(t *testing.T) {
+		secretPath := binderForsbrSecretPath.getSecretFieldPath()
+		expectedSecretPath := []string{"metadata", "clusterName"}
+		require.True(t, reflect.DeepEqual(secretPath, expectedSecretPath))
+	})
+
+	t.Run("update custom secret path ", func(t *testing.T) {
+		list, err := binderForsbrSecretPath.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedDeployment, err := binderForsbrSecretPath.updateSecretField(&list.Items[0])
+		require.NoError(t, err)
+		require.NotNil(t, updatedDeployment)
+
+		customSecretPathSlice := strings.Split(customSecretPath, ".")
+
+		customSecretInMeta, found, err := unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, name, customSecretInMeta)
+	})
+}
+
 func TestBinderNew(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	matchLabels := map[string]string{
-		"connects-to": "database",
-		"environment": "binder",
+		"appx": "x",
 	}
+
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
-
-	customSecretPath := "metadata.clusterName"
 	sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
 		PodSpecPath: &v1alpha1.PodSpecPath{
-			Containers: pathToContainers,
-			Volumes:    pathToVolumes,
+			Containers: defaultPathToContainers,
+			Volumes:    defaultPathToVolumes,
 		},
-		CustomSecretPath: &customSecretPath,
 	}
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
@@ -62,7 +111,6 @@ func TestBinderNew(t *testing.T) {
 		sbr,
 		[]string{},
 	)
-
 	require.NotNil(t, binder)
 
 	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
@@ -71,7 +119,7 @@ func TestBinderNew(t *testing.T) {
 		"ref",
 		"ref",
 		deploymentsGVR,
-		map[string]string{},
+		matchLabels,
 	)
 
 	binderForSBRWithResourceRef := NewBinder(
@@ -115,24 +163,6 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, 1, len(list))
 		require.Equal(t, "name", list[0].Name)
 		require.Equal(t, "value", list[0].Value)
-	})
-
-	t.Run("update custom secret path ", func(t *testing.T) {
-		list, err := binder.search()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(list.Items))
-
-		updatedDeployment, err := binder.updateSecretField(&list.Items[0])
-		require.NoError(t, err)
-		require.NotNil(t, updatedDeployment)
-
-		customSecretPathSlice := strings.Split(customSecretPath, ".")
-
-		customSecretInMeta, found, err := unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
-		require.NoError(t, err)
-		require.True(t, found)
-		require.Equal(t, name, customSecretInMeta)
-
 	})
 
 	t.Run("update", func(t *testing.T) {
@@ -225,11 +255,6 @@ func TestBinderNew(t *testing.T) {
 		require.True(t, reflect.DeepEqual(volumesPath, expectedVolumesPath))
 	})
 
-	t.Run("custom-path", func(t *testing.T) {
-		secretPath := binder.getSecretFieldPath()
-		expectedSecretPath := []string{"metadata", "clusterName"}
-		require.True(t, reflect.DeepEqual(secretPath, expectedSecretPath))
-	})
 }
 
 func TestBinderAppendEnvVar(t *testing.T) {
