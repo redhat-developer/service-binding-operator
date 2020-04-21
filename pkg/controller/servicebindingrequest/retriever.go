@@ -197,7 +197,13 @@ func (r *Retriever) readSecret(envVarPrefix *string, cr *unstructured.Unstructur
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
 		// making sure key name has a secret reference
-		r.store(envVarPrefix, cr, fmt.Sprintf("secret_%s", k), data)
+		if envVarPrefix != nil && *envVarPrefix == "" {
+			r.store(envVarPrefix, cr, k, data)
+
+		} else {
+			r.store(envVarPrefix, cr, fmt.Sprintf("secret_%s", k), data)
+
+		}
 	}
 
 	r.Objects = append(r.Objects, secret)
@@ -235,7 +241,11 @@ func (r *Retriever) readConfigMap(envVarPrefix *string, cr *unstructured.Unstruc
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = value
 		// making sure key name has a configMap reference
-		r.store(envVarPrefix, cr, fmt.Sprintf("configMap_%s", k), []byte(value))
+		if envVarPrefix != nil && *envVarPrefix == "" {
+			r.store(envVarPrefix, cr, k, []byte(value))
+		} else {
+			r.store(envVarPrefix, cr, fmt.Sprintf("configMap_%s", k), []byte(value))
+		}
 	}
 
 	r.Objects = append(r.Objects, u)
