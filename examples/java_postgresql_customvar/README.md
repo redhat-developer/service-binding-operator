@@ -5,8 +5,7 @@
 This scenario illustrates binding an imported Java application to an in-cluster operated managed PostgreSQL Database.
 
 Note that this example app is configured to operate with OpenShift 4.3 or newer.
-To use this example app with OpenShift 4.2, replace references to `Deployment`s
-with `DeploymentConfig`s.
+To use this example app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -212,7 +211,6 @@ spec:
 
 | Field | Description |
 |-------|-------------|
-| BindingStatus | The binding status of Service Binding Request |
 | Secret | The name of the intermediate secret |
 
 That's it, folks!

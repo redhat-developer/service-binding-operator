@@ -26,7 +26,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	sbrcontroller "github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -194,11 +194,10 @@ func assertSBRStatus(
 		return err
 	}
 
-	success := sbrcontroller.BindingSuccess
-	status := sbr.Status.BindingStatus
-	if status != success {
-		return fmt.Errorf("SBR '%s' is on '%s', instead of '%s' status",
-			status, namespacedName, success)
+	for i, condition := range sbr.Status.Conditions {
+		if condition.Type != conditions.BindingReady && condition.Status != corev1.ConditionTrue {
+			return fmt.Errorf("Condition.Type and Condition.Status is '%s' and '%s' instead of '%s' and '%s'", sbr.Status.Conditions[i].Type, sbr.Status.Conditions[i].Status, conditions.BindingReady, corev1.ConditionTrue)
+		}
 	}
 	return nil
 }
@@ -358,7 +357,7 @@ func CreateSBR(
 ) *v1alpha1.ServiceBindingRequest {
 	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
 	sbr := mocks.ServiceBindingRequestMock(
-		namespacedName.Namespace, namespacedName.Name, resourceRef, "", applicationGVR, matchLabels)
+		namespacedName.Namespace, namespacedName.Name, nil, resourceRef, "", applicationGVR, matchLabels)
 
 	// This function call explicitly modifies default SBR created by
 	// the mock
@@ -377,7 +376,7 @@ func CreateSBR(
 
 // setSBRBackendGVK sets backend service selector
 func setSBRBackendGVK(sbr *v1alpha1.ServiceBindingRequest, resourceRef string, backendGVK schema.GroupVersionKind) {
-	sbr.Spec.BackingServiceSelector = v1alpha1.BackingServiceSelector{
+	sbr.Spec.BackingServiceSelector = &v1alpha1.BackingServiceSelector{
 		GroupVersionKind: metav1.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
 		ResourceRef:      resourceRef,
 	}

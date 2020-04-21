@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -16,6 +17,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 )
 
 func init() {
@@ -40,7 +43,7 @@ func TestBinderNew(t *testing.T) {
 		"environment": "binder",
 	}
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "ref", "", deploymentsGVR, matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
 
 	customSecretPath := "metadata.clusterName"
 	sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
@@ -64,6 +67,7 @@ func TestBinderNew(t *testing.T) {
 
 	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
 		"service-binding-request-with-ref",
+		nil,
 		"ref",
 		"ref",
 		deploymentsGVR,
@@ -159,6 +163,28 @@ func TestBinderNew(t *testing.T) {
 		parsedTime, err := time.Parse(time.RFC3339, envVar.Value)
 		require.NoError(t, err)
 		require.True(t, parsedTime.Before(time.Now()))
+
+		// test binder with extra modifier present
+		ch := make(chan struct{})
+		binder.modifier = ExtraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
+			close(ch)
+			return nil
+		})
+
+		list, err = binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedObjects, err = binder.update(list)
+		require.NoError(t, err)
+		require.Len(t, updatedObjects, 1)
+		<-ch
+
+		// call another update as object is already updated, modifier func should not be called
+		updatedObjects, err = binder.update(list)
+		require.NoError(t, err)
+		require.Len(t, updatedObjects, 0)
+		binder.modifier = nil
 	})
 
 	t.Run("remove", func(t *testing.T) {
@@ -229,7 +255,7 @@ func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
 
 	binder := NewBinder(
@@ -253,7 +279,7 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
-	sbr := f.AddMockedServiceBindingRequest(name, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
 	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
 
 	binder := NewBinder(
@@ -285,7 +311,7 @@ func TestBindTwoApplications(t *testing.T) {
 		"environment": "binder",
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef1", matchLabels1)
-	sbr1 := f.AddMockedServiceBindingRequest(name1, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
+	sbr1 := f.AddMockedServiceBindingRequest(name1, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
 	binder1 := NewBinder(
 		context.TODO(),
 		f.FakeClient(),
@@ -301,7 +327,7 @@ func TestBindTwoApplications(t *testing.T) {
 		"environment": "demo",
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef2", matchLabels2)
-	sbr2 := f.AddMockedServiceBindingRequest(name2, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
+	sbr2 := f.AddMockedServiceBindingRequest(name2, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
 	binder2 := NewBinder(
 		context.TODO(),
 		f.FakeClient(),
@@ -332,7 +358,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	gvr := knativev1.SchemeGroupVersion.WithResource("services") // Group/Version/Resource for sbr
-	sbr := f.AddMockedServiceBindingRequest(name, "", "knative-app", gvr, matchLabels)
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "", "knative-app", gvr, matchLabels)
 	f.AddMockedUnstructuredKnativeService("knative-app", matchLabels)
 
 	binder := NewBinder(
@@ -344,12 +370,87 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	)
 
 	require.NotNil(t, binder)
+	require.NotNil(t, binder.modifier)
 
 	t.Run("Knative service contract with service binding operator", func(t *testing.T) {
 		list, err := binder.search()
 		assert.Nil(t, err)
 		assert.Equal(t, 1, len(list.Items))
 
+	})
+
+	ksvc := mocks.KnativeServiceMock(ns, "knative-app-with-rev-name", matchLabels)
+	ksvc.Spec.Template.Name = "knative-app-with-rev-name-revision-1"
+
+}
+
+func Test_extraFieldsModifier(t *testing.T) {
+	ns := "binder"
+	name := "service-binding-request"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "binder",
+	}
+
+	f := mocks.NewFake(t, ns)
+	deploy := mocks.DeploymentMock(ns, "deployment-fake", matchLabels)
+	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", deploy.Name, deploymentsGVR, matchLabels)
+	binder := NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+	require.Nil(t, binder.modifier)
+
+	gvr := knativev1.SchemeGroupVersion.WithResource("services")
+	ksvc := mocks.KnativeServiceMock(ns, "knative-app-with-rev-name", matchLabels)
+	sbr = mocks.ServiceBindingRequestMock(ns, name, nil, "", ksvc.Name, gvr, matchLabels)
+
+	binder = NewBinder(
+		context.TODO(),
+		f.FakeClient(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+	)
+
+	require.NotNil(t, binder)
+	require.NotNil(t, binder.modifier)
+
+	t.Run("ksvc revision name is empty", func(t *testing.T) {
+		u, err := converter.ToUnstructured(&ksvc)
+		require.NoError(t, err)
+
+		err = binder.modifier.ModifyExtraFields(u)
+		require.NoError(t, err)
+
+		var modified knativev1.Service
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &modified)
+		require.NoError(t, err)
+		assert.Equal(t, ksvc, modified)
+	})
+
+	t.Run("ksvc revision name is not empty", func(t *testing.T) {
+		ksvc.Spec.Template.Name = fmt.Sprintf("%s-%s", ksvc.Name, "rev-1")
+
+		u, err := converter.ToUnstructured(&ksvc)
+		require.NoError(t, err)
+
+		err = binder.modifier.ModifyExtraFields(u)
+		require.NoError(t, err)
+
+		var modified knativev1.Service
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &modified)
+		require.NoError(t, err)
+		assert.Equal(t, "", modified.Spec.Template.Name)
+
+		ksvc.Spec.Template.Name = ""
+		// the rest fields shoud not be modified
+		assert.Equal(t, ksvc, modified)
 	})
 
 }

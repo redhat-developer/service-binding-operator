@@ -1,8 +1,8 @@
-# Binding an Imported app to an In-cluster Operator Managed PostgreSQL Database
+# Binding an Imported app in one namespace to an In-cluster Operator Managed PostgreSQL Database in another namespace
 
 ## Introduction
 
-This scenario illustrates binding an imported application to an in-cluster operated managed PostgreSQL Database.
+This scenario illustrates binding an imported application in one namespace to an in-cluster operated managed PostgreSQL Database in another namespace.
 
 Note that this example app is configured to operate with OpenShift 4.3 or newer. To use this example
 app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
@@ -35,12 +35,6 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 and install a `alpha` version.
 
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make install-service-binding-operator
-```
-
 This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
 
 #### Install the DB operator using an `OperatorSource`
@@ -62,12 +56,6 @@ spec:
 EOS
 ```
 
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make install-backing-db-operator-source
-```
-
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
 ![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
@@ -78,9 +66,9 @@ This makes the `Database` custom resource available, that the application develo
 
 ### Application Developer
 
-#### Create a namespace called `service-binding-demo`
+#### Create one namespace called `service-binding-demo-1`
 
-The application and the DB needs a namespace to live in so let's create one for them:
+The application would be in a namespace service-binding-demo-1:
 
 ``` shell
 cat <<EOS |kubectl apply -f -
@@ -88,14 +76,8 @@ cat <<EOS |kubectl apply -f -
 kind: Namespace
 apiVersion: v1
 metadata:
-  name: service-binding-demo
+  name: service-binding-demo-1
 EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-project
 ```
 
 #### Import an application
@@ -117,9 +99,21 @@ Notice, that during the import no DB config was mentioned or requestd.
 
 When the application is running navigate to its route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That means that the application is not connected to a DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
 
-#### Create a DB instance for the application
+#### Create a DB instance for the application in another namespace
 
-Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `Database` custom resource in the `service-binding-demo` namespace called `db-demo`:
+Now create another namespace:
+
+``` shell
+cat <<EOS |kubectl apply -f -
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: service-binding-demo-2
+EOS
+```
+
+Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `Database` custom resource in the `service-binding-demo-2` namespace called `db-demo`:
 
 ``` shell
 cat <<EOS |kubectl apply -f -
@@ -128,18 +122,12 @@ apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
 metadata:
   name: db-demo
-  namespace: service-binding-demo
+  namespace: service-binding-demo-2
 spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
 EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-backing-db-instance
 ```
 
 #### Express an intent to bind the DB and the application
@@ -155,7 +143,7 @@ apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
 metadata:
   name: binding-request
-  namespace: service-binding-demo
+  namespace: service-binding-demo-1
 spec:
   applicationSelector:
     resourceRef: nodejs-rest-http-crud
@@ -167,19 +155,14 @@ spec:
     version: v1alpha1
     kind: Database
     resourceRef: db-demo
+    namespace: service-binding-demo-2 #The namespace where the DB instance resides
 EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-service-binding-request
 ```
 
 There are 2 parts in the request:
 
 * `applicationSelector` - used to search for the application based on the resourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment`.
-* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
+* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo` residing in a namespace other than that of the imported application.
 
 That causes the application to be re-deployed.
 

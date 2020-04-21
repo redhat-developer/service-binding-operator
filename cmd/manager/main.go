@@ -7,8 +7,7 @@ import (
 	"os"
 	"runtime"
 
-	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.
-	osappsv1 "github.com/openshift/api/apps/v1"
+	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	kubemetrics "github.com/operator-framework/operator-sdk/pkg/kube-metrics"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
@@ -109,11 +108,6 @@ func main() {
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		mainLog.Error(err, "Error adding local operator scheme")
-		os.Exit(1)
-	}
-
-	if err := osappsv1.AddToScheme(mgr.GetScheme()); err != nil {
-		mainLog.Error(err, "Error on adding OS APIs to scheme")
 		os.Exit(1)
 	}
 

@@ -18,28 +18,6 @@ type Secret struct {
 	plan   *Plan             // plan instance
 }
 
-// customEnvParser parse informed data in order to interpolate with values provided by custom
-// environment component.
-func (s *Secret) customEnvParser(data map[string][]byte) (map[string][]byte, error) {
-	// transforming input into format expected by custom environment parser
-	cache := make(map[string]interface{})
-	for k, v := range data {
-		cache[k] = v
-	}
-
-	// interpolating custom environment
-	envParser := NewCustomEnvParser(s.plan.SBR.Spec.CustomEnvVar, cache)
-	values, err := envParser.Parse()
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range values {
-		data[k] = []byte(v.(string))
-	}
-	return data, nil
-}
-
 // buildResourceClient creates a resource client to handle corev1/secret resource.
 func (s *Secret) buildResourceClient() dynamic.ResourceInterface {
 	gvr := corev1.SchemeGroupVersion.WithResource(SecretResource)
@@ -84,11 +62,7 @@ func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 
 // Commit will store informed data as a secret, commit it against the API server. It can forward
 // errors from custom environment parser component, or from the API server itself.
-func (s *Secret) Commit(data map[string][]byte) (*unstructured.Unstructured, error) {
-	payload, err := s.customEnvParser(data)
-	if err != nil {
-		return nil, err
-	}
+func (s *Secret) Commit(payload map[string][]byte) (*unstructured.Unstructured, error) {
 	return s.createOrUpdate(payload)
 }
 

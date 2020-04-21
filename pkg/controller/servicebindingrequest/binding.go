@@ -3,7 +3,6 @@ package servicebindingrequest
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
@@ -207,7 +206,6 @@ func (b *ServiceBinder) onError(
 		Reason:  BindingFail,
 		Message: b.message(err),
 	})
-	sbrStatus.BindingStatus = BindingFail
 	newSbr, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
@@ -243,7 +241,6 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
 
-	sbrStatus.BindingStatus = BindingSuccess
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   conditions.BindingReady,
 		Status: corev1.ConditionTrue,
@@ -270,11 +267,21 @@ func (b *ServiceBinder) setApplicationObjects(
 	sbrStatus *v1alpha1.ServiceBindingRequestStatus,
 	objs []*unstructured.Unstructured,
 ) {
-	names := []string{}
+	boundApps := []v1alpha1.BoundApplication{}
 	for _, obj := range objs {
-		names = append(names, fmt.Sprintf("%s/%s", obj.GetNamespace(), obj.GetName()))
+		boundApp := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   obj.GroupVersionKind().Group,
+				Version: obj.GroupVersionKind().Version,
+				Kind:    obj.GetKind(),
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: obj.GetName(),
+			},
+		}
+		boundApps = append(boundApps, boundApp)
 	}
-	sbrStatus.ApplicationObjects = names
+	sbrStatus.Applications = boundApps
 }
 
 // buildPlan creates a new plan.
@@ -292,6 +299,12 @@ var InvalidOptionsErr = errors.New("invalid options")
 
 // BuildServiceBinder creates a new binding manager according to options.
 func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
+
+	var isSBRDeleting bool
+	if options.SBR != nil && options.SBR.GetDeletionTimestamp() != nil {
+		isSBRDeleting = true
+	}
+
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
@@ -329,11 +342,15 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 		}
 	}
 
-	// gather retriever's read data
-	// TODO: do not return error
-	retrievedData, err := retriever.Get()
-	if err != nil {
-		return nil, err
+	var retrievedData map[string][]byte
+
+	if !isSBRDeleting {
+		// gather retriever's read data
+		// TODO: do not return error
+		retrievedData, err = retriever.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// gather related secret, again only appending it if there's a value.

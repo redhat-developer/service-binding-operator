@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"bytes"
+	"encoding/json"
 	"text/template"
 
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func NewCustomEnvParser(envMap []corev1.EnvVar, cache map[string]interface{}) *C
 func (c *CustomEnvParser) Parse() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
-		tmpl, err := template.New("set").Parse(v.Value)
+		tmpl, err := template.New("set").Funcs(template.FuncMap{"json": marshalToJSON}).Parse(v.Value)
 		if err != nil {
 			return data, err
 		}
@@ -41,4 +42,11 @@ func (c *CustomEnvParser) Parse() (map[string]interface{}, error) {
 		data[v.Name] = buf.String()
 	}
 	return data, nil
+}
+func marshalToJSON(m interface{}) (string, error) {
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
 }

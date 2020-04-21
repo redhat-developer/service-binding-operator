@@ -5,17 +5,20 @@ import (
 	"errors"
 
 	"k8s.io/apimachinery/pkg/api/meta"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 var (
-	plannerLog = log.NewLog("planner")
+	plannerLog                 = log.NewLog("planner")
+	errBackingServiceNamespace = errors.New("backing Service Namespace is unspecified")
 )
 
 // Planner plans resources needed to bind a given backend service, using OperatorLifecycleManager
@@ -36,7 +39,7 @@ type Plan struct {
 }
 
 // searchCR based on a CustomResourceDefinitionDescription and name, search for the object.
-func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
+func (p *Planner) searchCR(selector v1alpha1.BackingServiceSelector) (*unstructured.Unstructured, error) {
 	// gvr is the plural guessed resource for the given selector
 	gvk := schema.GroupVersionKind{
 		Group:   selector.Group,
@@ -44,8 +47,13 @@ func (p *Planner) searchCR(namespace string, selector v1alpha1.BackingServiceSel
 		Kind:    selector.Kind,
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+
+	if selector.Namespace == nil {
+		return nil, errBackingServiceNamespace
+	}
+
 	// delegate the search selector's namespaced resource client
-	return p.client.Resource(gvr).Namespace(namespace).Get(selector.ResourceRef, metav1.GetOptions{})
+	return p.client.Resource(gvr).Namespace(*selector.Namespace).Get(selector.ResourceRef, metav1.GetOptions{})
 }
 
 // CRDGVR is the plural GVR for Kubernetes CRDs.
@@ -70,9 +78,18 @@ var EmptyBackingServiceSelectorsErr = errors.New("backing service selectors are 
 // Plan by retrieving the necessary resources related to binding a service backend.
 func (p *Planner) Plan() (*Plan, error) {
 	ns := p.sbr.GetNamespace()
-	selectors := append([]v1alpha1.BackingServiceSelector{}, p.sbr.Spec.BackingServiceSelectors...)
-	if (p.sbr.Spec.BackingServiceSelector != v1alpha1.BackingServiceSelector{}) {
-		selectors = append(selectors, p.sbr.Spec.BackingServiceSelector)
+
+	var emptyApplication v1alpha1.ApplicationSelector
+	if p.sbr.Spec.ApplicationSelector == emptyApplication {
+		return nil, EmptyApplicationSelectorErr
+	}
+
+	var selectors []v1alpha1.BackingServiceSelector
+	if p.sbr.Spec.BackingServiceSelector != nil {
+		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelector)
+	}
+	if p.sbr.Spec.BackingServiceSelectors != nil {
+		selectors = append(selectors, *p.sbr.Spec.BackingServiceSelectors...)
 	}
 
 	if len(selectors) == 0 {
@@ -81,28 +98,54 @@ func (p *Planner) Plan() (*Plan, error) {
 
 	relatedResources := make([]*RelatedResource, 0)
 	for _, s := range selectors {
+
+		var crdDescription *olmv1alpha1.CRDDescription
+
+		if s.Namespace == nil {
+			s.Namespace = &ns
+		}
+
 		bssGVK := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
+
+		// Start with looking up if the resource exists
+		// If yes, errors during lookups of the CRD and
+		// the CRD could be ignored.
+		cr, err := p.searchCR(s)
+		if err != nil {
+			return nil, err
+		}
 
 		// resolve the CRD using the service's GVK
 		crd, err := p.searchCRD(bssGVK)
 		if err != nil {
-			return nil, err
-		}
-		p.logger.Debug("Resolved CRD", "CRD", crd)
+			// expected this to work, but didn't
+			// if k8sError.IsNotFound(err) {...}
+			p.logger.Error(err, "Probably not a CRD")
 
-		// resolve the CRDDescription based on the service's GVK and the resolved CRD
-		olm := NewOLM(p.client, ns)
-		crdDescription, err := olm.SelectCRDByGVK(bssGVK, crd)
+		} else {
+
+			p.logger.Debug("Resolved CRD", "CRD", crd)
+
+			olm := NewOLM(p.client, ns)
+
+			// Parse annotations from the OLM descriptors or the CRD
+			crdDescription, err = olm.SelectCRDByGVK(bssGVK, crd)
+			if err != nil {
+				p.logger.Error(err, "Probably not an OLM operator")
+			}
+			p.logger.Debug("Tentatively resolved CRDDescription", "CRDDescription", crdDescription)
+		}
+
+		// Parse ( and override ) annotations from the CR or kubernetes object
+		if crdDescription == nil {
+			crdDescription = &olmv1alpha1.CRDDescription{}
+		}
+		err = buildCRDDescriptionFromCR(cr, crdDescription)
 		if err != nil {
 			return nil, err
 		}
-		p.logger.Debug("Resolved CRDDescription", "CRDDescription", crdDescription)
 
-		cr, err := p.searchCR(ns, s)
-		if err != nil {
-			return nil, err
-		}
-
+		p.logger.Debug("Computed CRDDescription", "CRDDescription", crdDescription)
 		r := &RelatedResource{
 			CRDDescription: crdDescription,
 			CR:             cr,

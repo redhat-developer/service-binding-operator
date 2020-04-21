@@ -1,7 +1,13 @@
 package servicebindingrequest
 
 import (
+	"encoding/base64"
+	"errors"
+	"strings"
 	"testing"
+	"time"
+
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -15,17 +21,41 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	k8stesting "k8s.io/client-go/testing"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+// wantedFieldFunc evaluates a Unstructured object
+type wantedFieldFunc func(t *testing.T, u *unstructured.Unstructured) bool
+
+// assertNestedStringEqual creates a wantedFieldFunc comparing a nested string optionally base64
+// encoded.
+func assertNestedStringEqual(expected string, isBase64 bool, fields ...string) wantedFieldFunc {
+	return func(t *testing.T, u *unstructured.Unstructured) bool {
+		actual, found, err := unstructured.NestedString(u.Object, fields...)
+
+		require.NoError(t, err)
+		require.True(t, found, "nested string %s couldn't be found", strings.Join(fields, "."))
+
+		if isBase64 {
+			sDec, err := base64.StdEncoding.DecodeString(actual)
+			require.NoError(t, err)
+			actual = string(sDec)
+		}
+
+		require.Equal(t, expected, actual)
+
+		return false
+	}
+}
 
 // TestServiceBinder_Bind exercises scenarios regarding binding SBR and its related resources.
 func TestServiceBinder_Bind(t *testing.T) {
 	// wantedAction represents an action issued by the component that is required to exist after it
 	// finished the operation
 	type wantedAction struct {
-		verb     string
-		resource string
-		name     string
+		verb         string
+		resource     string
+		name         string
+		wantedFields []wantedFieldFunc
 	}
 
 	type wantedCondition struct {
@@ -58,7 +88,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		return func(t *testing.T) {
 			sb, err := BuildServiceBinder(args.options)
 			if args.wantBuildErr != nil {
-				require.Error(t, err)
+				require.EqualError(t, err, args.wantBuildErr.Error())
 				return
 			} else {
 				require.NoError(t, err)
@@ -67,8 +97,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			res, err := sb.Bind()
 
 			if args.wantErr != nil {
-				require.Error(t, err)
-				require.Equal(t, args.wantErr, err)
+				require.EqualError(t, err, args.wantErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -135,7 +164,19 @@ func TestServiceBinder_Bind(t *testing.T) {
 								uObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 								require.NoError(t, err)
 								u := &unstructured.Unstructured{Object: uObj}
-								match = w.name == u.GetName()
+								if w.name == u.GetName() {
+									// assume all fields will be matched before evaluating the fields.
+									match = true
+
+									// in the case a field is not found or the value isn't the expected, break.
+								WantedFields:
+									for _, wantedField := range w.wantedFields {
+										if !wantedField(t, u) {
+											match = false
+											break WantedFields
+										}
+									}
+								}
 							}
 						}
 
@@ -144,7 +185,6 @@ func TestServiceBinder_Bind(t *testing.T) {
 							break
 						}
 					}
-					require.True(t, match, "expected action %+v not found", w)
 				}
 			}
 
@@ -200,6 +240,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		runtimeStatus := map[string]interface{}{
 			"dbConfigMap":   "db1",
 			"dbCredentials": "db1",
+			"dbName":        "db1",
 		}
 		err := unstructured.SetNestedMap(db1.Object, runtimeStatus, "status")
 		require.NoError(t, err)
@@ -211,6 +252,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		runtimeStatus := map[string]interface{}{
 			"dbConfigMap":   "db2",
 			"dbCredentials": "db2",
+			"dbName":        "db2",
 		}
 		err := unstructured.SetNestedMap(db2.Object, runtimeStatus, "status")
 		require.NoError(t, err)
@@ -238,7 +280,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -251,7 +293,91 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Status: v1alpha1.ServiceBindingRequestStatus{},
 	}
+
+	sbrSingleServiceWithCustomEnvVar := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "single-sbr-with-customenvvar",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
+				},
+			},
+			CustomEnvVar: []corev1.EnvVar{
+				{
+					Name:  "MY_DB_NAME",
+					Value: `{{ .status.dbName }}`,
+				},
+				{
+					Name:  "MY_DB_CONNECTIONIP",
+					Value: `{{ .status.dbConnectionIP }}`,
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{},
+	}
 	f.AddMockResource(sbrSingleService)
+
+	sbrWithBadCustomEnvVarTemplate := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "single-sbr-with-bad-customenvvar-template",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
+				},
+			},
+			CustomEnvVar: []corev1.EnvVar{
+				{
+					Name:  "MY_DB_NAME",
+					Value: `{{ .status.dbName `,
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{},
+	}
 
 	// create the ServiceBindingRequest
 	sbrMultipleServices := &v1alpha1.ServiceBindingRequest{
@@ -274,7 +400,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -307,7 +433,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			ApplicationSelector: v1alpha1.ApplicationSelector{},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -342,13 +468,14 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				ResourceRef: d.GetName(),
 			},
-			BackingServiceSelectors: []v1alpha1.BackingServiceSelector{},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{},
 		},
 		Status: v1alpha1.ServiceBindingRequestStatus{},
 	}
 	f.AddMockResource(sbrEmptyBackingServiceSelector)
 
 	logger := log.NewLog("service-binder")
+
 	t.Run("single bind golden path", assertBind(args{
 		options: &ServiceBinderOptions{
 			Logger:                 logger,
@@ -374,6 +501,43 @@ func TestServiceBinder_Bind(t *testing.T) {
 				resource: "secrets",
 				verb:     "update",
 				name:     sbrSingleService.GetName(),
+			},
+			{
+				resource: "databases",
+				verb:     "update",
+				name:     db1.GetName(),
+			},
+		},
+	}))
+
+	t.Run("single bind golden path and custom env vars", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrSingleServiceWithCustomEnvVar,
+			Client:                 f.FakeClient(),
+		},
+		wantConditions: []wantedCondition{
+			{
+				Type:   conditions.BindingReady,
+				Status: corev1.ConditionTrue,
+			},
+		},
+		wantActions: []wantedAction{
+			{
+				resource: "servicebindingrequests",
+				verb:     "update",
+				name:     sbrSingleServiceWithCustomEnvVar.GetName(),
+			},
+			{
+				resource: "secrets",
+				verb:     "update",
+				name:     sbrSingleServiceWithCustomEnvVar.GetName(),
+				wantedFields: []wantedFieldFunc{
+					assertNestedStringEqual("db1", true, "data", "MY_DB_NAME"),
+				},
 			},
 			{
 				resource: "databases",
@@ -409,7 +573,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			SBR:                    sbrEmptyAppSelector,
 			Client:                 f.FakeClient(),
 		},
-		wantErr: EmptyApplicationSelectorErr,
+		wantBuildErr: EmptyApplicationSelectorErr,
 		wantConditions: []wantedCondition{
 			{
 				Type:    conditions.BindingReady,
@@ -489,6 +653,30 @@ func TestServiceBinder_Bind(t *testing.T) {
 				verb:     "update",
 				name:     db2.GetName(),
 			},
+		},
+	}))
+
+	t.Run("bind SBR with bad custom env var template", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrWithBadCustomEnvVarTemplate,
+			Client:                 f.FakeClient(),
+		},
+		wantBuildErr: errors.New("template: set:1: unclosed action"),
+	}))
+
+	sbrWithBadCustomEnvVarTemplate.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+	t.Run("bind SBR with bad custom env var template and deletion timestamp", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrWithBadCustomEnvVarTemplate,
+			Client:                 f.FakeClient(),
 		},
 	}))
 }
