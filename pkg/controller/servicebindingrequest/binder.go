@@ -13,7 +13,6 @@ import (
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
-	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -65,6 +64,7 @@ func (f ExtraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured)
 }
 
 var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
+var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
@@ -95,15 +95,13 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		return nil, err
+		return nil, ApplicationNotFound
+
 	}
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		return nil, k8serror.NewNotFound(
-			gvr.GroupResource(),
-			b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-		)
+		return nil, ApplicationNotFound
 	}
 	return objList, err
 }
@@ -555,6 +553,9 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *Binder) Unbind() error {
 	objs, err := b.search()
 	if err != nil {
+		if errors.Is(err, ApplicationNotFound) {
+			return nil
+		}
 		return err
 	}
 	return b.remove(objs)
@@ -565,6 +566,9 @@ func (b *Binder) Unbind() error {
 func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
+		if errors.Is(err, ApplicationNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return b.update(objs)

@@ -1,6 +1,8 @@
 package servicebindingrequest
 
 import (
+	"errors"
+
 	v1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	corev1 "k8s.io/api/core/v1"
@@ -114,6 +116,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
+		if errors.Is(err, ApplicationNotFound) {
+			logger.Info("SBR deleted after application deletion")
+			return Done()
+		}
 		logger.Error(err, "On retrieving service-binding-request instance.")
 		return DoneOnNotFound(err)
 	}
@@ -147,8 +153,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		if err == EmptyBackingServiceSelectorsErr || err == EmptyApplicationSelectorErr {
 			// TODO: find or create an error type containing suitable information to be propagated
 			var reason string
-			if err == EmptyBackingServiceSelectorsErr {
+			if errors.Is(err, EmptyBackingServiceSelectorsErr) {
 				reason = "EmptyBackingServiceSelectors"
+			} else if errors.Is(err, ApplicationNotFound) {
+				reason = "ApplicationUnavailable"
 			} else {
 				reason = "EmptyApplicationSelector"
 			}
