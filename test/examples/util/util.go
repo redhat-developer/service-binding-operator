@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	//Timeout defines the amount of time we should spend waiting for the resource when condition is true
+	//CmdTimeout defines the amount of time we should spend waiting for the resource when condition is true
 	CmdTimeout    = 10 * time.Minute
 	retryInterval = 5 * time.Second
 	retryTimeout  = 3 * time.Minute
