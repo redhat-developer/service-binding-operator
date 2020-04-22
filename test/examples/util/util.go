@@ -79,7 +79,6 @@ func GetPodNameFromLst(pods, srchItem string) (bool, string) {
 			}
 			return true, item
 		}
-		checkFlag = false
 	}
 	return checkFlag, item
 }
