@@ -185,3 +185,25 @@ func executeExecCmd(item ...string) (bool, string) {
 	}
 	return checkFlag, cmdRes
 }
+
+//GetPodLst fetches the list of pods
+func GetPodLst(ns string) string {
+	log.Print("Fetching the list of running pods")
+	pods := GetCmdResult("", "oc", "get", "pods", "-n", ns, "-o", `jsonpath={.items[*].metadata.name}`)
+	if pods == "" {
+		log.Fatalf("No pods are running...")
+	}
+	log.Printf("The list of running pods -- %v", pods)
+	return pods
+}
+
+//GetPodNameFromListOfPods returns the pod name requested from the list of pods running
+func GetPodNameFromListOfPods(ns string, expPodName string) string {
+	pods := GetPodLst(ns)
+	checkFlag, podName := GetPodNameFromLst(pods, expPodName)
+	if !checkFlag {
+		log.Fatalf("list does not contain pod from the list of pods running service binding operator in the cluster")
+	}
+	log.Printf("Pod Name --> %v", podName)
+	return podName
+}

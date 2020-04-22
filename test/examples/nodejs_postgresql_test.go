@@ -2,7 +2,6 @@ package examples_test
 
 import (
 	"fmt"
-	"log"
 
 	"strings"
 	"testing"
@@ -11,11 +10,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/test/examples/util"
 	"github.com/stretchr/testify/require"
 	"github.com/tebeka/selenium"
-
-	"io/ioutil"
-
-	"gopkg.in/yaml.v2"
-	appsv1 "k8s.io/api/apps/v1"
 )
 
 var (
@@ -27,10 +21,8 @@ var (
 	nodeJsApp = "https://github.com/pmacik/nodejs-rest-http-crud"
 	appName   = "nodejs-rest-http-crud"
 
-	ipName, ipStatus, podName, podStatus, dbOprRes string
-	expBuildPodName, dc, bc                        string
-	clusterAvailable                               = false
-	checkFlag                                      bool
+	bc               string
+	clusterAvailable = false
 
 	pkgManifest = "db-operators"
 	bckSvc      = "postgresql-operator"
@@ -49,44 +41,35 @@ func TestNodeJSPostgreSQL(t *testing.T) {
 
 	//t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
 	//t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
-	t.Run("create-project", CreatePorject)
-	t.Run("import-nodejs-app", ImportNodeJSApp)
+	//t.Run("create-project", CreatePorject)
+	///t.Run("import-nodejs-app", ImportNodeJSApp)
 
 	//Comment this once https://github.com/openshift/oc/pull/355 is fixed
-	t.Run("use-deployment", UseDeployment)
-	t.Run("create-backing-db-instance", CreateBackingDbInstance)
-	t.Run("createservice-binding-request", CreateServiceBindingRequest)
+	//t.Run("use-deployment", UseDeployment)
 
-	//t.Run("test-yaml", TestYaml)
+	//t.Run("create-backing-db-instance", CreateBackingDbInstance)
+	t.Run("createservice-binding-request", CreateServiceBindingRequest)
 
 }
 
-func UseDeployment(t *testing.T) {
+func UseDeployment(t *testing.T, dc string) {
+	expDeployPodName := bc + "-1-deploy"
 
 	t.Log(" Delete the deployment config ")
 	deletedStatus := util.GetCmdResult("", "oc", "delete", "dc", dc, "-n", pjt)
 	require.Containsf(t, deletedStatus, "deleted", "Deployment config is deleted with the message %d \n", deletedStatus)
 	t.Logf("-> Deployment config is deleted with the message %s \n", deletedStatus)
 
-	buildPods := util.GetCmdResult("", "oc", "get", "pods", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
-	t.Logf(" List of pods running in the cluster - %s", buildPods)
-	t.Log(" Fetching the build pod name from the list of pods ")
-
-	checkFlag, deploymentBuildPodName := util.GetPodNameFromLst(buildPods, expBuildPodName)
+	pods := util.GetPodLst(ns)
+	checkFlag, deploymentPodName := util.GetPodNameFromLst(pods, expDeployPodName)
 	require.NotEqual(t, true, checkFlag, "List does not contain the pod")
-	require.NotContainsf(t, deploymentBuildPodName, expBuildPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", expBuildPodName)
-	t.Logf("-> list does not contain %s build pod from the list of pods running builds in the cluster \n", expBuildPodName)
+	require.NotContainsf(t, deploymentPodName, expDeployPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", deploymentPodName)
+	t.Logf("-> list does not contain %s build pod from the list of pods running builds in the cluster \n", deploymentPodName)
 
 	deploymentData := util.GetCmdResult("", "oc", "apply", "-f", "deployment.yaml")
 	t.Logf("-> Deployment config is deleted with the message %s \n", deploymentData)
 
-	buildPods = util.GetCmdResult("", "oc", "get", "pods", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
-	require.NotEmptyf(t, buildPods, "", "There are number of build pods listed in a cluster %s \n", buildPods)
-	t.Logf(" List of pods running in the cluster - %s", buildPods)
-	t.Log(" Fetching the build pod name from the list of pods ")
-
-	checkFlag, deploymentPodName := util.GetPodNameFromLst(buildPods, bc)
-	require.Equal(t, true, checkFlag, "List does not contain the pod")
+	deploymentPodName = util.GetPodNameFromListOfPods(pjt, bc)
 	require.Containsf(t, deploymentPodName, bc, "list does not contain %s build pod from the list of pods running builds in the cluster", deploymentPodName)
 	t.Logf("-> deployment build Pod name is %s \n", deploymentPodName)
 
@@ -104,21 +87,6 @@ func UseDeployment(t *testing.T) {
 	//t.Logf("-> Deployment status is %s \n", envStatus)
 	//envFromStatus := util.GetCmdResult("", "oc", "get", "deployment", deployment, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
 	//t.Logf("-> Deployment status is %s \n", envFromStatus)
-}
-
-func TestYaml(t *testing.T) {
-
-	deployment := appsv1.Deployment{}
-	data, err := ioutil.ReadFile("/home/shobith/rh/pjts/serviceBindingOperator/src/github.com/redhat-developer/service-binding-operator/examples/nodejs_postgresql/deployment.yaml")
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	err = yaml.Unmarshal(data, &deployment)
-	if err != nil {
-		log.Fatalf("error: %v", err)
-	}
-	fmt.Printf("%v", deployment)
-
 }
 
 //SetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
@@ -150,27 +118,20 @@ func MakeInstallServiceBindingOperator(t *testing.T) {
 
 	// with openshift-operators namespace, capture the install plan
 	t.Log(" Fetching the status of install plan name ")
-	ipName = util.GetCmdResult("", "oc", "get", "subscription", oprName, "-n", ns, "-o", `jsonpath={.status.installplan.name}`)
+	ipName := util.GetCmdResult("", "oc", "get", "subscription", oprName, "-n", ns, "-o", `jsonpath={.status.installplan.name}`)
 	t.Logf("-> Install plan-ip name is %s \n", ipName)
 
 	//// with openshift-operators namespace, capture the install plan status of db-operators
 	t.Log(" Fetching the status of install plan status ")
-	ipStatus = util.GetCmdResult("Complete", "oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`)
+	ipStatus := util.GetCmdResult("Complete", "oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`)
 	t.Logf("-> Install plan-ip name is %s \n", ipStatus)
 
-	//oc get pods -n openshift-operator
-	t.Log("Fetching the pod name of the running pod")
-	pods := util.GetCmdResult("", "oc", "get", "pods", "-n", ns, "-o", `jsonpath={.items[*].metadata.name}`)
-	require.NotEmptyf(t, pods, "", "There are number of pods listed in a cluster %s \n", pods)
-
-	checkFlag, podName := util.GetPodNameFromLst(pods, oprName)
-	if checkFlag {
-		require.Containsf(t, podName, oprName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
-		t.Logf("-> Pod name is %s \n", podName)
-	}
+	podName := util.GetPodNameFromListOfPods(ns, oprName)
+	require.Containsf(t, podName, oprName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
+	t.Logf("-> Pod name is %s \n", podName)
 
 	t.Log("Fetching the status of running pod")
-	podStatus = util.GetCmdResult("Running", "oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`)
+	podStatus := util.GetCmdResult("Running", "oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`)
 	t.Logf("-> Pod name is %s \n", podStatus)
 	require.Equal(t, "Running", podStatus, "'pod plan status' is %d \n", podStatus)
 
@@ -199,25 +160,19 @@ func MakeInstallBackingServiceOperator(t *testing.T) {
 	t.Logf("subscription output is %s \n", subRes)
 
 	// with openshift-operators namespace, capture the install plan
-	ipName = util.GetCmdResult("", "oc", "get", "subscription", pkgManifest, "-n", ns, "-o", `jsonpath={.status.installplan.name}`)
+	ipName := util.GetCmdResult("", "oc", "get", "subscription", pkgManifest, "-n", ns, "-o", `jsonpath={.status.installplan.name}`)
 	t.Logf("-> Pod name is %s \n", ipName)
 
 	//// with openshift-operators namespace, capture the install plan status of db-operators
 	t.Log(" Fetching the status of install plan ")
-	ipStatus = util.GetCmdResult("Complete", "oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`)
+	ipStatus := util.GetCmdResult("Complete", "oc", "get", "ip", "-n", ns, ipName, "-o", `jsonpath={.status.phase}`)
 	t.Logf("-> Pod name is %s \n", ipStatus)
 	require.Equal(t, ipStatus, "Complete", "'install plan status' is %d \n", ipStatus)
 
-	//oc get pods -n openshift-operator
-	t.Log("Fetching the pod name of the running pod")
-	pods := util.GetCmdResult("", "oc", "get", "pods", "-n", ns, "-o", `jsonpath={.items[*].metadata.name}`)
-	require.NotEmptyf(t, pods, "", "There are number of pods listed in a cluster %s \n", pods)
+	podName := util.GetPodNameFromListOfPods(ns, bckSvc)
+	require.Containsf(t, podName, bckSvc, "list does not contain %s pod from the list of pods running backing service operator in the cluster", bckSvc)
+	t.Logf("-> Pod name is %s \n", podName)
 
-	checkFlag, podName := util.GetPodNameFromLst(pods, bckSvc)
-	if checkFlag {
-		require.Containsf(t, podName, bckSvc, "list does not contain %s pod from the list of pods running service binding operator in the cluster", bckSvc)
-		t.Logf("-> Pod name is %s \n", podName)
-	}
 	//oc get pod <<Name of pod(from step 4)>> -n openshift-operators -o jsonpath='{.status.phase}'
 	t.Log("Fetching the status of running pod")
 	podStatus := util.GetCmdResult("Running", "oc", "get", "pod", podName, "-n", ns, "-o", `jsonpath={.status.phase}`)
@@ -288,14 +243,10 @@ func ImportNodeJSApp(t *testing.T) {
 	buildStatus := util.GetCmdResult("Complete", "oc", "get", "build", buildName, "-o", `jsonpath={.status.phase}`)
 	require.Equal(t, "Complete", buildStatus, "Build status of config name %d is %d \n", buildName, buildStatus)
 	t.Logf(" Buid status of an app %s", buildStatus)
+
 	t.Log(" Fetching the list of pod for the build of an app ")
-	expBuildPodName = buildName + "-build"
-	buildPods := util.GetCmdResult("", "oc", "get", "pods", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
-	require.NotEmptyf(t, buildPods, "", "There are number of build pods listed in a cluster %s \n", buildPods)
-	t.Logf(" List of pods running in the cluster - %s", buildPods)
-	t.Log(" Fetching the build pod name from the list of pods ")
-	checkFlag, buildPodName := util.GetPodNameFromLst(buildPods, expBuildPodName)
-	require.Equal(t, true, checkFlag, "List does not contain the pod")
+	expBuildPodName := buildName + "-build"
+	buildPodName := util.GetPodNameFromListOfPods(pjt, expBuildPodName)
 	require.Containsf(t, expBuildPodName, buildPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", buildPodName)
 	t.Logf("-> Pod name is %s \n", buildPodName)
 
@@ -304,26 +255,29 @@ func ImportNodeJSApp(t *testing.T) {
 	require.Equal(t, "Succeeded", buildPodStatus, "Build pod status is %d \n", buildPodStatus)
 
 	t.Log("Fetching the deployment resource pod name from the list of pods")
-	expBuildPodName = bc + "-1-deploy"
-	checkFlag, deploymentBuildPodName := util.GetPodNameFromLst(buildPods, expBuildPodName)
-	require.Equal(t, true, checkFlag, "List does not contain the pod")
-	require.Containsf(t, deploymentBuildPodName, expBuildPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", deploymentBuildPodName)
-	t.Logf("-> deployment build Pod name is %s \n", deploymentBuildPodName)
+	expDeployPodName := bc + "-1-deploy"
+
+	deploymentPodName := util.GetPodNameFromListOfPods(pjt, expDeployPodName)
+	require.Containsf(t, deploymentPodName, expDeployPodName, "list does not contain %s build pod from the list of pods running builds in the cluster", deploymentPodName)
+	t.Logf("-> deployment build Pod name is %s \n", deploymentPodName)
 
 	t.Log("Fetching the status of running deployment resource pod")
-	deploymentPodStatus := util.GetCmdResult("Succeeded", "oc", "get", "pods", deploymentBuildPodName, "-n", pjt, "-o", `jsonpath={.status.phase}`)
+	deploymentPodStatus := util.GetCmdResult("Succeeded", "oc", "get", "pods", deploymentPodName, "-n", pjt, "-o", `jsonpath={.status.phase}`)
 	require.Equal(t, "Succeeded", deploymentPodStatus, "Build pod status is %d \n", deploymentPodStatus)
 	t.Logf("-> Deployment pods status is %s \n", deploymentPodStatus)
 
 	t.Log("Fetching the name of deployment config")
-	dc = util.GetCmdResult("", "oc", "get", "dc", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
+	dc := util.GetCmdResult("", "oc", "get", "dc", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
 	require.Equal(t, bc, dc, "DeploymentConfig name is %d \n", dc)
 	t.Logf("-> Deployment Config name is %s \n", dc)
+	/*
+		t.Log("Fetching the status of deployment config")
+		dcStatus := util.GetCmdResult("True", "oc", "get", "dc", dc, "-n", pjt, "-o", `jsonpath={.status.conditions[*].status}`)
+		require.Equal(t, "True True", dcStatus, "DeploymentConfig status is %d \n", dcStatus)
+		t.Logf("-> Deployment Config status is %s \n", dcStatus)
+	*/
 
-	t.Log("Fetching the status of deployment config")
-	dcStatus := util.GetCmdResult("True", "oc", "get", "dc", dc, "-n", pjt, "-o", `jsonpath={.status.conditions[*].status}`)
-	require.Equal(t, "True True", dcStatus, "DeploymentConfig status is %d \n", dcStatus)
-	t.Logf("-> Deployment Config status is %s \n", dcStatus)
+	UseDeployment(t, dc)
 
 	//oc expose svc/nodejs-rest-http-crud --name=nodejs-rest-http-crud
 	t.Log(" Exposing an app ")
@@ -360,13 +314,7 @@ func CreateBackingDbInstance(t *testing.T) {
 	connectionIP := util.GetCmdResult("", "oc", "get", "db", dbInstanceName, "-o", "jsonpath={.status.dbConnectionIP}")
 	t.Logf("-> DB Operation Result - %s \n", connectionIP)
 
-	buildPods := util.GetCmdResult("", "oc", "get", "pods", "-n", pjt, "-o", `jsonpath={.items[*].metadata.name}`)
-	require.NotEmptyf(t, buildPods, "", "There are number of build pods listed in a cluster %s \n", buildPods)
-	t.Logf(" List of pods running in the cluster - %s", buildPods)
-	t.Log(" Fetching the build pod name from the list of pods ")
-
-	checkFlag, dbPodName := util.GetPodNameFromLst(buildPods, dbName)
-	require.Equal(t, true, checkFlag, "List does not contain the pod")
+	dbPodName := util.GetPodNameFromListOfPods(pjt, dbName)
 	require.Containsf(t, dbPodName, dbName, "list does not contain %s db pod from the list of pods running db instance in the cluster", dbPodName)
 	t.Logf("-> Pod name is %s \n", dbPodName)
 
@@ -398,25 +346,21 @@ func CreateServiceBindingRequest(t *testing.T) {
 	t.Logf("-> Annotation is %s \n", annotation)
 	actSBRResponse := util.UnmarshalJSONData(annotation)
 	expSBRResponse := util.GetSbrResponse()
-	expSBRResponse.Metadata.Name = sbr
-	expSBRResponse.Metadata.Namespace = pjt
 	expSBRResponse.Spec.ApplicationSelector.Resource = "deployments"
-	expSBRResponse.Spec.ApplicationSelector.ResourceRef = bc
 	expSBRResponse.Spec.BackingServiceSelector.Group = "postgresql.baiju.dev"
 	expSBRResponse.Spec.BackingServiceSelector.Kind = "Database"
-	expSBRResponse.Spec.BackingServiceSelector.ResourceRef = dbName
 	//	require.Containsf(t, "true", reflect.DeepEqual(actSBRResponse, expSBRResponse), "structs not matching")
 
 	require.Equal(t, expSBRResponse.Kind, actSBRResponse.Kind, "SBR kind is not matched, As expected kind is %d and actual kind is %d\n", expSBRResponse.Kind, actSBRResponse.Kind)
-	require.Equal(t, expSBRResponse.Metadata.Namespace, actSBRResponse.Metadata.Namespace, "SBR Namespace is not matched, As expected namespace is %d and actual namespace is %d\n", expSBRResponse.Metadata.Namespace, actSBRResponse.Metadata.Namespace)
-	require.Equal(t, expSBRResponse.Metadata.Name, actSBRResponse.Metadata.Name, "SBR Name is not matched, As expected name is %d and actual name is %d\n", expSBRResponse.Metadata.Name, actSBRResponse.Metadata.Name)
+	require.Equal(t, pjt, actSBRResponse.Metadata.Namespace, "SBR Namespace is not matched, As expected namespace is %d and actual namespace is %d\n", pjt, actSBRResponse.Metadata.Namespace)
+	require.Equal(t, sbr, actSBRResponse.Metadata.Name, "SBR Name is not matched, As expected name is %d and actual name is %d\n", sbr, actSBRResponse.Metadata.Name)
 	require.Equal(t, expSBRResponse.Spec.ApplicationSelector.Resource, actSBRResponse.Spec.ApplicationSelector.Resource, "SBR application resource is not matched, As expected application resource is %d and actual application resource is %d\n", expSBRResponse.Spec.ApplicationSelector.Resource, actSBRResponse.Spec.ApplicationSelector.Resource)
-	require.Equal(t, expSBRResponse.Spec.ApplicationSelector.ResourceRef, actSBRResponse.Spec.ApplicationSelector.ResourceRef, "SBR application resource ref is not matched, As expected application resource ref is %d and actual application resource ref  is %d\n", expSBRResponse.Spec.ApplicationSelector.ResourceRef, actSBRResponse.Spec.ApplicationSelector.ResourceRef)
+	require.Equal(t, appName, actSBRResponse.Spec.ApplicationSelector.ResourceRef, "SBR application resource ref is not matched, As expected application resource ref is %d and actual application resource ref  is %d\n", appName, actSBRResponse.Spec.ApplicationSelector.ResourceRef)
 	require.Equal(t, expSBRResponse.Spec.BackingServiceSelector.Kind, actSBRResponse.Spec.BackingServiceSelector.Kind, "SBR BackingServiceSelector kind is not matched, As expected BackingServiceSelector kind is %d and actual BackingServiceSelector kind  is %d\n", expSBRResponse.Spec.BackingServiceSelector.Kind, actSBRResponse.Spec.BackingServiceSelector.Kind)
-	require.Equal(t, expSBRResponse.Spec.BackingServiceSelector.ResourceRef, actSBRResponse.Spec.BackingServiceSelector.ResourceRef, "SBR BackingServiceSelector ResourceRef is not matched, As expected BackingServiceSelector ResourceRef is %d and actual BackingServiceSelector ResourceRef  is %d\n", expSBRResponse.Spec.BackingServiceSelector.ResourceRef, actSBRResponse.Spec.BackingServiceSelector.ResourceRef)
+	require.Equal(t, dbName, actSBRResponse.Spec.BackingServiceSelector.ResourceRef, "SBR BackingServiceSelector ResourceRef is not matched, As expected BackingServiceSelector ResourceRef is %d and actual BackingServiceSelector ResourceRef  is %d\n", dbName, actSBRResponse.Spec.BackingServiceSelector.ResourceRef)
 
 	t.Log(" Fetching the route of an app ")
-	route := util.GetCmdResult("", "oc", "get", "route", bc, "-n", pjt, "-o", `jsonpath={.status.ingress[0].host}`)
+	route := util.GetCmdResult("", "oc", "get", "route", appName, "-n", pjt, "-o", `jsonpath={.status.ingress[0].host}`)
 	t.Logf("-> ROUTE - %s \n", route)
 
 	host := "http://" + route
@@ -430,13 +374,13 @@ func CreateServiceBindingRequest(t *testing.T) {
 
 	//env := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`)
 	t.Log("Fetching the status of binding")
-	env := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`)
+	env := util.GetCmdResult("", "oc", "get", "deploy", appName, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`)
 	require.Contains(t, env, "ServiceBindingOperator", "service binding env detail -> %d \n", env)
 	t.Logf("-> service binding env detail ->%s \n", env)
 
 	//envFrom := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
 	t.Log("Fetching the status of binding")
-	envFrom := util.GetCmdResult("", "oc", "get", "deploy", bc, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
+	envFrom := util.GetCmdResult("", "oc", "get", "deploy", appName, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
 	require.Contains(t, envFrom, sbr, "service binding envFrom detail -> %d \n", envFrom)
 	t.Logf("-> service binding envFrom detail -> %s \n", envFrom)
 }
