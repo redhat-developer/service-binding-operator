@@ -147,7 +147,7 @@ func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 // addCSVWatch creates a watch on ClusterServiceVersion.
 func (s *SBRController) addCSVWatch() error {
 	log := s.logger
-	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(ClusterServiceVersionKind)
+	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := s.Client.Resource(gvr).Namespace(os.Getenv("WATCH_NAMESPACE"))
 	_, err := resourceClient.List(metav1.ListOptions{})
 	if err != nil && errors.IsNotFound(err) {
