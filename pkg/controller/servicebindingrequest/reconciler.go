@@ -155,8 +155,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			var reason string
 			if errors.Is(err, EmptyBackingServiceSelectorsErr) {
 				reason = "EmptyBackingServiceSelectors"
-			} else if errors.Is(err, ApplicationNotFound) {
-				reason = "ApplicationUnavailable"
 			} else {
 				reason = "EmptyApplicationSelector"
 			}
