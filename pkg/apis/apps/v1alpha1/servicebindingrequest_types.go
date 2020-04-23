@@ -66,7 +66,8 @@ type BackingServiceSelector struct {
 	metav1.GroupVersionKind `json:",inline"`
 	ResourceRef             string `json:"resourceRef"`
 	// +optional
-	Namespace *string `json:"namespace,omitempty"`
+	Namespace    *string `json:"namespace,omitempty"`
+	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
 }
 
 // BoundApplication defines the application workloads to which the binding secret has

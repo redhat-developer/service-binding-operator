@@ -328,7 +328,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the specified resources
 	if options.DetectBindingResources {
-		err := retriever.ReadBindableResourcesData(&plan.SBR, rs)
+		err := retriever.ReadBindableResourcesData(&plan.SBR, plan.GetRelatedResources())
 		if err != nil {
 			return nil, err
 		}
@@ -336,7 +336,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the CRDDescription found by the planner
 	for _, r := range plan.GetRelatedResources() {
-		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
+		err = retriever.ReadCRDDescriptionData(r.EnvVarPrefix, r.CR, r.CRDDescription)
 		if err != nil {
 			return nil, err
 		}
