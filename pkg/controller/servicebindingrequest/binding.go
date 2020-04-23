@@ -231,6 +231,17 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {
 		b.Logger.Error(err, "On binding application.")
+
+		// Delete Finalizer when applicationSelector is removed
+		if err == EmptyApplicationSelectorErr {
+
+			b.SBR.SetFinalizers(removeStringSlice(b.SBR.GetFinalizers(), Finalizer))
+			if _, err := b.updateServiceBindingRequest(b.SBR); err != nil {
+				return NoRequeue(err)
+			}
+
+		}
+
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
 	b.setApplicationObjects(sbrStatus, updatedObjects)
@@ -256,6 +267,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	// appending finalizer, should be later removed upon resource deletion
 	sbr.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
+
 	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
 		return NoRequeue(err)
 	}

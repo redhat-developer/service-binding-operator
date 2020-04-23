@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,8 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	v1 "github.com/openshift/custom-resource-status/conditions/v1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -81,7 +84,14 @@ func (p *Planner) Plan() (*Plan, error) {
 
 	var emptyApplication v1alpha1.ApplicationSelector
 	if p.sbr.Spec.ApplicationSelector == emptyApplication {
-		return nil, EmptyApplicationSelectorErr
+		v1.SetStatusCondition(&p.sbr.Status.Conditions, v1.Condition{
+			Type:    conditions.BindingReady,
+			Status:  corev1.ConditionFalse,
+			Reason:  "EmptyApplicationSelector",
+			Message: EmptyApplicationSelectorErr.Error(),
+		})
+
+		p.sbr.Status.Applications = nil
 	}
 
 	var selectors []v1alpha1.BackingServiceSelector
