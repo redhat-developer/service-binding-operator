@@ -431,7 +431,7 @@ merge-to-master-release:
 push-to-manifest-repo:
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
-	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=$(BASE_BUNDLE_VERSION)
+	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=0.0.23
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
 	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
