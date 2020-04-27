@@ -2,6 +2,7 @@ package examples_test
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -39,8 +40,8 @@ func TestNodeJSPostgreSQL(t *testing.T) {
 
 	//t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
 	//t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
-	t.Run("create-project", CreatePorject)
-	t.Run("import-nodejs-app", ImportNodeJSApp)
+	//t.Run("create-project", CreatePorject)
+	//t.Run("import-nodejs-app", ImportNodeJSApp)
 	t.Run("create-backing-db-instance", CreateBackingDbInstance)
 	t.Run("createservice-binding-request", CreateServiceBindingRequest)
 
@@ -57,7 +58,7 @@ func SetExampleDir(t *testing.T) {
 //Logs the oc status
 func GetOCStatus(t *testing.T) {
 	t.Log("--- Getting OC Status ---")
-	util.GetOutput(util.Run("oc", "status"), "oc status")
+	util.GetOutput(util.Run("oc", "status"))
 	clusterAvailable = true
 	t.Log(" *** Connected to cluster *** ")
 }
@@ -68,7 +69,7 @@ func MakeInstallServiceBindingOperator(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Installing serivice binding operator into the cluster...")
-	res := util.GetOutput(util.Run("make", "install-service-binding-operator-master"), "make install-service-binding-operator-master")
+	res := util.GetOutput(util.Run("make", "install-service-binding-operator-master"))
 	resExp := strings.TrimSpace(strings.Split(res, "subscription.operators.coreos.com/service-binding-operator")[1])
 	fmt.Printf("subscription output is %s \n", resExp)
 	require.Containsf(t, []string{"created", "unchanged", "configured"}, resExp, "list does not contain %s while installing service binding operator", resExp)
@@ -98,7 +99,7 @@ func MakeInstallBackingServiceOperator(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Installing backing service operator source into the cluster...")
-	res := util.GetOutput(util.Run("make", "install-backing-db-operator-source"), "make install-backing-db-operator-source")
+	res := util.GetOutput(util.Run("make", "install-backing-db-operator-source"))
 	//resExp := strings.TrimSpace(strings.Split(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1], "Waiting")[0])
 	resExp := strings.TrimSpace(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1])
 	fmt.Printf("db operator installation source output is %s \n", resExp)
@@ -112,7 +113,7 @@ func MakeInstallBackingServiceOperator(t *testing.T) {
 
 	//Install the subscription using this command: make install-backing-db-operator-subscription
 	t.Log("Installing backing service operator subscription into the cluster...")
-	dbOprRes := util.GetOutput(util.Run("make", "install-backing-db-operator-subscription"), "make install-backing-db-operator-subscription")
+	dbOprRes := util.GetOutput(util.Run("make", "install-backing-db-operator-subscription"))
 	subRes := strings.TrimSpace(strings.Split(dbOprRes, "subscription.operators.coreos.com/db-operators")[1])
 	t.Logf("subscription output is %s \n", subRes)
 
@@ -144,7 +145,7 @@ func CreatePorject(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Creating a project into the cluster...")
-	res := util.GetOutput(util.Run("make", "create-project"), "make create-project")
+	res := util.GetOutput(util.Run("make", "create-project"))
 	require.NotEmptyf(t, res, "", "Pjt not created because of this - %s \n", res)
 	createPjtRes := util.GetPjtCreationRes(res, pjt)
 	require.Containsf(t, createPjtRes, pjt, "Pjt - %s is not created because of %s", pjt, res)
@@ -255,27 +256,18 @@ func UseDeployment(t *testing.T, dc string) {
 	require.Contains(t, deploymentStatus, "True", "Deployment status is %d \n", deploymentStatus)
 	t.Logf("-> Deployment status is %s \n", deploymentStatus)
 
-	/*
-		checkFlag, res = execCmd(item...)
+	env := util.GetOutput(util.Run("oc", "get", "deploy", appName, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`))
+	require.Equalf(t, "", env, "Env details are %d \n", env)
 
-		t.Log("Fetching the env details exists before binding")
-		env := util.GetCmdResult("", "oc", "get", "deploy", appName, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].env}`)
-		require.Equalf(t, "", env, "service binding env detail -> %d \n", env)
-		t.Logf("-> service binding env detail should be empty before binding ->%s \n", env)
-
-		t.Log("Fetching the envFrom details exists before binding")
-		envFrom := util.GetCmdResult("", "oc", "get", "deploy", appName, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`)
-		require.Equalf(t, "", envFrom, "service binding envFrom detail -> %d \n", envFrom)
-		t.Logf("-> service binding envFrom detail should be empty before binding -> %s \n", envFrom)
-	*/
-
+	envFrom := util.GetOutput(util.Run("oc", "get", "deploy", appName, "-n", pjt, "-o", `jsonpath={.spec.template.spec.containers[0].envFrom}`))
+	require.Equalf(t, "", envFrom, "EnvFrom details are %d \n", envFrom)
 }
 
 func CreateBackingDbInstance(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Creating Backing DB instance for backing service to connect with the app...")
-	res := util.GetOutput(util.Run("make", "create-backing-db-instance"), "make create-backing-db-instance")
+	res := util.GetOutput(util.Run("make", "create-backing-db-instance"))
 	resExp := strings.TrimSpace(strings.Split(res, dbName)[1])
 	fmt.Printf("Result of created backing DB instance is %s \n", resExp)
 	require.Containsf(t, []string{"created", "unchanged", "configured"}, resExp, "list does not contain %s while installing db instance", resExp)
@@ -286,6 +278,8 @@ func CreateBackingDbInstance(t *testing.T) {
 	t.Logf("-> DB instance name is %s \n", dbInstanceName)
 
 	connectionIP := util.GetCmdResult("", "oc", "get", "db", dbInstanceName, "-o", "jsonpath={.status.dbConnectionIP}")
+	re := regexp.MustCompile(`(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)(\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}`)
+	require.Equalf(t, true, re.MatchString(connectionIP), "IP address of the pod which runs the database instance is %d", connectionIP)
 	t.Logf("-> DB Operation Result - %s \n", connectionIP)
 
 	dbPodName := util.GetPodNameFromListOfPods(pjt, dbName)
@@ -298,7 +292,7 @@ func CreateServiceBindingRequest(t *testing.T) {
 	checkClusterAvailable(t)
 
 	t.Log("Creating Backing DB instance for backing service to connect with the app...")
-	resCreateSBR := util.GetOutput(util.Run("make", "create-service-binding-request"), "make create-service-binding-request")
+	resCreateSBR := util.GetOutput(util.Run("make", "create-service-binding-request"))
 	resExp := strings.TrimSpace(strings.Split(resCreateSBR, "servicebindingrequest.apps.openshift.io/binding-request")[1])
 	require.Containsf(t, []string{"created", "unchanged", "configured"}, resExp, "list does not contain %s while creating service binding request", resExp)
 	fmt.Printf("Result of creating service binding request is %s \n", resExp)

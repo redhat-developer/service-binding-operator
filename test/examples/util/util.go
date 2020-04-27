@@ -84,7 +84,7 @@ func GetPodNameFromLst(pods, srchItem string) (bool, string) {
 */
 
 //GetOutput returns the output using Stdout()
-func GetOutput(res *icmd.Result, cmd string) string {
+func GetOutput(res *icmd.Result) string {
 	var output string
 	exitCode := res.ExitCode
 	if exitCode == 0 || exitCode == 127 {
@@ -92,7 +92,6 @@ func GetOutput(res *icmd.Result, cmd string) string {
 	} else {
 		output = res.Stderr()
 	}
-	//fmt.Printf("Executed CMD: %s \n", cmd)
 	fmt.Printf("OUTPUT: %s \n", output)
 	return output
 }
@@ -141,7 +140,7 @@ func execCmd(item ...string) (bool, string) {
 	checkFlag := false
 	fmt.Printf("Get result of the command...iteration %v \n", cntr)
 	//fmt.Printf("Command executed: %v \n", item)
-	cmdRes = GetOutput(Run(item...), "")
+	cmdRes = GetOutput(Run(item...))
 	if cmdRes != "" {
 		checkFlag = true
 	}
