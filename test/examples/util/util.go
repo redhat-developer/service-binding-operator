@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"strings"
 	"time"
@@ -23,13 +22,12 @@ const (
 )
 
 var (
-	workingDirPath, _                                             = os.Getwd()
-	workingDirOp                                                  = icmd.Dir(workingDirPath)
-	kubeConfig                                                    = os.Getenv("KUBECONFIG")
-	environment                                                   = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
-	checkFlag                                                     = false
-	cntr                                                          int
-	ipName, dbOprRes, output, subRes, pjtRes, ipStatus, podStatus string
+	workingDirPath, _ = os.Getwd()
+	workingDirOp      = icmd.Dir(workingDirPath)
+	kubeConfig        = os.Getenv("KUBECONFIG")
+	environment       = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
+	//checkFlag         = false
+	cntr int
 )
 
 //Run runs a command with timeout
@@ -65,6 +63,7 @@ func GetExamplesDir() string {
 	return path.Clean(fmt.Sprintf("%s/../../examples", wd))
 }
 
+/*
 //GetPodNameFromLst returns specific name of the pod from the pod list
 func GetPodNameFromLst(pods, srchItem string) (bool, string) {
 	item := ""
@@ -79,13 +78,14 @@ func GetPodNameFromLst(pods, srchItem string) (bool, string) {
 			}
 			return true, item
 		}
-		checkFlag = false
 	}
 	return checkFlag, item
 }
+*/
 
 //GetOutput returns the output using Stdout()
 func GetOutput(res *icmd.Result, cmd string) string {
+	var output string
 	exitCode := res.ExitCode
 	if exitCode == 0 || exitCode == 127 {
 		output = res.Stdout()
@@ -114,6 +114,7 @@ func GetPjtCreationRes(pjtRes string, pjt string) string {
 func GetCmdResult(status string, item ...string) string {
 	var res string
 	cntr = 0
+	checkFlag := false
 	err := wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
 		checkFlag, res = execCmd(item...)
 		if checkFlag {
@@ -147,6 +148,7 @@ func execCmd(item ...string) (bool, string) {
 	return checkFlag, cmdRes
 }
 
+/*
 //GetExecCmdResult retrieves the info about build
 func GetExecCmdResult(status string, item ...string) string {
 	var res string
@@ -185,6 +187,7 @@ func executeExecCmd(item ...string) (bool, string) {
 	}
 	return checkFlag, cmdRes
 }
+*/
 
 //GetPodLst fetches the list of pods
 func GetPodLst(ns string) string {
@@ -197,6 +200,7 @@ func GetPodLst(ns string) string {
 	return pods
 }
 
+/*
 //GetPodNameFromListOfPods returns the pod name requested from the list of pods running
 func GetPodNameFromListOfPods(ns string, expPodName string) string {
 	pods := GetPodLst(ns)
@@ -206,4 +210,39 @@ func GetPodNameFromListOfPods(ns string, expPodName string) string {
 	}
 	log.Printf("Pod Name --> %v", podName)
 	return podName
+}
+*/
+
+//GetPodNameFromListOfPods function returns required pod name from the list of pods running
+func GetPodNameFromListOfPods(ns string, expPodName string) string {
+	cntr = 0
+	podName := ""
+	checkFlag := false
+	pods := GetPodLst(ns)
+	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+		checkFlag, podName = SrchItemFromLst(pods, expPodName)
+		if checkFlag {
+			return true, nil
+		}
+		return false, nil
+	})
+	return podName
+}
+
+//SrchItemFromLst returns specific name of the pod from the pod list
+func SrchItemFromLst(lst, srchItem string) (bool, string) {
+	item := ""
+	cntr++
+	fmt.Printf("Get result of the command...iteration %v \n", cntr)
+	lstArr := strings.Split(lst, " ")
+	for _, item := range lstArr {
+		if strings.Contains(item, srchItem) {
+			if strings.Contains(srchItem, "-build") {
+				fmt.Printf("item matched as %s \n", item)
+				return true, item
+			}
+			return true, item
+		}
+	}
+	return false, item
 }
