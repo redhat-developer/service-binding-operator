@@ -193,6 +193,12 @@ github.com/spf13/pflag
 # github.com/stretchr/testify v1.4.0
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
+# github.com/tebeka/selenium v0.9.9
+github.com/tebeka/selenium
+github.com/tebeka/selenium/chrome
+github.com/tebeka/selenium/firefox
+github.com/tebeka/selenium/internal/zip
+github.com/tebeka/selenium/log
 # go.uber.org/atomic v1.4.0
 go.uber.org/atomic
 # go.uber.org/multierr v1.1.0
@@ -270,6 +276,13 @@ gotest.tools/assert/cmp
 gotest.tools/internal/difflib
 gotest.tools/internal/format
 gotest.tools/internal/source
+# gotest.tools/v3 v3.0.2
+gotest.tools/v3/assert
+gotest.tools/v3/assert/cmp
+gotest.tools/v3/icmd
+gotest.tools/v3/internal/difflib
+gotest.tools/v3/internal/format
+gotest.tools/v3/internal/source
 # k8s.io/api v0.0.0 => k8s.io/api v0.0.0-20191016110408-35e52d86657a
 k8s.io/api/admission/v1beta1
 k8s.io/api/admissionregistration/v1

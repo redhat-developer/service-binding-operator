@@ -13,11 +13,9 @@ require (
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
 	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20191115003340-16619cd27fa5
 	github.com/operator-framework/operator-sdk v0.15.2
-	github.com/pmezard/go-difflib v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
 	github.com/tebeka/selenium v0.9.9
-	gopkg.in/yaml.v2 v2.2.4
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.0.2
 	k8s.io/api v0.0.0
@@ -27,7 +25,6 @@ require (
 	k8s.io/code-generator v0.0.0
 	k8s.io/gengo v0.0.0-20191010091904-7fa3014cb28f
 	k8s.io/kube-openapi v0.0.0-20190918143330-0270cf2f1c1d
-	k8s.io/kubernetes v1.16.2
 	knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67 // indirect
 	knative.dev/serving v0.9.0
 	sigs.k8s.io/controller-runtime v0.4.0

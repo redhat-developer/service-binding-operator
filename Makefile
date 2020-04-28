@@ -231,7 +231,14 @@ parse-test-e2e-operator-log:
 test-unit:
 	$(info Running unit test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e|grep -v examples) -v -mod vendor $(TEST_EXTRA_ARGS)
+
+.PHONY: test-examples
+## Runs the examples tests without code coverage
+test-examples:
+	$(info Running examples test: $@)
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
+		go test ./test/examples -v -mod vendor $(TEST_EXTRA_ARGS)
 
 .PHONY: test-e2e-image
 ## Run e2e tests on operator image
@@ -258,7 +265,7 @@ test-unit-with-coverage:
 	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)rm -vf '$(GOCOV_DIR)/*.txt'
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e|grep -v examples) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test
