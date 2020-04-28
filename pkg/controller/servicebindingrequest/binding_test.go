@@ -2,8 +2,10 @@ package servicebindingrequest
 
 import (
 	"encoding/base64"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/conditions"
@@ -87,7 +89,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		return func(t *testing.T) {
 			sb, err := BuildServiceBinder(args.options)
 			if args.wantBuildErr != nil {
-				require.Error(t, err)
+				require.EqualError(t, err, args.wantBuildErr.Error())
 				return
 			} else {
 				require.NoError(t, err)
@@ -96,8 +98,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			res, err := sb.Bind()
 
 			if args.wantErr != nil {
-				require.Error(t, err)
-				require.Equal(t, args.wantErr, err)
+				require.EqualError(t, err, args.wantErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -310,6 +311,46 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockResource(sbrSingleService)
 
+	sbrWithBadCustomEnvVarTemplate := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "apps.openshift.io/v1alpha1",
+			Kind:       "ServiceBindingRequest",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "single-sbr-with-bad-customenvvar-template",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				ResourceRef: d.GetName(),
+			},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					ResourceRef: db1.GetName(),
+				},
+			},
+			CustomEnvVar: []corev1.EnvVar{
+				{
+					Name:  "MY_DB_NAME",
+					Value: `{{ .status.dbName `,
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingRequestStatus{},
+	}
+
 	// create the ServiceBindingRequest
 	sbrMultipleServices := &v1alpha1.ServiceBindingRequest{
 		TypeMeta: metav1.TypeMeta{
@@ -504,7 +545,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			SBR:                    sbrEmptyAppSelector,
 			Client:                 f.FakeClient(),
 		},
-		wantBuildErr: EmptyApplicationSelectorErr,
+		wantErr: EmptyApplicationSelectorErr,
 		wantConditions: []wantedCondition{
 			{
 				Type:    conditions.BindingReady,
@@ -584,6 +625,30 @@ func TestServiceBinder_Bind(t *testing.T) {
 				verb:     "update",
 				name:     db2.GetName(),
 			},
+		},
+	}))
+
+	t.Run("bind SBR with bad custom env var template", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrWithBadCustomEnvVarTemplate,
+			Client:                 f.FakeClient(),
+		},
+		wantBuildErr: errors.New("template: set:1: unclosed action"),
+	}))
+
+	sbrWithBadCustomEnvVarTemplate.DeletionTimestamp = &metav1.Time{Time: time.Now()}
+	t.Run("bind SBR with bad custom env var template and deletion timestamp", assertBind(args{
+		options: &ServiceBinderOptions{
+			Logger:                 logger,
+			DynClient:              f.FakeDynClient(),
+			DetectBindingResources: false,
+			EnvVarPrefix:           "",
+			SBR:                    sbrWithBadCustomEnvVarTemplate,
+			Client:                 f.FakeClient(),
 		},
 	}))
 }

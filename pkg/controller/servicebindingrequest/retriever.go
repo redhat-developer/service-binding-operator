@@ -76,7 +76,7 @@ func (r *Retriever) getCRKey(u *unstructured.Unstructured, section string, key s
 // read attributes from CR, where place means which top level key name contains the "path" actual
 // value, and parsing x-descriptors in order to either directly read CR data, or read items from
 // a secret.
-func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDescriptors []string) error {
+func (r *Retriever) read(envVarPrefix *string, cr *unstructured.Unstructured, place, path string, xDescriptors []string) error {
 	log := r.logger.WithValues(
 		"CR.Section", place,
 		"CRDDescription.Path", path,
@@ -114,7 +114,7 @@ func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDes
 			r.markVisitedPaths(r.extractSecretItemName(xDescriptor), pathValue, place)
 			r.VolumeKeys = append(r.VolumeKeys, pathValue)
 		} else if strings.HasPrefix(xDescriptor, attributePrefix) {
-			r.store(cr, path, []byte(pathValue))
+			r.store(envVarPrefix, cr, path, []byte(pathValue))
 		} else {
 			log.Debug("Defaulting....")
 		}
@@ -122,14 +122,14 @@ func (r *Retriever) read(cr *unstructured.Unstructured, place, path string, xDes
 
 	for name, items := range secrets {
 		// loading secret items all-at-once
-		err := r.readSecret(cr, name, items, place, path)
+		err := r.readSecret(envVarPrefix, cr, name, items, place, path)
 		if err != nil {
 			return err
 		}
 	}
 	for name, items := range configMaps {
 		// add the function readConfigMap
-		err := r.readConfigMap(cr, name, items, place, path)
+		err := r.readConfigMap(envVarPrefix, cr, name, items, place, path)
 		if err != nil {
 			return err
 		}
@@ -167,7 +167,7 @@ func (r *Retriever) markVisitedPaths(name, keyPath, fromPath string) {
 
 // readSecret based in secret name and list of items, read a secret from the same namespace informed
 // in plan instance.
-func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items []string, fromPath string, path string) error {
+func (r *Retriever) readSecret(envVarPrefix *string, cr *unstructured.Unstructured, name string, items []string, fromPath string, path string) error {
 	log := r.logger.WithValues("Secret.Name", name, "Secret.Items", items)
 	log.Debug("Reading secret items...")
 
@@ -197,7 +197,13 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = string(data)
 		// making sure key name has a secret reference
-		r.store(cr, fmt.Sprintf("secret_%s", k), data)
+		if envVarPrefix != nil && *envVarPrefix == "" {
+			r.store(envVarPrefix, cr, k, data)
+
+		} else {
+			r.store(envVarPrefix, cr, fmt.Sprintf("secret_%s", k), data)
+
+		}
 	}
 
 	r.Objects = append(r.Objects, secret)
@@ -206,7 +212,7 @@ func (r *Retriever) readSecret(cr *unstructured.Unstructured, name string, items
 
 // readConfigMap based in configMap name and list of items, read a configMap from the same namespace informed
 // in plan instance.
-func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, items []string, fromPath string, path string) error {
+func (r *Retriever) readConfigMap(envVarPrefix *string, cr *unstructured.Unstructured, name string, items []string, fromPath string, path string) error {
 	log := r.logger.WithValues("ConfigMap.Name", name, "ConfigMap.Items", items)
 	log.Debug("Reading ConfigMap items...")
 
@@ -235,7 +241,11 @@ func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, it
 		// update cache after reading configmap/secret in cache
 		r.cache[fromPath].(map[string]interface{})[path].(map[string]interface{})[k] = value
 		// making sure key name has a configMap reference
-		r.store(cr, fmt.Sprintf("configMap_%s", k), []byte(value))
+		if envVarPrefix != nil && *envVarPrefix == "" {
+			r.store(envVarPrefix, cr, k, []byte(value))
+		} else {
+			r.store(envVarPrefix, cr, fmt.Sprintf("configMap_%s", k), []byte(value))
+		}
 	}
 
 	r.Objects = append(r.Objects, u)
@@ -243,13 +253,25 @@ func (r *Retriever) readConfigMap(cr *unstructured.Unstructured, name string, it
 }
 
 // store key and value, formatting key to look like an environment variable.
-func (r *Retriever) store(u *unstructured.Unstructured, key string, value []byte) {
+func (r *Retriever) store(envVarPrefix *string, u *unstructured.Unstructured, key string, value []byte) {
 	key = strings.ReplaceAll(key, ":", "_")
 	key = strings.ReplaceAll(key, ".", "_")
-	if r.bindingPrefix == "" {
-		key = fmt.Sprintf("%s_%s", u.GetKind(), key)
+	if envVarPrefix == nil {
+		if r.bindingPrefix == "" {
+			key = fmt.Sprintf("%s_%s", u.GetKind(), key)
+		} else {
+			key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, u.GetKind(), key)
+		}
+	} else if *envVarPrefix == "" {
+		if r.bindingPrefix != "" {
+			key = fmt.Sprintf("%s_%s", r.bindingPrefix, key)
+		}
 	} else {
-		key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, u.GetKind(), key)
+		if r.bindingPrefix != "" {
+			key = fmt.Sprintf("%s_%s_%s", r.bindingPrefix, *envVarPrefix, key)
+		} else {
+			key = fmt.Sprintf("%s_%s", *envVarPrefix, key)
+		}
 	}
 	key = strings.ToUpper(key)
 	r.data[key] = value

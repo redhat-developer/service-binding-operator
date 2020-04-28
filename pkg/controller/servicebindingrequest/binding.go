@@ -299,6 +299,12 @@ var InvalidOptionsErr = errors.New("invalid options")
 
 // BuildServiceBinder creates a new binding manager according to options.
 func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
+
+	var isSBRDeleting bool
+	if options.SBR != nil && options.SBR.GetDeletionTimestamp() != nil {
+		isSBRDeleting = true
+	}
+
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
@@ -322,7 +328,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the specified resources
 	if options.DetectBindingResources {
-		err := retriever.ReadBindableResourcesData(&plan.SBR, rs)
+		err := retriever.ReadBindableResourcesData(&plan.SBR, plan.GetRelatedResources())
 		if err != nil {
 			return nil, err
 		}
@@ -330,17 +336,21 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the CRDDescription found by the planner
 	for _, r := range plan.GetRelatedResources() {
-		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
+		err = retriever.ReadCRDDescriptionData(r.EnvVarPrefix, r.CR, r.CRDDescription)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// gather retriever's read data
-	// TODO: do not return error
-	retrievedData, err := retriever.Get()
-	if err != nil {
-		return nil, err
+	var retrievedData map[string][]byte
+
+	if !isSBRDeleting {
+		// gather retriever's read data
+		// TODO: do not return error
+		retrievedData, err = retriever.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// gather related secret, again only appending it if there's a value.

@@ -36,11 +36,11 @@ func (r *Retriever) Get() (map[string][]byte, error) {
 // ReadBindableResourcesData reads all related resources of a given sbr
 func (r *Retriever) ReadBindableResourcesData(
 	sbr *v1alpha1.ServiceBindingRequest,
-	crs []*unstructured.Unstructured,
+	relatedResources RelatedResources,
 ) error {
 	r.logger.Info("Detecting extra resources for binding...")
-	for _, cr := range crs {
-		b := NewDetectBindableResources(sbr, cr, []schema.GroupVersionResource{
+	for _, rs := range ([]*RelatedResource)(relatedResources) {
+		b := NewDetectBindableResources(sbr, rs.CR, []schema.GroupVersionResource{
 			{Group: "", Version: "v1", Resource: "configmaps"},
 			{Group: "", Version: "v1", Resource: "services"},
 			{Group: "route.openshift.io", Version: "v1", Resource: "routes"},
@@ -51,36 +51,36 @@ func (r *Retriever) ReadBindableResourcesData(
 			return err
 		}
 		for k, v := range vals {
-			r.storeInto(cr, k, []byte(fmt.Sprintf("%v", v)))
+			r.storeInto(rs.EnvVarPrefix, rs.CR, k, []byte(fmt.Sprintf("%v", v)))
 		}
 	}
 
 	return nil
 }
 
-func (r *Retriever) storeInto(cr *unstructured.Unstructured, key string, value []byte) {
-	r.store(cr, key, value)
+func (r *Retriever) storeInto(envVarPrefix *string, cr *unstructured.Unstructured, key string, value []byte) {
+	r.store(envVarPrefix, cr, key, value)
 }
 
-func (r *Retriever) copyFrom(u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
-	if err := r.read(u, path, fieldPath, descriptors); err != nil {
+func (r *Retriever) copyFrom(envVarPrefix *string, u *unstructured.Unstructured, path string, fieldPath string, descriptors []string) error {
+	if err := r.read(envVarPrefix, u, path, fieldPath, descriptors); err != nil {
 		return err
 	}
 	return nil
 }
 
 // ReadCRDDescriptionData reads data related to given crdDescription
-func (r *Retriever) ReadCRDDescriptionData(u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
+func (r *Retriever) ReadCRDDescriptionData(envVarPrefix *string, u *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
 	r.logger.Info("Looking for spec-descriptors in 'spec'...")
 	for _, specDescriptor := range crdDescription.SpecDescriptors {
-		if err := r.copyFrom(u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
+		if err := r.copyFrom(envVarPrefix, u, "spec", specDescriptor.Path, specDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}
 
 	r.logger.Info("Looking for status-descriptors in 'status'...")
 	for _, statusDescriptor := range crdDescription.StatusDescriptors {
-		if err := r.copyFrom(u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
+		if err := r.copyFrom(envVarPrefix, u, "status", statusDescriptor.Path, statusDescriptor.XDescriptors); err != nil {
 			return err
 		}
 	}

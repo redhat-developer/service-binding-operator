@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"k8s.io/apimachinery/pkg/fields"
@@ -12,8 +13,8 @@ import (
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
-	k8serror "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -22,6 +23,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 var (
@@ -42,10 +44,27 @@ type Binder struct {
 	dynClient  dynamic.Interface               // kubernetes dynamic api client
 	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys []string                        // list of key names used in volume mounts
+	modifier   ExtraFieldsModifier             // extra modifier for CRDs before updating
 	logger     *log.Log                        // logger instance
 }
 
+// ExtraFieldsModifier is useful for updating backend service which requires additional changes besides
+// env/volumes updating. eg. for knative service we need to remove or update `spec.template.metadata.name`
+// from service template before updating otherwise it will be rejected.
+type ExtraFieldsModifier interface {
+	ModifyExtraFields(u *unstructured.Unstructured) error
+}
+
+// ExtraFieldsModifierFunc func receiver type for ExtraFieldsModifier
+type ExtraFieldsModifierFunc func(u *unstructured.Unstructured) error
+
+// ModifyExtraFields implements ExtraFieldsModifier interface
+func (f ExtraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured) error {
+	return f(u)
+}
+
 var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
+var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
@@ -76,15 +95,13 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		return nil, err
+		return nil, ApplicationNotFound
+
 	}
 
 	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
 	if len(objList.Items) == 0 {
-		return nil, k8serror.NewNotFound(
-			gvr.GroupResource(),
-			b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
-		)
+		return nil, ApplicationNotFound
 	}
 	return objList, err
 }
@@ -478,6 +495,13 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			continue
 		}
 
+		if b.modifier != nil {
+			err = b.modifier.ModifyExtraFields(updatedObj)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		log.Debug("Updating object...")
 		if err := b.client.Update(b.ctx, updatedObj); err != nil {
 			return nil, err
@@ -529,6 +553,9 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *Binder) Unbind() error {
 	objs, err := b.search()
 	if err != nil {
+		if errors.Is(err, ApplicationNotFound) {
+			return nil
+		}
 		return err
 	}
 	return b.remove(objs)
@@ -539,6 +566,9 @@ func (b *Binder) Unbind() error {
 func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
+		if errors.Is(err, ApplicationNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return b.update(objs)
@@ -552,12 +582,36 @@ func NewBinder(
 	sbr *v1alpha1.ServiceBindingRequest,
 	volumeKeys []string,
 ) *Binder {
+
+	logger := log.NewLog("binder")
+	modifier := extraFieldsModifier(logger, sbr)
+
 	return &Binder{
 		ctx:        ctx,
 		client:     client,
 		dynClient:  dynClient,
 		sbr:        sbr,
 		volumeKeys: volumeKeys,
-		logger:     log.NewLog("binder"),
+		modifier:   modifier,
+		logger:     logger,
+	}
+}
+
+func extraFieldsModifier(logger *log.Log, sbr *v1alpha1.ServiceBindingRequest) ExtraFieldsModifier {
+	gvr := sbr.Spec.ApplicationSelector.GroupVersionResource
+	ksvcgvr := knativev1.SchemeGroupVersion.WithResource("services")
+	switch gvr.String() {
+	case ksvcgvr.String():
+		pathToRevisionName := "spec.template.metadata.name"
+		return ExtraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
+			revisionName, ok, err := unstructured.NestedString(u.Object, strings.Split(pathToRevisionName, ".")...)
+			if err == nil && ok {
+				logger.Info("remove revision in knative service template", "name", revisionName)
+				unstructured.RemoveNestedField(u.Object, strings.Split(pathToRevisionName, ".")...)
+			}
+			return nil
+		})
+	default:
+		return nil
 	}
 }
