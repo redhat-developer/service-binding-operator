@@ -189,9 +189,9 @@ func executeExecCmd(item ...string) (bool, string) {
 */
 
 //GetPodLst fetches the list of pods
-func GetPodLst(ns string) string {
+func GetPodLst(operatorsNS string) string {
 	log.Print("Fetching the list of running pods")
-	pods := GetCmdResult("", "oc", "get", "pods", "-n", ns, "-o", `jsonpath={.items[*].metadata.name}`)
+	pods := GetCmdResult("", "oc", "get", "pods", "-n", operatorsNS, "-o", `jsonpath={.items[*].metadata.name}`)
 	if pods == "" {
 		log.Fatalf("No pods are running...")
 	}
@@ -213,11 +213,11 @@ func GetPodNameFromListOfPods(ns string, expPodName string) string {
 */
 
 //GetPodNameFromListOfPods function returns required pod name from the list of pods running
-func GetPodNameFromListOfPods(ns string, expPodName string) string {
+func GetPodNameFromListOfPods(operatorsNS string, expPodName string) string {
 	cntr = 0
 	podName := ""
 	checkFlag := false
-	pods := GetPodLst(ns)
+	pods := GetPodLst(operatorsNS)
 	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
 		checkFlag, podName = SrchItemFromLst(pods, expPodName)
 		if checkFlag {
