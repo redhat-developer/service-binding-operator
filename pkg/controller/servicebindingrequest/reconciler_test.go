@@ -359,3 +359,59 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 	require.Equal(t, 0, len(sbrOutput.Status.Applications))
 }
+
+// TestBindingSuccessOnRemovingInjectedSecret tests that when secret is removed from application spec then reconciler re-injects the secret.
+func TestBindingSuccessOnRemovingInjectedSecret(t *testing.T) {
+	ctx := context.TODO()
+	backingServiceResourceRef := "backingServiceRef"
+	applicationResourceRef := "applicationRef"
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, applicationResourceRef, deploymentsGVR, nil)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredDeployment(reconcilerName, nil)
+	f.AddMockedSecret("db-credentials")
+
+	fakeClient := f.FakeClient()
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{client: fakeClient, dynClient: fakeDynClient, scheme: f.S}
+
+	res, err := reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	require.Equal(t, conditions.BindingReady, sbrOutput.Status.Conditions[0].Type)
+	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+	require.Equal(t, 1, len(sbrOutput.Status.Applications))
+	expectedStatus := v1alpha1.BoundApplication{
+		GroupVersionKind: v1.GroupVersionKind{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+		},
+		LocalObjectReference: corev1.LocalObjectReference{
+			Name: namespacedName.Name,
+		},
+	}
+	require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
+
+	// update Application
+	d := appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+	d.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name = ""
+	require.NoError(t, fakeClient.Update(ctx, &d))
+
+	reconciler = &Reconciler{client: fakeClient, dynClient: f.FakeDynClient(), scheme: f.S}
+	res, err = reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	d2 := appsv1.Deployment{}
+	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d2))
+	require.Equal(t, reconcilerName, d2.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.Name)
+}
