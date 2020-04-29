@@ -38,8 +38,8 @@ func TestNodeJSPostgreSQL(t *testing.T) {
 	t.Run("set-example-dir", SetExampleDir)
 	t.Run("get-oc-status", GetOCStatus)
 
-	//t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
-	//t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
+	t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
+	t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
 	t.Run("create-project", CreatePorject)
 	t.Run("import-nodejs-app", ImportNodeJSApp)
 	t.Run("create-backing-db-instance", CreateBackingDbInstance)
