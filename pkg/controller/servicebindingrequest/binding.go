@@ -115,7 +115,7 @@ func (b *ServiceBinder) Unbind() (reconcile.Result, error) {
 	logger := b.Logger.WithName("Unbind")
 
 	logger.Info("Cleaning related objects from operator's annotations...")
-	if err := RemoveSBRAnnotations(b.DynClient, b.Objects); err != nil {
+	if err := RemoveAndUpdateSBRAnnotations(b.DynClient, b.Objects); err != nil {
 		logger.Error(err, "On removing annotations from related objects.")
 		return RequeueError(err)
 	}
@@ -236,7 +236,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
-	if err = SetSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
+	if err = SetAndUpdateSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
 		b.Logger.Error(err, "On setting annotations in related objects.")
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}

@@ -100,45 +100,68 @@ func updateUnstructuredObj(client dynamic.Interface, obj *unstructured.Unstructu
 	return err
 }
 
-// SetSBRAnnotations update existing annotations to include operator's. The annotations added are
+// SetSBRAnnotations set annotations to include SBR information and return a new object.
+func SetSBRAnnotations(namespacedName types.NamespacedName,
+	obj *unstructured.Unstructured) *unstructured.Unstructured {
+	newObj := obj.DeepCopy()
+	annotations := newObj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations[sbrNamespaceAnnotation] = namespacedName.Namespace
+	annotations[sbrNameAnnotation] = namespacedName.Name
+	newObj.SetAnnotations(annotations)
+	return newObj
+}
+
+// SetAndUpdateSBRAnnotations update existing annotations to include operator's. The annotations added are
 // referring to a existing SBR namespaced name.
-func SetSBRAnnotations(
+func SetAndUpdateSBRAnnotations(
 	client dynamic.Interface,
 	namespacedName types.NamespacedName,
 	objs []*unstructured.Unstructured,
 ) error {
 	for _, obj := range objs {
-		annotations := obj.GetAnnotations()
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
-
-		annotations[sbrNamespaceAnnotation] = namespacedName.Namespace
-		annotations[sbrNameAnnotation] = namespacedName.Name
-		obj.SetAnnotations(annotations)
-
-		if err := updateUnstructuredObj(client, obj); err != nil {
+		newObj := SetSBRAnnotations(namespacedName, obj)
+		equal, err := nestedMapComparison(obj, newObj, []string{"metadata", "annotations"}...)
+		if err != nil {
 			return err
+		}
+		if !equal {
+			if err := updateUnstructuredObj(client, newObj); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-// RemoveSBRAnnotations removes SBR related annotations from all the objects and updates them using
+// RemoveSBRAnnotations removes SBR related annotations and return a new object.
+func RemoveSBRAnnotations(obj *unstructured.Unstructured) *unstructured.Unstructured {
+	newObj := obj.DeepCopy()
+	annotations := newObj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	delete(annotations, sbrNameAnnotation)
+	delete(annotations, sbrNamespaceAnnotation)
+	newObj.SetAnnotations(annotations)
+	return newObj
+}
+
+// RemoveAndUpdateSBRAnnotations removes SBR related annotations from all the objects and updates them using
 // the given client.
-func RemoveSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
+func RemoveAndUpdateSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
 	for _, obj := range objs {
-		annotations := obj.GetAnnotations()
-		if annotations == nil {
-			annotations = make(map[string]string)
-		}
-
-		delete(annotations, sbrNameAnnotation)
-		delete(annotations, sbrNamespaceAnnotation)
-		obj.SetAnnotations(annotations)
-
-		if err := updateUnstructuredObj(client, obj); err != nil {
+		newObj := RemoveSBRAnnotations(obj)
+		equal, err := nestedMapComparison(obj, newObj, []string{"metadata", "annotations"}...)
+		if err != nil {
 			return err
+		}
+		if !equal {
+			if err := updateUnstructuredObj(client, newObj); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
