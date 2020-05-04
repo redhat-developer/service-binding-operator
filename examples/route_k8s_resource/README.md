@@ -1,8 +1,8 @@
-# Use any resource as a backing service
+# Binding an Imported app to a Route/Ingress
 
 ## Introduction
 
-Binding information can be present in standalone k8s objects like routes, services, deployments too. This scenario illustrates using any resource ( CR / non-CR ) which has a spec and a status as a backing service.
+Binding information can be present in standalone k8s objects like routes/ingress, services, deployments too. This scenario illustrates using any resource ( CR / non-CR ) which has a spec and a status as a backing service.
 
 Binding metadata is being read from annotations on the backing service ( like CR, Route, Service, basically any kubernetes object with a spec and status, along with associated CRD or CSV.
 
