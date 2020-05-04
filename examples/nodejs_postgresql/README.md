@@ -33,15 +33,46 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install a `alpha` version.
+and install the `alpha` version.
 
-Alternatively, you can perform the same task with this make command:
+Alternatively, you can perform the same task manually using the following command:
 
 ``` shell
 make install-service-binding-operator-community
 ```
 
 This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+
+##### :bulb: Latest `master` version of the operator
+
+It is also possible to install the latest `master` version of the operator instead of the one from `community-operators`. To enable that an `OperatorSource` has to be installed with the latest `master` version:
+
+``` shell
+cat <<EOS | kubectl apply -f -
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata:
+  name: redhat-developer-operators
+  namespace: openshift-marketplace
+spec:
+  type: appregistry
+  endpoint: https://quay.io/cnr
+  registryNamespace: redhat-developer
+EOS
+```
+
+Alternatively, you can perform the same task manually using the following command before going to the Operator Hub:
+
+``` shell
+make install-service-binding-operator-source-master
+```
+
+or running the following command to install the operator completely:
+
+``` shell
+make install-service-binding-operator-master
+```
 
 #### Install the DB operator using an `OperatorSource`
 
