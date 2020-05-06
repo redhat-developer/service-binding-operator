@@ -114,6 +114,8 @@ spec:
                   type: string
                 version:
                   type: string
+                envVarPrefix:
+                  type: string
               required:
               - group
               - kind
@@ -137,6 +139,8 @@ spec:
                   resourceRef:
                     type: string
                   version:
+                    type: string
+                  envVarPrefix:
                     type: string
                 required:
                 - group
@@ -280,9 +284,6 @@ spec:
                 - version
                 type: object
               type: array
-            bindingStatus:
-              description: BindingStatus is the status of the service binding request.
-              type: string
             conditions:
               description: Conditions describes the state of the operator's reconciliation
                 functionality.
@@ -314,6 +315,9 @@ spec:
             secret:
               description: Secret is the name of the intermediate secret
               type: string
+          required:
+          - conditions
+          - secret
           type: object
       type: object
   version: v1alpha1

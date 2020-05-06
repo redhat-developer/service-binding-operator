@@ -206,7 +206,6 @@ func (b *ServiceBinder) onError(
 		Reason:  BindingFail,
 		Message: b.message(err),
 	})
-	sbrStatus.BindingStatus = BindingFail
 	newSbr, errStatus := b.updateStatusServiceBindingRequest(sbr, sbrStatus)
 	if errStatus != nil {
 		return RequeueError(errStatus)
@@ -242,7 +241,6 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
 	}
 
-	sbrStatus.BindingStatus = BindingSuccess
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   conditions.BindingReady,
 		Status: corev1.ConditionTrue,
@@ -283,7 +281,7 @@ func (b *ServiceBinder) setApplicationObjects(
 		}
 		boundApps = append(boundApps, boundApp)
 	}
-	sbrStatus.ApplicationObjects = boundApps
+	sbrStatus.Applications = boundApps
 }
 
 // buildPlan creates a new plan.
@@ -301,6 +299,12 @@ var InvalidOptionsErr = errors.New("invalid options")
 
 // BuildServiceBinder creates a new binding manager according to options.
 func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
+
+	var isSBRDeleting bool
+	if options.SBR != nil && options.SBR.GetDeletionTimestamp() != nil {
+		isSBRDeleting = true
+	}
+
 	if !options.Valid() {
 		return nil, InvalidOptionsErr
 	}
@@ -324,7 +328,7 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the specified resources
 	if options.DetectBindingResources {
-		err := retriever.ReadBindableResourcesData(&plan.SBR, rs)
+		err := retriever.ReadBindableResourcesData(&plan.SBR, plan.GetRelatedResources())
 		if err != nil {
 			return nil, err
 		}
@@ -332,17 +336,21 @@ func BuildServiceBinder(options *ServiceBinderOptions) (*ServiceBinder, error) {
 
 	// read bindable data from the CRDDescription found by the planner
 	for _, r := range plan.GetRelatedResources() {
-		err = retriever.ReadCRDDescriptionData(r.CR, r.CRDDescription)
+		err = retriever.ReadCRDDescriptionData(r.EnvVarPrefix, r.CR, r.CRDDescription)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// gather retriever's read data
-	// TODO: do not return error
-	retrievedData, err := retriever.Get()
-	if err != nil {
-		return nil, err
+	var retrievedData map[string][]byte
+
+	if !isSBRDeleting {
+		// gather retriever's read data
+		// TODO: do not return error
+		retrievedData, err = retriever.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// gather related secret, again only appending it if there's a value.

@@ -74,3 +74,62 @@ func TestCustomEnvPath_Parse_exampleCase(t *testing.T) {
 	str2 := values["JDBC_PASSWORD"]
 	require.Equal(t, "database-pass", str2, "Connection string is not matching")
 }
+
+func TestCustomEnvPath_Parse_ToJson(t *testing.T) {
+	cache := map[string]interface{}{
+		"spec": map[string]interface{}{
+			"dbName": "database-name",
+		},
+		"status": map[string]interface{}{
+			"creds": map[string]interface{}{
+				"user": "database-user",
+				"pass": "database-pass",
+			},
+		},
+	}
+
+	envMap := []corev1.EnvVar{
+		corev1.EnvVar{
+			Name:  "root",
+			Value: `{{ json . }}`,
+		},
+		corev1.EnvVar{
+			Name:  "spec",
+			Value: `{{ json .spec }}`,
+		},
+		corev1.EnvVar{
+			Name:  "status",
+			Value: `{{ json .status }}`,
+		},
+		corev1.EnvVar{
+			Name:  "creds",
+			Value: `{{ json .status.creds }}`,
+		},
+		corev1.EnvVar{
+			Name:  "dbName",
+			Value: `{{ json .spec.dbName }}`,
+		},
+		corev1.EnvVar{
+			Name:  "notExist",
+			Value: `{{ json .notExist }}`,
+		},
+	}
+	customEnvPath := NewCustomEnvParser(envMap, cache)
+	values, err := customEnvPath.Parse()
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	str := values["root"]
+	require.Equal(t, `{"spec":{"dbName":"database-name"},"status":{"creds":{"pass":"database-pass","user":"database-user"}}}`, str, "root path json string is not matching")
+	str2 := values["spec"]
+	require.Equal(t, `{"dbName":"database-name"}`, str2, "spec json string is not matching")
+	str3 := values["status"]
+	require.Equal(t, `{"creds":{"pass":"database-pass","user":"database-user"}}`, str3, "status json string is not matching")
+	str4 := values["creds"]
+	require.Equal(t, `{"pass":"database-pass","user":"database-user"}`, str4, "creds json string is not matching")
+	str5 := values["dbName"]
+	require.Equal(t, `"database-name"`, str5, "dbName json string is not matching")
+	str6 := values["notExist"]
+	require.Equal(t, "null", str6, "notExist json string is not matching")
+}

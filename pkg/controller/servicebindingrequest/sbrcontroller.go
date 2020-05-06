@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -145,9 +147,18 @@ func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 // addCSVWatch creates a watch on ClusterServiceVersion.
 func (s *SBRController) addCSVWatch() error {
 	log := s.logger
+	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
+	resourceClient := s.Client.Resource(gvr).Namespace(os.Getenv("WATCH_NAMESPACE"))
+	_, err := resourceClient.List(metav1.ListOptions{})
+	if err != nil && errors.IsNotFound(err) {
+		log.Warning("ClusterServiceVersions CRD is not installed, skip watching")
+		return nil
+	} else if err != nil {
+		return err
+	}
 	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind(ClusterServiceVersionKind)
 	source := s.createSourceForGVK(csvGVK)
-	err := s.Controller.Watch(source, NewCreateWatchEventHandler(s))
+	err = s.Controller.Watch(source, NewCreateWatchEventHandler(s))
 	if err != nil {
 		return err
 	}
