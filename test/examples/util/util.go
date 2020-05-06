@@ -96,12 +96,12 @@ func GetOutput(res *icmd.Result) string {
 	return output
 }
 
-//GetPjtCreationRes returns specific name of the pod from the pod list
-func GetPjtCreationRes(pjtRes string, pjt string) string {
+//GetProjectCreationRes returns specific name of the pod from the pod list
+func GetProjectCreationRes(projectRes string, project string) string {
 	item := ""
-	lstArr := strings.Split(pjtRes, "\n")
+	lstArr := strings.Split(projectRes, "\n")
 	for _, item := range lstArr {
-		if strings.Contains(item, pjt) {
+		if strings.Contains(item, project) {
 			fmt.Printf("item matched as %s \n", item)
 			return item
 		}

@@ -40,7 +40,7 @@ func TestNodeJSPostgreSQL(t *testing.T) {
 
 	t.Run("install-service-binding-operator", MakeInstallServiceBindingOperator)
 	t.Run("install-backing-service-operator", MakeInstallBackingServiceOperator)
-	t.Run("create-project", CreatePorject)
+	t.Run("create-project", CreateProject)
 	t.Run("import-nodejs-app", ImportNodeJSApp)
 	t.Run("create-backing-db-instance", CreateBackingDbInstance)
 	t.Run("createservice-binding-request", CreateServiceBindingRequest)
@@ -140,32 +140,32 @@ func MakeInstallBackingServiceOperator(t *testing.T) {
 	require.NotEmpty(t, crd, "packing service CRD not found")
 }
 
-func CreatePorject(t *testing.T) {
+func CreateProject(t *testing.T) {
 
 	checkClusterAvailable(t)
 
 	t.Log("Creating a project into the cluster...")
 	res := util.GetOutput(util.Run("make", "create-project"))
-	require.NotEmptyf(t, res, "", "Pjt not created because of this - %s \n", res)
-	createPjtRes := util.GetPjtCreationRes(res, appNS)
-	require.Containsf(t, createPjtRes, appNS, "Namespace - %s is not created because of %s", appNS, res)
+	require.NotEmptyf(t, res, "", "Project not created because of this - %s \n", res)
+	createProjectRes := util.GetProjectCreationRes(res, appNS)
+	require.Containsf(t, createProjectRes, appNS, "Namespace - %s is not created because of %s", appNS, res)
 
-	t.Logf("-> Project created - %s \n", createPjtRes)
+	t.Logf("-> Project created - %s \n", createProjectRes)
 	t.Log("Get the name of project added to the cluster...\n")
-	getPjt := util.GetCmdResult("", "oc", "get", "project", appNS, "-o", `jsonpath={.metadata.name}`)
+	getProject := util.GetCmdResult("", "oc", "get", "project", appNS, "-o", `jsonpath={.metadata.name}`)
 
-	t.Logf("-> Project created - %s \n", getPjt)
-	require.Equal(t, getPjt, appNS, "Namespace created is %d \n", getPjt)
+	t.Logf("-> Project created - %s \n", getProject)
+	require.Equal(t, getProject, appNS, "Namespace created is %d \n", getProject)
 
 	t.Log("Get the status of the project added to the cluster...\n")
-	pjtStatus := util.GetCmdResult("Active", "oc", "get", "project", appNS, "-o", `jsonpath={.status.phase}`)
+	projectStatus := util.GetCmdResult("Active", "oc", "get", "project", appNS, "-o", `jsonpath={.status.phase}`)
 
-	t.Logf("-> Project created %s has the status %s \n", appNS, pjtStatus)
-	require.Equal(t, "Active", pjtStatus, "Namespace status is %d \n", pjtStatus)
+	t.Logf("-> Project created %s has the status %s \n", appNS, projectStatus)
+	require.Equal(t, "Active", projectStatus, "Namespace status is %d \n", projectStatus)
 
 	t.Log(" Setting the project to service-binding-demo ")
-	pjtRes := util.GetCmdResult("", "oc", "project", appNS)
-	t.Logf("Project/Namespace set is %s", pjtRes)
+	projectRes := util.GetCmdResult("", "oc", "project", appNS)
+	t.Logf("Project/Namespace set is %s", projectRes)
 }
 
 func ImportNodeJSApp(t *testing.T) {
