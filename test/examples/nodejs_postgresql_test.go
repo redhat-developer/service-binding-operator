@@ -47,7 +47,7 @@ func TestNodeJSPostgreSQL(t *testing.T) {
 
 }
 
-//SetExampleDir tests that the corrent example directory was set as a working directory for running the commands.
+//SetExampleDir tests that the current example directory was set as a working directory for running the commands.
 func SetExampleDir(t *testing.T) {
 	examplePath := fmt.Sprintf("%s/%s", util.GetExamplesDir(), exampleName)
 	util.SetDir(examplePath)
@@ -63,7 +63,6 @@ func GetOCStatus(t *testing.T) {
 	t.Log(" *** Connected to cluster *** ")
 }
 
-//Logs out the output of command make install-service-binding-operator
 func MakeInstallServiceBindingOperator(t *testing.T) {
 
 	checkClusterAvailable(t)
@@ -146,8 +145,8 @@ func CreateProject(t *testing.T) {
 
 	t.Log("Creating a project into the cluster...")
 	res := util.GetOutput(util.Run("make", "create-project"))
-	require.NotEmptyf(t, res, "", "Project not created because of this - %s \n", res)
-	createProjectRes := util.GetProjectCreationRes(res, appNS)
+	require.NotEmptyf(t, res, "", "Project not created because of - %s \n", res)
+	createProjectRes := util.GetProjectCreationResult(res, appNS)
 	require.Containsf(t, createProjectRes, appNS, "Namespace - %s is not created because of %s", appNS, res)
 
 	t.Logf("-> Project created - %s \n", createProjectRes)

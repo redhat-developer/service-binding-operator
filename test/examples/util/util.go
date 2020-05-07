@@ -1,7 +1,5 @@
 package util
 
-//This will set the corresponding example directory
-
 import (
 	"fmt"
 	"log"
@@ -30,7 +28,7 @@ var (
 	cntr int
 )
 
-//Run runs a command with timeout
+//Run function executes a command with timeout
 func Run(cmd ...string) *icmd.Result {
 	currentCmd := icmd.Cmd{
 		Command: cmd,
@@ -96,8 +94,8 @@ func GetOutput(res *icmd.Result) string {
 	return output
 }
 
-//GetProjectCreationRes returns specific name of the pod from the pod list
-func GetProjectCreationRes(projectRes string, project string) string {
+//GetProjectCreationResult returns the result of make create-project
+func GetProjectCreationResult(projectRes string, project string) string {
 	item := ""
 	lstArr := strings.Split(projectRes, "\n")
 	for _, item := range lstArr {
@@ -109,7 +107,7 @@ func GetProjectCreationRes(projectRes string, project string) string {
 	return item
 }
 
-//GetCmdResult retrieves the info about build
+//GetCmdResult executes execCmd function indefinitely till the timeout occurs if there is no response of a command, returns the result(res) immediately
 func GetCmdResult(status string, item ...string) string {
 	var res string
 	cntr = 0
@@ -133,7 +131,7 @@ func GetCmdResult(status string, item ...string) string {
 	return res
 }
 
-//execCmd returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
+//execCmd returns a boolean result and the result of the command (cmdRes) executed
 func execCmd(item ...string) (bool, string) {
 	cntr++
 	var cmdRes string
@@ -228,7 +226,7 @@ func GetPodNameFromListOfPods(operatorsNS string, expPodName string) string {
 	return podName
 }
 
-//SrchItemFromLst returns specific name of the pod from the pod list
+//SrchItemFromLst returns specific search item (srchItem) from the list (lst)
 func SrchItemFromLst(lst, srchItem string) (bool, string) {
 	item := ""
 	cntr++
