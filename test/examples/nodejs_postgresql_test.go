@@ -188,7 +188,7 @@ func ImportNodeJSApp(t *testing.T) {
 	t.Logf(" Buid name of an app %s", buildName)
 
 	t.Log(" Fetching the buid status of the app ")
-	buildStatus := util.GetCmdResult("Complete", "oc", "get", "build", buildName, "-o", `jsonpath={.status.phase}`)
+	buildStatus := util.GetCmdResultWithTimeout("Complete", 5 * time.Second, 5 * time.Minute, "oc", "get", "build", buildName, "-o", `jsonpath={.status.phase}`)
 	require.Equal(t, "Complete", buildStatus, "Build status of config name %d is %d \n", buildName, buildStatus)
 	t.Logf(" Buid status of an app %s", buildStatus)
 

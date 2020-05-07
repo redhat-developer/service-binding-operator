@@ -241,7 +241,7 @@ test-unit:
 test-examples:
 	$(info Running examples test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test ./test/examples -v -mod vendor $(TEST_EXTRA_ARGS)
+		go test ./test/examples -v -mod vendor -timeout=20m $(TEST_EXTRA_ARGS)
 
 .PHONY: test-e2e-image
 ## Run e2e tests on operator image

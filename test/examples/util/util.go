@@ -15,8 +15,8 @@ import (
 const (
 	//CmdTimeout defines the amount of time we should spend waiting for the resource when condition is true
 	CmdTimeout    = 10 * time.Minute
-	retryInterval = 5 * time.Second
-	retryTimeout  = 3 * time.Minute
+	defaultRetryInterval = 5 * time.Second
+	defaultRetryTimeout  = 3 * time.Minute
 )
 
 var (
@@ -107,8 +107,13 @@ func GetProjectCreationResult(projectRes string, project string) string {
 	return item
 }
 
-//GetCmdResult executes execCmd function indefinitely till the timeout occurs if there is no response of a command, returns the result(res) immediately
+//GetCmdResult executes execCmd function indefinitely till the default timeout occurs if there is no response of a command, returns the result(res) immediately
 func GetCmdResult(status string, item ...string) string {
+	return GetCmdResultWithTimeout(status, defaultRetryInterval, defaultRetryTimeout, item...)
+}
+
+//GetCmdResultWithTimeout executes execCmd function indefinitely till the timeout occurs if there is no response of a command, returns the result(res) immediately
+func GetCmdResultWithTimeout(status string, retryInterval time.Duration, retryTimeout time.Duration, item ...string) string {
 	var res string
 	cntr = 0
 	checkFlag := false
@@ -216,7 +221,7 @@ func GetPodNameFromListOfPods(operatorsNS string, expPodName string) string {
 	podName := ""
 	checkFlag := false
 	pods := GetPodLst(operatorsNS)
-	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
+	wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		checkFlag, podName = SrchItemFromLst(pods, expPodName)
 		if checkFlag {
 			return true, nil
