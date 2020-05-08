@@ -471,5 +471,6 @@ dev-release:
 ## -- Target to validate release --
 .PHONY: validate-release
 ## validate the operator by installing the releases
-validate-release:
-	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) ./hack/validate-release.sh
+validate-release: setup-venv
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yq==2.10.0
+	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="alpha" ./hack/validate-release.sh
