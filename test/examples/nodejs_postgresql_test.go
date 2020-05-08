@@ -28,11 +28,6 @@ var (
 	dbName      = "db-demo"
 )
 
-const (
-	retryInterval = 1 * time.Second
-	retryTimeout  = 10 * time.Second
-)
-
 func TestNodeJSPostgreSQL(t *testing.T) {
 
 	t.Run("set-example-dir", SetExampleDir)
@@ -99,7 +94,6 @@ func MakeInstallBackingServiceOperator(t *testing.T) {
 
 	t.Log("Installing backing service operator source into the cluster...")
 	res := util.GetOutput(util.Run("make", "install-backing-db-operator-source"))
-	//resExp := strings.TrimSpace(strings.Split(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1], "Waiting")[0])
 	resExp := strings.TrimSpace(strings.Split(res, "operatorsource.operators.coreos.com/db-operators")[1])
 	fmt.Printf("db operator installation source output is %s \n", resExp)
 	require.True(t, strings.Contains(resExp, "created") || strings.Contains(resExp, "unchanged"), "Output %s does not contain created or unchanged while installing db service operator source", resExp)
@@ -188,7 +182,7 @@ func ImportNodeJSApp(t *testing.T) {
 	t.Logf(" Buid name of an app %s", buildName)
 
 	t.Log(" Fetching the buid status of the app ")
-	buildStatus := util.GetCmdResultWithTimeout("Complete", 5 * time.Second, 5 * time.Minute, "oc", "get", "build", buildName, "-o", `jsonpath={.status.phase}`)
+	buildStatus := util.GetCmdResultWithTimeout("Complete", 5*time.Second, 5*time.Minute, "oc", "get", "build", buildName, "-o", `jsonpath={.status.phase}`)
 	require.Equal(t, "Complete", buildStatus, "Build status of config name %d is %d \n", buildName, buildStatus)
 	t.Logf(" Buid status of an app %s", buildStatus)
 
@@ -358,6 +352,8 @@ func checkNodeJSAppFrontend(t *testing.T, startURL string, expectedHeader string
 	defer wd.Quit()
 
 	err := wd.Get(startURL)
+	//wd.SetImplicitWaitTimeout(15 * time.Second)
+	time.Sleep(10 * time.Second)
 	require.NoErrorf(t, err, "Unable to open app page: %s", startURL)
 	header := findElementBy(t, wd, selenium.ByTagName, "h1")
 

@@ -14,7 +14,7 @@ import (
 
 const (
 	//CmdTimeout defines the amount of time we should spend waiting for the resource when condition is true
-	CmdTimeout    = 10 * time.Minute
+	CmdTimeout           = 10 * time.Minute
 	defaultRetryInterval = 5 * time.Second
 	defaultRetryTimeout  = 3 * time.Minute
 )
@@ -24,8 +24,7 @@ var (
 	workingDirOp      = icmd.Dir(workingDirPath)
 	kubeConfig        = os.Getenv("KUBECONFIG")
 	environment       = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
-	//checkFlag         = false
-	cntr int
+	cntr              int
 )
 
 //Run function executes a command with timeout
@@ -60,26 +59,6 @@ func GetExamplesDir() string {
 	}
 	return path.Clean(fmt.Sprintf("%s/../../examples", wd))
 }
-
-/*
-//GetPodNameFromLst returns specific name of the pod from the pod list
-func GetPodNameFromLst(pods, srchItem string) (bool, string) {
-	item := ""
-	checkFlag := false
-	lstArr := strings.Split(pods, " ")
-	for _, item := range lstArr {
-		if strings.Contains(item, srchItem) {
-			if strings.Contains(srchItem, "-build") {
-				fmt.Printf("item matched as %s \n", item)
-				checkFlag = true
-				return checkFlag, item
-			}
-			return true, item
-		}
-	}
-	return checkFlag, item
-}
-*/
 
 //GetOutput returns the output using Stdout()
 func GetOutput(res *icmd.Result) string {
@@ -142,54 +121,12 @@ func execCmd(item ...string) (bool, string) {
 	var cmdRes string
 	checkFlag := false
 	fmt.Printf("Get result of the command...iteration %v \n", cntr)
-	//fmt.Printf("Command executed: %v \n", item)
 	cmdRes = GetOutput(Run(item...))
 	if cmdRes != "" {
 		checkFlag = true
 	}
 	return checkFlag, cmdRes
 }
-
-/*
-//GetExecCmdResult retrieves the info about build
-func GetExecCmdResult(status string, item ...string) string {
-	var res string
-	cntr = 0
-	wait.PollImmediate(retryInterval, retryTimeout, func() (bool, error) {
-		checkFlag, res = executeExecCmd(item...)
-		if checkFlag {
-			if status != "" {
-				if strings.Contains(res, status) {
-					return true, nil
-				}
-				return false, nil
-			}
-			return true, nil
-		}
-		return false, nil
-	})
-	return res
-}
-
-//executeExecCmd returns boolean result if ip name is available, with openshift-operators namespace, capture the install plan
-func executeExecCmd(item ...string) (bool, string) {
-	cntr++
-	var cmdRes string
-	checkFlag := false
-	fmt.Printf("Get result of the command...iteration %v \n", cntr)
-	//fmt.Printf("Command executed: %v \n", item)
-	out, err := exec.Command("curlCMD", item...).Output()
-	if err != nil {
-		fmt.Println("Error!")
-		log.Fatal(err)
-	}
-
-	if string(out) != "" {
-		checkFlag = true
-	}
-	return checkFlag, cmdRes
-}
-*/
 
 //GetPodLst fetches the list of pods
 func GetPodLst(operatorsNS string) string {
@@ -201,19 +138,6 @@ func GetPodLst(operatorsNS string) string {
 	log.Printf("The list of running pods -- %v", pods)
 	return pods
 }
-
-/*
-//GetPodNameFromListOfPods returns the pod name requested from the list of pods running
-func GetPodNameFromListOfPods(ns string, expPodName string) string {
-	pods := GetPodLst(ns)
-	checkFlag, podName := GetPodNameFromLst(pods, expPodName)
-	if !checkFlag {
-		log.Fatalf("list does not contain pod from the list of pods running service binding operator in the cluster")
-	}
-	log.Printf("Pod Name --> %v", podName)
-	return podName
-}
-*/
 
 //GetPodNameFromListOfPods function returns required pod name from the list of pods running
 func GetPodNameFromListOfPods(operatorsNS string, expPodName string) string {
