@@ -19,7 +19,7 @@ f := mocks.NewFake(t, "namespace")
 Add mocked objects are you need.
 
 ``` go
-f.AddMockedSecret("db-credentials")
+f.AddMockedUnstructuredSecret("db-credentials")
 ```
 
 ### 3. Instantiate API Clients

@@ -181,9 +181,12 @@ func (f *Fake) AddMockedUnstructuredPostgresDatabaseCR(ref string) *unstructured
 	return d
 }
 
-// AddMockedSecret add mocked object from SecretMock.
-func (f *Fake) AddMockedSecret(name string) {
-	f.objs = append(f.objs, SecretMock(f.ns, name))
+// AddMockedUnstructuredSecret add mocked object from SecretMock.
+func (f *Fake) AddMockedUnstructuredSecret(name string) *unstructured.Unstructured {
+	s, err := UnstructuredSecretMock(f.ns, name)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, s)
+	return s
 }
 
 // AddNamespacedMockedSecret add mocked object from SecretMock in a namespace

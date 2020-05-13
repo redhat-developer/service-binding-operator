@@ -195,17 +195,18 @@ out/test-namespace:
 get-test-namespace: out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
 
-.PHONY: deploy-e2e-crds
-deploy-e2e-crds:
-	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
-
 # E2E test
-.PHONY: e2e-setup
-e2e-setup: e2e-cleanup
+.PHONY: e2e-deploy-3rd-party-crds
+e2e-deploy-3rd-party-crds: get-test-namespace
+	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/
+
+.PHONY: e2e-create-namespace
+e2e-create-namespace:
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
-	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
-	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/etcd_v1beta2_etcdcluster_crd.yaml
-	$(Q)mkdir -p $(LOGS_DIR)/e2e
+
+.PHONY: e2e-setup
+e2e-setup: e2e-cleanup e2e-create-namespace e2e-deploy-3rd-party-crds
+	$(Q)mkdir -p ${LOGS_DIR}/e2e
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace

@@ -15,25 +15,24 @@ import (
 type Secret struct {
 	logger *log.Log          // logger instance
 	client dynamic.Interface // Kubernetes API client
-	plan   *Plan             // plan instance
+	ns     string
+	name   string
 }
 
 // buildResourceClient creates a resource client to handle corev1/secret resource.
 func (s *Secret) buildResourceClient() dynamic.ResourceInterface {
 	gvr := corev1.SchemeGroupVersion.WithResource(SecretResource)
-	return s.client.Resource(gvr).Namespace(s.plan.Ns)
+	return s.client.Resource(gvr).Namespace(s.ns)
 }
 
 // createOrUpdate will take informed payload and either create a new secret or update an existing
 // one. It can return error when Kubernetes client does.
 func (s *Secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
-	ns := s.plan.Ns
-	name := s.plan.Name
-	logger := s.logger.WithValues("Namespace", ns, "Name", name)
+	logger := s.logger.WithValues("Namespace", s.ns, "Name", s.name)
 	secretObj := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
+			Namespace: s.ns,
+			Name:      s.name,
 		},
 		Data: payload,
 	}
@@ -70,7 +69,7 @@ func (s *Secret) Commit(payload map[string][]byte) (*unstructured.Unstructured, 
 // the API server does.
 func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
 	resourceClient := s.buildResourceClient()
-	u, err := resourceClient.Get(s.plan.Name, metav1.GetOptions{})
+	u, err := resourceClient.Get(s.name, metav1.GetOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, false, err
 	}
@@ -80,7 +79,7 @@ func (s *Secret) Get() (*unstructured.Unstructured, bool, error) {
 // Delete the secret represented by this component. It can return error when the API server does.
 func (s *Secret) Delete() error {
 	resourceClient := s.buildResourceClient()
-	err := resourceClient.Delete(s.plan.Name, &metav1.DeleteOptions{})
+	err := resourceClient.Delete(s.name, &metav1.DeleteOptions{})
 	if err != nil && !errors.IsNotFound(err) {
 		return err
 	}
@@ -88,10 +87,16 @@ func (s *Secret) Delete() error {
 }
 
 // NewSecret instantiate a new Secret.
-func NewSecret(client dynamic.Interface, plan *Plan) *Secret {
+func NewSecret(
+	client dynamic.Interface,
+	ns string,
+	name string,
+) *Secret {
 	return &Secret{
 		logger: log.NewLog("secret"),
 		client: client,
-		plan:   plan,
+
+		name: name,
+		ns:   ns,
 	}
 }

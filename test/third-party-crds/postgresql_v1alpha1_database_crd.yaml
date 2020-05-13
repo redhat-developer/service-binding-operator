@@ -4,8 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   name: databases.postgresql.baiju.dev
   annotations:
-    servicebindingoperator.redhat.io/status.dbCredentials-data.user: 'binding:env:object:secret'
-    servicebindingoperator.redhat.io/status.dbCredentials-data.password: 'binding:env:object:secret'
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.host: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.name: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.password: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.port: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.username: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConnectionIP: binding:env:attribute
+    servicebindingoperator.redhat.io/status.dbConnectionPort: binding:env:attribute
+    servicebindingoperator.redhat.io/status.dbCredentials-password: binding:env:object:secret
+    servicebindingoperator.redhat.io/status.dbCredentials-user: binding:env:object:secret
+    servicebindingoperator.redhat.io/status.dbName: binding:env:attribute
 spec:
   group: postgresql.baiju.dev
   names:
