@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/apimachinery/pkg/fields"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -17,9 +17,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
@@ -40,11 +38,11 @@ const ChangeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 // secret. Those secrets should be offered as environment variables.
 type Binder struct {
 	ctx        context.Context                 // request context
-	client     client.Client                   // kubernetes API client
 	dynClient  dynamic.Interface               // kubernetes dynamic api client
 	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys []string                        // list of key names used in volume mounts
 	modifier   ExtraFieldsModifier             // extra modifier for CRDs before updating
+	restMapper meta.RESTMapper                 // RESTMapper to convert GVR from GVK
 	logger     *log.Log                        // logger instance
 }
 
@@ -67,7 +65,7 @@ var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLa
 var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
-func (b *Binder) search() (*unstructured.UnstructuredList, error) {
+func (b *Binder) search() ([]*unstructured.Unstructured, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
@@ -75,15 +73,18 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 	}
 
+	var result []*unstructured.Unstructured
 	var opts metav1.ListOptions
-
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
-		fieldName := make(map[string]string)
-		fieldName["metadata.name"] = b.sbr.Spec.ApplicationSelector.ResourceRef
-		opts = metav1.ListOptions{
-			FieldSelector: fields.Set(fieldName).String(),
+		object, err := b.dynClient.Resource(gvr).Namespace(ns).
+			Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
+
+		if err != nil {
+			return nil, err
 		}
+		result = append(result, object)
+		return result, nil
 	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
 		matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
 		opts = metav1.ListOptions{
@@ -95,11 +96,12 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		return nil, ApplicationNotFound
-
+		return nil, err
 	}
-
-	return objList, err
+	for idx := range objList.Items {
+		result = append(result, &objList.Items[idx])
+	}
+	return result, nil
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
@@ -465,28 +467,28 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
-func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
+func (b *Binder) update(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
 	updatedObjs := []*unstructured.Unstructured{}
 
-	for _, obj := range objs.Items {
-		// store a copy of the original object to later be used in a comparison
-		originalObj := obj.DeepCopy()
+	for _, obj := range objs {
+		// modify the copy of the original object and use the original one later for comparison
+		updatedObj := obj.DeepCopy()
 		name := obj.GetName()
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		log.Debug("Inspecting object...")
 
-		updatedObj, err := b.updateSpecContainers(&obj)
+		updatedObj, err := b.updateSpecContainers(updatedObj)
 		if err != nil {
 			return nil, err
 		}
 
 		if len(b.volumeKeys) > 0 {
-			if updatedObj, err = b.updateSpecVolumes(&obj); err != nil {
+			if updatedObj, err = b.updateSpecVolumes(updatedObj); err != nil {
 				return nil, err
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(originalObj, updatedObj, "spec"); err != nil {
+		if specsAreEqual, err := nestedMapComparison(obj, updatedObj, "spec"); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
@@ -501,48 +503,56 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		}
 
 		log.Debug("Updating object...")
-		if err := b.client.Update(b.ctx, updatedObj); err != nil {
+		gk := updatedObj.GroupVersionKind().GroupKind()
+		version := updatedObj.GroupVersionKind().Version
+		mapping, err := b.restMapper.RESTMapping(gk, version)
+		if err != nil {
 			return nil, err
 		}
+		updated, err := b.dynClient.Resource(mapping.Resource).
+			Namespace(updatedObj.GetNamespace()).
+			Update(updatedObj, metav1.UpdateOptions{})
 
-		log.Debug("Reading back updated object...")
-		// reading object back again, to comply with possible modifications
-		namespacedName := types.NamespacedName{
-			Namespace: updatedObj.GetNamespace(),
-			Name:      updatedObj.GetName(),
-		}
-		if err = b.client.Get(b.ctx, namespacedName, updatedObj); err != nil {
+		if err != nil {
 			return nil, err
 		}
-
-		updatedObjs = append(updatedObjs, updatedObj)
+		updatedObjs = append(updatedObjs, updated)
 	}
 
 	return updatedObjs, nil
 }
 
 // remove attempts to update each given object without any service binding related information.
-func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
-	for _, obj := range objs.Items {
+func (b *Binder) remove(objs []*unstructured.Unstructured) error {
+	for _, obj := range objs {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Debug("Inspecting object...")
-
-		updatedObj, err := b.removeSpecContainers(&obj)
+		updatedObj, err := b.removeSpecContainers(obj)
 		if err != nil {
 			return err
 		}
-
 		if len(b.volumeKeys) > 0 {
-			if updatedObj, err = b.removeSpecVolumes(&obj); err != nil {
+			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {
 				return err
 			}
 		}
 
-		logger.Debug("Updating object...")
-		if err = b.client.Update(b.ctx, updatedObj); err != nil {
+		gk := updatedObj.GroupVersionKind().GroupKind()
+		version := updatedObj.GroupVersionKind().Version
+		mapping, err := b.restMapper.RESTMapping(gk, version)
+		if err != nil {
 			return err
 		}
+
+		_, err = b.dynClient.Resource(mapping.Resource).
+			Namespace(updatedObj.GetNamespace()).
+			Update(updatedObj, metav1.UpdateOptions{})
+
+		if err != nil {
+			return err
+		}
+
 	}
 	return nil
 }
@@ -575,10 +585,10 @@ func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 // NewBinder returns a new Binder instance.
 func NewBinder(
 	ctx context.Context,
-	client client.Client,
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
 	volumeKeys []string,
+	restMapper meta.RESTMapper,
 ) *Binder {
 
 	logger := log.NewLog("binder")
@@ -586,11 +596,11 @@ func NewBinder(
 
 	return &Binder{
 		ctx:        ctx,
-		client:     client,
 		dynClient:  dynClient,
 		sbr:        sbr,
 		volumeKeys: volumeKeys,
 		modifier:   modifier,
+		restMapper: restMapper,
 		logger:     logger,
 	}
 }
