@@ -99,10 +99,6 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 
 	}
 
-	// Return fake NotFound error explicitly to ensure requeue when objList(^) is empty.
-	if len(objList.Items) == 0 {
-		return nil, ApplicationNotFound
-	}
 	return objList, err
 }
 
@@ -159,6 +155,8 @@ func (b *Binder) removeSpecVolumes(
 func (b *Binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 	name := b.sbr.GetName()
 	log := b.logger
+
+	// FIXME(isuttonl): update should not bail out here since b.volumeKeys might change
 	log.Debug("Checking if binding volume is already defined...")
 	for _, v := range volumes {
 		volume := v.(corev1.Volume)

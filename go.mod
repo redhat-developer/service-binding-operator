@@ -8,6 +8,7 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-containerregistry v0.0.0-20191218175032-34fb8ff33bed // indirect
+	github.com/imdario/mergo v0.3.8
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
@@ -15,7 +16,6 @@ require (
 	github.com/operator-framework/operator-sdk v0.15.2
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
-	github.com/tebeka/selenium v0.9.9
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.0.2
 	k8s.io/api v0.0.0

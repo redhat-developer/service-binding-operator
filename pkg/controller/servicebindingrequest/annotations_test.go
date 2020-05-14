@@ -105,7 +105,55 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 	objs = append(objs, u)
 
 	t.Run("SetSBRAnnotations", func(t *testing.T) {
-		err := SetSBRAnnotations(client, namespacedName, objs)
+		originCopy := u.DeepCopy()
+		newObj := SetSBRAnnotations(namespacedName, u)
+
+		// we are not modifying the origin object
+		equal, err := nestedMapComparison(u, originCopy)
+		require.NoError(t, err)
+		require.True(t, equal)
+
+		equal, err = nestedMapComparison(u, newObj, []string{"metadata", "annotations"}...)
+		require.NoError(t, err)
+		require.False(t, equal)
+
+		objNamespacedName, err := GetSBRNamespacedNameFromObject(newObj)
+		require.NoError(t, err)
+		require.Equal(t, namespacedName, objNamespacedName)
+
+		// assert nothing else is changed
+		newObj.SetAnnotations(nil)
+		equal, err = nestedMapComparison(u, newObj)
+		require.NoError(t, err)
+		require.True(t, equal)
+	})
+
+	t.Run("RemoveSBRAnnotations", func(t *testing.T) {
+		originCopy := u.DeepCopy()
+		newObj := RemoveSBRAnnotations(u)
+
+		// we are not modifying the origin object
+		equal, err := nestedMapComparison(u, originCopy)
+		require.NoError(t, err)
+		require.True(t, equal)
+
+		equal, err = nestedMapComparison(u, newObj, []string{"metadata", "annotations"}...)
+		require.NoError(t, err)
+		require.False(t, equal)
+
+		objNamespacedName, err := GetSBRNamespacedNameFromObject(newObj)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, objNamespacedName)
+
+		// assert nothing else is changed
+		newObj.SetAnnotations(u.GetAnnotations())
+		equal, err = nestedMapComparison(u, newObj)
+		require.NoError(t, err)
+		require.True(t, equal)
+	})
+
+	t.Run("SetAndUpdateSBRAnnotations", func(t *testing.T) {
+		err := SetAndUpdateSBRAnnotations(client, namespacedName, objs)
 		require.NoError(t, err)
 
 		u, err := deploymentResource.Get(ns, metav1.GetOptions{})
@@ -116,8 +164,8 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		require.Equal(t, namespacedName, objNamespacedName)
 	})
 
-	t.Run("RemoveSBRAnnotations", func(t *testing.T) {
-		err := RemoveSBRAnnotations(client, objs)
+	t.Run("RemoveAndUpdateSBRAnnotations", func(t *testing.T) {
+		err := RemoveAndUpdateSBRAnnotations(client, objs)
 		require.NoError(t, err)
 
 		u, err := deploymentResource.Get(ns, metav1.GetOptions{})

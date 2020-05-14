@@ -20,17 +20,13 @@ func TestSecretNew(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 
-	matchLabels := map[string]string{}
-	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", "", deploymentsGVR, matchLabels)
-
-	plan := &Plan{
-		Ns:   ns,
-		Name: name,
-		SBR:  *sbr,
-	}
 	data := map[string][]byte{"key": []byte("value")}
 
-	s := NewSecret(f.FakeDynClient(), plan)
+	s := NewSecret(
+		f.FakeDynClient(),
+		ns,
+		name,
+	)
 
 	t.Run("createOrUpdate", func(t *testing.T) {
 		u, err := s.createOrUpdate(data)
