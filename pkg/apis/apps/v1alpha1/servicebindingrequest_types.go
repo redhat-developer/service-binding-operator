@@ -10,9 +10,6 @@ import (
 
 // ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
 type ServiceBindingRequestSpec struct {
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags:
-	// 	https://book.kubebuilder.io/beyond_basics/generating_crd.html
 	// MountPathPrefix is the prefix for volume mount
 	// +optional
 	MountPathPrefix string `json:"mountPathPrefix,omitempty"`
