@@ -1,7 +1,6 @@
 package mocks
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,7 +8,6 @@ import (
 	ocv1 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	olminstall "github.com/operator-framework/operator-lifecycle-manager/pkg/controller/install"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -234,8 +232,8 @@ func clusterServiceVersionMock(
 	name string,
 	crdDescription olmv1alpha1.CRDDescription,
 ) olmv1alpha1.ClusterServiceVersion {
-	strategy := olminstall.StrategyDetailsDeployment{
-		DeploymentSpecs: []olminstall.StrategyDeploymentSpec{{
+	strategy := olmv1alpha1.StrategyDetailsDeployment{
+		DeploymentSpecs: []olmv1alpha1.StrategyDeploymentSpec{{
 			Name: "deployment",
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{
@@ -254,8 +252,6 @@ func clusterServiceVersionMock(
 		}},
 	}
 
-	strategyJSON, _ := json.Marshal(strategy)
-
 	return olmv1alpha1.ClusterServiceVersion{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ClusterServiceVersion",
@@ -268,8 +264,8 @@ func clusterServiceVersionMock(
 		Spec: olmv1alpha1.ClusterServiceVersionSpec{
 			DisplayName: "mock-database-csv",
 			InstallStrategy: olmv1alpha1.NamedInstallStrategy{
-				StrategyName:    "deployment",
-				StrategySpecRaw: strategyJSON,
+				StrategyName: "deployment",
+				StrategySpec: strategy,
 			},
 			CustomResourceDefinitions: olmv1alpha1.CustomResourceDefinitions{
 				Owned: []olmv1alpha1.CRDDescription{crdDescription},
