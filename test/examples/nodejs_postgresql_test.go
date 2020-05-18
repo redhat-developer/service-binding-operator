@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/examples/util"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -305,14 +306,15 @@ func CreateServiceBindingRequest(t *testing.T) {
 
 	annotation := util.GetCmdResult("", "oc", "get", "sbr", sbr, "-n", appNS, "-o", `jsonpath='{.metadata.annotations.kubectl\.kubernetes\.io\/last-applied-configuration}'`)
 	t.Logf("-> Annotation is %s \n", annotation)
-	actSBRResponse := util.UnmarshalJSONData(annotation)
-	expSBRResponse := util.GetSbrResponse()
+	actSBRResponse := &v1alpha1.ServiceBindingRequest{}
+	err := util.UnmarshalJSONData(annotation, actSBRResponse)
+	require.NoError(t, err, "Unable to unmarshall SBR from JSON")
+
 	expResource := "deployments"
 	expKind := "Database"
 
-	require.Equal(t, expSBRResponse.Kind, actSBRResponse.Kind, "SBR kind is not matched, As expected kind is %d and actual kind is %d\n", expSBRResponse.Kind, actSBRResponse.Kind)
-	require.Equal(t, appNS, actSBRResponse.Metadata.Namespace, "SBR Namespace is not matched, As expected namespace is %d and actual namespace is %d\n", appNS, actSBRResponse.Metadata.Namespace)
-	require.Equal(t, sbr, actSBRResponse.Metadata.Name, "SBR Name is not matched, As expected name is %d and actual name is %d\n", sbr, actSBRResponse.Metadata.Name)
+	require.Equal(t, appNS, actSBRResponse.ObjectMeta.Namespace, "SBR Namespace is not matched, As expected namespace is %d and actual namespace is %d\n", appNS, actSBRResponse.ObjectMeta.Namespace)
+	require.Equal(t, sbr, actSBRResponse.ObjectMeta.Name, "SBR Name is not matched, As expected name is %d and actual name is %d\n", sbr, actSBRResponse.ObjectMeta.Name)
 	require.Equal(t, expResource, actSBRResponse.Spec.ApplicationSelector.Resource, "SBR application resource is not matched, As expected application resource is %d and actual application resource is %d\n", expResource, actSBRResponse.Spec.ApplicationSelector.Resource)
 	require.Equal(t, appName, actSBRResponse.Spec.ApplicationSelector.ResourceRef, "SBR application resource ref is not matched, As expected application resource ref is %d and actual application resource ref  is %d\n", appName, actSBRResponse.Spec.ApplicationSelector.ResourceRef)
 	require.Equal(t, expKind, actSBRResponse.Spec.BackingServiceSelector.Kind, "SBR BackingServiceSelector kind is not matched, As expected BackingServiceSelector kind is %d and actual BackingServiceSelector kind  is %d\n", expKind, actSBRResponse.Spec.BackingServiceSelector.Kind)

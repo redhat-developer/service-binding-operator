@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"gotest.tools/v3/icmd"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -171,4 +173,12 @@ func SrchItemFromLst(lst, srchItem string) (bool, string) {
 		}
 	}
 	return false, item
+}
+
+//UnmarshalJSONData unmarshall the data in form of json to a struct
+func UnmarshalJSONData(jsonData string, obj *v1alpha1.ServiceBindingRequest) error {
+	if strings.Contains(jsonData, "'") {
+		jsonData = strings.Trim(jsonData, "'")
+	}
+	return json.Unmarshal([]byte(jsonData), obj)
 }
