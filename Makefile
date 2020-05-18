@@ -244,6 +244,11 @@ test-examples:
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test ./test/examples -v -mod vendor -timeout=20m $(TEST_EXTRA_ARGS)
 
+.PHONY: clean-examples
+## Removes kube cache directory
+clean-examples:
+	$(Q)rm -rf examples/*/.kube/
+
 .PHONY: test-e2e-image
 ## Run e2e tests on operator image
 test-e2e-image: push-image

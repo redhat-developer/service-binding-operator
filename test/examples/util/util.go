@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -75,26 +76,34 @@ func GetOutput(res *icmd.Result) string {
 	return output
 }
 
-//GetProjectCreationResult returns the result of make create-project
-func GetProjectCreationResult(projectRes string, project string) string {
-	item := ""
+//GetCreateDeleteProjectResult returns the result of make create-project
+func GetCreateDeleteProjectResult(projectRes string, r *regexp.Regexp) (string, bool) {
+	var item string
 	lstArr := strings.Split(projectRes, "\n")
 	for _, item := range lstArr {
-		if strings.Contains(item, project) {
-			fmt.Printf("item matched as %s \n", item)
-			return item
+		if r.MatchString(item) {
+			return item, true
 		}
 	}
-	return item
+	return item, false
+}
+
+//GetRegExMatch returns the result of make create-project
+func GetRegExMatch(srchData string, r *regexp.Regexp) (string, bool) {
+	if r.MatchString(srchData) {
+		return r.FindString(srchData), true
+	}
+	return r.FindString(srchData), false
 }
 
 //GetCmdResult executes execCmd function indefinitely till the default timeout occurs if there is no response of a command, returns the result(res) immediately
-func GetCmdResult(status string, item ...string) string {
-	return GetCmdResultWithTimeout(status, defaultRetryInterval, defaultRetryTimeout, item...)
+func GetCmdResult(status string, item ...string) (string, error) {
+	result, err := GetCmdResultWithTimeout(status, defaultRetryInterval, defaultRetryTimeout, item...)
+	return result, err
 }
 
 //GetCmdResultWithTimeout executes execCmd function indefinitely till the timeout occurs if there is no response of a command, returns the result(res) immediately
-func GetCmdResultWithTimeout(status string, retryInterval time.Duration, retryTimeout time.Duration, item ...string) string {
+func GetCmdResultWithTimeout(status string, retryInterval time.Duration, retryTimeout time.Duration, item ...string) (string, error) {
 	var res string
 	cntr = 0
 	checkFlag := false
@@ -111,10 +120,7 @@ func GetCmdResultWithTimeout(status string, retryInterval time.Duration, retryTi
 		}
 		return false, nil
 	})
-	if err != nil {
-		return ""
-	}
-	return res
+	return res, err
 }
 
 //execCmd returns a boolean result and the result of the command (cmdRes) executed
@@ -122,7 +128,7 @@ func execCmd(item ...string) (bool, string) {
 	cntr++
 	var cmdRes string
 	checkFlag := false
-	fmt.Printf("Get result of the command...iteration %v \n", cntr)
+	fmt.Printf("CMD Result [%v]...iteration %v \n", item, cntr)
 	cmdRes = GetOutput(Run(item...))
 	if cmdRes != "" {
 		checkFlag = true
@@ -133,8 +139,8 @@ func execCmd(item ...string) (bool, string) {
 //GetPodLst fetches the list of pods
 func GetPodLst(operatorsNS string) string {
 	log.Print("Fetching the list of running pods")
-	pods := GetCmdResult("", "oc", "get", "pods", "-n", operatorsNS, "-o", `jsonpath={.items[*].metadata.name}`)
-	if pods == "" {
+	pods, err := GetCmdResult("", "oc", "get", "pods", "-n", operatorsNS, "-o", `jsonpath={.items[*].metadata.name}`)
+	if pods == "" && err != nil {
 		log.Fatalf("No pods are running...")
 	}
 	log.Printf("The list of running pods -- %v", pods)
@@ -142,24 +148,24 @@ func GetPodLst(operatorsNS string) string {
 }
 
 //GetPodNameFromListOfPods function returns required pod name from the list of pods running
-func GetPodNameFromListOfPods(operatorsNS string, expPodName string) string {
+func GetPodNameFromListOfPods(operatorsNS string, expPodName string) (string, error) {
 	cntr = 0
-	podName := ""
+	var podName string
 	checkFlag := false
 	pods := GetPodLst(operatorsNS)
-	wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
+	err := wait.PollImmediate(defaultRetryInterval, defaultRetryTimeout, func() (bool, error) {
 		checkFlag, podName = SrchItemFromLst(pods, expPodName)
 		if checkFlag {
 			return true, nil
 		}
 		return false, nil
 	})
-	return podName
+	return podName, err
 }
 
 //SrchItemFromLst returns specific search item (srchItem) from the list (lst)
 func SrchItemFromLst(lst, srchItem string) (bool, string) {
-	item := ""
+	var item string
 	cntr++
 	fmt.Printf("Get result of the command...iteration %v \n", cntr)
 	lstArr := strings.Split(lst, " ")
