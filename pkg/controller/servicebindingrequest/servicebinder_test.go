@@ -8,6 +8,9 @@ import (
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,10 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	k8stesting "k8s.io/client-go/testing"
-
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 // objAssertionFunc implements an assertion of given obj in the context of given test t.
@@ -69,6 +68,39 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions []wantedCondition
 
 		wantResult *reconcile.Result
+	}
+
+	assertSchemaPathResolution := func(args args, sb ServiceBinder) func(*testing.T) {
+		return func(t *testing.T) {
+			providedBindingPath := args.options.SBR.Spec.ApplicationSelector.BindingPath
+			computedBindingPath := sb.SBR.Spec.ApplicationSelector.BindingPath
+
+			if providedBindingPath != nil {
+
+				// user has provided BindingPath information explicitly
+				require.True(t, providedBindingPath.PodSpecPath != nil ||
+					providedBindingPath.CustomSecretPath != nil)
+
+				// ensure the provided values have not been adulterated.
+				if providedBindingPath.PodSpecPath != nil {
+					require.Equal(t, providedBindingPath.PodSpecPath.Containers,
+						computedBindingPath.PodSpecPath.Containers)
+					require.Equal(t, providedBindingPath.PodSpecPath.Volumes,
+						computedBindingPath.PodSpecPath.Volumes)
+
+				} else if computedBindingPath.CustomSecretPath != nil {
+					// ensure the provided values have not been adulterated.
+					require.Equal(t, providedBindingPath.CustomSecretPath,
+						computedBindingPath.CustomSecretPath)
+				}
+			} else {
+				// user has NOT provided BindingPath information explicitly
+
+				require.Equal(t, defaultPathToContainers, computedBindingPath.PodSpecPath.Containers)
+				require.Equal(t, defaultPathToVolumes, computedBindingPath.PodSpecPath.Volumes)
+				require.Nil(t, computedBindingPath.CustomSecretPath)
+			}
+		}
 	}
 
 	// assertBind exercises the bind functionality
@@ -172,6 +204,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 					}
 				}
 			}
+			assertSchemaPathResolution(args, *sb)
 		}
 	}
 

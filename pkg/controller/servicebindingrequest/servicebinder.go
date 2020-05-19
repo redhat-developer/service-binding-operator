@@ -345,6 +345,15 @@ func BuildServiceBinder(
 		options.Binding.VolumeKeys,
 	)
 
+	if options.SBR.Spec.ApplicationSelector.BindingPath == nil {
+		options.SBR.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+			PodSpecPath: &v1alpha1.PodSpecPath{
+				Containers: defaultPathToContainers,
+				Volumes:    defaultPathToVolumes,
+			},
+		}
+	}
+
 	return &ServiceBinder{
 		Logger:    options.Logger,
 		Binder:    binder,
