@@ -266,7 +266,7 @@ gotest.tools/v3/icmd
 gotest.tools/v3/internal/difflib
 gotest.tools/v3/internal/format
 gotest.tools/v3/internal/source
-# k8s.io/api v0.0.0 => k8s.io/api v0.0.0-20191016110408-35e52d86657a
+# k8s.io/api v0.0.0 => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
 # k8s.io/api v0.17.1 => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
 k8s.io/api/admission/v1beta1
 k8s.io/api/admissionregistration/v1
