@@ -65,7 +65,7 @@ func TestBinderNew(t *testing.T) {
 		require.NotNil(t, binderForSBRWithResourceRef)
 		list, err := binderForSBRWithResourceRef.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
+		require.Equal(t, 1, len(list.Items))
 	})
 
 	t.Run("search", func(t *testing.T) {
@@ -80,7 +80,7 @@ func TestBinderNew(t *testing.T) {
 		require.NotNil(t, binder)
 		list, err := binder.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
+		require.Equal(t, 1, len(list.Items))
 	})
 
 	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestBinderNew(t *testing.T) {
 		require.NotNil(t, binder)
 		list, err := binder.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
+		require.Equal(t, 1, len(list.Items))
 
 		updatedObjects, err := binder.update(list)
 		require.NoError(t, err)
@@ -181,15 +181,16 @@ func TestBinderNew(t *testing.T) {
 
 		list, err := binder.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
+		require.Equal(t, 1, len(list.Items))
 
 		updatedObjects, err := binder.update(list)
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 		<-ch
 
+		list, err = binder.search()
 		// call another update as object is already updated, modifier func should not be called
-		updatedObjects, err = binder.update(updatedObjects)
+		updatedObjects, err = binder.update(list)
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 0)
 	})
@@ -207,7 +208,7 @@ func TestBinderNew(t *testing.T) {
 		require.NotNil(t, binder)
 		list, err := binder.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
+		require.Equal(t, 1, len(list.Items))
 
 		updatedObjects, err := binder.update(list)
 		require.NoError(t, err)
@@ -218,7 +219,7 @@ func TestBinderNew(t *testing.T) {
 
 		list, err = binder.search()
 		require.NoError(t, err)
-		containers, found, err := unstructured.NestedSlice(list[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -274,7 +275,7 @@ func TestBinderApplicationName(t *testing.T) {
 	t.Run("search by application name", func(t *testing.T) {
 		list, err := binder.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
+		require.Equal(t, 1, len(list.Items))
 	})
 }
 
@@ -298,8 +299,8 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 	t.Run("deploymentconfig", func(t *testing.T) {
 		list, err := binder.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list))
-		require.Equal(t, "DeploymentConfig", list[0].Object["kind"])
+		require.Equal(t, 1, len(list.Items))
+		require.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
 	})
 
 }
@@ -343,11 +344,11 @@ func TestBindTwoApplications(t *testing.T) {
 	t.Run("two applications with one backing service", func(t *testing.T) {
 		list1, err := binder1.search()
 		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list1))
+		assert.Equal(t, 1, len(list1.Items))
 
 		list2, err := binder2.search()
 		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list2))
+		assert.Equal(t, 1, len(list2.Items))
 	})
 }
 
@@ -378,7 +379,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	t.Run("Knative service contract with service binding operator", func(t *testing.T) {
 		list, err := binder.search()
 		assert.Nil(t, err)
-		assert.Equal(t, 1, len(list))
+		assert.Equal(t, 1, len(list.Items))
 
 	})
 

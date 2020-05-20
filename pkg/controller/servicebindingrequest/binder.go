@@ -65,7 +65,7 @@ var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLa
 var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
-func (b *Binder) search() ([]*unstructured.Unstructured, error) {
+func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
@@ -73,7 +73,6 @@ func (b *Binder) search() ([]*unstructured.Unstructured, error) {
 		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 	}
 
-	var result []*unstructured.Unstructured
 	var opts metav1.ListOptions
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
@@ -83,8 +82,9 @@ func (b *Binder) search() ([]*unstructured.Unstructured, error) {
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, object)
-		return result, nil
+
+		objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
+		return objList, nil
 	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
 		matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
 		opts = metav1.ListOptions{
@@ -98,10 +98,7 @@ func (b *Binder) search() ([]*unstructured.Unstructured, error) {
 	if err != nil {
 		return nil, err
 	}
-	for idx := range objList.Items {
-		result = append(result, &objList.Items[idx])
-	}
-	return result, nil
+	return objList, nil
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
@@ -467,10 +464,10 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
-func (b *Binder) update(objs []*unstructured.Unstructured) ([]*unstructured.Unstructured, error) {
+func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
 	updatedObjs := []*unstructured.Unstructured{}
 
-	for _, obj := range objs {
+	for _, obj := range objs.Items {
 		// modify the copy of the original object and use the original one later for comparison
 		updatedObj := obj.DeepCopy()
 		name := obj.GetName()
@@ -488,7 +485,7 @@ func (b *Binder) update(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(obj, updatedObj, "spec"); err != nil {
+		if specsAreEqual, err := nestedMapComparison(&obj, updatedObj, "spec"); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
@@ -523,12 +520,12 @@ func (b *Binder) update(objs []*unstructured.Unstructured) ([]*unstructured.Unst
 }
 
 // remove attempts to update each given object without any service binding related information.
-func (b *Binder) remove(objs []*unstructured.Unstructured) error {
-	for _, obj := range objs {
+func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
+	for _, obj := range objs.Items {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Debug("Inspecting object...")
-		updatedObj, err := b.removeSpecContainers(obj)
+		updatedObj, err := b.removeSpecContainers(&obj)
 		if err != nil {
 			return err
 		}
