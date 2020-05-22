@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 
 export EXAMPLE_NAMESPACE="service-binding-demo"
 
