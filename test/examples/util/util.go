@@ -26,8 +26,11 @@ var (
 	workingDirPath, _ = os.Getwd()
 	workingDirOp      = icmd.Dir(workingDirPath)
 	kubeConfig        = os.Getenv("KUBECONFIG")
-	environment       = []string{fmt.Sprintf("KUBECONFIG=%s", kubeConfig)}
-	cntr              int
+	environment       = []string{
+		fmt.Sprintf("KUBECONFIG=%s", kubeConfig),
+		fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
+	}
+	cntr int
 )
 
 //Run function executes a command with timeout
