@@ -74,6 +74,7 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	}
 
 	var opts metav1.ListOptions
+
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
 		object, err := b.dynClient.Resource(gvr).Namespace(ns).
