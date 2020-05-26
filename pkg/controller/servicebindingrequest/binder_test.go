@@ -189,6 +189,7 @@ func TestBinderNew(t *testing.T) {
 		<-ch
 
 		list, err = binder.search()
+		require.NoError(t, err)
 		// call another update as object is already updated, modifier func should not be called
 		updatedObjects, err = binder.update(list)
 		require.NoError(t, err)
