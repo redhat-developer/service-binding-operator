@@ -28,8 +28,8 @@ const (
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
 	dynClient  dynamic.Interface // kubernetes dynamic api client
-	RestMapper meta.RESTMapper   // restMapper to convert GVK and GVR
 	scheme     *runtime.Scheme   // api scheme
+	RestMapper meta.RESTMapper   // restMapper to convert GVK and GVR
 }
 
 // reconcilerLog local logger instance
