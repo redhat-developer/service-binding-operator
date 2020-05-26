@@ -474,4 +474,4 @@ dev-release:
 ## validate the operator by installing the releases
 validate-release: setup-venv
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yq==2.10.0
-	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="alpha" ./hack/validate-release.sh
+	BUNDLE_VERSION=$(BUNDLE_VERSION) CHANNEL="alpha" ./hack/validate-release.sh

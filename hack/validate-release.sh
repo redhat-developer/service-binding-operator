@@ -4,7 +4,6 @@ set -e
 set -u
 
 SUBSCRIPTION="./test/operator-hub/subscription2.yaml"
-BUNDLE_VERSION=`curl -s https://raw.githubusercontent.com/operator-framework/community-operators/master/community-operators/service-binding-operator/service-binding-operator.package.yaml | ./out/venv3/bin/yq -r '.channels[] | select (.name == '\"$CHANNEL\"') | .currentCSV | sub("service-binding-operator.v"; "") '`
 INSTALL_PLAN_PRIOR=service-binding-operator.v${BUNDLE_VERSION}
 
 # Subscribing to the operator
