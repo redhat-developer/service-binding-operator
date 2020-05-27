@@ -22,13 +22,12 @@ type ServiceBindingSpec struct {
 	// +optional
 	DataMapping []corev1.EnvVar `json:"dataMapping,omitempty"`
 
-	// BackingServiceSelectors is used to identify multiple backing services.
-	// This would be made a required field after 'services'
-	// is removed.
+	// Services is used to identify multiple backing services.
 	Services []Service `json:"services"`
 
 	// Application is used to identify the application connecting to the
-	// backing service operator.
+	// backing service operator. When not provided, a managed binding secret
+	// is created but not bound to any application workload.
 	// +optional
 	Application Application `json:"application,omitempty"`
 

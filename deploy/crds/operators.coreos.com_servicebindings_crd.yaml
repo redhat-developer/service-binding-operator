@@ -37,7 +37,8 @@ spec:
           properties:
             application:
               description: Application is used to identify the application connecting
-                to the backing service operator.
+                to the backing service operator. When not provided, a managed binding
+                secret is created but not bound to any application workload.
               properties:
                 group:
                   type: string
@@ -211,9 +212,7 @@ spec:
               description: MountPathPrefix is the prefix for volume mount
               type: string
             services:
-              description: BackingServiceSelectors is used to identify multiple backing
-                services. This would be made a required field after 'services' is
-                removed.
+              description: Services is used to identify multiple backing services.
               items:
                 description: Service defines the selector based on resource name,
                   version, and resource kind
