@@ -18,26 +18,26 @@ Test application : https://github.com/akashshinde/node-todo.git
 
 4. Create SBR.
 ```yaml
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: binding-request
 spec:
-  applicationSelector:
+  application:
     matchLabels:
       connects-to: etcd
       environment: demo
-    group: apps.openshift.io
+    group: operators.coreos.com
     version: v1
     resource: deploymentconfigs
-    resourceRef: ""
-  backingServiceSelector:
-    group: etcd.database.coreos.com
-    version: v1beta2
-    kind: EtcdCluster
-    resourceRef: etcd-cluster-example
+    name: ""
+  services:
+    - group: etcd.database.coreos.com
+      version: v1beta2
+      kind: EtcdCluster
+      name: etcd-cluster-example
   mountPathPrefix: “”
-  customEnvVar: []
+  dataMapping: []
   detectBindingResources: true
 ```
 5. Application should be binded to the Etcd database automatically.

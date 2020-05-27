@@ -5,7 +5,7 @@
 This scenario illustrates binding an imported Java application to an in-cluster operated managed PostgreSQL Database.
 
 Note that this example app is configured to operate with OpenShift 4.3 or newer.
-To use this example app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
+To use this example app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `operators.coreos.com`.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -41,7 +41,7 @@ Alternatively, you can perform the same task manually using the following comman
 make install-service-binding-operator-community
 ```
 
-This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
 ##### :bulb: Latest `master` version of the operator
 
@@ -178,28 +178,28 @@ make create-backing-db-instance
 
 Now, the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
 
-Create the following `ServiceBindingRequest`:
+Create the following `ServiceBinding`:
 
 ```shell
 cat <<EOS |kubectl apply -f -
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: binding-request
   namespace: service-binding-demo
 spec:
-  applicationSelector:
-    resourceRef: java-app
+  application:
+    name: java-app
     group: apps
     version: v1
     resource: deployments
-  backingServiceSelector:
-    group: postgresql.baiju.dev
-    version: v1alpha1
-    kind: Database
-    resourceRef: db-demo
-  customEnvVar:
+  - services:
+      group: postgresql.baiju.dev
+      version: v1alpha1
+      kind: Database
+      name: db-demo
+  dataMapping:
     - name: JDBC_URL
       value: 'jdbc:postgresql://{{ .status.dbConnectionIP }}:{{ .status.dbConnectionPort }}/{{ .status.dbName }}'
     - name: DB_USER
@@ -217,14 +217,14 @@ make create-service-binding-request
 
 There are 2 parts in the request:
 
-* `applicationSelector` - used to search for the application based on theresourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
-* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
+* `application` - used to search for the application based on theresourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
+* `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
 
 Once the new version is up, go to the application's route to check the UI. Now, it works!
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
+When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
 
 ```yaml
 spec:
@@ -236,9 +236,9 @@ spec:
               name: binding-request
 ```
 
-#### ServiceBindingRequestStatus
+#### ServiceBindingStatus
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+`ServiceBindingStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
 | Field | Description |
 |-------|-------------|

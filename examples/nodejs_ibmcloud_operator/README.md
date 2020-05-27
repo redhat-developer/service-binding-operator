@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This scenario illustrates binding an imported application to an off-cluster operator-managed IBM Cloud Service. The scenario also shows the use of the `customEnvVar` feature of the Service Binding Operator to specify a mapping for the injected environment variables.
+This scenario illustrates binding an imported application to an off-cluster operator-managed IBM Cloud Service. The scenario also shows the use of the `dataMapping` feature of the Service Binding Operator to specify a mapping for the injected environment variables.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -37,7 +37,7 @@ Alternatively, you can perform the same task manually using the following comman
 make install-service-binding-operator-community
 ```
 
-This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
 ##### :bulb: Latest `master` version of the operator
 
@@ -206,28 +206,28 @@ environment variables required by the sample node.js app.
 More specifically, the node.js app requires two environment variables: `LANGUAGE_TRANSLATOR_URL` 
 and `LANGUAGE_TRANSLATOR_IAM_APIKEY`. These keys are available in the backing service secret as
 `url` and `apikey` respectively, and they can be mapped to the variables required by the app using
-the `customEnvVar` feature of the service binding operator.
+the `dataMapping` feature of the service binding operator.
 
-All we need to do is to create the following [`ServiceBindingRequest`](./service-binding-request.nodejs-app.yaml):
+All we need to do is to create the following [`ServiceBinding`](./service-binding-request.nodejs-app.yaml):
 
 ```yaml
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: mytranslator.to.nodejs-app
   namespace: service-binding-demo
 spec:
-  backingServiceSelector:
-    group: ibmcloud.ibm.com
-    version: v1alpha1
-    kind: Binding
-    resourceRef: mytranslator-binding
-  applicationSelector:
-    resourceRef: language-translator-nodejs
-    group: apps.openshift.io
+  services:
+    - group: ibmcloud.ibm.com
+      version: v1alpha1
+      kind: Binding
+      name: mytranslator-binding
+  application:
+    name: language-translator-nodejs
+    group: operators.coreos.com
     version: v1
     resource: deploymentconfigs
-  customEnvVar:
+  dataMapping:
      - name: LANGUAGE_TRANSLATOR_URL
        value: '{{ index .status.secretName "url" }}'
      - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
@@ -236,9 +236,9 @@ spec:
 
 There are 3 interesting parts in the request:
 
-* `backingServiceSelector` - used to find the backing service - the operator-backed language translator instance with name `mytranslator-binding`.
-* `applicationSelector` - used to search for the application based on the resourceRef and the `resourceKind` of the application to be a `DeploymentConfig`, matched by the label `app=language-translator-nodejs`.
-* `customEnvVar` - specifies the mapping for the environment variables injected into the bound application.
+* `services` - used to find the backing service - the operator-backed language translator instance with name `mytranslator-binding`.
+* `application` - used to search for the application based on the resourceRef and the `resourceKind` of the application to be a `DeploymentConfig`, matched by the label `app=language-translator-nodejs`.
+* `dataMapping` - specifies the mapping for the environment variables injected into the bound application.
 
 We can use run the following command to create the binding request:
 
@@ -260,7 +260,7 @@ npm info lifecycle language-translator-demo@0.3.10~start: language-translator-de
 Server running on port: 8080
 ```
 
-We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the custom environment variables that  that we specified above in the `ServiceBindingRequest`.
+We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the custom environment variables that  that we specified above in the `ServiceBinding`.
 
 To create a route for the application, run the following command:
 

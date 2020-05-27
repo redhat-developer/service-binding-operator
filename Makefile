@@ -358,13 +358,13 @@ deploy-rbac:
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
-	$(Q)kubectl apply -f deploy/crds/apps.openshift.io_servicebindingrequests_crd.yaml
+	$(Q)kubectl apply -f deploy/crds/operators.coreos.com_servicebindings_crd.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
 deploy-clean:
-	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
-	$(Q)-kubectl delete -f deploy/crds/apps.openshift.io_servicebindingrequests_crd.yaml
+	$(Q)-kubectl delete -f deploy/crds/operators.coreos.com_servicebindings_cr.yaml
+	$(Q)-kubectl delete -f deploy/crds/operators.coreos.com_servicebindingrequests_crd.yaml
 	$(Q)-kubectl delete -f deploy/operator.yaml
 	$(Q)-kubectl delete -f deploy/role_binding.yaml
 	$(Q)-kubectl delete -f deploy/role.yaml
@@ -414,7 +414,7 @@ endif
 ## Copy crd from deploy/crds to manifests-upstream/
 consistent-crds-manifests-upstream:
 	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
-	servicebindingrequests.apps.openshift.io.crd.yaml
+	servicebindings.operators.coreos.com.crd.yaml
 
 ## -- Target for merge to master dev release --
 .PHONY: merge-to-master-release

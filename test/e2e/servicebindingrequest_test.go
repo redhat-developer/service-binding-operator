@@ -26,12 +26,12 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 type Step string
-type OnSBRCreate func(sbr *v1alpha1.ServiceBindingRequest)
+type OnSBRCreate func(sbr *v1alpha1.ServiceBinding)
 
 const (
 	DBStep          Step = "create-db"
@@ -67,8 +67,8 @@ var (
 func TestAddSchemesToFramework(t *testing.T) {
 	logf.SetLogger(logf.ZapLogger(true))
 
-	t.Log("Adding ServiceBindingRequestList scheme to cluster...")
-	sbrlist := v1alpha1.ServiceBindingRequestList{}
+	t.Log("Adding ServiceBindingList scheme to cluster...")
+	sbrlist := v1alpha1.ServiceBindingList{}
 	require.NoError(t, framework.AddToFrameworkScheme(apis.AddToScheme, &sbrlist))
 
 	t.Log("Adding ClusterServiceVersionList scheme to cluster...")
@@ -85,31 +85,31 @@ func TestAddSchemesToFramework(t *testing.T) {
 
 	t.Run("end-to-end", func(t *testing.T) {
 		t.Run("scenario-etcd-unannotated-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
+			ServiceBinding(t, []Step{AppStep, EtcdClusterStep, SBREtcdStep})
 		})
 		t.Run("scenario-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, AppStep, SBRStep})
+			ServiceBinding(t, []Step{DBStep, AppStep, SBRStep})
 		})
 		t.Run("scenario-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
+			ServiceBinding(t, []Step{AppStep, DBStep, SBRStep})
 		})
 		t.Run("scenario-db-sbr-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
+			ServiceBinding(t, []Step{DBStep, SBRStep, AppStep})
 		})
 		t.Run("scenario-app-sbr-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
+			ServiceBinding(t, []Step{AppStep, SBRStep, DBStep})
 		})
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
+			ServiceBinding(t, []Step{SBRStep, DBStep, AppStep})
 		})
 		t.Run("scenario-sbr-app-db", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
+			ServiceBinding(t, []Step{SBRStep, AppStep, DBStep})
 		})
 		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
+			ServiceBinding(t, []Step{CSVStep, DBStep, AppStep, SBRStep})
 		})
 		t.Run("scenario-csv-app-db-sbr", func(t *testing.T) {
-			ServiceBindingRequest(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
+			ServiceBinding(t, []Step{CSVStep, AppStep, DBStep, SBRStep})
 		})
 	})
 }
@@ -142,9 +142,9 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framewor
 	return ns, f
 }
 
-// ServiceBindingRequest bootstrap method to initialize cluster resources and setup a testing
+// ServiceBinding bootstrap method to initialize cluster resources and setup a testing
 // namespace, after bootstrap operator related tests method is called out.
-func ServiceBindingRequest(t *testing.T, steps []Step) {
+func ServiceBinding(t *testing.T, steps []Step) {
 	t.Log("Creating a new test context...")
 	ctx := framework.NewTestCtx(t)
 	defer ctx.Cleanup()
@@ -189,18 +189,18 @@ func assertSBRStatus(
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
 ) error {
-	sbr := &v1alpha1.ServiceBindingRequest{}
+	sbr := &v1alpha1.ServiceBinding{}
 	if err := f.Client.Get(ctx, namespacedName, sbr); err != nil {
 		return err
 	}
 
 	for i, condition := range sbr.Status.Conditions {
-		if condition.Type != servicebindingrequest.BindingReady && condition.Status != corev1.ConditionTrue {
+		if condition.Type != servicebinding.BindingReady && condition.Status != corev1.ConditionTrue {
 			return fmt.Errorf(
 				"Condition.Type and Condition.Status is '%s' and '%s' instead of '%s' and '%s'",
 				sbr.Status.Conditions[i].Type,
 				sbr.Status.Conditions[i].Status,
-				servicebindingrequest.BindingReady,
+				servicebinding.BindingReady,
 				corev1.ConditionTrue)
 		}
 	}
@@ -368,9 +368,9 @@ func CreateSBR(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 	onSBRCreate OnSBRCreate,
-) *v1alpha1.ServiceBindingRequest {
-	t.Logf("Creating ServiceBindingRequest mock object '%#v'...", namespacedName)
-	sbr := mocks.ServiceBindingRequestMock(
+) *v1alpha1.ServiceBinding {
+	t.Logf("Creating ServiceBinding mock object '%#v'...", namespacedName)
+	sbr := mocks.ServiceBindingMock(
 		namespacedName.Namespace, namespacedName.Name, nil, resourceRef, "", applicationGVR, matchLabels)
 
 	// This function call explicitly modifies default SBR created by
@@ -390,21 +390,23 @@ func CreateSBR(
 
 // setSBRBackendGVK sets backend service selector
 func setSBRBackendGVK(
-	sbr *v1alpha1.ServiceBindingRequest,
+	sbr *v1alpha1.ServiceBinding,
 	resourceRef string,
 	backendGVK schema.GroupVersionKind,
 	envVarPrefix string,
 ) {
-	sbr.Spec.BackingServiceSelector = &v1alpha1.BackingServiceSelector{
-		GroupVersionKind: metav1.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
-		ResourceRef:      resourceRef,
-		EnvVarPrefix:     &envVarPrefix,
+	sbr.Spec.Services = []v1alpha1.Service{
+		{
+			GroupVersionKind:     metav1.GroupVersionKind{Group: backendGVK.Group, Version: backendGVK.Version, Kind: backendGVK.Kind},
+			LocalObjectReference: corev1.LocalObjectReference{Name: resourceRef},
+			EnvVarPrefix:         &envVarPrefix,
+		},
 	}
 }
 
 // setSBRBindUnannotated makes SBR to detect bindable resource
 // without depending on annotation
-func setSBRBindUnannotated(sbr *v1alpha1.ServiceBindingRequest, bindUnAnnotated bool) {
+func setSBRBindUnannotated(sbr *v1alpha1.ServiceBinding, bindUnAnnotated bool) {
 	sbr.Spec.DetectBindingResources = bindUnAnnotated
 }
 
@@ -531,7 +533,7 @@ func serviceBindingRequestTest(
 	todoCtx := context.TODO()
 	assertKeys := postgresSecretAssertion
 
-	var sbr *v1alpha1.ServiceBindingRequest
+	var sbr *v1alpha1.ServiceBinding
 	for _, step := range steps {
 		switch step {
 		case CSVStep:
@@ -551,7 +553,7 @@ func serviceBindingRequestTest(
 				resourceRef,
 				deploymentsGVR,
 				matchLabels,
-				func(sbr *v1alpha1.ServiceBindingRequest) {
+				func(sbr *v1alpha1.ServiceBinding) {
 					setSBRBackendGVK(sbr, resourceRef,
 						v1beta2.SchemeGroupVersion.WithKind(v1beta2.EtcdClusterResourceKind),
 						"ETCDCLUSTER",

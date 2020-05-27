@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	GroupName     = "apps.openshift.io"
+	GroupName     = "operators.coreos.com"
 	GroupVersion  = schema.GroupVersion{Group: GroupName, Version: "v1"}
 	schemeBuilder = runtime.NewSchemeBuilder(addKnownTypes, corev1.AddToScheme, extensionsv1beta1.AddToScheme)
 	// Install is a function which adds this version to a scheme

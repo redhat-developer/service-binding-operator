@@ -31,7 +31,7 @@ Navigate to `Operators`->`OperatorHub` in the OpenShift console; in the `Develop
 
 and install an `alpha` version.
 
-This makes the `ServiceBindingRequest` custom resource available for the application developer.
+This makes the `ServiceBinding` custom resource available for the application developer.
 
 
 ### Application Developer
@@ -91,34 +91,34 @@ spec:
 EOS
 ```
 
-Now create a ServiceBindingRequest as below:
+Now create a ServiceBinding as below:
 
 ``` shell
 cat <<EOS |kubectl apply -f -
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 
 metadata: 
   name: binding-request
   namespace: service-binding-demo
 
 spec: 
-  applicationSelector: 
+  application: 
     group: ""
     resource: deployments
-    resourceRef: nodejs-rest-http-crud-git
+    name: nodejs-rest-http-crud-git
     version: v1
 
-  backingServiceSelectors:                                                                                                        
+  services:                                
    - group: route.openshift.io
-      version: v1
-      kind: Route # <--- not NECESSARILY a CR
-      resourceRef: example 
+     version: v1
+     kind: Route # <--- not NECESSARILY a CR
+     name: example 
 EOS
 ```
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the Route information that was annotated to be injected into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`.
+When the `ServiceBinding` was created the Service Binding Operator's controller injected the Route information that was annotated to be injected into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`.
 
 Check the contents of `Secret` - `binding-request` by executing `oc get secrets binding-request -o yaml` for the following result:
 

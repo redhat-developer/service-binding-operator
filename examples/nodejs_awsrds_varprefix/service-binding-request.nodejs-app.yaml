@@ -1,18 +1,18 @@
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: mydb.to.nodejs-app
   namespace: service-binding-demo
 spec:
   envVarPrefix: "MYDB"
-  backingServiceSelector:
+  services:
     group: aws.pmacik.dev
     version: v1alpha1
     kind: RDSDatabase
-    resourceRef: mydb
-  applicationSelector:
-    resourceRef: nodejs-app
+    name: mydb
+  application:
+    name: nodejs-app
     group: apps
     version: v1
     resource: deployments

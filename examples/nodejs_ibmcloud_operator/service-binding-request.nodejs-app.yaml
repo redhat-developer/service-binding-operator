@@ -1,20 +1,20 @@
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: mytranslator.to.nodejs-app
   namespace: service-binding-demo
 spec:
-  backingServiceSelector:
-    group: ibmcloud.ibm.com
-    version: v1alpha1
-    kind: Binding
-    resourceRef: mytranslator-binding
-  applicationSelector:
-    resourceRef: language-translator-nodejs
-    group: apps.openshift.io
+  services:
+    - group: ibmcloud.ibm.com
+      version: v1alpha1
+      kind: Binding
+      name: mytranslator-binding
+  application:
+    name: language-translator-nodejs
+    group: operators.coreos.com
     version: v1
     resource: deploymentconfigs
-  customEnvVar:
+  dataMapping:
     - name: LANGUAGE_TRANSLATOR_URL
       value: '{{ index .status.secretName "url" }}'
     - name: LANGUAGE_TRANSLATOR_IAM_APIKEY

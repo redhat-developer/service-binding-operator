@@ -5,19 +5,19 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "apps.openshift.io/v1alpha1",
-          "kind": "ServiceBindingRequest",
+          "apiVersion": "operators.coreos.com/v1alpha1",
+          "kind": "ServiceBinding",
           "metadata": {
-            "name": "example-servicebindingrequest"
+            "name": "example-servicebinding"
           },
           "spec": {
-            "applicationSelector": {
+            "application": {
               "group": "apps",
               "resource": "deployments",
               "resourceRef": "nodejs-rest-http-crud",
               "version": "v1"
             },
-            "backingServiceSelector": {
+            "services": {
               "group": "postgresql.example.dev",
               "kind": "Database",
               "resourceRef": "pg-instance",
@@ -44,8 +44,8 @@ spec:
   customresourcedefinitions:
     owned:
     - description: Expresses intent to bind an operator-backed service with a Deployment
-      kind: ServiceBindingRequest
-      name: servicebindingrequests.apps.openshift.io
+      kind: ServiceBinding
+      name: servicebindings.operators.coreos.com
       version: v1alpha1
   description: '
    The Service Binding Operator enables application developers
@@ -53,7 +53,7 @@ spec:
    without having to perform manual configuration of secrets, configmaps, etc.
    The Service Binding Operator accomplishes this through automatically collecting binding information
    and sharing with an application to bind it with operator managed backing services.
-   The binding is performed through a new custom resource called a ServiceBindingRequest.
+   The binding is performed through a new custom resource called a ServiceBinding.
 
    ### Example
 
@@ -148,7 +148,7 @@ spec:
           verbs:
           - update
         - apiGroups:
-          - apps.openshift.io
+          - operators.coreos.com
           resources:
           - '*'
           verbs:

@@ -90,30 +90,30 @@ screen, and then the "From Git" button. Fill the "Git Repo URL" with
 validated and the appropriate "Builder Image" and "Builder Image Version"
 will be selected. Push the "Create" button to create the application.
 
-Create the ServiceBindingRequest `node-todo-git` by pushing the "+" button
+Create the ServiceBinding `node-todo-git` by pushing the "+" button
 on the top right corner and pasting the following:
 
 ```yaml
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: node-todo-git
 spec:
-  applicationSelector:
-    resourceRef: node-todo-git
+  application:
+    name: node-todo-git
     group: apps
     version: v1
     resource: deployments
-  backingServiceSelectors:
+  services:
   - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
-    resourceRef: db-demo
+    name: db-demo
   - group: etcd.database.coreos.com
     version: v1beta2
     kind: EtcdCluster
-    resourceRef: etcd-demo
+    name: etcd-demo
   detectBindingResources: true
 ```
 
@@ -145,8 +145,8 @@ data:
 kind: Secret
 metadata:
   annotations:
-    service-binding-operator.apps.openshift.io/binding-name: node-todo-git
-    service-binding-operator.apps.openshift.io/binding-namespace: multiple-services-demo
+    service-binding-operator.operators.coreos.com/binding-name: node-todo-git
+    service-binding-operator.operators.coreos.com/binding-namespace: multiple-services-demo
   creationTimestamp: "2020-02-14T11:58:29Z"
   name: node-todo-git
   namespace: multiple-services-demo

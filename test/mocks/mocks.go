@@ -30,8 +30,8 @@ const (
 	CRDName            = "postgresql.baiju.dev"
 	CRDVersion         = "v1alpha1"
 	CRDKind            = "Database"
-	OperatorKind       = "ServiceBindingRequest"
-	OperatorAPIVersion = "apps.openshift.io/v1alpha1"
+	OperatorKind       = "ServiceBinding"
+	OperatorAPIVersion = "operators.coreos.com/v1alpha1"
 )
 
 var (
@@ -388,8 +388,8 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 	}
 }
 
-// MultiNamespaceServiceBindingRequestMock return a binding-request mock of informed name and match labels.
-func MultiNamespaceServiceBindingRequestMock(
+// MultiNamespaceServiceBindingMock return a binding-request mock of informed name and match labels.
+func MultiNamespaceServiceBindingMock(
 	ns string,
 	name string,
 	backingServiceResourceRef string,
@@ -397,33 +397,35 @@ func MultiNamespaceServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha1.ServiceBindingRequest {
-	sbr := &v1alpha1.ServiceBindingRequest{
+) *v1alpha1.ServiceBinding {
+	sbr := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
-		Spec: v1alpha1.ServiceBindingRequestSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar:    []corev1.EnvVar{},
-			ApplicationSelector: v1alpha1.ApplicationSelector{
+			DataMapping:     []corev1.EnvVar{},
+			Application: v1alpha1.Application{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
-				ResourceRef:          applicationResourceRef,
+				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
-			BackingServiceSelector: &v1alpha1.BackingServiceSelector{
-				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-				ResourceRef:      backingServiceResourceRef,
-				Namespace:        &backingServiceNamespace,
+			Services: []v1alpha1.Service{
+				{
+					GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+					LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
+					Namespace:            &backingServiceNamespace,
+				},
 			},
 		},
 	}
 	return sbr
 }
 
-// ServiceBindingRequestMock return a binding-request mock of informed name and match labels.
-func ServiceBindingRequestMock(
+// ServiceBindingMock return a binding-request mock of informed name and match labels.
+func ServiceBindingMock(
 	ns string,
 	name string,
 	backingServiceNamespace *string,
@@ -431,33 +433,35 @@ func ServiceBindingRequestMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha1.ServiceBindingRequest {
-	sbr := &v1alpha1.ServiceBindingRequest{
+) *v1alpha1.ServiceBinding {
+	sbr := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
-		Spec: v1alpha1.ServiceBindingRequestSpec{
+		Spec: v1alpha1.ServiceBindingSpec{
 			MountPathPrefix: "/var/redhat",
-			CustomEnvVar:    []corev1.EnvVar{},
-			ApplicationSelector: v1alpha1.ApplicationSelector{
+			DataMapping:     []corev1.EnvVar{},
+			Application: v1alpha1.Application{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
-				ResourceRef:          applicationResourceRef,
+				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
-			BackingServiceSelector: &v1alpha1.BackingServiceSelector{
-				GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-				ResourceRef:      backingServiceResourceRef,
-				Namespace:        backingServiceNamespace,
+			Services: []v1alpha1.Service{
+				{
+					GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+					LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
+					Namespace:            backingServiceNamespace,
+				},
 			},
 		},
 	}
 	return sbr
 }
 
-// UnstructuredServiceBindingRequestMock returns a unstructured version of SBR.
-func UnstructuredServiceBindingRequestMock(
+// UnstructuredServiceBindingMock returns a unstructured version of SBR.
+func UnstructuredServiceBindingMock(
 	ns string,
 	name string,
 	backingServiceResourceRef string,
@@ -465,7 +469,7 @@ func UnstructuredServiceBindingRequestMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
-	sbr := ServiceBindingRequestMock(ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+	sbr := ServiceBindingMock(ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 

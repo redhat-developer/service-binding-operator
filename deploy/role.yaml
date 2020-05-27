@@ -41,7 +41,7 @@ rules:
     verbs:
       - update
   - apiGroups:
-      - apps.openshift.io
+      - operators.coreos.com
     resources:
       - "*"
     verbs:

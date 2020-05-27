@@ -8,7 +8,7 @@ services, without having to perform manual configuration of secrets,
 configmaps, etc. and to assist operator providers in promoting and
 expanding the adoption of their operators.
 
-When a ServiceBindingRequest is created the Service Binding Operator
+When a ServiceBinding is created the Service Binding Operator
 collects binding information and shares it with application. The
 Binding Service Operator's controller injects the binding information
 into the application's "DeploymentConfig", "Deployment" or “Replicaset"

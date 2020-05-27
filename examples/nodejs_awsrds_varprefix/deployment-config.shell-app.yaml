@@ -1,5 +1,5 @@
 ---
-apiVersion: apps.openshift.io/v1
+apiVersion: operators.coreos.com/v1
 kind: DeploymentConfig
 metadata:
   name: shell-app
@@ -19,5 +19,5 @@ spec:
       restartPolicy: Always
       containers:
         - name: shell-app
-          image: image-registry.openshift-image-registry.svc:5000/service-binding-demo/shell-app  # yamllint disable-line rule:line-length
+          image: image-registry.openshift-image-registry.svc:5000/service-binding-demo/shell-app # yamllint disable-line rule:line-length
           imagePullPolicy: Always
