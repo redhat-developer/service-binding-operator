@@ -26,7 +26,7 @@ type ServiceBindingSpec struct {
 	// This would be made a required field after 'services'
 	// is removed.
 	// +optional
-	Services []Service `json:"services,omitempty"`
+	Services []Service `json:"services"`
 
 	// Application is used to identify the application connecting to the
 	// backing service operator.
