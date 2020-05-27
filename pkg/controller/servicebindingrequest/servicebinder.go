@@ -317,8 +317,8 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 
 				// appending finalizer, should be later removed upon resource deletion
 				b.SBR.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
-				if _, err2 := b.updateServiceBindingRequest(b.SBR); err2 != nil {
-					return NoRequeue(err2)
+				if _, statusUpdateErr := b.updateServiceBindingRequest(b.SBR); statusUpdateErr != nil {
+					return NoRequeue(statusUpdateErr)
 				}
 			}
 			return b.onError(err, b.SBR, sbrStatus, nil)

@@ -11,7 +11,7 @@ git:
 
 env:
   global:
-    - SDK_VERSION="0.15.2"
+    - SDK_VERSION="0.16.0"
     - GO111MODULE=on
     - USER="redhat-developer"
     - EMAIL="openshift-dev-services@redhat.com"
