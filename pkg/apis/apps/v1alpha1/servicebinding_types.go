@@ -25,7 +25,6 @@ type ServiceBindingSpec struct {
 	// BackingServiceSelectors is used to identify multiple backing services.
 	// This would be made a required field after 'services'
 	// is removed.
-	// +optional
 	Services []Service `json:"services"`
 
 	// Application is used to identify the application connecting to the
