@@ -195,12 +195,12 @@ func assertSBRStatus(
 	}
 
 	for i, condition := range sbr.Status.Conditions {
-		if condition.Type != servicebindingrequest.BindingReady && condition.Status != corev1.ConditionTrue {
+		if condition.Type != servicebindingrequest.InjectionReady && condition.Status != corev1.ConditionTrue {
 			return fmt.Errorf(
 				"Condition.Type and Condition.Status is '%s' and '%s' instead of '%s' and '%s'",
 				sbr.Status.Conditions[i].Type,
 				sbr.Status.Conditions[i].Status,
-				servicebindingrequest.BindingReady,
+				servicebindingrequest.InjectionReady,
 				corev1.ConditionTrue)
 		}
 	}

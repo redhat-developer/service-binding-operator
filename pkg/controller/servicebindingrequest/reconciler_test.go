@@ -78,8 +78,26 @@ func TestApplicationSelectorByName(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		require.True(t,
+			conditionsv1.IsStatusConditionPresentAndEqual(
+				sbrOutput.Status.Conditions,
+				CollectionReady,
+				corev1.ConditionTrue,
+			),
+			"CollectionReady condition should exist and true; existing conditions: %+v",
+			sbrOutput.Status.Conditions,
+		)
+
+		require.True(t,
+			conditionsv1.IsStatusConditionPresentAndEqual(
+				sbrOutput.Status.Conditions,
+				InjectionReady,
+				corev1.ConditionTrue,
+			),
+			"InjectionReady condition should exist and true; existing conditions: %+v",
+			sbrOutput.Status.Conditions,
+		)
+
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
 			GroupVersionKind: v1.GroupVersionKind{
@@ -142,8 +160,26 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		require.True(t,
+			conditionsv1.IsStatusConditionPresentAndEqual(
+				sbrOutput.Status.Conditions,
+				CollectionReady,
+				corev1.ConditionTrue,
+			),
+			"CollectionReady condition should exist and true; existing conditions: %+v",
+			sbrOutput.Status.Conditions,
+		)
+
+		require.True(t,
+			conditionsv1.IsStatusConditionPresentAndEqual(
+				sbrOutput.Status.Conditions,
+				InjectionReady,
+				corev1.ConditionTrue,
+			),
+			"InjectionReady condition should exist and true; existing conditions: %+v",
+			sbrOutput.Status.Conditions,
+		)
+
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
@@ -208,7 +244,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	})
 }
 
-func TestReconcilerGenericBinding(t *testing.T) {
+func TestReconcilerApplicationNotFound(t *testing.T) {
 	ctx := context.TODO()
 	backingServiceResourceRef := "backingService1"
 	matchLabels := map[string]string{
@@ -234,7 +270,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	// Reconcile without deployment
 	res, err := reconciler.Reconcile(reconcileRequest())
-	require.NoError(t, err)
+	require.Error(t, ApplicationNotFoundErr, err)
 	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
@@ -244,12 +280,23 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.True(t,
 		conditionsv1.IsStatusConditionPresentAndEqual(
 			sbrOutput.Status.Conditions,
-			BindingReady,
+			CollectionReady,
 			corev1.ConditionTrue,
 		),
-		"Ready condition should exist and true; existing conditions: %+v",
+		"CollectionReady condition should exist and true; existing conditions: %+v",
 		sbrOutput.Status.Conditions,
 	)
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput.Status.Conditions,
+			InjectionReady,
+			corev1.ConditionFalse,
+		),
+		"InjectionReady condition should exist and false; existing conditions: %+v",
+		sbrOutput.Status.Conditions,
+	)
+
 	require.Len(t, sbrOutput.Status.Applications, 0)
 
 	// Reconcile with deployment
@@ -272,8 +319,26 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, BindingReady, sbrOutput2.Status.Conditions[0].Type)
-	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput2.Status.Conditions,
+			CollectionReady,
+			corev1.ConditionTrue,
+		),
+		"CollectionReady condition should exist and true; existing conditions: %+v",
+		sbrOutput2.Status.Conditions,
+	)
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput2.Status.Conditions,
+			InjectionReady,
+			corev1.ConditionTrue,
+		),
+		"InjectionReady condition should exist and true; existing conditions: %+v",
+		sbrOutput2.Status.Conditions,
+	)
+
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 
@@ -301,8 +366,25 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	d = appsv1.Deployment{}
 	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
 
-	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
-	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput3.Status.Conditions,
+			CollectionReady,
+			corev1.ConditionTrue,
+		),
+		"CollectionReady condition should exist and true; existing conditions: %+v",
+		sbrOutput3.Status.Conditions,
+	)
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput3.Status.Conditions,
+			InjectionReady,
+			corev1.ConditionTrue,
+		),
+		"InjectionReady condition should exist and true; existing conditions: %+v",
+		sbrOutput3.Status.Conditions,
+	)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
@@ -360,8 +442,25 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		require.True(t,
+			conditionsv1.IsStatusConditionPresentAndEqual(
+				sbrOutput.Status.Conditions,
+				CollectionReady,
+				corev1.ConditionTrue,
+			),
+			"CollectionReady condition should exist and true; existing conditions: %+v",
+			sbrOutput.Status.Conditions,
+		)
+
+		require.True(t,
+			conditionsv1.IsStatusConditionPresentAndEqual(
+				sbrOutput.Status.Conditions,
+				InjectionReady,
+				corev1.ConditionTrue,
+			),
+			"InjectionReady condition should exist and true; existing conditions: %+v",
+			sbrOutput.Status.Conditions,
+		)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
@@ -392,9 +491,25 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-	// Currently the Conditions[0].Status would be true as application's absence won't cause error
-	// TODO New steps to conditions to be introduced - InjectionReady, CollectionReady
-	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 	require.Equal(t, 0, len(sbrOutput.Status.Applications))
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput.Status.Conditions,
+			CollectionReady,
+			corev1.ConditionTrue,
+		),
+		"CollectionReady condition should exist and true; existing conditions: %+v",
+		sbrOutput.Status.Conditions,
+	)
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput.Status.Conditions,
+			InjectionReady,
+			corev1.ConditionFalse,
+		),
+		"InjectionReady condition should exist and false; existing conditions: %+v",
+		sbrOutput.Status.Conditions,
+	)
 }

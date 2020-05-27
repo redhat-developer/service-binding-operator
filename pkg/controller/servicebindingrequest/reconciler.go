@@ -19,11 +19,19 @@ import (
 )
 
 const (
-	// BindingReady indicates that the binding succeeded
-	BindingReady conditionsv1.ConditionType = "Ready"
+	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
+	CollectionReady conditionsv1.ConditionType = "CollectionReady"
+	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
+	// If status is true, it indicates that the binding succeeded
+	InjectionReady conditionsv1.ConditionType = "InjectionReady"
 	// EmptyServiceSelectorsReason is used when the ServiceBindingRequest has empty
 	// backingServiceSelectors.
 	EmptyServiceSelectorsReason = "EmptyServiceSelectors"
+	// EmptyApplicationSelectorReason is used when the ServiceBindingRequest has empty
+	// applicationSelector.
+	EmptyApplicationSelectorReason = "EmptyApplicationSelector"
+	// ApplicationNotFoundReason is used when the application is not found.
+	ApplicationNotFoundReason = "ApplicationNotFound"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -108,7 +116,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		if errors.Is(err, ApplicationNotFound) {
+		if errors.Is(err, ApplicationNotFoundErr) {
 			logger.Info("SBR deleted after application deletion")
 			return Done()
 		}
@@ -132,7 +140,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	selectors := extractServiceSelectors(sbr)
 	if len(selectors) == 0 {
 		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, conditionsv1.Condition{
-			Type:    BindingReady,
+			Type:    InjectionReady,
 			Status:  corev1.ConditionFalse,
 			Reason:  EmptyServiceSelectorsReason,
 			Message: "The spec.backingServiceSelectors field is empty.",

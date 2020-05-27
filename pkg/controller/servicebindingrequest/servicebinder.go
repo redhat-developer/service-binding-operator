@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
@@ -232,7 +233,7 @@ func (b *ServiceBinder) onError(
 		b.setApplicationObjects(sbrStatus, objs)
 	}
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:    BindingReady,
+		Type:    InjectionReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  BindingFail,
 		Message: b.message(err),
@@ -244,6 +245,20 @@ func (b *ServiceBinder) onError(
 	b.SBR = newSbr
 
 	return RequeueOnNotFound(err, requeueAfter)
+}
+
+// isApplicationSelectorEmpty returns true if applicationSelector is not declared in
+// the Service Binding Request.
+func isApplicationSelectorEmpty(
+	application v1alpha1.ApplicationSelector,
+) bool {
+	var emptyApplication v1alpha1.ApplicationSelector
+	if application == emptyApplication ||
+		application.ResourceRef == "" &&
+			application.LabelSelector.MatchLabels == nil {
+		return true
+	}
+	return false
 }
 
 // Bind configures binding between the Service Binding Request and its related objects.
@@ -258,37 +273,86 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	}
 	sbrStatus.Secret = secretObj.GetName()
 
-	updatedObjects, err := b.Binder.Bind()
-	if err != nil {
-		b.Logger.Error(err, "On binding application.")
-		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
+	if isApplicationSelectorEmpty(b.SBR.Spec.ApplicationSelector) {
+		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			Type:   CollectionReady,
+			Status: corev1.ConditionTrue,
+		})
+		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			Type:    InjectionReady,
+			Status:  corev1.ConditionFalse,
+			Reason:  EmptyApplicationSelectorReason,
+			Message: EmptyApplicationSelectorErr.Error(),
+		})
+
+		// updating status of request instance
+		sbr, err := b.updateStatusServiceBindingRequest(b.SBR, sbrStatus)
+		if err != nil {
+			return RequeueOnConflict(err)
+		}
+
+		// appending finalizer, should be later removed upon resource deletion
+		sbr.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
+		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
+			return NoRequeue(err)
+		}
+
+		b.Logger.Info("Application reference not found")
+		return Done()
+	} else {
+		updatedObjects, err := b.Binder.Bind()
+		if err != nil {
+			b.Logger.Error(err, "On binding application.")
+			if errors.Is(err, ApplicationNotFoundErr) {
+				conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+					Type:   CollectionReady,
+					Status: corev1.ConditionTrue,
+				})
+				conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+					Type:    InjectionReady,
+					Status:  corev1.ConditionFalse,
+					Reason:  ApplicationNotFoundReason,
+					Message: ApplicationNotFoundErr.Error(),
+				})
+
+				// appending finalizer, should be later removed upon resource deletion
+				b.SBR.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
+				if _, err2 := b.updateServiceBindingRequest(b.SBR); err2 != nil {
+					return NoRequeue(err2)
+				}
+			}
+			return b.onError(err, b.SBR, sbrStatus, nil)
+		}
+		b.setApplicationObjects(sbrStatus, updatedObjects)
+
+		// annotating objects related to binding
+		namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
+		if err = SetAndUpdateSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
+			b.Logger.Error(err, "On setting annotations in related objects.")
+			return b.onError(err, b.SBR, sbrStatus, updatedObjects)
+		}
+
+		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			Type:   CollectionReady,
+			Status: corev1.ConditionTrue,
+		})
+		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			Type:   InjectionReady,
+			Status: corev1.ConditionTrue,
+		})
+
+		// updating status of request instance
+		sbr, err := b.updateStatusServiceBindingRequest(b.SBR, sbrStatus)
+		if err != nil {
+			return RequeueOnConflict(err)
+		}
+
+		// appending finalizer, should be later removed upon resource deletion
+		sbr.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
+		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
+			return NoRequeue(err)
+		}
 	}
-	b.setApplicationObjects(sbrStatus, updatedObjects)
-
-	// annotating objects related to binding
-	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
-	if err = SetAndUpdateSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
-		b.Logger.Error(err, "On setting annotations in related objects.")
-		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
-	}
-
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   BindingReady,
-		Status: corev1.ConditionTrue,
-	})
-
-	// updating status of request instance
-	sbr, err := b.updateStatusServiceBindingRequest(b.SBR, sbrStatus)
-	if err != nil {
-		return RequeueOnConflict(err)
-	}
-
-	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
-	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
-		return NoRequeue(err)
-	}
-
 	b.Logger.Info("All done!")
 	return Done()
 }
