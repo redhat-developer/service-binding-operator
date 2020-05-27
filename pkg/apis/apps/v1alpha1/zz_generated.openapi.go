@@ -80,7 +80,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingStatus(ref common.ReferenceCall
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ServiceBindingStatus defines the observed state of ServiceBindingStatus",
+				Description: "ServiceBindingStatus defines the observed state of ServiceBinding",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"conditions": {
@@ -96,7 +96,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingStatus(ref common.ReferenceCall
 							},
 						},
 					},
-					"secret": {
+					"secretRef": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Secret is the name of the intermediate secret",
 							Ref:         ref("k8s.io/api/core/v1.LocalObjectReference"),
@@ -116,7 +116,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingStatus(ref common.ReferenceCall
 						},
 					},
 				},
-				Required: []string{"conditions", "secret"},
+				Required: []string{"conditions", "secretRef"},
 			},
 		},
 		Dependencies: []string{

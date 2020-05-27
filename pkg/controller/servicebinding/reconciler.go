@@ -99,10 +99,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	sbr, err := r.getServiceBinding(request.NamespacedName)
 	if err != nil {
 		if errors.Is(err, ApplicationNotFound) {
-			logger.Info("SBR deleted after application deletion")
+			logger.Info("ServiceBinding deleted after application deletion")
 			return Done()
 		}
-		logger.Error(err, "On retrieving service-binding-request instance.")
+		logger.Error(err, "On retrieving ServiceBinding instance.")
 		return DoneOnNotFound(err)
 	}
 
@@ -115,7 +115,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	//}
 
 	logger = logger.WithValues("ServiceBinding.Name", sbr.Name)
-	logger.Debug("Found service binding request to inspect")
+	logger.Debug("Found service binding to inspect")
 
 	ctx := context.Background()
 

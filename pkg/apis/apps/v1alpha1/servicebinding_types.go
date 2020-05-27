@@ -31,7 +31,7 @@ type ServiceBindingSpec struct {
 	// Application is used to identify the application connecting to the
 	// backing service operator.
 	// +optional
-	Application Application `json:"application"`
+	Application Application `json:"application,omitempty"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
@@ -39,13 +39,13 @@ type ServiceBindingSpec struct {
 	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
 }
 
-// ServiceBindingStatus defines the observed state of ServiceBindingStatus
+// ServiceBindingStatus defines the observed state of ServiceBinding
 // +k8s:openapi-gen=true
 type ServiceBindingStatus struct {
 	// Conditions describes the state of the operator's reconciliation functionality.
 	Conditions []conditionsv1.Condition `json:"conditions"`
 	// Secret is the name of the intermediate secret
-	Secret corev1.LocalObjectReference `json:"secret"`
+	Secret corev1.LocalObjectReference `json:"secretRef"`
 	// ApplicationObjects contains all the application objects filtered by label
 	// +optional
 	Applications []BoundApplication `json:"applications,omitempty"`
@@ -75,7 +75,7 @@ type Application struct {
 	// +optional
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
 	metav1.GroupVersionResource `json:",inline"`
-	corev1.LocalObjectReference `json:",inline"`
+	corev1.LocalObjectReference `json:",inline,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

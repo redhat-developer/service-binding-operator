@@ -42,7 +42,7 @@ type Binder struct {
 	ctx        context.Context          // request context
 	client     client.Client            // kubernetes API client
 	dynClient  dynamic.Interface        // kubernetes dynamic api client
-	sbr        *v1alpha1.ServiceBinding // instantiated service binding request
+	sbr        *v1alpha1.ServiceBinding // instantiated service binding
 	volumeKeys []string                 // list of key names used in volume mounts
 	modifier   ExtraFieldsModifier      // extra modifier for CRDs before updating
 	logger     *log.Log                 // logger instance
