@@ -24,7 +24,6 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Reconciler, error) {
 	return &Reconciler{
-		client:     mgr.GetClient(),
 		dynClient:  client,
 		scheme:     mgr.GetScheme(),
 		RestMapper: mgr.GetRESTMapper(),

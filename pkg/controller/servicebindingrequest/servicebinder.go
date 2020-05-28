@@ -7,12 +7,12 @@ import (
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -45,11 +45,11 @@ type ServiceBinderOptions struct {
 	DynClient              dynamic.Interface
 	DetectBindingResources bool
 	SBR                    *v1alpha1.ServiceBindingRequest
-	Client                 client.Client
 	Objects                []*unstructured.Unstructured
 	EnvVars                map[string][]byte
 	EnvVarPrefix           string
 	Binding                *Binding
+	RESTMapper             meta.RESTMapper
 }
 
 // ErrInvalidServiceBinderOptions is returned when ServiceBinderOptions contains an invalid value.
@@ -69,12 +69,12 @@ func (o *ServiceBinderOptions) Valid() error {
 		return ErrInvalidServiceBinderOptions("DynClient")
 	}
 
-	if o.Client == nil {
-		return ErrInvalidServiceBinderOptions("Client")
-	}
-
 	if o.Binding == nil {
 		return ErrInvalidServiceBinderOptions("Binding")
+	}
+
+	if o.RESTMapper == nil {
+		return ErrInvalidServiceBinderOptions("RESTMapper")
 	}
 
 	return nil
@@ -339,10 +339,10 @@ func BuildServiceBinder(
 	// consider renaming to ResourceBinder
 	binder := NewBinder(
 		ctx,
-		options.Client,
 		options.DynClient,
 		options.SBR,
 		options.Binding.VolumeKeys,
+		options.RESTMapper,
 	)
 
 	return &ServiceBinder{
