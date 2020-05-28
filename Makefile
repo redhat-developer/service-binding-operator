@@ -313,9 +313,13 @@ build-image:
 generate-k8s:
 	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate k8s
 
+build-openapi-gen-cli: $(OUTPUT_DIR)/openapi-gen
+	$(Q)GOCACHE=$(GOCACHE) go build -o $(OUTPUT_DIR)/openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
+
 ## Generate-OpenAPI: after modifying _types, generate OpenAPI scaffolding.
-generate-openapi:
-	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate openapi
+generate-openapi: build-openapi-gen-cli
+	# Build the latest openapi-gen from source
+	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/openapi-gen --logtostderr=true -o "" -i $(GO_PACKAGE_PATH)/pkg/apis/apps/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/apps/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum

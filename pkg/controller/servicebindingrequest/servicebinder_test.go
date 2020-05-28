@@ -18,6 +18,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -400,11 +401,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: false,
 			SBR:                    sbrSingleService,
-			Client:                 f.FakeClient(),
 			Binding: &Binding{
 				EnvVars:    map[string][]byte{},
 				VolumeKeys: []string{},
 			},
+			RESTMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -437,13 +438,13 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: false,
 			SBR:                    sbrSingleServiceWithCustomEnvVar,
-			Client:                 f.FakeClient(),
 			Binding: &Binding{
 				EnvVars: map[string][]byte{
 					"MY_DB_NAME": []byte("db1"),
 				},
 				VolumeKeys: []string{},
 			},
+			RESTMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -479,11 +480,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: true,
 			SBR:                    sbrSingleService,
-			Client:                 f.FakeClient(),
 			Binding: &Binding{
 				EnvVars:    map[string][]byte{},
 				VolumeKeys: []string{},
 			},
+			RESTMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -499,11 +500,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: true,
 			SBR:                    sbrEmptyAppSelector,
-			Client:                 f.FakeClient(),
 			Binding: &Binding{
 				EnvVars:    map[string][]byte{},
 				VolumeKeys: []string{},
 			},
+			RESTMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantErr: EmptyApplicationSelectorErr,
 		wantConditions: []wantedCondition{
@@ -523,7 +524,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: false,
 			SBR:                    nil,
-			Client:                 f.FakeClient(),
+			RESTMapper:             testutils.BuildTestRESTMapper(),
 		},
 		wantBuildErr: ErrInvalidServiceBinderOptions("SBR"),
 	}))
@@ -534,11 +535,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 			DynClient:              f.FakeDynClient(),
 			DetectBindingResources: false,
 			SBR:                    sbrMultipleServices,
-			Client:                 f.FakeClient(),
 			Binding: &Binding{
 				EnvVars:    map[string][]byte{},
 				VolumeKeys: []string{},
 			},
+			RESTMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{

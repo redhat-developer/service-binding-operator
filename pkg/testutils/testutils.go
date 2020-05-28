@@ -19,5 +19,9 @@ func BuildTestRESTMapper() meta.RESTMapper {
 		schema.GroupVersionKind{Kind: "ConfigMap", Version: "v1"},
 		meta.RESTScopeNamespace,
 	)
+	restMapper.Add(
+		schema.GroupVersionKind{Kind: "Deployment", Version: "v1", Group: "apps"},
+		meta.RESTScopeNamespace,
+	)
 	return restMapper
 }

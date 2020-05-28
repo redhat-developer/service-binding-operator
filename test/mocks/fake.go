@@ -14,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	ocav1 "github.com/openshift/api/apps/v1"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
@@ -205,11 +203,6 @@ func (f *Fake) AddMockedUnstructuredConfigMap(name string) {
 
 func (f *Fake) AddMockResource(resource runtime.Object) {
 	f.objs = append(f.objs, resource)
-}
-
-// FakeClient returns fake structured api client.
-func (f *Fake) FakeClient() client.Client {
-	return fake.NewFakeClientWithScheme(f.S, f.objs...)
 }
 
 // FakeDynClient returns fake dynamic api client.

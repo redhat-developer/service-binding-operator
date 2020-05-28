@@ -115,7 +115,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 }
 
 // cleanupOptions using global variables to create the object.
-func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
+func cleanupOptions(ctx *framework.Context) *framework.CleanupOptions {
 	return &framework.CleanupOptions{
 		TestContext:   ctx,
 		Timeout:       cleanupTimeout,
@@ -125,7 +125,7 @@ func cleanupOptions(ctx *framework.TestCtx) *framework.CleanupOptions {
 
 // bootstrapNamespace execute scaffolding to have a new cluster initialized, and acquire a test
 // namespace, the namespace name is returned and framework global variables are returned.
-func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framework.Framework) {
+func bootstrapNamespace(t *testing.T, ctx *framework.Context) (string, *framework.Framework) {
 	t.Log("Initializing cluster resources...")
 	err := ctx.InitializeClusterResources(cleanupOptions(ctx))
 	if err != nil {
@@ -146,7 +146,7 @@ func bootstrapNamespace(t *testing.T, ctx *framework.TestCtx) (string, *framewor
 // namespace, after bootstrap operator related tests method is called out.
 func ServiceBindingRequest(t *testing.T, steps []Step) {
 	t.Log("Creating a new test context...")
-	ctx := framework.NewTestCtx(t)
+	ctx := framework.NewContext(t)
 	defer ctx.Cleanup()
 
 	ns, f := bootstrapNamespace(t, ctx)
@@ -502,7 +502,7 @@ func inspectSecretNotFound(
 // expecting for changes caused by the operator.
 func serviceBindingRequestTest(
 	t *testing.T,
-	ctx *framework.TestCtx,
+	ctx *framework.Context,
 	f *framework.Framework,
 	ns string,
 	steps []Step,
@@ -615,7 +615,7 @@ func serviceBindingRequestTest(
 func CreateEtcdCluster(
 	todoCtx context.Context,
 	t *testing.T,
-	ctx *framework.TestCtx,
+	ctx *framework.Context,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
 ) (*v1beta2.EtcdCluster, *corev1.Service) {
