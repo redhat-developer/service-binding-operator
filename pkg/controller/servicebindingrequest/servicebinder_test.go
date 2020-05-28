@@ -103,30 +103,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 			if len(args.wantConditions) > 0 {
 				// proceed to find whether conditions match wanted conditions
-				for i, c := range args.wantConditions {
-					expected := conditionsv1.Condition{}
-					got := conditionsv1.Condition{}
-					if len(c.Type) > 0 {
-						expected.Type = c.Type
-						got.Type = sb.SBR.Status.Conditions[i].Type
+				for _, c := range args.wantConditions {
+					if c.Status == corev1.ConditionTrue {
+						requireConditionPresentAndTrue(t, c.Type, sb.SBR.Status.Conditions)
 					}
-					if len(c.Status) > 0 {
-						expected.Status = c.Status
-						got.Status = sb.SBR.Status.Conditions[i].Status
+					if c.Status == corev1.ConditionFalse {
+						requireConditionPresentAndFalse(t, c.Type, sb.SBR.Status.Conditions)
 					}
-					if len(c.Reason) > 0 {
-						expected.Reason = c.Reason
-						got.Reason = sb.SBR.Status.Conditions[i].Reason
-					}
-					if len(c.Message) > 0 {
-						expected.Message = c.Message
-						got.Message = sb.SBR.Status.Conditions[i].Message
-					}
-
-					require.Equal(t, expected, got)
 				}
 			}
-
 			// regardless of the result, verify the actions expected by the reconciliation
 			// process have been issued if user has specified wanted actions
 			if len(args.wantActions) > 0 {
