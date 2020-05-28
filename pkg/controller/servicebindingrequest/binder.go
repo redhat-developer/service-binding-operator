@@ -92,7 +92,6 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
 		return nil, err
-
 	}
 
 	if len(objList.Items) == 0 {
