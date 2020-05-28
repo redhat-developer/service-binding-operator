@@ -2,7 +2,6 @@ package servicebindingrequest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -63,9 +62,6 @@ func (f ExtraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured)
 	return f(u)
 }
 
-var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
-var ApplicationNotFound = errors.New("Application is already deleted")
-
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
@@ -90,13 +86,17 @@ func (b *Binder) search() (*unstructured.UnstructuredList, error) {
 			LabelSelector: labels.Set(matchLabels).String(),
 		}
 	} else {
-		return nil, EmptyApplicationSelectorErr
+		return nil, ErrEmptyApplicationSelector
 	}
 
 	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 	if err != nil {
-		return nil, ApplicationNotFound
+		return nil, err
 
+	}
+
+	if len(objList.Items) == 0 {
+		return nil, ErrApplicationNotFound
 	}
 
 	return objList, err
@@ -551,9 +551,6 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *Binder) Unbind() error {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, ApplicationNotFound) {
-			return nil
-		}
 		return err
 	}
 	return b.remove(objs)
@@ -564,9 +561,6 @@ func (b *Binder) Unbind() error {
 func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, ApplicationNotFound) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return b.update(objs)

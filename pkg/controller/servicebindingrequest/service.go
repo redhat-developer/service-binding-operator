@@ -24,6 +24,11 @@ var (
 	// EmptyBackingServiceSelectorsErr is returned when no backing service selectors have been
 	// informed in the Service Binding Request.
 	ErrEmptyBackingServiceSelectors = errors.New("backing service selectors are empty")
+	// ErrEmptyApplicationSelector is returned when no application selectors have been
+	// informed in the Service Binding Request.
+	ErrEmptyApplicationSelector = errors.New("application selectors are empty")
+	// ErrApplicationNotFound is returned when no application is found
+	ErrApplicationNotFound = errors.New("application not found")
 )
 
 func findService(
