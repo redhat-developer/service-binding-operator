@@ -23,6 +23,8 @@ const (
 	// EmptyServiceSelectorsReason is used when the ServiceBindingRequest has empty
 	// backingServiceSelectors.
 	EmptyServiceSelectorsReason = "EmptyServiceSelectors"
+	// ServiceNotFoundReason is used when the service is not found.
+	ServiceNotFoundReason = "ServiceNotFound"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -146,7 +148,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		// being worked in https://github.com/redhat-developer/service-binding-operator/pull/442.
 		return RequeueError(ErrEmptyBackingServiceSelectors)
 	}
-
 	serviceCtxs, err := buildServiceContexts(
 		r.dynClient,
 		sbr.GetNamespace(),
@@ -155,6 +156,19 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.RestMapper,
 	)
 	if err != nil {
+		if err == ErrServiceNotFound {
+			conditionsv1.SetStatusCondition(&sbr.Status.Conditions, conditionsv1.Condition{
+				Type:    BindingReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  ServiceNotFoundReason,
+				Message: ErrServiceNotFound.Error(),
+			})
+			_, updateErr := updateServiceBindingRequestStatus(r.dynClient, sbr)
+			if updateErr == nil {
+				return RequeueError(updateErr)
+			}
+			return RequeueError(ErrServiceNotFound)
+		}
 		return RequeueError(err)
 	}
 

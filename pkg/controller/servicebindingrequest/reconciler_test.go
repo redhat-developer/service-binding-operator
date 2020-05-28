@@ -362,3 +362,40 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 	require.Equal(t, 0, len(sbrOutput.Status.Applications))
 }
+
+// TestEmptyApplicationSelector tests that Status is successfully updated when Service is not found
+func TestServiceNotFound(t *testing.T) {
+	backingServiceResourceRef := "backingService1"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredSecret("db-credentials")
+	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+
+	// Reconcile without service
+	res, err := reconciler.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.True(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	require.NoError(t, err)
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrOutput.Status.Conditions,
+			BindingReady,
+			corev1.ConditionFalse,
+		),
+		"Ready condition should exist and be false; existing conditions: %+v",
+		sbrOutput.Status.Conditions,
+	)
+}
