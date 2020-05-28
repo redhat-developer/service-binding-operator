@@ -66,40 +66,45 @@ var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
+	// If Application name is present
+	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
+		return b.getApplicationByName()
+	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
+		return b.getApplicationByLabelSelector()
+	} else {
+		return nil, EmptyApplicationSelectorErr
+	}
+}
+
+func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
 		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
 		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
 	}
-
-	var opts metav1.ListOptions
-
-	// If Application name is present
-	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
-		object, err := b.dynClient.Resource(gvr).Namespace(ns).
-			Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
-
-		if err != nil {
-			return nil, err
-		}
-
-		objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
-		return objList, nil
-	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
-		matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
-		opts = metav1.ListOptions{
-			LabelSelector: labels.Set(matchLabels).String(),
-		}
-	} else {
-		return nil, EmptyApplicationSelectorErr
-	}
-
-	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	object, err := b.dynClient.Resource(gvr).Namespace(ns).
+		Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
+
+	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
 	return objList, nil
+}
+
+func (b *Binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
+	ns := b.sbr.GetNamespace()
+	gvr := schema.GroupVersionResource{
+		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
+		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
+		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+	}
+	matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
+	opts := metav1.ListOptions{
+		LabelSelector: labels.Set(matchLabels).String(),
+	}
+	return b.dynClient.Resource(gvr).Namespace(ns).List(opts)
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
