@@ -69,7 +69,7 @@ func MakeInstallServiceBindingOperator(t *testing.T) {
 
 	checkClusterAvailable(t)
 
-	t.Log("Installing serivice binding operator into the cluster...")
+	t.Log("Installing service binding operator into the cluster...")
 	res := util.GetOutput(util.Run("make", "install-service-binding-operator-master"))
 	resExp := strings.TrimSpace(strings.Split(res, "subscription.operators.coreos.com/service-binding-operator")[1])
 	fmt.Printf("subscription output is %s \n", resExp)
