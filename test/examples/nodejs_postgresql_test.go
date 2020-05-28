@@ -60,7 +60,8 @@ func SetExampleDir(t *testing.T) {
 //Logs the oc status
 func GetOCStatus(t *testing.T) {
 	t.Log("--- Getting OC Status ---")
-	util.GetOutput(util.Run("oc", "status"))
+	result := util.Run("oc", "status")
+	require.Equal(t, 0, result.ExitCode)
 	clusterAvailable = true
 	t.Log(" *** Connected to cluster *** ")
 }
