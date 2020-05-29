@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	exampleName = "nodejs_postgresql"
-	operatorsNS = "openshift-operators"
-	oprName     = "service-binding-operator"
-	appNS       = "service-binding-demo"
+	exampleName  = "nodejs_postgresql"
+	operatorsNS  = "openshift-operators"
+	operatorName = "service-binding-operator"
+	appNS        = "service-binding-demo"
 
-	nodeJsApp = "https://github.com/pmacik/nodejs-rest-http-crud"
+	nodeJSApp = "https://github.com/pmacik/nodejs-rest-http-crud"
 	appName   = "nodejs-rest-http-crud"
 
 	clusterAvailable = false
@@ -78,7 +78,7 @@ func MakeInstallServiceBindingOperator(t *testing.T) {
 
 	// with openshift-operators namespace, capture the install plan
 	t.Log(" Fetching the status of install plan name ")
-	ipName, err := util.GetCmdResult("", "oc", "get", "subscription", oprName, "-n", operatorsNS, "-o", `jsonpath={.status.installplan.name}`)
+	ipName, err := util.GetCmdResult("", "oc", "get", "subscription", operatorName, "-n", operatorsNS, "-o", `jsonpath={.status.installplan.name}`)
 	require.NoErrorf(t, err, "<<Error while getting the name of the install plan as the result is - %s >>", ipName)
 	t.Logf("-> Install plan-ip name is %s \n", ipName)
 
@@ -88,10 +88,10 @@ func MakeInstallServiceBindingOperator(t *testing.T) {
 	require.NoErrorf(t, err, "<<Error while getting the status of install plan as the result is - %s >>", ipStatus)
 	t.Logf("-> Install plan-ip name is %s \n", ipStatus)
 
-	podNameSBO, err = util.GetPodNameFromListOfPods(operatorsNS, oprName)
+	podNameSBO, err = util.GetPodNameFromListOfPods(operatorsNS, operatorName)
 
 	require.NoErrorf(t, err, "<<There are no pods running service binding operator in the cluster as the result is - %s >>", podNameSBO)
-	require.Containsf(t, podNameSBO, oprName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
+	require.Containsf(t, podNameSBO, operatorName, "list does not contain %s pod from the list of pods running service binding operator in the cluster", resExp)
 	t.Logf("-> Pod name is %s \n", podNameSBO)
 
 	t.Log("Fetching the status of running pod")
@@ -192,9 +192,9 @@ func ImportNodeJSApp(t *testing.T) {
 
 	t.Log("import an nodejs app to bind with backing service...")
 
-	nodeJsAppArg := "nodejs~" + nodeJsApp
+	nodeJSAppArg := "nodejs~" + nodeJSApp
 	t.Log(" Fetching the build config name of the app ")
-	app, err := util.GetCmdResult("", "oc", "new-app", nodeJsAppArg, "--name", appName, "-n", appNS)
+	app, err := util.GetCmdResult("", "oc", "new-app", nodeJSAppArg, "--name", appName, "-n", appNS)
 	require.NoErrorf(t, err, "<<Error while creating an nodejs app as the result is - %s >>", app)
 	t.Logf("-> App info - %s \n", app)
 
@@ -499,7 +499,7 @@ func UninstallServiceBindingOperator(t *testing.T) {
 	t.Log("Uninstalling serivice binding operator from the cluster...")
 	resultMakeUninstallSBO := util.GetOutput(util.Run("make", "uninstall-service-binding-operator-master"))
 
-	expSBOSubDelete, err := regexp.Compile(`.*subscription.operators.coreos.com\s.` + oprName + `.\sdeleted.*`)
+	expSBOSubDelete, err := regexp.Compile(`.*subscription.operators.coreos.com\s.` + operatorName + `.\sdeleted.*`)
 	require.NoErrorf(t, err, "<<Error while applying regular expression to uninstall SBO subscription - %s >>", expSBOSubDelete)
 
 	expSBODelete, err := regexp.Compile(`.*operatorsource.operators.coreos.com\s.` + oprSrc + `.\sdeleted.*`)
@@ -513,9 +513,9 @@ func UninstallServiceBindingOperator(t *testing.T) {
 	require.Equal(t, true, checkFlag, "Unable to match the uninstall status for SBO source as the value is %s", matchedSBODelete)
 	require.Containsf(t, resultMakeUninstallSBO, matchedSBODelete, "Unable to uninstall the SBO source because of %s", matchedSBODelete)
 
-	deleteSBOOcGetResult, err := util.GetCmdResult("", "oc", "get", "subscription", oprName, "-n", operatorsNS, "-o", `jsonpath={.status.installplan.name}`)
+	deleteSBOOcGetResult, err := util.GetCmdResult("", "oc", "get", "subscription", operatorName, "-n", operatorsNS, "-o", `jsonpath={.status.installplan.name}`)
 	require.NoErrorf(t, err, "<<Error while getting the name of the install plan from subscription after SBO Subscription uninstallation as the result is - %s >>", deleteSBOOcGetResult)
-	expectedOCGetOprCMD := oprName + `" not found`
+	expectedOCGetOprCMD := operatorName + `" not found`
 	require.Containsf(t, deleteSBOOcGetResult, expectedOCGetOprCMD, "OC get subscription after uninstall SBO subscription status is %d \n", deleteSBOOcGetResult)
 	fmt.Printf("-> After Uninstall SBO, oc get subscription gives this message - %s \n", deleteSBOOcGetResult)
 
