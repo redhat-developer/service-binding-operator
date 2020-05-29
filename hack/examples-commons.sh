@@ -1,5 +1,4 @@
 #!/bin/bash
-
 export EXAMPLE_NAMESPACE="service-binding-demo"
 
 function pathname() {
