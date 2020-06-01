@@ -6,6 +6,7 @@ import (
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,13 +23,22 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
+// ResourceWatcher add watching for GroupVersionKind/GroupVersionResource
+type ResourceWatcher interface {
+	AddWatchForGVR(schema.GroupVersionResource) error
+	AddWatchForGVK(schema.GroupVersionKind) error
+}
+
 // SBRController hold the controller instance and methods for a ServiceBindingRequest.
 type SBRController struct {
 	Controller   controller.Controller            // controller-runtime instance
 	Client       dynamic.Interface                // kubernetes dynamic api client
+	RestMapper   meta.RESTMapper                  // restMapper to convert GVK and GVR
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
 	logger       *log.Log                         // logger instance
 }
+
+var _ ResourceWatcher = (*SBRController)(nil)
 
 // controllerName common name of this controller
 const controllerName = "servicebindingrequest-controller"
@@ -142,6 +152,15 @@ func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	logger.Debug("Creating watch on GVK")
 	src := s.createSourceForGVK(gvk)
 	return s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), buildGVKPredicate(logger))
+}
+
+// AddWatchForGVR creates a watch on a given GVR
+func (s *SBRController) AddWatchForGVR(gvr schema.GroupVersionResource) error {
+	gvk, err := s.RestMapper.KindFor(gvr)
+	if err != nil {
+		return err
+	}
+	return s.AddWatchForGVK(gvk)
 }
 
 // addCSVWatch creates a watch on ClusterServiceVersion.
@@ -278,6 +297,7 @@ func NewSBRController(
 	return &SBRController{
 		Controller:   c,
 		Client:       client,
+		RestMapper:   mgr.GetRESTMapper(),
 		watchingGVKs: make(map[schema.GroupVersionKind]bool),
 		logger:       log.NewLog("sbrcontroller"),
 	}, nil
