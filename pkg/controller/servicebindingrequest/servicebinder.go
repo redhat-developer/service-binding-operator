@@ -319,6 +319,7 @@ func (b *ServiceBinder) handleApplicationNotFound() (reconcile.Result, error) {
 	if _, updateErr := b.updateServiceBindingRequest(b.SBR); updateErr != nil {
 		return NoRequeue(updateErr)
 	}
+	b.Logger.Info(ErrApplicationNotFound.Error())
 	return RequeueOnNotFound(ErrApplicationNotFound, requeueAfter)
 }
 
