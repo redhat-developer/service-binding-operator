@@ -265,9 +265,10 @@ func isApplicationSelectorEmpty(
 	return false
 }
 
-// handleApplicationSelectorEmpty handles scenario when applicationSelector is not declared in
-// the Service Binding Request.
-func (b *ServiceBinder) handleApplicationSelectorEmpty() (reconcile.Result, error) {
+// handleApplication handles scenarios when:
+// 1. applicationSelector not declared in the Service Binding Request
+// 2. application not found
+func (b *ServiceBinder) handleApplication(reason string, applicationError error) (reconcile.Result, error) {
 	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
 		Type:   CollectionReady,
 		Status: corev1.ConditionTrue,
@@ -275,8 +276,8 @@ func (b *ServiceBinder) handleApplicationSelectorEmpty() (reconcile.Result, erro
 	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
 		Type:    InjectionReady,
 		Status:  corev1.ConditionFalse,
-		Reason:  EmptyApplicationSelectorReason,
-		Message: ErrEmptyApplicationSelector.Error(),
+		Reason:  reason,
+		Message: applicationError.Error(),
 	})
 
 	// updating status of request instance
@@ -291,36 +292,12 @@ func (b *ServiceBinder) handleApplicationSelectorEmpty() (reconcile.Result, erro
 		return NoRequeue(err)
 	}
 
-	b.Logger.Info(ErrEmptyApplicationSelector.Error())
+	b.Logger.Info(applicationError.Error())
+
+	if errors.Is(applicationError, ErrApplicationNotFound) {
+		return RequeueOnNotFound(ErrApplicationNotFound, requeueAfter)
+	}
 	return Done()
-}
-
-// handleApplicationSelectorEmpty handles scenario when application is not found.
-func (b *ServiceBinder) handleApplicationNotFound() (reconcile.Result, error) {
-	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
-		Type:   CollectionReady,
-		Status: corev1.ConditionTrue,
-	})
-	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
-		Type:    InjectionReady,
-		Status:  corev1.ConditionFalse,
-		Reason:  ApplicationNotFoundReason,
-		Message: ErrApplicationNotFound.Error(),
-	})
-
-	// updating status of request instance
-	_, err := b.updateStatusServiceBindingRequest(b.SBR, &b.SBR.Status)
-	if err != nil {
-		return RequeueOnConflict(err)
-	}
-
-	// appending finalizer, should be later removed upon resource deletion
-	b.SBR.SetFinalizers(append(removeStringSlice(b.SBR.GetFinalizers(), Finalizer), Finalizer))
-	if _, updateErr := b.updateServiceBindingRequest(b.SBR); updateErr != nil {
-		return NoRequeue(updateErr)
-	}
-	b.Logger.Info(ErrApplicationNotFound.Error())
-	return RequeueOnNotFound(ErrApplicationNotFound, requeueAfter)
 }
 
 // Bind configures binding between the Service Binding Request and its related objects.
@@ -336,13 +313,13 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	sbrStatus.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.SBR.Spec.ApplicationSelector) {
-		return b.handleApplicationSelectorEmpty()
+		return b.handleApplication(EmptyApplicationSelectorReason, ErrEmptyApplicationSelector)
 	}
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {
 		b.Logger.Error(err, "On binding application.")
 		if errors.Is(err, ErrApplicationNotFound) {
-			return b.handleApplicationNotFound()
+			return b.handleApplication(ApplicationNotFoundReason, ErrApplicationNotFound)
 		}
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
