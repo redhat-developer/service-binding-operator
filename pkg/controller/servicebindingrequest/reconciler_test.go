@@ -1,7 +1,6 @@
 package servicebindingrequest
 
 import (
-	"context"
 	"reflect"
 	"testing"
 	"time"
@@ -224,7 +223,6 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 }
 
 func TestApplicationNotFound(t *testing.T) {
-	ctx := context.TODO()
 	backingServiceResourceRef := "backingService1"
 	matchLabels := map[string]string{
 		"connects-to": "database",
@@ -299,8 +297,12 @@ func TestApplicationNotFound(t *testing.T) {
 	sbrOutput3, err := reconciler.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
+	u, err = fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+
 	d = appsv1.Deployment{}
-	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+	require.NoError(t, err)
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput3.Status.Conditions)
 	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput3.Status.Conditions)

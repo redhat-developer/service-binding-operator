@@ -84,11 +84,13 @@ func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 	if err != nil {
 		return nil, err
 	}
+
+	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
+
 	if len(objList.Items) == 0 {
 		return nil, ErrApplicationNotFound
 	}
 
-	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
 	return objList, nil
 }
 
@@ -103,7 +105,17 @@ func (b *Binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 	opts := metav1.ListOptions{
 		LabelSelector: labels.Set(matchLabels).String(),
 	}
-	return b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+
+	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(objList.Items) == 0 {
+		return nil, ErrApplicationNotFound
+	}
+
+	return objList, nil
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
