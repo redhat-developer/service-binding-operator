@@ -104,6 +104,8 @@ spec:
                 service operator. Deprecation Notice: In the upcoming release, this
                 field would be depcreated. It would be mandatory to set "backingServiceSelectors".'
               properties:
+                envVarPrefix:
+                  type: string
                 group:
                   type: string
                 kind:
@@ -113,8 +115,6 @@ spec:
                 resourceRef:
                   type: string
                 version:
-                  type: string
-                envVarPrefix:
                   type: string
               required:
               - group
@@ -130,6 +130,8 @@ spec:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
                 properties:
+                  envVarPrefix:
+                    type: string
                   group:
                     type: string
                   kind:
@@ -139,8 +141,6 @@ spec:
                   resourceRef:
                     type: string
                   version:
-                    type: string
-                  envVarPrefix:
                     type: string
                 required:
                 - group
@@ -191,7 +191,8 @@ spec:
                       fieldRef:
                         description: 'Selects a field of the pod: supports metadata.name,
                           metadata.namespace, metadata.labels, metadata.annotations,
-                          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP.'
+                          spec.nodeName, spec.serviceAccountName, status.hostIP, status.podIP,
+                          status.podIPs.'
                         properties:
                           apiVersion:
                             description: Version of the schema the FieldPath is written
@@ -215,9 +216,13 @@ spec:
                               for env vars'
                             type: string
                           divisor:
+                            anyOf:
+                            - type: integer
+                            - type: string
                             description: Specifies the output format of the exposed
                               resources, defaults to "1"
-                            type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
                           resource:
                             description: 'Required: resource to select'
                             type: string
@@ -262,8 +267,8 @@ spec:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
             applications:
-              description: ApplicationObjects contains all the application objects
-                filtered by label
+              description: Applications contain all the applications filtered by name
+                or label
               items:
                 description: BoundApplication defines the application workloads to
                   which the binding secret has injected.

@@ -3,46 +3,46 @@ module github.com/redhat-developer/service-binding-operator
 go 1.14
 
 require (
-	cloud.google.com/go v0.45.1 // indirect
 	github.com/coreos/etcd-operator v0.9.4
+	github.com/emicklei/go-restful v2.11.1+incompatible // indirect
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-containerregistry v0.0.0-20191218175032-34fb8ff33bed // indirect
 	github.com/imdario/mergo v0.3.8
+	github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a // indirect
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
-	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20200130164400-12c06cfc05c4
-	github.com/operator-framework/operator-sdk v0.16.0
+	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20200321030439-57b580e57e88
+	github.com/operator-framework/operator-sdk v0.17.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.4.0
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.17.1
-	k8s.io/apiextensions-apiserver v0.17.1
-	k8s.io/apimachinery v0.17.1
+	k8s.io/api v0.18.3
+	k8s.io/apiextensions-apiserver v0.18.2
+	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.0.0
+	k8s.io/code-generator v0.17.4
 	k8s.io/gengo v0.0.0-20191010091904-7fa3014cb28f
-	k8s.io/kube-openapi v0.0.0-20190918143330-0270cf2f1c1d
+	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 	knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67 // indirect
 	knative.dev/serving v0.9.0
-	sigs.k8s.io/controller-runtime v0.4.0
-	sigs.k8s.io/controller-tools v0.2.4
+	sigs.k8s.io/controller-runtime v0.5.2
+	sigs.k8s.io/controller-tools v0.2.8
 
 )
 
-replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v12.2.0+incompatible
+replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
 
 // requested by operator-sdk 0.16
 // https://sdk.operatorframework.io/docs/migration/version-upgrade-guide/#v016x
 replace (
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm
-	k8s.io/api => k8s.io/api v0.0.0-20191016110408-35e52d86657a
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
-	k8s.io/apiserver => k8s.io/apiserver v0.0.0-20191016112112-5190913f932d
+	k8s.io/apiserver => k8s.io/apiserver v0.18.3
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5
-	k8s.io/client-go => k8s.io/client-go v0.0.0-20191016111102-bec269661e48
+	k8s.io/client-go => k8s.io/client-go v0.17.4 // Required by prometheus-operator
 	k8s.io/cloud-provider => k8s.io/cloud-provider v0.0.0-20191016115326-20453efc2458
 	k8s.io/cluster-bootstrap => k8s.io/cluster-bootstrap v0.0.0-20191016115129-c07a134afb42
 	k8s.io/code-generator => k8s.io/code-generator v0.0.0-20191004115455-8e001e5d1894
