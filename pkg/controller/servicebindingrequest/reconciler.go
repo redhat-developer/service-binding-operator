@@ -11,7 +11,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
@@ -36,7 +35,6 @@ const (
 
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	client     client.Client     // kubernetes api client
 	dynClient  dynamic.Interface // kubernetes dynamic api client
 	scheme     *runtime.Scheme   // api scheme
 	RestMapper meta.RESTMapper   // restMapper to convert GVK and GVR
@@ -182,13 +180,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	options := &ServiceBinderOptions{
-		Client:                 r.client,
 		DynClient:              r.dynClient,
 		DetectBindingResources: sbr.Spec.DetectBindingResources,
 		SBR:                    sbr,
 		Logger:                 logger,
 		Objects:                serviceCtxs.GetServices(),
 		Binding:                binding,
+		RESTMapper:             r.RestMapper,
 	}
 
 	sb, err := BuildServiceBinder(ctx, options)

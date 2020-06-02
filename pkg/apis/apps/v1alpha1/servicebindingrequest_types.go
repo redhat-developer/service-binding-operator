@@ -53,7 +53,7 @@ type ServiceBindingRequestStatus struct {
 	Conditions []conditionsv1.Condition `json:"conditions"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
-	// ApplicationObjects contains all the application objects filtered by label
+	// Applications contain all the applications filtered by name or label
 	// +optional
 	Applications []BoundApplication `json:"applications,omitempty"`
 }
