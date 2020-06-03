@@ -295,8 +295,13 @@ func (b *ServiceBinder) handleApplication(reason string, applicationError error)
 	b.Logger.Info(applicationError.Error())
 
 	if errors.Is(applicationError, ErrApplicationNotFound) {
+		sbr.SetFinalizers(nil)
+		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
+			return NoRequeue(err)
+		}
 		return RequeueOnNotFound(ErrApplicationNotFound, requeueAfter)
 	}
+
 	return Done()
 }
 
@@ -311,10 +316,12 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
 	sbrStatus.Secret = secretObj.GetName()
+	b.SBR.Status.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.SBR.Spec.ApplicationSelector) {
 		return b.handleApplication(EmptyApplicationSelectorReason, ErrEmptyApplicationSelector)
 	}
+
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {
 		b.Logger.Error(err, "On binding application.")

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -82,16 +83,13 @@ func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 	object, err := b.dynClient.Resource(gvr).Namespace(ns).
 		Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, ErrApplicationNotFound
+		}
 		return nil, err
 	}
 
-	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
-
-	if len(objList.Items) == 0 {
-		return nil, ErrApplicationNotFound
-	}
-
-	return objList, nil
+	return &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}, nil
 }
 
 func (b *Binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
