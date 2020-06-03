@@ -27,7 +27,7 @@ const (
 	// BindingFail binding has failed
 	BindingFail = "BindingFail"
 	//Finalizer annotation used in finalizer steps
-	Finalizer = "finalizer.servicebinding.openshift.io"
+	Finalizer = "finalizer.servicebinding.operators.coreos.com"
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
 )
