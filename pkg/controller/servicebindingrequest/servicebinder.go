@@ -265,10 +265,10 @@ func isApplicationSelectorEmpty(
 	return false
 }
 
-// handleApplication handles scenarios when:
+// handleApplicationError handles scenarios when:
 // 1. applicationSelector not declared in the Service Binding Request
 // 2. application not found
-func (b *ServiceBinder) handleApplication(reason string, applicationError error) (reconcile.Result, error) {
+func (b *ServiceBinder) handleApplicationError(reason string, applicationError error) (reconcile.Result, error) {
 	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
 		Type:   CollectionReady,
 		Status: corev1.ConditionTrue,
@@ -316,14 +316,14 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 	b.SBR.Status.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.SBR.Spec.ApplicationSelector) {
-		return b.handleApplication(EmptyApplicationSelectorReason, ErrEmptyApplicationSelector)
+		return b.handleApplicationError(EmptyApplicationSelectorReason, ErrEmptyApplicationSelector)
 	}
 
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {
 		b.Logger.Error(err, "On binding application.")
 		if errors.Is(err, ErrApplicationNotFound) {
-			return b.handleApplication(ApplicationNotFoundReason, ErrApplicationNotFound)
+			return b.handleApplicationError(ApplicationNotFoundReason, ErrApplicationNotFound)
 		}
 		return b.onError(err, b.SBR, &b.SBR.Status, nil)
 	}
