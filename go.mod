@@ -5,6 +5,7 @@ go 1.14
 require (
 	cloud.google.com/go v0.45.1 // indirect
 	github.com/coreos/etcd-operator v0.9.4
+	github.com/docker/docker v1.4.2-0.20190924003213-a8608b5b67c7
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
 	github.com/google/go-containerregistry v0.0.0-20191218175032-34fb8ff33bed // indirect

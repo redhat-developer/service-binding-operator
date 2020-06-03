@@ -15,6 +15,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
+	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
@@ -43,17 +44,7 @@ func TestBinderNew(t *testing.T) {
 	sbr := f.AddMockedServiceBinding(name, nil, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
-	binder := NewBinder(
-		context.TODO(),
-		f.FakeClient(),
-		f.FakeDynClient(),
-		sbr,
-		[]string{},
-	)
-
-	require.NotNil(t, binder)
-
-	sbrWithResourceRef := f.AddMockedServiceBinding(
+	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
 		"service-binding-request-with-ref",
 		nil,
 		"ref",
@@ -62,29 +53,46 @@ func TestBinderNew(t *testing.T) {
 		map[string]string{},
 	)
 
-	binderForSBRWithResourceRef := NewBinder(
-		context.TODO(),
-		f.FakeClient(),
-		f.FakeDynClient(),
-		sbrWithResourceRef,
-		[]string{},
-	)
-
-	require.NotNil(t, binderForSBRWithResourceRef)
-
 	t.Run("search-using-resourceref", func(t *testing.T) {
+		binderForSBRWithResourceRef := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbrWithResourceRef,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+
+		require.NotNil(t, binderForSBRWithResourceRef)
 		list, err := binderForSBRWithResourceRef.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 	})
 
 	t.Run("search", func(t *testing.T) {
+		binder := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+
+		require.NotNil(t, binder)
 		list, err := binder.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 	})
 
 	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
+		binder := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+
+		require.NotNil(t, binder)
 		secretName := "secret"
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
 		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
@@ -98,6 +106,16 @@ func TestBinderNew(t *testing.T) {
 	})
 
 	t.Run("appendEnv", func(t *testing.T) {
+
+		binder := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+
+		require.NotNil(t, binder)
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
 		list := binder.appendEnvVar(d.Spec.Template.Spec.Containers[0].Env, "name", "value")
 		require.Equal(t, 1, len(list))
@@ -106,6 +124,16 @@ func TestBinderNew(t *testing.T) {
 	})
 
 	t.Run("update", func(t *testing.T) {
+
+		binder := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+
+		require.NotNil(t, binder)
 		list, err := binder.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
@@ -114,7 +142,7 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
-		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -134,6 +162,16 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, parsedTime.Before(time.Now()))
 
+	})
+
+	t.Run("update with extra modifier present", func(t *testing.T) {
+		binder := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
 		// test binder with extra modifier present
 		ch := make(chan struct{})
 		binder.modifier = ExtraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
@@ -141,23 +179,34 @@ func TestBinderNew(t *testing.T) {
 			return nil
 		})
 
-		list, err = binder.search()
+		list, err := binder.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 
-		updatedObjects, err = binder.update(list)
+		updatedObjects, err := binder.update(list)
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 		<-ch
 
+		list, err = binder.search()
+		require.NoError(t, err)
 		// call another update as object is already updated, modifier func should not be called
 		updatedObjects, err = binder.update(list)
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 0)
-		binder.modifier = nil
 	})
 
 	t.Run("remove", func(t *testing.T) {
+
+		binder := NewBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+
+		require.NotNil(t, binder)
 		list, err := binder.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
@@ -169,6 +218,8 @@ func TestBinderNew(t *testing.T) {
 		err = binder.remove(list)
 		require.NoError(t, err)
 
+		list, err = binder.search()
+		require.NoError(t, err)
 		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
@@ -209,15 +260,20 @@ func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
+<<<<<<< HEAD:pkg/controller/servicebinding/binder_test.go
 	sbr := f.AddMockedServiceBinding(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("ref", nil)
+=======
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
+	f.AddMockedUnstructuredDeployment("applicationResourceRef", nil)
+>>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder_test.go
 
 	binder := NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 
 	require.NotNil(t, binder)
@@ -233,15 +289,20 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
+<<<<<<< HEAD:pkg/controller/servicebinding/binder_test.go
 	sbr := f.AddMockedServiceBinding(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
 	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
+=======
+	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
+	f.AddMockedUnstructuredDeploymentConfig("applicationResourceRef", nil)
+>>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder_test.go
 
 	binder := NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 
 	require.NotNil(t, binder)
@@ -268,10 +329,10 @@ func TestBindTwoApplications(t *testing.T) {
 	sbr1 := f.AddMockedServiceBinding(name1, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
 	binder1 := NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr1,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 	require.NotNil(t, binder1)
 
@@ -284,10 +345,10 @@ func TestBindTwoApplications(t *testing.T) {
 	sbr2 := f.AddMockedServiceBinding(name2, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
 	binder2 := NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr2,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 	require.NotNil(t, binder2)
 
@@ -317,10 +378,10 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 
 	binder := NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 
 	require.NotNil(t, binder)
@@ -351,10 +412,10 @@ func Test_extraFieldsModifier(t *testing.T) {
 	sbr := mocks.ServiceBindingMock(ns, name, nil, "", deploy.Name, deploymentsGVR, matchLabels)
 	binder := NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 
 	require.NotNil(t, binder)
@@ -366,10 +427,10 @@ func Test_extraFieldsModifier(t *testing.T) {
 
 	binder = NewBinder(
 		context.TODO(),
-		f.FakeClient(),
 		f.FakeDynClient(),
 		sbr,
 		[]string{},
+		testutils.BuildTestRESTMapper(),
 	)
 
 	require.NotNil(t, binder)

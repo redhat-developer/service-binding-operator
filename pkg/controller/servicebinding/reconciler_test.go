@@ -1,16 +1,19 @@
 package servicebinding
 
 import (
-	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -27,6 +30,7 @@ const (
 )
 
 var (
+	secretsGVR           = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	deploymentsGVR       = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 	deploymentConfigsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deploymentconfigs"}
 )
@@ -54,19 +58,11 @@ func TestApplicationSelectorByName(t *testing.T) {
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
-	f.AddMockedUnstructuredDeployment(reconcilerName, nil)
+	f.AddMockedUnstructuredDeployment(applicationResourceRef, nil)
 	f.AddMockedUnstructuredSecret("db-credentials")
 
-	restMapper := testutils.BuildTestRESTMapper()
-
-	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  fakeDynClient,
-		scheme:     f.S,
-	}
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 
 	t.Run("test-application-selector-by-name", func(t *testing.T) {
 
@@ -88,7 +84,7 @@ func TestApplicationSelectorByName(t *testing.T) {
 				Kind:    "Deployment",
 			},
 			LocalObjectReference: corev1.LocalObjectReference{
-				Name: namespacedName.Name,
+				Name: applicationResourceRef,
 			},
 		}
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -98,30 +94,21 @@ func TestApplicationSelectorByName(t *testing.T) {
 // TestReconcilerReconcileUsingSecret test the reconciliation process using a secret, expected to be
 // the regular approach.
 func TestReconcilerReconcileUsingSecret(t *testing.T) {
-	ctx := context.TODO()
 	backingServiceResourceRef := "test-using-secret"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBinding(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredServiceBinding(reconcilerName, backingServiceResourceRef, reconcilerName, deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredCSV("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedUnstructuredSecret("db-credentials")
 
-	restMapper := testutils.BuildTestRESTMapper()
-
-	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  fakeDynClient,
-		scheme:     f.S,
-	}
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 
 	t.Run("reconcile-using-secret", func(t *testing.T) {
 		res, err := reconciler.Reconcile(reconcileRequest())
@@ -129,8 +116,13 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+
+		u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+		require.NoError(t, err)
+
 		d := appsv1.Deployment{}
-		require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+		require.NoError(t, err)
 
 		containers := d.Spec.Template.Spec.Containers
 		require.Equal(t, 1, len(containers))
@@ -162,41 +154,35 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 }
 
 func TestReconcilerReconcileUsingVolumes(t *testing.T) {
-	ctx := context.TODO()
 	backingServiceResourceRef := "test-using-volumes"
 	matchLabels := map[string]string{
 		"connects-to": "database",
 		"environment": "reconciler",
 	}
 	f := mocks.NewFake(t, reconcilerNs)
-	f.AddMockedUnstructuredServiceBinding(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredServiceBinding(reconcilerName, backingServiceResourceRef, reconcilerName, deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredCSVWithVolumeMount("cluster-service-version-list")
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	f.AddMockedUnstructuredSecret("db-credentials")
 
-	restMapper := testutils.BuildTestRESTMapper()
-
-	fakeClient := f.FakeClient()
-	reconciler := &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  f.FakeDynClient(),
-		scheme:     f.S,
-	}
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 
 	t.Run("reconcile-using-volume", func(t *testing.T) {
 		res, err := reconciler.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
-		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+		u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+		require.NoError(t, err)
+
 		d := appsv1.Deployment{}
-		require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+		require.NoError(t, err)
 
 		containers := d.Spec.Template.Spec.Containers
-
 		require.Equal(t, 1, len(containers[0].VolumeMounts))
 		require.Equal(t, "/var/redhat", containers[0].VolumeMounts[0].MountPath)
 		require.Equal(t, reconcilerName, containers[0].VolumeMounts[0].Name)
@@ -209,7 +195,6 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 }
 
 func TestReconcilerGenericBinding(t *testing.T) {
-	ctx := context.TODO()
 	backingServiceResourceRef := "backingService1"
 	matchLabels := map[string]string{
 		"connects-to": "database",
@@ -222,15 +207,8 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredSecret("db-credentials")
 
-	restMapper := testutils.BuildTestRESTMapper()
-
-	fakeClient := f.FakeClient()
-	reconciler := &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  f.FakeDynClient(),
-		scheme:     f.S,
-	}
+	fakeDynClient := f.FakeDynClient()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 
 	// Reconcile without deployment
 	res, err := reconciler.Reconcile(reconcileRequest())
@@ -254,20 +232,18 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	// Reconcile with deployment
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
-
-	fakeClient = f.FakeClient()
-	reconciler = &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  f.FakeDynClient(),
-		scheme:     f.S,
-	}
+	fakeDynClient = f.FakeDynClient()
+	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 	res, err = reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
+	u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+
 	d := appsv1.Deployment{}
-	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+	require.NoError(t, err)
 
 	sbrOutput2, err := reconciler.getServiceBinding(namespacedName)
 	require.NoError(t, err)
@@ -277,30 +253,27 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret.Name)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 
-	// Update Credentials
+	u, err = fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
+	require.NoError(t, err)
 	s := corev1.Secret{}
-	secretNamespaced := types.NamespacedName{Namespace: reconcilerNs, Name: "db-credentials"}
-	require.NoError(t, fakeClient.Get(ctx, secretNamespaced, &s))
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &s)
+	require.NoError(t, err)
+
+	// Update Credentials
 	s.Data["password"] = []byte("abc123")
-	require.NoError(t, fakeClient.Update(ctx, &s))
-
-	reconciler = &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  f.FakeDynClient(),
-		scheme:     f.S,
-	}
-
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&s)
+	require.NoError(t, err)
+	updated := unstructured.Unstructured{Object: obj}
+	_, err = fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Update(&updated, metav1.UpdateOptions{})
+	require.NoError(t, err)
+	time.Sleep(1 * time.Second)
+	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 	res, err = reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
 	sbrOutput3, err := reconciler.getServiceBinding(namespacedName)
 	require.NoError(t, err)
-
-	d = appsv1.Deployment{}
-	require.NoError(t, fakeClient.Get(ctx, namespacedName, &d))
-
 	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret.Name)
@@ -327,13 +300,11 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 	f.AddMockedUnstructuredSecret("db-credentials")
 
-	fakeClient := f.FakeClient()
 	fakeDynClient := f.FakeDynClient()
 
 	restMapper := testutils.BuildTestRESTMapper()
 
 	reconciler := &Reconciler{
-		client:     fakeClient,
 		dynClient:  fakeDynClient,
 		scheme:     f.S,
 		RestMapper: restMapper,
@@ -363,6 +334,7 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret.Name)
+		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
 }
@@ -374,15 +346,7 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	f.AddMockedUnstructuredServiceBindingWithoutApplication(reconcilerName, backingServiceResourceRef)
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 
-	restMapper := testutils.BuildTestRESTMapper()
-
-	fakeClient := f.FakeClient()
-	reconciler := &Reconciler{
-		RestMapper: restMapper,
-		client:     fakeClient,
-		dynClient:  f.FakeDynClient(),
-		scheme:     f.S,
-	}
+	reconciler := &Reconciler{dynClient: f.FakeDynClient(), RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
