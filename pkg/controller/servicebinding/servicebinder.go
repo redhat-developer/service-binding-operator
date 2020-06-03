@@ -258,7 +258,7 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		b.Logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.SBR, sbrStatus, nil)
 	}
-	sbrStatus.Secret = corev1.LocalObjectReference{Name: secretObj.GetName()}
+	sbrStatus.SecretRef = corev1.LocalObjectReference{Name: secretObj.GetName()}
 
 	updatedObjects, err := b.Binder.Bind()
 	if err != nil {

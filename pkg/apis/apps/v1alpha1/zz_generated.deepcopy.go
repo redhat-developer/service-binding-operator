@@ -198,7 +198,7 @@ func (in *ServiceBindingStatus) DeepCopyInto(out *ServiceBindingStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	out.Secret = in.Secret
+	out.SecretRef = in.SecretRef
 	if in.Applications != nil {
 		in, out := &in.Applications, &out.Applications
 		*out = make([]BoundApplication, len(*in))
