@@ -14,13 +14,13 @@ metadata:
             "application": {
               "group": "apps",
               "resource": "deployments",
-              "resourceRef": "nodejs-rest-http-crud",
+              "name": "nodejs-rest-http-crud",
               "version": "v1"
             },
             "services": {
               "group": "postgresql.example.dev",
               "kind": "Database",
-              "resourceRef": "pg-instance",
+              "name": "pg-instance",
               "version": "v1alpha1"
             },
             "mountPathPrefix": "/var/credentials"
