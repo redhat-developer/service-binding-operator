@@ -307,15 +307,12 @@ func (b *ServiceBinder) handleApplication(reason string, applicationError error)
 
 // Bind configures binding between the Service Binding Request and its related objects.
 func (b *ServiceBinder) Bind() (reconcile.Result, error) {
-	sbrStatus := b.SBR.Status.DeepCopy()
-
 	b.Logger.Info("Saving data on intermediary secret...")
 	secretObj, err := b.Secret.Commit(b.EnvVars)
 	if err != nil {
 		b.Logger.Error(err, "On saving secret data..")
-		return b.onError(err, b.SBR, sbrStatus, nil)
+		return b.onError(err, b.SBR, &b.SBR.Status, nil)
 	}
-	sbrStatus.Secret = secretObj.GetName()
 	b.SBR.Status.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.SBR.Spec.ApplicationSelector) {
@@ -328,28 +325,28 @@ func (b *ServiceBinder) Bind() (reconcile.Result, error) {
 		if errors.Is(err, ErrApplicationNotFound) {
 			return b.handleApplication(ApplicationNotFoundReason, ErrApplicationNotFound)
 		}
-		return b.onError(err, b.SBR, sbrStatus, nil)
+		return b.onError(err, b.SBR, &b.SBR.Status, nil)
 	}
-	b.setApplicationObjects(sbrStatus, updatedObjects)
+	b.setApplicationObjects(&b.SBR.Status, updatedObjects)
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.SBR.GetNamespace(), Name: b.SBR.GetName()}
 	if err = SetAndUpdateSBRAnnotations(b.DynClient, namespacedName, append(b.Objects, secretObj)); err != nil {
 		b.Logger.Error(err, "On setting annotations in related objects.")
-		return b.onError(err, b.SBR, sbrStatus, updatedObjects)
+		return b.onError(err, b.SBR, &b.SBR.Status, updatedObjects)
 	}
 
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
 		Type:   CollectionReady,
 		Status: corev1.ConditionTrue,
 	})
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	conditionsv1.SetStatusCondition(&b.SBR.Status.Conditions, conditionsv1.Condition{
 		Type:   InjectionReady,
 		Status: corev1.ConditionTrue,
 	})
 
 	// updating status of request instance
-	sbr, err := b.updateStatusServiceBindingRequest(b.SBR, sbrStatus)
+	sbr, err := b.updateStatusServiceBindingRequest(b.SBR, &b.SBR.Status)
 	if err != nil {
 		return RequeueOnConflict(err)
 	}
