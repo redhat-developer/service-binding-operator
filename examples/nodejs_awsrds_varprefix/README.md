@@ -226,10 +226,10 @@ metadata:
 spec:
   envVarPrefix: "MYDB"
   services:
-    group: aws.pmacik.dev
-    version: v1alpha1
-    kind: RDSDatabase
-    name: mydb
+    - group: aws.pmacik.dev
+      version: v1alpha1
+      kind: RDSDatabase
+      name: mydb
   application:
     name: shell-app
     group: operators.coreos.com

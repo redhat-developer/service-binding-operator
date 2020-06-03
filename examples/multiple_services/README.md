@@ -106,14 +106,14 @@ spec:
     version: v1
     resource: deployments
   services:
-  - group: postgresql.baiju.dev
-    version: v1alpha1
-    kind: Database
-    name: db-demo
-  - group: etcd.database.coreos.com
-    version: v1beta2
-    kind: EtcdCluster
-    name: etcd-demo
+    - group: postgresql.baiju.dev
+      version: v1alpha1
+      kind: Database
+      name: db-demo
+    - group: etcd.database.coreos.com
+      version: v1beta2
+      kind: EtcdCluster
+      name: etcd-demo
   detectBindingResources: true
 ```
 

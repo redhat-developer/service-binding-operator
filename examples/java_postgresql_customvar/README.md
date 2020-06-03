@@ -194,11 +194,11 @@ spec:
     group: apps
     version: v1
     resource: deployments
-  - services:
-      group: postgresql.baiju.dev
-      version: v1alpha1
-      kind: Database
-      name: db-demo
+  services:
+      - group: postgresql.baiju.dev
+        version: v1alpha1
+        kind: Database
+        name: db-demo
   dataMapping:
     - name: JDBC_URL
       value: 'jdbc:postgresql://{{ .status.dbConnectionIP }}:{{ .status.dbConnectionPort }}/{{ .status.dbName }}'

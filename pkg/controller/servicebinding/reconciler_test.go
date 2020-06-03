@@ -136,7 +136,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
-		require.Equal(t, reconcilerName, sbrOutput.Status.Secret.Name)
+		require.Equal(t, reconcilerName, sbrOutput.Status.SecretRef.Name)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
@@ -250,7 +250,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	require.Equal(t, BindingReady, sbrOutput2.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
-	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret.Name)
+	require.Equal(t, reconcilerName, sbrOutput2.Status.SecretRef.Name)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 
 	u, err = fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
@@ -276,7 +276,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
-	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret.Name)
+	require.Equal(t, reconcilerName, sbrOutput3.Status.SecretRef.Name)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
 }
@@ -333,7 +333,7 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 
 		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
-		require.Equal(t, reconcilerName, sbrOutput.Status.Secret.Name)
+		require.Equal(t, reconcilerName, sbrOutput.Status.SecretRef.Name)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
