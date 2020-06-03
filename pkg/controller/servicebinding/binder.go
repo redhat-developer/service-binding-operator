@@ -37,13 +37,13 @@ const ChangeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 // Binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
 type Binder struct {
-	ctx        context.Context                 // request context
-	dynClient  dynamic.Interface               // kubernetes dynamic api client
-	sbr        *v1alpha1.ServiceBinding		   // instantiated service binding request
-	volumeKeys []string                        // list of key names used in volume mounts
-	modifier   ExtraFieldsModifier             // extra modifier for CRDs before updating
-	restMapper meta.RESTMapper                 // RESTMapper to convert GVR from GVK
-	logger     *log.Log                        // logger instance
+	ctx        context.Context          // request context
+	dynClient  dynamic.Interface        // kubernetes dynamic api client
+	sbr        *v1alpha1.ServiceBinding // instantiated service binding request
+	volumeKeys []string                 // list of key names used in volume mounts
+	modifier   ExtraFieldsModifier      // extra modifier for CRDs before updating
+	restMapper meta.RESTMapper          // RESTMapper to convert GVR from GVK
+	logger     *log.Log                 // logger instance
 }
 
 // ExtraFieldsModifier is useful for updating backend service which requires additional changes besides
@@ -66,61 +66,28 @@ var ApplicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in Application.
 func (b *Binder) search() (*unstructured.UnstructuredList, error) {
-<<<<<<< HEAD:pkg/controller/servicebinding/binder.go
-	ns := b.sbr.GetNamespace()
-
-	application := b.sbr.Spec.Application
-	gvr := schema.GroupVersionResource{
-		Group:    application.Group,
-		Version:  application.Version,
-		Resource: application.Resource,
-	}
-
-	var opts metav1.ListOptions
-
 	// If Application name is present
-	if application.Name != "" {
-		fieldName := make(map[string]string)
-		fieldName["metadata.name"] = application.Name
-		opts = metav1.ListOptions{
-			FieldSelector: fields.Set(fieldName).String(),
-		}
-	} else if application.LabelSelector != nil {
-		matchLabels := application.LabelSelector.MatchLabels
-		opts = metav1.ListOptions{
-			LabelSelector: labels.Set(matchLabels).String(),
-		}
-=======
-	// If Application name is present
-	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
+	if b.sbr.Spec.Application.Name != "" {
 		return b.getApplicationByName()
-	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
+	} else if b.sbr.Spec.Application.LabelSelector != nil {
 		return b.getApplicationByLabelSelector()
->>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder.go
 	} else {
 		return nil, EmptyApplicationSelectorErr
 	}
 }
 
-<<<<<<< HEAD:pkg/controller/servicebinding/binder.go
-	objects, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
-=======
 func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
-		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
-		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
-		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+		Group:    b.sbr.Spec.Application.Group,
+		Version:  b.sbr.Spec.Application.Version,
+		Resource: b.sbr.Spec.Application.Resource,
 	}
 	object, err := b.dynClient.Resource(gvr).Namespace(ns).
-		Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
->>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder.go
+		Get(b.sbr.Spec.Application.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-<<<<<<< HEAD:pkg/controller/servicebinding/binder.go
-	return objects, err
-=======
 
 	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
 	return objList, nil
@@ -129,16 +96,15 @@ func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 func (b *Binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
-		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
-		Version:  b.sbr.Spec.ApplicationSelector.GroupVersionResource.Version,
-		Resource: b.sbr.Spec.ApplicationSelector.GroupVersionResource.Resource,
+		Group:    b.sbr.Spec.Application.Group,
+		Version:  b.sbr.Spec.Application.Version,
+		Resource: b.sbr.Spec.Application.Resource,
 	}
-	matchLabels := b.sbr.Spec.ApplicationSelector.LabelSelector.MatchLabels
+	matchLabels := b.sbr.Spec.Application.LabelSelector.MatchLabels
 	opts := metav1.ListOptions{
 		LabelSelector: labels.Set(matchLabels).String(),
 	}
 	return b.dynClient.Resource(gvr).Namespace(ns).List(opts)
->>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder.go
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying

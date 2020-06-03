@@ -44,7 +44,7 @@ func TestBinderNew(t *testing.T) {
 	sbr := f.AddMockedServiceBinding(name, nil, "ref", "", deploymentsGVR, matchLabels)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
-	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
+	sbrWithResourceRef := f.AddMockedServiceBinding(
 		"service-binding-request-with-ref",
 		nil,
 		"ref",
@@ -260,13 +260,8 @@ func TestBinderApplicationName(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
-<<<<<<< HEAD:pkg/controller/servicebinding/binder_test.go
 	sbr := f.AddMockedServiceBinding(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
-	f.AddMockedUnstructuredDeployment("ref", nil)
-=======
-	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("applicationResourceRef", nil)
->>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder_test.go
 
 	binder := NewBinder(
 		context.TODO(),
@@ -289,13 +284,8 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 	ns := "service-binding-demo-with-deploymentconfig"
 	name := "service-binding-request"
 	f := mocks.NewFake(t, ns)
-<<<<<<< HEAD:pkg/controller/servicebinding/binder_test.go
 	sbr := f.AddMockedServiceBinding(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
-	f.AddMockedUnstructuredDeploymentConfig("ref", nil)
-=======
-	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
 	f.AddMockedUnstructuredDeploymentConfig("applicationResourceRef", nil)
->>>>>>> c2884dd421d2caa3fa8e1946708a339a049aba87:pkg/controller/servicebindingrequest/binder_test.go
 
 	binder := NewBinder(
 		context.TODO(),
