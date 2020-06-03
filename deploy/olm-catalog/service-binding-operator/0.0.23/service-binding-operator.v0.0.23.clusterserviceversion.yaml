@@ -17,12 +17,12 @@ metadata:
               "name": "nodejs-rest-http-crud",
               "version": "v1"
             },
-            "services": {
+            "services": [{
               "group": "postgresql.example.dev",
               "kind": "Database",
               "name": "pg-instance",
               "version": "v1alpha1"
-            },
+            }],
             "mountPathPrefix": "/var/credentials"
           }
         }
