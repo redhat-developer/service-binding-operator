@@ -141,6 +141,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			r.dynClient,
 			sbr,
 			conditionsv1.Condition{
+				Type:    CollectionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  EmptyServiceSelectorsReason,
+				Message: ErrEmptyBackingServiceSelectors.Error(),
+			},
+			conditionsv1.Condition{
 				Type:    InjectionReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  EmptyServiceSelectorsReason,
