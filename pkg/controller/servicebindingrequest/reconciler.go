@@ -27,10 +27,10 @@ const (
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
-type Reconciler struct {
+type reconciler struct {
 	dynClient       dynamic.Interface // kubernetes dynamic api client
 	scheme          *runtime.Scheme   // api scheme
-	RestMapper      meta.RESTMapper   // restMapper to convert GVK and GVR
+	restMapper      meta.RESTMapper   // restMapper to convert GVK and GVR
 	resourceWatcher ResourceWatcher   // ResourceWatcher to add watching for specific GVK/GVR
 }
 
@@ -48,10 +48,10 @@ var reconcilerLog = log.NewLog("reconciler")
 //}
 
 // getServiceBindingRequest retrieve the SBR object based on namespaced-name.
-func (r *Reconciler) getServiceBindingRequest(
+func (r *reconciler) getServiceBindingRequest(
 	namespacedName types.NamespacedName,
 ) (*v1alpha1.ServiceBindingRequest, error) {
-	gr := v1alpha1.SchemeGroupVersion.WithResource(ServiceBindingRequestResource)
+	gr := v1alpha1.SchemeGroupVersion.WithResource(serviceBindingRequestResource)
 	resourceClient := r.dynClient.Resource(gr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(namespacedName.Name, metav1.GetOptions{})
 	if err != nil {
@@ -97,7 +97,7 @@ func extractServiceSelectors(
 //    data formatted as environment variables key/value;
 // 4. Search applications that are interested to bind with given service, by inspecting labels. The
 //    Deployment (and other kinds) will be updated in "spec" level.
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	logger := reconcilerLog.WithValues(
 		"Request.Namespace", request.Namespace,
 		"Request.Name", request.Name,
@@ -108,12 +108,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		if errors.Is(err, ApplicationNotFound) {
+		if errors.Is(err, applicationNotFound) {
 			logger.Info("SBR deleted after application deletion")
-			return Done()
+			return done()
 		}
 		logger.Error(err, "On retrieving service-binding-request instance.")
-		return DoneOnNotFound(err)
+		return doneOnNotFound(err)
 	}
 
 	// validate namespaced ServiceBindingRequest instance (this check has been disabled until test data has been
@@ -139,14 +139,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		})
 		_, updateErr := updateServiceBindingRequestStatus(r.dynClient, sbr)
 		if updateErr == nil {
-			return Done()
+			return done()
 		}
 		// TODO: do not requeue here
 		//
 		// Since there are nothing to recover from in the case service selectors is empty, it is
 		// still required to requeue due to some watches not being implemented. This is known issue
 		// being worked in https://github.com/redhat-developer/service-binding-operator/pull/442.
-		return RequeueError(ErrEmptyBackingServiceSelectors)
+		return requeueError(errEmptyBackingServiceSelectors)
 	}
 
 	serviceCtxs, err := buildServiceContexts(
@@ -154,10 +154,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		sbr.GetNamespace(),
 		selectors,
 		sbr.Spec.DetectBindingResources,
-		r.RestMapper,
+		r.restMapper,
 	)
 	if err != nil {
-		return RequeueError(err)
+		return requeueError(err)
 	}
 
 	binding, err := buildBinding(
@@ -167,25 +167,25 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		sbr.Spec.EnvVarPrefix,
 	)
 	if err != nil {
-		return RequeueError(err)
+		return requeueError(err)
 	}
 
-	options := &ServiceBinderOptions{
-		DynClient:              r.dynClient,
-		DetectBindingResources: sbr.Spec.DetectBindingResources,
-		SBR:                    sbr,
-		Logger:                 logger,
-		Objects:                serviceCtxs.GetServices(),
-		Binding:                binding,
-		RESTMapper:             r.RestMapper,
+	options := &serviceBinderOptions{
+		dynClient:              r.dynClient,
+		detectBindingResources: sbr.Spec.DetectBindingResources,
+		sbr:                    sbr,
+		logger:                 logger,
+		objects:                serviceCtxs.getServices(),
+		binding:                binding,
+		restMapper:             r.restMapper,
 	}
 
-	sb, err := BuildServiceBinder(ctx, options)
+	sb, err := buildServiceBinder(ctx, options)
 	if err != nil {
 		// BuildServiceBinder can return only InvalidOptionsErr, and it is a programmer's error so
 		// just bail out without re-queueing nor updating conditions.
 		logger.Error(err, "Building ServiceBinder")
-		return NoRequeue(err)
+		return noRequeue(err)
 	}
 
 	gvrSpec := sbr.Spec.ApplicationSelector.GroupVersionResource
@@ -203,9 +203,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if sbr.GetDeletionTimestamp() != nil {
 		logger := logger.WithName("unbind")
 		logger.Info("Executing unbinding steps...")
-		return sb.Unbind()
+		return sb.unbind()
 	}
 
 	logger.Info("Binding applications with intermediary secret...")
-	return sb.Bind()
+	return sb.bind()
 }

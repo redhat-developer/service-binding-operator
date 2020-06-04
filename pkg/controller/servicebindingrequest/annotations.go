@@ -38,11 +38,11 @@ func extractSBRNamespacedName(data map[string]string) types.NamespacedName {
 	return namespacedName
 }
 
-// GetSBRNamespacedNameFromObject returns a types.NamespacedName if the required service binding
+// getSBRNamespacedNameFromObject returns a types.NamespacedName if the required service binding
 // request annotations are present in the given runtime.Object, empty otherwise. When annotations are
 // not present, it checks if the object is an actual SBR, returning the details when positive. An
 // error can be returned in the case the object can't be decoded.
-func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, error) {
+func getSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, error) {
 	sbrNamespacedName := types.NamespacedName{}
 	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
 	if err != nil {
@@ -59,14 +59,14 @@ func GetSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, e
 		"SBR.NamespacedName", sbrNamespacedName.String(),
 	)
 
-	if IsNamespacedNameEmpty(sbrNamespacedName) {
+	if isNamespacedNameEmpty(sbrNamespacedName) {
 		log.Debug("SBR information not present in annotations, continue inspecting object")
 	} else {
 		log.Trace("SBR information found in annotations, returning it")
 		return sbrNamespacedName, nil
 	}
 
-	if u.GroupVersionKind() == v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind) {
+	if u.GroupVersionKind() == v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind) {
 		log.Debug("Object is a SBR, returning its namespaced name")
 		sbrNamespacedName.Namespace = u.GetNamespace()
 		sbrNamespacedName.Name = u.GetName()
@@ -100,8 +100,8 @@ func updateUnstructuredObj(client dynamic.Interface, obj *unstructured.Unstructu
 	return err
 }
 
-// SetSBRAnnotations set annotations to include SBR information and return a new object.
-func SetSBRAnnotations(namespacedName types.NamespacedName,
+// setSBRAnnotations set annotations to include SBR information and return a new object.
+func setSBRAnnotations(namespacedName types.NamespacedName,
 	obj *unstructured.Unstructured) *unstructured.Unstructured {
 	newObj := obj.DeepCopy()
 	annotations := newObj.GetAnnotations()
@@ -114,15 +114,15 @@ func SetSBRAnnotations(namespacedName types.NamespacedName,
 	return newObj
 }
 
-// SetAndUpdateSBRAnnotations update existing annotations to include operator's. The annotations added are
+// setAndUpdateSBRAnnotations update existing annotations to include operator's. The annotations added are
 // referring to a existing SBR namespaced name.
-func SetAndUpdateSBRAnnotations(
+func setAndUpdateSBRAnnotations(
 	client dynamic.Interface,
 	namespacedName types.NamespacedName,
 	objs []*unstructured.Unstructured,
 ) error {
 	for _, obj := range objs {
-		newObj := SetSBRAnnotations(namespacedName, obj)
+		newObj := setSBRAnnotations(namespacedName, obj)
 		equal, err := nestedMapComparison(obj, newObj, []string{"metadata", "annotations"}...)
 		if err != nil {
 			return err
@@ -136,8 +136,8 @@ func SetAndUpdateSBRAnnotations(
 	return nil
 }
 
-// RemoveSBRAnnotations removes SBR related annotations and return a new object.
-func RemoveSBRAnnotations(obj *unstructured.Unstructured) *unstructured.Unstructured {
+// removeSBRAnnotations removes SBR related annotations and return a new object.
+func removeSBRAnnotations(obj *unstructured.Unstructured) *unstructured.Unstructured {
 	newObj := obj.DeepCopy()
 	annotations := newObj.GetAnnotations()
 	if annotations == nil {
@@ -149,11 +149,11 @@ func RemoveSBRAnnotations(obj *unstructured.Unstructured) *unstructured.Unstruct
 	return newObj
 }
 
-// RemoveAndUpdateSBRAnnotations removes SBR related annotations from all the objects and updates them using
+// removeAndUpdateSBRAnnotations removes SBR related annotations from all the objects and updates them using
 // the given client.
-func RemoveAndUpdateSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
+func removeAndUpdateSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
 	for _, obj := range objs {
-		newObj := RemoveSBRAnnotations(obj)
+		newObj := removeSBRAnnotations(obj)
 		equal, err := nestedMapComparison(obj, newObj, []string{"metadata", "annotations"}...)
 		if err != nil {
 			return err

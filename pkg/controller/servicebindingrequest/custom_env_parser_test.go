@@ -10,9 +10,9 @@ import (
 
 func TestCustomEnvParser(t *testing.T) {
 	type wantedVar struct {
-		Name       string
-		Value      string
-		ErrMessage string
+		name       string
+		value      string
+		errMessage string
 	}
 
 	type args struct {
@@ -23,12 +23,12 @@ func TestCustomEnvParser(t *testing.T) {
 
 	testCase := func(args args) func(t *testing.T) {
 		return func(t *testing.T) {
-			parser := NewCustomEnvParser(args.varTemplates, args.in)
+			parser := newCustomEnvParser(args.varTemplates, args.in)
 			values, err := parser.Parse()
 			require.NoError(t, err)
 
 			for _, w := range args.wanted {
-				require.Equal(t, values[w.Name], w.Value, w.ErrMessage)
+				require.Equal(t, values[w.name], w.value, w.errMessage)
 			}
 		}
 	}
@@ -46,8 +46,8 @@ func TestCustomEnvParser(t *testing.T) {
 			},
 		},
 		wanted: []wantedVar{
-			{Name: "JDBC_CONNECTION_STRING", Value: "database-name:database-user@database-pass"},
-			{Name: "ANOTHER_STRING", Value: "database-name_database-user"},
+			{name: "JDBC_CONNECTION_STRING", value: "database-name:database-user@database-pass"},
+			{name: "ANOTHER_STRING", value: "database-name_database-user"},
 		},
 		varTemplates: []corev1.EnvVar{
 			corev1.EnvVar{
@@ -72,7 +72,7 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 
 	assertParse := func(args args) func(*testing.T) {
 		return func(t *testing.T) {
-			customEnvParser := NewCustomEnvParser(args.templates, args.envVarCtx)
+			customEnvParser := newCustomEnvParser(args.templates, args.envVarCtx)
 			actual, err := customEnvParser.Parse()
 			if args.wantErr != nil {
 				require.Error(t, args.wantErr)
@@ -142,7 +142,7 @@ func TestCustomEnvPath_Parse_exampleCase(t *testing.T) {
 		},
 	}
 
-	customEnvPath := NewCustomEnvParser(envMap, cache)
+	customEnvPath := newCustomEnvParser(envMap, cache)
 	values, err := customEnvPath.Parse()
 	if err != nil {
 		t.Error(err)
@@ -193,7 +193,7 @@ func TestCustomEnvPath_Parse_ToJson(t *testing.T) {
 			Value: `{{ json .notExist }}`,
 		},
 	}
-	customEnvPath := NewCustomEnvParser(envMap, cache)
+	customEnvPath := newCustomEnvParser(envMap, cache)
 	values, err := customEnvPath.Parse()
 	if err != nil {
 		t.Error(err)

@@ -11,16 +11,16 @@ var (
 	watchLog = log.NewLog("watch")
 )
 
-// CSVToWatcherMapper creates a EventHandler interface to map ClusterServiceVersion objects back to
+// csvToWatcherMapper creates a EventHandler interface to map ClusterServiceVersion objects back to
 // controller and add given GVK to watch list.
-type CSVToWatcherMapper struct {
-	controller *SBRController
+type csvToWatcherMapper struct {
+	controller *sbrController
 }
 
 // Map requests directed to CSV objects and exctract related GVK to trigger another watch on
 // controller instance.
-func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
-	olm := NewOLM(c.controller.Client, obj.Meta.GetNamespace())
+func (c *csvToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
+	olm := newOLM(c.controller.Client, obj.Meta.GetNamespace())
 	namespacedName := types.NamespacedName{
 		Namespace: obj.Meta.GetNamespace(),
 		Name:      obj.Meta.GetName(),
@@ -28,7 +28,7 @@ func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
 
 	log := watchLog.WithName("CSVToWatcherMapper").WithValues("Obj.NamespacedName", namespacedName)
 
-	gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
+	gvks, err := olm.listGVKsFromCSVNamespacedName(namespacedName)
 	if err != nil {
 		log.Error(err, "Failed on listing GVK with namespaced-name!")
 		return []reconcile.Request{}
@@ -47,8 +47,8 @@ func (c *CSVToWatcherMapper) Map(obj handler.MapObject) []reconcile.Request {
 
 // NewCreateWatchEventHandler creates a new instance of handler.EventHandler interface with
 // CSVToWatcherMapper as map-func.
-func NewCreateWatchEventHandler(controller *SBRController) handler.EventHandler {
+func NewCreateWatchEventHandler(controller *sbrController) handler.EventHandler {
 	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: &CSVToWatcherMapper{controller: controller},
+		ToRequests: &csvToWatcherMapper{controller: controller},
 	}
 }

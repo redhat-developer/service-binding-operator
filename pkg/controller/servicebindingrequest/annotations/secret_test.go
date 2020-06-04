@@ -33,11 +33,11 @@ func TestSecretHandler(t *testing.T) {
 
 			restMapper := testutils.BuildTestRESTMapper()
 
-			bindingInfo, err := NewBindingInfo(args.name, args.value)
+			bi, err := NewBindingInfo(args.name, args.value)
 			require.NoError(t, err)
-			handler, err := NewSecretHandler(
+			handler, err := newSecretHandler(
 				f.FakeDynClient(),
-				bindingInfo,
+				bi,
 				unstructured.Unstructured{Object: args.service},
 				restMapper,
 			)

@@ -18,12 +18,12 @@ import (
 )
 
 var (
-	// ErrUnspecifiedBackingServiceNamespace is returned when the namespace of a service is
+	// errUnspecifiedBackingServiceNamespace is returned when the namespace of a service is
 	// unspecified.
-	ErrUnspecifiedBackingServiceNamespace = errors.New("backing service namespace is unspecified")
-	// EmptyBackingServiceSelectorsErr is returned when no backing service selectors have been
+	errUnspecifiedBackingServiceNamespace = errors.New("backing service namespace is unspecified")
+	// errEmptyBackingServiceSelectors is returned when no backing service selectors have been
 	// informed in the Service Binding Request.
-	ErrEmptyBackingServiceSelectors = errors.New("backing service selectors are empty")
+	errEmptyBackingServiceSelectors = errors.New("backing service selectors are empty")
 )
 
 func findService(
@@ -38,7 +38,7 @@ func findService(
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 
 	if len(ns) == 0 {
-		return nil, ErrUnspecifiedBackingServiceNamespace
+		return nil, errUnspecifiedBackingServiceNamespace
 	}
 
 	// delegate the search selector's namespaced resource client
@@ -48,8 +48,8 @@ func findService(
 		Get(resourceRef, metav1.GetOptions{})
 }
 
-// CRDGVR is the plural GVR for Kubernetes CRDs.
-var CRDGVR = schema.GroupVersionResource{
+// crdGVR is the plural GVR for Kubernetes CRDs.
+var crdGVR = schema.GroupVersionResource{
 	Group:    "apiextensions.k8s.io",
 	Version:  "v1beta1",
 	Resource: "customresourcedefinitions",
@@ -61,7 +61,7 @@ func findServiceCRD(client dynamic.Interface, gvk schema.GroupVersionKind) (*uns
 	// crdName is the string'fied GroupResource, e.g. "deployments.apps"
 	crdName := gvr.GroupResource().String()
 	// delegate the search to the CustomResourceDefinition resource client
-	return client.Resource(CRDGVR).Get(crdName, metav1.GetOptions{})
+	return client.Resource(crdGVR).Get(crdName, metav1.GetOptions{})
 }
 
 func loadDescriptor(anns map[string]string, path string, descriptor string, root string) {
@@ -113,7 +113,7 @@ func findCRDDescription(
 	bssGVK schema.GroupVersionKind,
 	crd *unstructured.Unstructured,
 ) (*olmv1alpha1.CRDDescription, error) {
-	return NewOLM(client, ns).SelectCRDByGVK(bssGVK, crd)
+	return newOLM(client, ns).selectCRDByGVK(bssGVK, crd)
 }
 
 type bindableResource struct {
@@ -189,14 +189,14 @@ func buildOwnedResourceContext(
 	restMapper meta.RESTMapper,
 	inputPath string,
 	outputPath string,
-) (*ServiceContext, error) {
+) (*serviceContext, error) {
 	svcCtx, err := buildServiceContext(
 		client, obj.GetNamespace(), obj.GetObjectKind().GroupVersionKind(), obj.GetName(),
 		ownerEnvVarPrefix, restMapper)
 	if err != nil {
 		return nil, err
 	}
-	svcCtx.EnvVars, _, err = nested.GetValue(obj.Object, inputPath, outputPath)
+	svcCtx.envVars, _, err = nested.GetValue(obj.Object, inputPath, outputPath)
 	return svcCtx, err
 }
 
@@ -205,8 +205,8 @@ func buildOwnedResourceContexts(
 	objs []*unstructured.Unstructured,
 	ownerEnvVarPrefix *string,
 	restMapper meta.RESTMapper,
-) ([]*ServiceContext, error) {
-	ctxs := make(ServiceContextList, 0)
+) ([]*serviceContext, error) {
+	ctxs := make(serviceContextList, 0)
 
 	for _, obj := range objs {
 		for _, br := range bindableResources {

@@ -7,10 +7,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-const AttributeValue = "binding:env:attribute"
+const attributeValue = "binding:env:attribute"
 
-// AttributeHandler handles "binding:env:attribute" annotations.
-type AttributeHandler struct {
+// attributeHandler handles "binding:env:attribute" annotations.
+type attributeHandler struct {
 	// inputPath is the path that should be extracted from the resource. Required.
 	inputPath string
 	// outputPath is the path the extracted data should be placed under in the
@@ -22,30 +22,30 @@ type AttributeHandler struct {
 
 // Handle returns a unstructured object according to the "binding:env:attribute"
 // annotation strategy.
-func (h *AttributeHandler) Handle() (Result, error) {
+func (h *attributeHandler) Handle() (result, error) {
 	val, _, err := nested.GetValue(h.resource.Object, h.inputPath, h.outputPath)
 	if err != nil {
-		return Result{}, err
+		return result{}, err
 	}
-	return Result{
+	return result{
 		Data: val,
 	}, nil
 }
 
 // IsAttribute returns true if the annotation value should trigger the attribute
 // handler.
-func IsAttribute(s string) bool {
-	return AttributeValue == s
+func isAttribute(s string) bool {
+	return attributeValue == s
 }
 
 // NewAttributeHandler constructs an AttributeHandler.
-func NewAttributeHandler(
-	bindingInfo *BindingInfo,
+func newAttributeHandler(
+	bi *bindingInfo,
 	resource unstructured.Unstructured,
-) *AttributeHandler {
-	outputPath := bindingInfo.SourcePath
-	if len(bindingInfo.ResourceReferencePath) > 0 {
-		outputPath = bindingInfo.ResourceReferencePath
+) *attributeHandler {
+	outputPath := bi.SourcePath
+	if len(bi.ResourceReferencePath) > 0 {
+		outputPath = bi.ResourceReferencePath
 	}
 
 	// the current implementation removes "status." and "spec." from fields exported through
@@ -56,8 +56,8 @@ func NewAttributeHandler(
 		}
 	}
 
-	return &AttributeHandler{
-		inputPath:  bindingInfo.SourcePath,
+	return &attributeHandler{
+		inputPath:  bi.SourcePath,
 		outputPath: outputPath,
 		resource:   resource,
 	}

@@ -8,64 +8,62 @@ import (
 )
 
 const (
-	// ServiceBindingRequestResource the name of ServiceBindingRequest resource.
-	ServiceBindingRequestResource = "servicebindingrequests"
-	// ServiceBindingRequestKind defines the name of the CRD kind.
-	ServiceBindingRequestKind = "ServiceBindingRequest"
-	// DeploymentConfigKind defines the name of DeploymentConfig kind.
-	DeploymentConfigKind = "DeploymentConfig"
-	// ClusterServiceVersionKind the name of ClusterServiceVersion kind.
-	ClusterServiceVersionKind = "ClusterServiceVersion"
-	// SecretResource defines the resource name for Secrets.
-	SecretResource = "secrets"
-	// SecretKind defines the name of Secret kind.
-	SecretKind = "Secret"
+	// serviceBindingRequestResource the name of ServiceBindingRequest resource.
+	serviceBindingRequestResource = "servicebindingrequests"
+	// serviceBindingRequestKind defines the name of the CRD kind.
+	serviceBindingRequestKind = "ServiceBindingRequest"
+	// clusterServiceVersionKind the name of ClusterServiceVersion kind.
+	clusterServiceVersionKind = "ClusterServiceVersion"
+	// secretResource defines the resource name for Secrets.
+	secretResource = "secrets"
+	// secretKind defines the name of Secret kind.
+	secretKind = "Secret"
 )
 
-// RequeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
-func RequeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
+// requeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
+func requeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {
-		return Requeue(nil, requeueAfter)
+		return requeue(nil, requeueAfter)
 	}
-	return NoRequeue(err)
+	return noRequeue(err)
 }
 
-// RequeueOnConflict in case of conflict error, returning the error with requeue, otherwise Done.
-func RequeueOnConflict(err error) (reconcile.Result, error) {
+// requeueOnConflict in case of conflict error, returning the error with requeue, otherwise Done.
+func requeueOnConflict(err error) (reconcile.Result, error) {
 	if errors.IsConflict(err) {
-		return RequeueError(err)
+		return requeueError(err)
 	}
-	return Done()
+	return done()
 }
 
-// RequeueError simply requeue exposing the error.
-func RequeueError(err error) (reconcile.Result, error) {
+// requeueError simply requeue exposing the error.
+func requeueError(err error) (reconcile.Result, error) {
 	return reconcile.Result{Requeue: true}, err
 }
 
-// Requeue based on empty result and no error informed upstream, request will be requeued.
-func Requeue(err error, requeueAfter int64) (reconcile.Result, error) {
+// requeue based on empty result and no error informed upstream, request will be requeued.
+func requeue(err error, requeueAfter int64) (reconcile.Result, error) {
 	return reconcile.Result{
 		RequeueAfter: time.Duration(requeueAfter) * time.Second,
 		Requeue:      true,
 	}, err
 }
 
-// Done when no error is informed and request is not set for requeue.
-func Done() (reconcile.Result, error) {
+// done when no error is informed and request is not set for requeue.
+func done() (reconcile.Result, error) {
 	return reconcile.Result{}, nil
 }
 
-// DoneOnNotFound will return done when error is not-found, otherwise it calls out NoRequeue.
-func DoneOnNotFound(err error) (reconcile.Result, error) {
+// doneOnNotFound will return done when error is not-found, otherwise it calls out NoRequeue.
+func doneOnNotFound(err error) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {
-		return Done()
+		return done()
 	}
-	return NoRequeue(err)
+	return noRequeue(err)
 }
 
-// NoRequeue returns error without requeue flag.
-func NoRequeue(err error) (reconcile.Result, error) {
+// noRequeue returns error without requeue flag.
+func noRequeue(err error) (reconcile.Result, error) {
 	return reconcile.Result{}, err
 }
 

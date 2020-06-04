@@ -10,8 +10,8 @@ const (
 	ServiceBindingOperatorAnnotationPrefix = "servicebindingoperator.redhat.io/"
 )
 
-// BindingInfo represents the pieces of a binding as parsed from an annotation.
-type BindingInfo struct {
+// bindingInfo represents the pieces of a binding as parsed from an annotation.
+type bindingInfo struct {
 	// ResourceReferencePath is the field in the Backing Service CR referring to a bindable property, either
 	// embedded or a reference to a related object..
 	ResourceReferencePath string
@@ -28,7 +28,7 @@ var ErrInvalidAnnotationName = errors.New("invalid annotation name")
 var ErrEmptyAnnotationName = errors.New("empty annotation name")
 
 // NewBindingInfo parses the encoded in the annotation name, returning its parts.
-func NewBindingInfo(name string, value string) (*BindingInfo, error) {
+func NewBindingInfo(name string, value string) (*bindingInfo, error) {
 	// do not process unknown annotations
 	if !strings.HasPrefix(name, ServiceBindingOperatorAnnotationPrefix) {
 		return nil, ErrInvalidAnnotationPrefix
@@ -49,7 +49,7 @@ func NewBindingInfo(name string, value string) (*BindingInfo, error) {
 		sourcePath = parts[1]
 	}
 
-	return &BindingInfo{
+	return &bindingInfo{
 		ResourceReferencePath: resourceReferencePath,
 		SourcePath:            sourcePath,
 		Descriptor:            strings.Join([]string{value, sourcePath}, ":"),

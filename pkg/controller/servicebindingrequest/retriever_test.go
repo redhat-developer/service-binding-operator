@@ -29,12 +29,12 @@ func TestRetriever(t *testing.T) {
 	crInSameNamespace, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
 	require.NoError(t, err)
 
-	serviceCtxs := ServiceContextList{
+	serviceCtxs := serviceContextList{
 		{
-			Service: cr,
+			service: cr,
 		},
 		{
-			Service: crInSameNamespace,
+			service: crInSameNamespace,
 		},
 	}
 
@@ -66,7 +66,7 @@ func TestRetriever(t *testing.T) {
 func TestBuildServiceEnvVars(t *testing.T) {
 
 	type testCase struct {
-		ctx                *ServiceContext
+		ctx                *serviceContext
 		globalEnvVarPrefix string
 		expected           map[string]string
 	}
@@ -80,9 +80,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 	testCases := []testCase{
 		{
 			globalEnvVarPrefix: "",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &emptyString,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &emptyString,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -92,9 +92,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "globalprefix",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &emptyString,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &emptyString,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -104,9 +104,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "globalprefix",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &serviceEnvVarPrefix,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &serviceEnvVarPrefix,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -116,10 +116,10 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "",
-			ctx: &ServiceContext{
-				Service:      cr,
-				EnvVarPrefix: nil,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				service:      cr,
+				envVarPrefix: nil,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -129,9 +129,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &serviceEnvVarPrefix,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &serviceEnvVarPrefix,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},

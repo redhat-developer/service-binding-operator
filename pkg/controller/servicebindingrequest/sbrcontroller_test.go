@@ -204,7 +204,7 @@ func (f *fakeController) Watch(src source.Source, eventhandler handler.EventHand
 
 func TestSBRController_ResourceWatcher(t *testing.T) {
 
-	controller := &SBRController{
+	controller := &sbrController{
 		RestMapper: testutils.BuildTestRESTMapper(),
 		logger:     log.NewLog("testSBRController"),
 	}

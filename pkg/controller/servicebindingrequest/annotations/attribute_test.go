@@ -22,7 +22,7 @@ func TestAttributeHandler(t *testing.T) {
 			bindingInfo, err := NewBindingInfo(args.key, args.value)
 			require.NoError(t, err)
 			require.NotNil(t, bindingInfo)
-			handler := NewAttributeHandler(bindingInfo, *args.obj)
+			handler := newAttributeHandler(bindingInfo, *args.obj)
 			got, err := handler.Handle()
 			require.NoError(t, err)
 			require.NotNil(t, got)

@@ -30,8 +30,8 @@ var supportedBindingTypes = map[bindingType]bool{
 // ConfigMap and Secret resources keep user data.
 var dataPath = "data"
 
-// Result contains data that has been collected by an annotation handler.
-type Result struct {
+// result contains data that has been collected by an annotation handler.
+type result struct {
 	// Data contains the annotation data collected by an annotation handler inside a deep structure
 	// with its root being the value specified in the Path field.
 	Data map[string]interface{}
@@ -42,21 +42,21 @@ type Result struct {
 	Path string
 }
 
-// Handler should be implemented by types that want to offer a mechanism to provide binding data to
+// handler should be implemented by types that want to offer a mechanism to provide binding data to
 // the system.
-type Handler interface {
+type handler interface {
 	// Handle returns binding data.
-	Handle() (Result, error)
+	Handle() (result, error)
 }
 
-type ErrHandlerNotFound string
+type errHandlerNotFound string
 
-func (e ErrHandlerNotFound) Error() string {
+func (e errHandlerNotFound) Error() string {
 	return fmt.Sprintf("could not find handler for annotation value %q", string(e))
 }
 
 func IsErrHandlerNotFound(err error) bool {
-	_, ok := err.(ErrHandlerNotFound)
+	_, ok := err.(errHandlerNotFound)
 	return ok
 }
 
@@ -69,7 +69,7 @@ func BuildHandler(
 	annotationKey string,
 	annotationValue string,
 	restMapper meta.RESTMapper,
-) (Handler, error) {
+) (handler, error) {
 	bindingInfo, err := NewBindingInfo(annotationKey, annotationValue)
 	if err != nil {
 		return nil, err
@@ -78,13 +78,13 @@ func BuildHandler(
 	val := bindingInfo.Value
 
 	switch {
-	case IsAttribute(val):
-		return NewAttributeHandler(bindingInfo, *obj), nil
-	case IsSecret(val):
-		return NewSecretHandler(kubeClient, bindingInfo, *obj, restMapper)
-	case IsConfigMap(val):
-		return NewConfigMapHandler(kubeClient, bindingInfo, *obj, restMapper)
+	case isAttribute(val):
+		return newAttributeHandler(bindingInfo, *obj), nil
+	case isSecret(val):
+		return newSecretHandler(kubeClient, bindingInfo, *obj, restMapper)
+	case isConfigMap(val):
+		return newConfigMapHandler(kubeClient, bindingInfo, *obj, restMapper)
 	default:
-		return nil, ErrHandlerNotFound(val)
+		return nil, errHandlerNotFound(val)
 	}
 }
