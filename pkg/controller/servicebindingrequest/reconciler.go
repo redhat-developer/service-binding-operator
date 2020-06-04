@@ -9,6 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -27,9 +28,10 @@ const (
 
 // Reconciler reconciles a ServiceBindingRequest object
 type Reconciler struct {
-	dynClient  dynamic.Interface // kubernetes dynamic api client
-	scheme     *runtime.Scheme   // api scheme
-	RestMapper meta.RESTMapper   // restMapper to convert GVK and GVR
+	dynClient       dynamic.Interface // kubernetes dynamic api client
+	scheme          *runtime.Scheme   // api scheme
+	RestMapper      meta.RESTMapper   // restMapper to convert GVK and GVR
+	resourceWatcher ResourceWatcher   // ResourceWatcher to add watching for specific GVK/GVR
 }
 
 // reconcilerLog local logger instance
@@ -184,6 +186,18 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		// just bail out without re-queueing nor updating conditions.
 		logger.Error(err, "Building ServiceBinder")
 		return NoRequeue(err)
+	}
+
+	gvrSpec := sbr.Spec.ApplicationSelector.GroupVersionResource
+	gvr := schema.GroupVersionResource{
+		Group:    gvrSpec.Group,
+		Version:  gvrSpec.Version,
+		Resource: gvrSpec.Resource,
+	}
+
+	err = r.resourceWatcher.AddWatchForGVR(gvr)
+	if err != nil {
+		logger.Error(err, "Error add watching application GVR")
 	}
 
 	if sbr.GetDeletionTimestamp() != nil {

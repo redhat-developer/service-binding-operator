@@ -8,9 +8,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -142,6 +145,15 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
+		// make sure SBR annonation is added
+		deployment := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedObjects[0].Object, &deployment)
+		require.NoError(t, err)
+
+		sbrName, err := GetSBRNamespacedNameFromObject(&deployment)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{Name: name, Namespace: ns}, sbrName)
+
 		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
@@ -224,6 +236,15 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
+
+		// make sure SBR annonation is removed
+		deployment := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[0].Object, &deployment)
+		require.NoError(t, err)
+
+		sbrName, err := GetSBRNamespacedNameFromObject(&deployment)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, sbrName)
 
 		c := corev1.Container{}
 		u := containers[0].(map[string]interface{})

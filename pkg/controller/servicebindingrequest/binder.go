@@ -10,6 +10,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -480,6 +481,9 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		log.Debug("Inspecting object...")
 
+		sbrNamespacedName := types.NamespacedName{Namespace: b.sbr.GetNamespace(), Name: b.sbr.GetName()}
+		updatedObj = SetSBRAnnotations(sbrNamespacedName, updatedObj)
+
 		updatedObj, err := b.updateSpecContainers(updatedObj)
 		if err != nil {
 			return nil, err
@@ -491,7 +495,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(&obj, updatedObj, "spec"); err != nil {
+		if specsAreEqual, err := nestedMapComparison(&obj, updatedObj); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
@@ -535,6 +539,8 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 		if err != nil {
 			return err
 		}
+		updatedObj = RemoveSBRAnnotations(updatedObj)
+
 		if len(b.volumeKeys) > 0 {
 			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {
 				return err

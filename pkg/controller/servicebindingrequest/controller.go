@@ -22,7 +22,7 @@ func Add(mgr manager.Manager) error {
 }
 
 // newReconciler returns a new reconcile.Reconciler
-func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Reconciler, error) {
+func newReconciler(mgr manager.Manager, client dynamic.Interface) (*Reconciler, error) {
 	return &Reconciler{
 		dynClient:  client,
 		scheme:     mgr.GetScheme(),
@@ -31,12 +31,13 @@ func newReconciler(mgr manager.Manager, client dynamic.Interface) (reconcile.Rec
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
-func add(mgr manager.Manager, r reconcile.Reconciler, client dynamic.Interface) error {
+func add(mgr manager.Manager, r *Reconciler, client dynamic.Interface) error {
 	opts := controller.Options{Reconciler: r}
 	c, err := NewSBRController(mgr, opts, client)
 	if err != nil {
 		return err
 	}
+	r.resourceWatcher = c
 	return c.Watch()
 }
 

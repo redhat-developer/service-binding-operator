@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -49,6 +50,34 @@ func reconcileRequest() reconcile.Request {
 	}
 }
 
+type fakeResourceWatcher struct {
+	record map[schema.GroupVersionKind]bool
+	mapper meta.RESTMapper
+}
+
+var _ ResourceWatcher = (*fakeResourceWatcher)(nil)
+
+func (f *fakeResourceWatcher) AddWatchForGVR(gvr schema.GroupVersionResource) error {
+	gvk, err := f.mapper.KindFor(gvr)
+	if err != nil {
+		return err
+	}
+	f.record[gvk] = true
+	return nil
+}
+
+func (f *fakeResourceWatcher) AddWatchForGVK(gvk schema.GroupVersionKind) error {
+	f.record[gvk] = true
+	return nil
+}
+
+func newFakeResourceWatcher(mapper meta.RESTMapper) *fakeResourceWatcher {
+	return &fakeResourceWatcher{
+		record: make(map[schema.GroupVersionKind]bool),
+		mapper: mapper,
+	}
+}
+
 // TestApplicationSelectorByName tests discovery of application by name
 func TestApplicationSelectorByName(t *testing.T) {
 	backingServiceResourceRef := "backingServiceRef"
@@ -62,7 +91,9 @@ func TestApplicationSelectorByName(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("test-application-selector-by-name", func(t *testing.T) {
 
@@ -108,7 +139,9 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("reconcile-using-secret", func(t *testing.T) {
 		res, err := reconciler.Reconcile(reconcileRequest())
@@ -168,7 +201,9 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("reconcile-using-volume", func(t *testing.T) {
 		res, err := reconciler.Reconcile(reconcileRequest())
@@ -208,7 +243,9 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	// Reconcile without deployment
 	res, err := reconciler.Reconcile(reconcileRequest())
@@ -234,6 +271,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	fakeDynClient = f.FakeDynClient()
 	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 	res, err = reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
@@ -268,6 +306,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.NoError(t, err)
 	time.Sleep(1 * time.Second)
 	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 	res, err = reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
@@ -301,14 +340,9 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-
-	restMapper := testutils.BuildTestRESTMapper()
-
-	reconciler := &Reconciler{
-		dynClient:  fakeDynClient,
-		scheme:     f.S,
-		RestMapper: restMapper,
-	}
+	mapper := testutils.BuildTestRESTMapper()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("test-reconciler-reconcile-with-conflicting-application-selector", func(t *testing.T) {
 
@@ -346,7 +380,10 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	f.AddMockedUnstructuredServiceBindingRequestWithoutApplication(reconcilerName, backingServiceResourceRef)
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 
-	reconciler := &Reconciler{dynClient: f.FakeDynClient(), RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
+	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	res, err := reconciler.Reconcile(reconcileRequest())
 	require.NoError(t, err)
