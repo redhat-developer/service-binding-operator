@@ -53,9 +53,14 @@ func getOperatorName() string {
 	return "service-binding-operator"
 }
 
-// isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION.
+// isLeaderElectionEnabled based on environment variable SERVICE_BINDING_OPERATOR_DISABLE_ELECTION. By default, it is enabled.
 func isLeaderElectionEnabled() bool {
 	return os.Getenv("SERVICE_BINDING_OPERATOR_DISABLE_ELECTION") == ""
+}
+
+// isLeaderWithLeaseEnabled based on environment variable SERVICE_BINDING_OPERATOR_LEADER_ELECTION_OPTION. By default, it is leader-for-life.
+func isLeaderWithLeaseEnabled() bool {
+	return os.Getenv("SERVICE_BINDING_OPERATOR_LEADER_ELECTION_OPTION") == "leader-with-lease"
 }
 
 func main() {
@@ -81,23 +86,34 @@ func main() {
 
 	ctx := context.TODO()
 
+	opts := manager.Options{
+		Namespace:          namespace,
+		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+	}
+
 	// FIXME: is there a way to tell k8s-client that is not running in-cluster?
 	if isLeaderElectionEnabled() {
-		// Become the leader before proceeding
-		err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
-		if err != nil {
-			mainLog.Error(err, "Failed to become the leader")
-			os.Exit(1)
+		if !isLeaderWithLeaseEnabled() {
+			// Become the leader before proceeding
+			err = leader.Become(ctx, fmt.Sprintf("%s-lock", getOperatorName()))
+			if err != nil {
+				mainLog.Error(err, "Failed to become the leader")
+				os.Exit(1)
+			}
+		} else {
+			opts = manager.Options{
+				Namespace:          namespace,
+				MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+				LeaderElection:     true,
+				LeaderElectionID:   getOperatorName(),
+			}
 		}
 	} else {
 		mainLog.Warning("Leader election is disabled")
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
-	mgr, err := manager.New(cfg, manager.Options{
-		Namespace:          namespace,
-		MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
-	})
+	mgr, err := manager.New(cfg, opts)
 	if err != nil {
 		mainLog.Error(err, "Error on creating a new manager instance")
 		os.Exit(1)
