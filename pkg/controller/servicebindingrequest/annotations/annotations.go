@@ -15,7 +15,7 @@ const (
 	// BindingTypeVolumeMount indicates the binding should happen through a volume mount.
 	BindingTypeVolumeMount bindingType = "volumemount"
 	// BindingTypeEnvVar indicates the binding should happen through environment variables.
-	BindingTypeEnvVar bindingType = "env"
+	BindingTypeEnvVar bindingType = "envVar"
 )
 
 // supportedBindingTypes contains all currently supported binding types.
@@ -75,16 +75,17 @@ func BuildHandler(
 		return nil, err
 	}
 
-	val := bindingInfo.Value
+	// val := bindingInfo.Value
+	objectType := bindingInfo.ObjectType
 
 	switch {
-	case IsAttribute(val):
+	case IsAttribute(""):
 		return NewAttributeHandler(bindingInfo, *obj), nil
-	case IsSecret(val):
+	case IsSecret(objectType):
 		return NewSecretHandler(kubeClient, bindingInfo, *obj, restMapper)
-	case IsConfigMap(val):
+	case IsConfigMap(objectType):
 		return NewConfigMapHandler(kubeClient, bindingInfo, *obj, restMapper)
 	default:
-		return nil, ErrHandlerNotFound(val)
+		return nil, ErrHandlerNotFound(objectType)
 	}
 }

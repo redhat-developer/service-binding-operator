@@ -7,6 +7,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+// Attribute example
+
+// “servicebinding.dev/uri”:"path={.status.data.url}"
 const AttributeValue = "binding:env:attribute"
 
 // AttributeHandler handles "binding:env:attribute" annotations.

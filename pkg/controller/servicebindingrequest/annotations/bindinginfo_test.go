@@ -11,6 +11,10 @@ func prefix(s string) string {
 	return fmt.Sprintf("%s%s", ServiceBindingOperatorAnnotationPrefix, s)
 }
 
+func prefixNew(s string) string {
+	return fmt.Sprintf("%s%s", "servicebinding.dev", s)
+}
+
 // TestNewBindingInfo exercises annotation binding information parsing.
 func TestNewBindingInfo(t *testing.T) {
 	type args struct {
@@ -55,6 +59,17 @@ func TestNewBindingInfo(t *testing.T) {
 			},
 			name:    "empty annotation name",
 			wantErr: true,
+		},
+		{
+			args: args{name: prefixNew("dbCredentials"), value: "path={.status.data.dbCredentials},objectType=Secret"},
+			want: &BindingInfo{
+				// "servicebinding.dev/dbCredentials": "path={.status.data.dbCredentials},objectType=Secret"
+				SourcePath: "status.data.dbCredentials",
+				Value:      "path={.status.data.dbCredentials},objectType=Secret",
+				ObjectType: Secret,
+			},
+			name:    "initial new spec test",
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

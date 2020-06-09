@@ -10,12 +10,14 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-const SecretValue = "binding:env:object:secret"
-const VolumeMountSecretValue = "binding:volumemount:secret"
+// const SecretValue = "binding:env:object:secret"
+// const VolumeMountSecretValue = "binding:volumemount:secret"
+
+const SecretValue = "Secret"
 
 // IsSecret returns true if the annotation value should trigger the secret handler.
 func IsSecret(s string) bool {
-	return SecretValue == s || VolumeMountSecretValue == s
+	return SecretValue == s
 }
 
 // decodeBase64String asserts whether val is a string and returns its decoded value.

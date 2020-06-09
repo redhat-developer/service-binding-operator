@@ -2,7 +2,6 @@ package annotations
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -59,17 +58,33 @@ func discoverRelatedResourceName(obj map[string]interface{}, bindingInfo *Bindin
 	return name, nil
 }
 
+////////////////////////////////////////////////////////////
 // discoverBindingType attempts to extract a binding type from the given annotation value val.
-func discoverBindingType(val string) (bindingType, error) {
-	re := regexp.MustCompile("^binding:(.*?):.*$")
-	parts := re.FindStringSubmatch(val)
-	if len(parts) == 0 {
-		return "", ErrInvalidBindingValue(val)
-	}
-	t := bindingType(parts[1])
-	_, ok := supportedBindingTypes[t]
-	if !ok {
-		return "", UnknownBindingTypeErr(t)
+// func discoverBindingType(val string) (bindingType, error) {
+// 	re := regexp.MustCompile("^binding:(.*?):.*$")
+// 	parts := re.FindStringSubmatch(val)
+// 	if len(parts) == 0 {
+// 		return "", ErrInvalidBindingValue(val)
+// 	}
+// 	t := bindingType(parts[1])
+// 	_, ok := supportedBindingTypes[t]
+// 	if !ok {
+// 		return "", UnknownBindingTypeErr(t)
+// 	}
+// 	return t, nil
+// }
+/////////////////////////////////////////////////////////////////////////
+
+// discoverBindingType attempts to extract a binding type from the given annotation value val.
+func discoverBindingType(t bindingType) (bindingType, error) {
+	if t != "" {
+		_, ok := supportedBindingTypes[t]
+		if !ok {
+			return "", UnknownBindingTypeErr(t)
+		}
+
+	} else {
+		_ = supportedBindingTypes[BindingTypeEnvVar]
 	}
 	return t, nil
 }
@@ -132,7 +147,9 @@ func (h *ResourceHandler) Handle() (Result, error) {
 		}
 	}
 
-	typ, err := discoverBindingType(h.bindingInfo.Value)
+	//BindAs can be envVar or volumemount
+	bindAs := h.bindingInfo.BindAs // syntax error
+	typ, err := discoverBindingType(bindAs)
 	if err != nil {
 		return Result{}, err
 	}
@@ -144,11 +161,28 @@ func (h *ResourceHandler) Handle() (Result, error) {
 	}
 
 	// prefix the output path with the kind of the resource.
-	outputPath := strings.Join([]string{
-		strings.ToLower(gvk.Kind),
-		h.bindingInfo.SourcePath,
-	}, ".")
+	// outputPath := strings.Join([]string{
+	// 	strings.ToLower(gvk.Kind),
+	// 	h.bindingInfo.SourcePath,
+	// }, ".")
 
+	// Data check sourcekey
+
+	sourceKey := h.bindingInfo.SourceKey
+	outputPath := ""
+	// check source key and resourcereference path
+	// TODO : look into outputPath
+	if sourceKey == "" { // check the type object type and attribute it is sourcePath.sourceKey
+		outputPath = strings.Join([]string{
+			strings.ToLower(gvk.Kind),
+			h.bindingInfo.SourcePath,
+		}, ".")
+	} else {
+		outputPath = strings.Join([]string{
+			strings.ToLower(gvk.Kind),
+			h.bindingInfo.SourceKey,
+		}, ".")
+	}
 	return Result{
 		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
 		Type: typ,
