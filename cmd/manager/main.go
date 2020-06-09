@@ -101,11 +101,13 @@ func main() {
 				os.Exit(1)
 			}
 		} else {
+			leaderNS := os.Getenv("SERVICE_BINDING_OPERATOR_LEADER_ELECTION_NAMESPACE")
 			opts = manager.Options{
-				Namespace:          namespace,
-				MetricsBindAddress: fmt.Sprintf("%s:%d", metricsHost, metricsPort),
-				LeaderElection:     true,
-				LeaderElectionID:   getOperatorName(),
+				Namespace:               namespace,
+				MetricsBindAddress:      fmt.Sprintf("%s:%d", metricsHost, metricsPort),
+				LeaderElection:          true,
+				LeaderElectionID:        getOperatorName(),
+				LeaderElectionNamespace: leaderNS,
 			}
 		}
 	} else {
