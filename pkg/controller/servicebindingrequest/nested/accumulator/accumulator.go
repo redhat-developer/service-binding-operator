@@ -8,15 +8,15 @@ import (
 
 const valuesKey = "values"
 
-// Accumulator is a value accumulator.
-type Accumulator map[string]interface{}
+// accumulator is a value accumulator.
+type accumulator map[string]interface{}
 
-// UnsupportedTypeErr is returned when an unsupported type is encountered.
-var UnsupportedTypeErr = errors.New("unsupported type")
+// unsupportedTypeErr is returned when an unsupported type is encountered.
+var unsupportedTypeErr = errors.New("unsupported type")
 
 // Accumulate accumulates the `val` value. An error is returned in the case
 // `val` contains an unsupported type.
-func (a Accumulator) Accumulate(val interface{}) error {
+func (a accumulator) Accumulate(val interface{}) error {
 	b := NewAccumulator()
 	switch v := val.(type) {
 	case map[string]interface{}:
@@ -28,17 +28,17 @@ func (a Accumulator) Accumulate(val interface{}) error {
 	case []map[string]interface{}, []string, []int:
 		b[valuesKey] = v
 	default:
-		return UnsupportedTypeErr
+		return unsupportedTypeErr
 	}
 	return mergo.Merge(&a, b, mergo.WithAppendSlice, mergo.WithOverride, mergo.WithTypeCheck)
 }
 
 // Value returns the accumulated values.
-func (a Accumulator) Value() interface{} {
+func (a accumulator) Value() interface{} {
 	return a[valuesKey]
 }
 
 // NewAccumulator returns a new value accumulator
-func NewAccumulator() Accumulator {
-	return Accumulator{}
+func NewAccumulator() accumulator {
+	return accumulator{}
 }

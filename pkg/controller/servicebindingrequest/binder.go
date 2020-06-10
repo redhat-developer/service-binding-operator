@@ -32,52 +32,52 @@ var (
 	volumesPath = []string{"spec", "template", "spec", "volumes"}
 )
 
-// ChangeTriggerEnv hijacking environment in order to trigger a change
-const ChangeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
+// changeTriggerEnv hijacking environment in order to trigger a change
+const changeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 
-// Binder executes the "binding" act of updating different application kinds to use intermediary
+// binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
-type Binder struct {
+type binder struct {
 	ctx        context.Context                 // request context
 	dynClient  dynamic.Interface               // kubernetes dynamic api client
 	sbr        *v1alpha1.ServiceBindingRequest // instantiated service binding request
 	volumeKeys []string                        // list of key names used in volume mounts
-	modifier   ExtraFieldsModifier             // extra modifier for CRDs before updating
+	modifier   extraFieldsModifier             // extra modifier for CRDs before updating
 	restMapper meta.RESTMapper                 // RESTMapper to convert GVR from GVK
 	logger     *log.Log                        // logger instance
 }
 
-// ExtraFieldsModifier is useful for updating backend service which requires additional changes besides
+// extraFieldsModifier is useful for updating backend service which requires additional changes besides
 // env/volumes updating. eg. for knative service we need to remove or update `spec.template.metadata.name`
 // from service template before updating otherwise it will be rejected.
-type ExtraFieldsModifier interface {
+type extraFieldsModifier interface {
 	ModifyExtraFields(u *unstructured.Unstructured) error
 }
 
-// ExtraFieldsModifierFunc func receiver type for ExtraFieldsModifier
-type ExtraFieldsModifierFunc func(u *unstructured.Unstructured) error
+// extraFieldsModifierFunc func receiver type for ExtraFieldsModifier
+type extraFieldsModifierFunc func(u *unstructured.Unstructured) error
 
 // ModifyExtraFields implements ExtraFieldsModifier interface
-func (f ExtraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured) error {
+func (f extraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured) error {
 	return f(u)
 }
 
-var EmptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
-var ApplicationNotFound = errors.New("Application is already deleted")
+var emptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
+var applicationNotFound = errors.New("Application is already deleted")
 
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
-func (b *Binder) search() (*unstructured.UnstructuredList, error) {
+func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	// If Application name is present
 	if b.sbr.Spec.ApplicationSelector.ResourceRef != "" {
 		return b.getApplicationByName()
 	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
 		return b.getApplicationByLabelSelector()
 	} else {
-		return nil, EmptyApplicationSelectorErr
+		return nil, emptyApplicationSelectorErr
 	}
 }
 
-func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) {
+func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
@@ -94,7 +94,7 @@ func (b *Binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 	return objList, nil
 }
 
-func (b *Binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
+func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
 	gvr := schema.GroupVersionResource{
 		Group:    b.sbr.Spec.ApplicationSelector.GroupVersionResource.Group,
@@ -110,7 +110,7 @@ func (b *Binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
 // to find data in informed Unstructured object.
-func (b *Binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface{}, error) {
+func (b *binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface{}, error) {
 	log := b.logger.WithValues("Volumes.NestedPath", volumesPath)
 	log.Debug("Reading volumes definitions...")
 	volumes, _, err := unstructured.NestedSlice(obj.Object, volumesPath...)
@@ -121,7 +121,7 @@ func (b *Binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface
 }
 
 // updateSpecVolumes execute the inspection and update "volumes" entries in informed spec.
-func (b *Binder) updateSpecVolumes(
+func (b *binder) updateSpecVolumes(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
 	volumes, err := b.extractSpecVolumes(obj)
@@ -142,7 +142,7 @@ func (b *Binder) updateSpecVolumes(
 // removeSpecVolumes based on extract volume subset, removing volume bind volume entry. It can return
 // error on navigating though unstructured object, or in the case of having issues to edit
 // unstructured resource.
-func (b *Binder) removeSpecVolumes(
+func (b *binder) removeSpecVolumes(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
 	volumes, err := b.extractSpecVolumes(obj)
@@ -158,7 +158,7 @@ func (b *Binder) removeSpecVolumes(
 
 // updateVolumes inspect informed list assuming as []corev1.Volume, and if binding volume is already
 // defined just return the same list, otherwise, appending the binding volume.
-func (b *Binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
+func (b *binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 	name := b.sbr.GetName()
 	log := b.logger
 
@@ -197,7 +197,7 @@ func (b *Binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 }
 
 // removeVolumes remove the bind volumes from informed list of unstructured volumes.
-func (b *Binder) removeVolumes(volumes []interface{}) []interface{} {
+func (b *binder) removeVolumes(volumes []interface{}) []interface{} {
 	name := b.sbr.GetName()
 	var cleanVolumes []interface{}
 	for _, v := range volumes {
@@ -210,7 +210,7 @@ func (b *Binder) removeVolumes(volumes []interface{}) []interface{} {
 }
 
 // extractSpecContainers search for
-func (b *Binder) extractSpecContainers(obj *unstructured.Unstructured) ([]interface{}, error) {
+func (b *binder) extractSpecContainers(obj *unstructured.Unstructured) ([]interface{}, error) {
 	log := b.logger.WithValues("Containers.NestedPath", containersPath)
 
 	containers, found, err := unstructured.NestedSlice(obj.Object, containersPath...)
@@ -227,7 +227,7 @@ func (b *Binder) extractSpecContainers(obj *unstructured.Unstructured) ([]interf
 }
 
 // updateSpecContainers extract containers from object, and trigger update.
-func (b *Binder) updateSpecContainers(
+func (b *binder) updateSpecContainers(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
 	containers, err := b.extractSpecContainers(obj)
@@ -246,7 +246,7 @@ func (b *Binder) updateSpecContainers(
 // removeSpecContainers find and edit containers resource subset, removing bind related entries
 // from the object. It can return error on extracting data, editing steps and final editing of to be
 // returned object.
-func (b *Binder) removeSpecContainers(
+func (b *binder) removeSpecContainers(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
 	containers, err := b.extractSpecContainers(obj)
@@ -263,7 +263,7 @@ func (b *Binder) removeSpecContainers(
 }
 
 // updateContainers execute the update command per container found.
-func (b *Binder) updateContainers(containers []interface{}) ([]interface{}, error) {
+func (b *binder) updateContainers(containers []interface{}) ([]interface{}, error) {
 	var err error
 
 	for i, container := range containers {
@@ -281,7 +281,7 @@ func (b *Binder) updateContainers(containers []interface{}) ([]interface{}, erro
 }
 
 // removeContainers execute removal of binding related entries in containers.
-func (b *Binder) removeContainers(containers []interface{}) ([]interface{}, error) {
+func (b *binder) removeContainers(containers []interface{}) ([]interface{}, error) {
 	var err error
 
 	for i, container := range containers {
@@ -298,7 +298,7 @@ func (b *Binder) removeContainers(containers []interface{}) ([]interface{}, erro
 }
 
 // appendEnvVar append a single environment variable onto informed "EnvVar" instance.
-func (b *Binder) appendEnvVar(
+func (b *binder) appendEnvVar(
 	envList []corev1.EnvVar,
 	envParam string,
 	envValue string,
@@ -325,7 +325,7 @@ func (b *Binder) appendEnvVar(
 
 // appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
-func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+func (b *binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
 	for _, env := range envList {
 		if env.SecretRef.Name == secret {
 			b.logger.Debug("Directive 'envFrom' is already present!")
@@ -345,7 +345,7 @@ func (b *Binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []
 }
 
 // removeEnvFrom remove bind related entry from slice of "EnvFromSource".
-func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+func (b *binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
 	var cleanEnvList []corev1.EnvFromSource
 	for _, env := range envList {
 		if env.SecretRef.Name != secret {
@@ -357,7 +357,7 @@ func (b *Binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []
 
 // containerFromUnstructured based on informed unstructured corev1.Container, convert it back to the
 // original type. It can return errors on the process.
-func (b *Binder) containerFromUnstructured(container interface{}) (*corev1.Container, error) {
+func (b *binder) containerFromUnstructured(container interface{}) (*corev1.Container, error) {
 	c := &corev1.Container{}
 	u := container.(map[string]interface{})
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(u, c)
@@ -368,7 +368,7 @@ func (b *Binder) containerFromUnstructured(container interface{}) (*corev1.Conta
 }
 
 // updateContainer execute the update of a single container, adding binding items.
-func (b *Binder) updateContainer(container interface{}) (map[string]interface{}, error) {
+func (b *binder) updateContainer(container interface{}) (map[string]interface{}, error) {
 	c, err := b.containerFromUnstructured(container)
 	if err != nil {
 		return nil, err
@@ -380,7 +380,7 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 	// add a special environment variable that is only used to trigger a change in the declaration,
 	// attempting to force a side effect (in case of a Deployment, it would result in its Pods to be
 	// restarted)
-	c.Env = b.appendEnvVar(c.Env, ChangeTriggerEnv, time.Now().Format(time.RFC3339))
+	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, time.Now().Format(time.RFC3339))
 
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries
@@ -391,7 +391,7 @@ func (b *Binder) updateContainer(container interface{}) (map[string]interface{},
 }
 
 // removeContainer execute the update of single container to remove binding items.
-func (b *Binder) removeContainer(container interface{}) (map[string]interface{}, error) {
+func (b *binder) removeContainer(container interface{}) (map[string]interface{}, error) {
 	c, err := b.containerFromUnstructured(container)
 	if err != nil {
 		return nil, err
@@ -409,7 +409,7 @@ func (b *Binder) removeContainer(container interface{}) (map[string]interface{},
 }
 
 // appendVolumeMounts append the binding volume in the template level.
-func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
+func (b *binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
 	name := b.sbr.GetName()
 	mountPath := b.sbr.Spec.MountPathPrefix
 	if mountPath == "" {
@@ -430,7 +430,7 @@ func (b *Binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 
 // removeVolumeMounts from informed slice of corev1.VolumeMount, make sure all binding related
 // entries won't be part of returned slice.
-func (b *Binder) removeVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
+func (b *binder) removeVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
 	var cleanVolumeMounts []corev1.VolumeMount
 	name := b.sbr.GetName()
 	for _, v := range volumeMounts {
@@ -471,7 +471,7 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBindingRequest.
-func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
+func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
 	updatedObjs := []*unstructured.Unstructured{}
 
 	for _, obj := range objs.Items {
@@ -482,7 +482,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		log.Debug("Inspecting object...")
 
 		sbrNamespacedName := types.NamespacedName{Namespace: b.sbr.GetNamespace(), Name: b.sbr.GetName()}
-		updatedObj = SetSBRAnnotations(sbrNamespacedName, updatedObj)
+		updatedObj = setSBRAnnotations(sbrNamespacedName, updatedObj)
 
 		updatedObj, err := b.updateSpecContainers(updatedObj)
 		if err != nil {
@@ -530,7 +530,7 @@ func (b *Binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 }
 
 // remove attempts to update each given object without any service binding related information.
-func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
+func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 	for _, obj := range objs.Items {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
@@ -539,7 +539,7 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 		if err != nil {
 			return err
 		}
-		updatedObj = RemoveSBRAnnotations(updatedObj)
+		updatedObj = removeSBRAnnotations(updatedObj)
 
 		if len(b.volumeKeys) > 0 {
 			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {
@@ -566,11 +566,11 @@ func (b *Binder) remove(objs *unstructured.UnstructuredList) error {
 	return nil
 }
 
-// Unbind select objects subject to binding, and proceed with "remove", which will unbind objects.
-func (b *Binder) Unbind() error {
+// unbind select objects subject to binding, and proceed with "remove", which will unbind objects.
+func (b *binder) unbind() error {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, ApplicationNotFound) {
+		if errors.Is(err, applicationNotFound) {
 			return nil
 		}
 		return err
@@ -578,12 +578,12 @@ func (b *Binder) Unbind() error {
 	return b.remove(objs)
 }
 
-// Bind resources to intermediary secret, by searching informed ResourceKind containing the labels
+// bind resources to intermediary secret, by searching informed ResourceKind containing the labels
 // in ApplicationSelector, and then updating spec.
-func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
+func (b *binder) bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, ApplicationNotFound) {
+		if errors.Is(err, applicationNotFound) {
 			return nil, nil
 		}
 		return nil, err
@@ -591,19 +591,19 @@ func (b *Binder) Bind() ([]*unstructured.Unstructured, error) {
 	return b.update(objs)
 }
 
-// NewBinder returns a new Binder instance.
-func NewBinder(
+// newBinder returns a new Binder instance.
+func newBinder(
 	ctx context.Context,
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
 	volumeKeys []string,
 	restMapper meta.RESTMapper,
-) *Binder {
+) *binder {
 
 	logger := log.NewLog("binder")
-	modifier := extraFieldsModifier(logger, sbr)
+	modifier := buildExtraFieldsModifier(logger, sbr)
 
-	return &Binder{
+	return &binder{
 		ctx:        ctx,
 		dynClient:  dynClient,
 		sbr:        sbr,
@@ -614,13 +614,13 @@ func NewBinder(
 	}
 }
 
-func extraFieldsModifier(logger *log.Log, sbr *v1alpha1.ServiceBindingRequest) ExtraFieldsModifier {
+func buildExtraFieldsModifier(logger *log.Log, sbr *v1alpha1.ServiceBindingRequest) extraFieldsModifier {
 	gvr := sbr.Spec.ApplicationSelector.GroupVersionResource
 	ksvcgvr := knativev1.SchemeGroupVersion.WithResource("services")
 	switch gvr.String() {
 	case ksvcgvr.String():
 		pathToRevisionName := "spec.template.metadata.name"
-		return ExtraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
+		return extraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
 			revisionName, ok, err := unstructured.NestedString(u.Object, strings.Split(pathToRevisionName, ".")...)
 			if err == nil && ok {
 				logger.Info("remove revision in knative service template", "name", revisionName)

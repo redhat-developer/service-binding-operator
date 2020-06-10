@@ -14,10 +14,10 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/nested"
 )
 
-// ResourceHandler handles annotations related to external resources.
-type ResourceHandler struct {
+// resourceHandler handles annotations related to external resources.
+type resourceHandler struct {
 	// bindingInfo contains the binding details related to the annotation handler.
-	bindingInfo *BindingInfo
+	bindingInfo *bindingInfo
 	// client is the client used to retrieve a related secret.
 	client dynamic.Interface
 	// relatedGroupVersionResource is the related resource GVR, used to retrieve the related resource
@@ -41,20 +41,20 @@ type ResourceHandler struct {
 
 // discoverRelatedResourceName returns the resource name referenced by the handler. Can return an
 // error in the case the expected information doesn't exist in the handler's resource object.
-func discoverRelatedResourceName(obj map[string]interface{}, bindingInfo *BindingInfo) (string, error) {
+func discoverRelatedResourceName(obj map[string]interface{}, bi *bindingInfo) (string, error) {
 	resourceNameValue, ok, err := unstructured.NestedFieldCopy(
 		obj,
-		strings.Split(bindingInfo.ResourceReferencePath, ".")...,
+		strings.Split(bi.ResourceReferencePath, ".")...,
 	)
 	if !ok {
-		return "", ResourceNameFieldNotFoundErr
+		return "", resourceNameFieldNotFoundErr
 	}
 	if err != nil {
 		return "", err
 	}
 	name, ok := resourceNameValue.(string)
 	if !ok {
-		return "", InvalidArgumentErr(bindingInfo.ResourceReferencePath)
+		return "", invalidArgumentErr(bi.ResourceReferencePath)
 	}
 	return name, nil
 }
@@ -64,12 +64,12 @@ func discoverBindingType(val string) (bindingType, error) {
 	re := regexp.MustCompile("^binding:(.*?):.*$")
 	parts := re.FindStringSubmatch(val)
 	if len(parts) == 0 {
-		return "", ErrInvalidBindingValue(val)
+		return "", errInvalidBindingValue(val)
 	}
 	t := bindingType(parts[1])
 	_, ok := supportedBindingTypes[t]
 	if !ok {
-		return "", UnknownBindingTypeErr(t)
+		return "", unknownBindingTypeErr(t)
 	}
 	return t, nil
 }
@@ -83,10 +83,10 @@ func discoverBindingType(val string) (bindingType, error) {
 //
 // In the case the resource reference and source paths are different, the source path is appended to
 // the resulting slice.
-func getInputPathFields(bindingInfo *BindingInfo, inputPathPrefix *string) []string {
+func getInputPathFields(bi *bindingInfo, inputPathPrefix *string) []string {
 	inputPathFields := []string{}
-	if bindingInfo.ResourceReferencePath != bindingInfo.SourcePath {
-		inputPathFields = append(inputPathFields, bindingInfo.SourcePath)
+	if bi.ResourceReferencePath != bi.SourcePath {
+		inputPathFields = append(inputPathFields, bi.SourcePath)
 	}
 	if inputPathPrefix != nil && len(*inputPathPrefix) > 0 {
 		inputPathFields = append([]string{*inputPathPrefix}, inputPathFields...)
@@ -95,7 +95,7 @@ func getInputPathFields(bindingInfo *BindingInfo, inputPathPrefix *string) []str
 }
 
 // Handle returns the value for an external resource strategy.
-func (h *ResourceHandler) Handle() (Result, error) {
+func (h *resourceHandler) Handle() (result, error) {
 	ns := h.resource.GetNamespace()
 	resource, err := h.
 		client.
@@ -103,16 +103,16 @@ func (h *ResourceHandler) Handle() (Result, error) {
 		Namespace(ns).
 		Get(h.relatedResourceName, metav1.GetOptions{})
 	if err != nil {
-		return Result{}, err
+		return result{}, err
 	}
 
 	inputPathFields := getInputPathFields(h.bindingInfo, h.inputPathRoot)
 	val, ok, err := unstructured.NestedFieldCopy(resource.Object, inputPathFields...)
 	if !ok {
-		return Result{}, InvalidArgumentErr(strings.Join(inputPathFields, ", "))
+		return result{}, invalidArgumentErr(strings.Join(inputPathFields, ", "))
 	}
 	if err != nil {
-		return Result{}, err
+		return result{}, err
 	}
 
 	if mapVal, ok := val.(map[string]interface{}); ok {
@@ -120,7 +120,7 @@ func (h *ResourceHandler) Handle() (Result, error) {
 		for k, v := range mapVal {
 			decodedVal, err := h.stringValue(v)
 			if err != nil {
-				return Result{}, err
+				return result{}, err
 			}
 			tmpVal[k] = decodedVal
 		}
@@ -128,19 +128,19 @@ func (h *ResourceHandler) Handle() (Result, error) {
 	} else {
 		val, err = h.stringValue(val)
 		if err != nil {
-			return Result{}, err
+			return result{}, err
 		}
 	}
 
 	typ, err := discoverBindingType(h.bindingInfo.Value)
 	if err != nil {
-		return Result{}, err
+		return result{}, err
 	}
 
 	// get resource's kind.
 	gvk, err := h.restMapper.KindFor(h.relatedGroupVersionResource)
 	if err != nil {
-		return Result{}, err
+		return result{}, err
 	}
 
 	// prefix the output path with the kind of the resource.
@@ -149,7 +149,7 @@ func (h *ResourceHandler) Handle() (Result, error) {
 		h.bindingInfo.SourcePath,
 	}, ".")
 
-	return Result{
+	return result{
 		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
 		Type: typ,
 		Path: outputPath,
@@ -168,35 +168,35 @@ func stringValue(v interface{}) (string, error) {
 // NewSecretHandler constructs a SecretHandler.
 func NewResourceHandler(
 	client dynamic.Interface,
-	bindingInfo *BindingInfo,
+	bi *bindingInfo,
 	resource unstructured.Unstructured,
 	relatedGroupVersionResource schema.GroupVersionResource,
 	inputPathPrefix *string,
 	restMapper meta.RESTMapper,
-) (*ResourceHandler, error) {
+) (*resourceHandler, error) {
 	if client == nil {
-		return nil, InvalidArgumentErr("client")
+		return nil, invalidArgumentErr("client")
 	}
 
-	if bindingInfo == nil {
-		return nil, InvalidArgumentErr("bindingInfo")
+	if bi == nil {
+		return nil, invalidArgumentErr("bi")
 	}
 
-	if len(bindingInfo.SourcePath) == 0 {
-		return nil, InvalidArgumentErr("bindingInfo.Path")
+	if len(bi.SourcePath) == 0 {
+		return nil, invalidArgumentErr("bi.Path")
 	}
 
-	if len(bindingInfo.ResourceReferencePath) == 0 {
-		return nil, InvalidArgumentErr("bindingInfo.ResourceReferencePath")
+	if len(bi.ResourceReferencePath) == 0 {
+		return nil, invalidArgumentErr("bi.ResourceReferencePath")
 	}
 
-	relatedResourceName, err := discoverRelatedResourceName(resource.Object, bindingInfo)
+	relatedResourceName, err := discoverRelatedResourceName(resource.Object, bi)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ResourceHandler{
-		bindingInfo:                 bindingInfo,
+	return &resourceHandler{
+		bindingInfo:                 bi,
 		client:                      client,
 		inputPathRoot:               inputPathPrefix,
 		relatedGroupVersionResource: relatedGroupVersionResource,

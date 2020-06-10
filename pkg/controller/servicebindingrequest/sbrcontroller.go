@@ -29,8 +29,8 @@ type ResourceWatcher interface {
 	AddWatchForGVK(schema.GroupVersionKind) error
 }
 
-// SBRController hold the controller instance and methods for a ServiceBindingRequest.
-type SBRController struct {
+// sbrController hold the controller instance and methods for a ServiceBindingRequest.
+type sbrController struct {
 	Controller   controller.Controller            // controller-runtime instance
 	Client       dynamic.Interface                // kubernetes dynamic api client
 	RestMapper   meta.RESTMapper                  // restMapper to convert GVK and GVR
@@ -38,7 +38,7 @@ type SBRController struct {
 	logger       *log.Log                         // logger instance
 }
 
-var _ ResourceWatcher = (*SBRController)(nil)
+var _ ResourceWatcher = (*sbrController)(nil)
 
 // controllerName common name of this controller
 const controllerName = "servicebindingrequest-controller"
@@ -63,24 +63,24 @@ func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (bool,
 
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
 // ServiceBindingRequest if it contains the required configuration.
-func (s *SBRController) newEnqueueRequestsForSBR() handler.EventHandler {
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &SBRRequestMapper{}}
+func (s *sbrController) newEnqueueRequestsForSBR() handler.EventHandler {
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &sbrRequestMapper{}}
 }
 
 // createSourceForGVK creates a *source.Kind for the given gvk.
-func (s *SBRController) createSourceForGVK(gvk schema.GroupVersionKind) *source.Kind {
+func (s *sbrController) createSourceForGVK(gvk schema.GroupVersionKind) *source.Kind {
 	return &source.Kind{Type: s.createUnstructuredWithGVK(gvk)}
 }
 
 // createUnstructuredWithGVK creates a *unstructured.Unstructured with the given gvk.
-func (s *SBRController) createUnstructuredWithGVK(gvk schema.GroupVersionKind) *unstructured.Unstructured {
+func (s *sbrController) createUnstructuredWithGVK(gvk schema.GroupVersionKind) *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
 	u.SetGroupVersionKind(gvk)
 	return u
 }
 
 // getWatchingGVKs return a list of GVKs that this controller is interested in watching.
-func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
+func (s *sbrController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 	log := s.logger
 	// standard resources types
 	gvks := []schema.GroupVersionKind{
@@ -88,8 +88,8 @@ func (s *SBRController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
 		{Group: "", Version: "v1", Kind: "ConfigMap"},
 	}
 
-	olm := NewOLM(s.Client, os.Getenv("WATCH_NAMESPACE"))
-	olmGVKs, err := olm.ListCSVOwnedCRDsAsGVKs()
+	olm := newOLM(s.Client, os.Getenv("WATCH_NAMESPACE"))
+	olmGVKs, err := olm.listCSVOwnedCRDsAsGVKs()
 	if err != nil {
 		log.Error(err, "On listing owned CSV as GVKs")
 		return nil, err
@@ -138,7 +138,7 @@ func buildGVKPredicate(logger *log.Log) predicate.Funcs {
 }
 
 // AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
-func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
+func (s *sbrController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	logger := s.logger.WithValues("GVK", gvk)
 	logger.Debug("Adding watch for GVK...")
 	if _, exists := s.watchingGVKs[gvk]; exists {
@@ -155,7 +155,7 @@ func (s *SBRController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 }
 
 // AddWatchForGVR creates a watch on a given GVR
-func (s *SBRController) AddWatchForGVR(gvr schema.GroupVersionResource) error {
+func (s *sbrController) AddWatchForGVR(gvr schema.GroupVersionResource) error {
 	gvk, err := s.RestMapper.KindFor(gvr)
 	if err != nil {
 		return err
@@ -164,7 +164,7 @@ func (s *SBRController) AddWatchForGVR(gvr schema.GroupVersionResource) error {
 }
 
 // addCSVWatch creates a watch on ClusterServiceVersion.
-func (s *SBRController) addCSVWatch() error {
+func (s *sbrController) addCSVWatch() error {
 	log := s.logger
 	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := s.Client.Resource(gvr).Namespace(os.Getenv("WATCH_NAMESPACE"))
@@ -175,7 +175,7 @@ func (s *SBRController) addCSVWatch() error {
 	} else if err != nil {
 		return err
 	}
-	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind(ClusterServiceVersionKind)
+	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind(clusterServiceVersionKind)
 	source := s.createSourceForGVK(csvGVK)
 	err = s.Controller.Watch(source, NewCreateWatchEventHandler(s))
 	if err != nil {
@@ -222,8 +222,8 @@ func buildSBRPredicate(logger *log.Log) predicate.Funcs {
 }
 
 // addSBRWatch creates a watchon ServiceBindingRequest GVK.
-func (s *SBRController) addSBRWatch() error {
-	gvk := v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind)
+func (s *sbrController) addSBRWatch() error {
+	gvk := v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind)
 	l := s.logger.WithValues("GKV", gvk)
 	src := s.createSourceForGVK(gvk)
 	err := s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), buildSBRPredicate(l))
@@ -237,7 +237,7 @@ func (s *SBRController) addSBRWatch() error {
 }
 
 // addWhitelistedGVKWatches create watch on GVKs employed on CSVs.
-func (s *SBRController) addWhitelistedGVKWatches() error {
+func (s *sbrController) addWhitelistedGVKWatches() error {
 	log := s.logger
 	// list of interesting GVKs to watch
 	gvks, err := s.getWatchingGVKs()
@@ -259,7 +259,7 @@ func (s *SBRController) addWhitelistedGVKWatches() error {
 }
 
 // Watch setup "watch" for all GVKs relevant for SBRController.
-func (s *SBRController) Watch() error {
+func (s *sbrController) Watch() error {
 	log := s.logger
 	err := s.addSBRWatch()
 	if err != nil {
@@ -288,13 +288,13 @@ func NewSBRController(
 	mgr manager.Manager,
 	options controller.Options,
 	client dynamic.Interface,
-) (*SBRController, error) {
+) (*sbrController, error) {
 	c, err := controller.New(controllerName, mgr, options)
 	if err != nil {
 		return nil, err
 	}
 
-	return &SBRController{
+	return &sbrController{
 		Controller:   c,
 		Client:       client,
 		RestMapper:   mgr.GetRESTMapper(),

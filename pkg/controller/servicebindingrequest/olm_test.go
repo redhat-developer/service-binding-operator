@@ -46,7 +46,7 @@ func TestOLMWithoutCSVCRD(t *testing.T) {
 		}
 		return false, nil, nil
 	})
-	olm := NewOLM(client, ns)
+	olm := newOLM(client, ns)
 
 	t.Run("listCSVs without CSV CRD installed", func(t *testing.T) {
 		resourceClient := client.Resource(gvr).Namespace(ns)
@@ -68,7 +68,7 @@ func TestOLMNew(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV(csvName)
 	client := f.FakeDynClient()
-	olm := NewOLM(client, ns)
+	olm := newOLM(client, ns)
 
 	t.Run("listCSVs", func(t *testing.T) {
 		csvs, err := olm.listCSVs()
@@ -84,7 +84,7 @@ func TestOLMNew(t *testing.T) {
 
 	t.Run("SelectCRDByGVK", func(t *testing.T) {
 		// FIXME: include test for populated CRD
-		crd, err := olm.SelectCRDByGVK(schema.GroupVersionKind{
+		crd, err := olm.selectCRDByGVK(schema.GroupVersionKind{
 			Group:   mocks.CRDName,
 			Version: mocks.CRDVersion,
 			Kind:    mocks.CRDKind,
@@ -96,7 +96,7 @@ func TestOLMNew(t *testing.T) {
 	})
 
 	t.Run("ListCSVOwnedCRDsAsGVKs", func(t *testing.T) {
-		gvks, err := olm.ListCSVOwnedCRDsAsGVKs()
+		gvks, err := olm.listCSVOwnedCRDsAsGVKs()
 		require.NoError(t, err)
 		require.Len(t, gvks, 1)
 		assertGVKs(t, gvks)
@@ -104,7 +104,7 @@ func TestOLMNew(t *testing.T) {
 
 	t.Run("ListGVKsFromCSVNamespacedName", func(t *testing.T) {
 		namespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
-		gvks, err := olm.ListGVKsFromCSVNamespacedName(namespacedName)
+		gvks, err := olm.listGVKsFromCSVNamespacedName(namespacedName)
 		require.NoError(t, err)
 		require.Len(t, gvks, 1)
 		assertGVKs(t, gvks)

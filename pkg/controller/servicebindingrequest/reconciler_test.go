@@ -92,17 +92,17 @@ func TestApplicationSelectorByName(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 	mapper := testutils.BuildTestRESTMapper()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("test-application-selector-by-name", func(t *testing.T) {
 
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
 		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
@@ -140,11 +140,11 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 	mapper := testutils.BuildTestRESTMapper()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("reconcile-using-secret", func(t *testing.T) {
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
@@ -164,7 +164,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
 
 		namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
 		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
@@ -202,11 +202,11 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 	mapper := testutils.BuildTestRESTMapper()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("reconcile-using-volume", func(t *testing.T) {
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
@@ -244,16 +244,16 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 	mapper := testutils.BuildTestRESTMapper()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	// Reconcile without deployment
-	res, err := reconciler.Reconcile(reconcileRequest())
+	res, err := r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	require.True(t,
@@ -270,9 +270,9 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	// Reconcile with deployment
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	fakeDynClient = f.FakeDynClient()
-	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
-	res, err = reconciler.Reconcile(reconcileRequest())
+	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+	res, err = r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
@@ -283,7 +283,7 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
 	require.NoError(t, err)
 
-	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput2, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	require.Equal(t, BindingReady, sbrOutput2.Status.Conditions[0].Type)
@@ -305,13 +305,13 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	_, err = fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Update(&updated, metav1.UpdateOptions{})
 	require.NoError(t, err)
 	time.Sleep(1 * time.Second)
-	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
-	res, err = reconciler.Reconcile(reconcileRequest())
+	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+	res, err = r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
-	sbrOutput3, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput3, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
@@ -341,17 +341,17 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 	mapper := testutils.BuildTestRESTMapper()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("test-reconciler-reconcile-with-conflicting-application-selector", func(t *testing.T) {
 
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
 		expectedStatus := v1alpha1.BoundApplication{
@@ -382,15 +382,15 @@ func TestEmptyApplicationSelector(t *testing.T) {
 
 	fakeDynClient := f.FakeDynClient()
 	mapper := testutils.BuildTestRESTMapper()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: mapper, scheme: f.S}
-	reconciler.resourceWatcher = newFakeResourceWatcher(mapper)
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
-	res, err := reconciler.Reconcile(reconcileRequest())
+	res, err := r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)

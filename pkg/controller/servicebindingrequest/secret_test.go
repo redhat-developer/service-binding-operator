@@ -22,7 +22,7 @@ func TestSecretNew(t *testing.T) {
 
 	data := map[string][]byte{"key": []byte("value")}
 
-	s := NewSecret(
+	s := newSecret(
 		f.FakeDynClient(),
 		ns,
 		name,
@@ -35,18 +35,18 @@ func TestSecretNew(t *testing.T) {
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		err := s.Delete()
+		err := s.delete()
 		assert.NoError(t, err)
 	})
 
 	t.Run("Commit", func(t *testing.T) {
-		u, err := s.Commit(data)
+		u, err := s.commit(data)
 		assert.NoError(t, err)
 		assertSecretNamespacedName(t, u, ns, name)
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		u, found, err := s.Get()
+		u, found, err := s.get()
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assertSecretNamespacedName(t, u, ns, name)

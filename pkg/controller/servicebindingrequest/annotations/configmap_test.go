@@ -35,7 +35,7 @@ func TestConfigMapHandler(t *testing.T) {
 
 			bindingInfo, err := NewBindingInfo(args.name, args.value)
 			require.NoError(t, err)
-			handler, err := NewConfigMapHandler(
+			handler, err := newConfigMapHandler(
 				f.FakeDynClient(),
 				bindingInfo,
 				unstructured.Unstructured{Object: args.service},

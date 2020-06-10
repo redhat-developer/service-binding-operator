@@ -57,7 +57,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	// args are the test arguments
 	type args struct {
 		// options inform the test how to build the ServiceBinder.
-		options *ServiceBinderOptions
+		options *serviceBinderOptions
 		// wantBuildErr informs the test an error is wanted at build phase.
 		wantBuildErr error
 		// wantErr informs the test an error is wanted at ServiceBinder's bind phase.
@@ -76,7 +76,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	assertBind := func(args args) func(*testing.T) {
 		return func(t *testing.T) {
 			ctx := context.TODO()
-			sb, err := BuildServiceBinder(ctx, args.options)
+			sb, err := buildServiceBinder(ctx, args.options)
 			if args.wantBuildErr != nil {
 				require.EqualError(t, err, args.wantBuildErr.Error())
 				return
@@ -84,7 +84,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			res, err := sb.Bind()
+			res, err := sb.bind()
 
 			if args.wantErr != nil {
 				require.EqualError(t, err, args.wantErr.Error())
@@ -97,7 +97,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 			// extract actions from the dynamic client, regardless of the bind status; it is expected
 			// that failures also issue updates for ServiceBindingRequest objects
-			dynClient, ok := sb.DynClient.(*fake.FakeDynamicClient)
+			dynClient, ok := sb.dynClient.(*fake.FakeDynamicClient)
 			require.True(t, ok)
 			actions := dynClient.Actions()
 			require.NotNil(t, actions)
@@ -105,7 +105,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			if len(args.wantConditions) > 0 {
 				// proceed to find whether conditions match wanted conditions
 				for _, c := range args.wantConditions {
-					for _, cond := range sb.SBR.Status.Conditions {
+					for _, cond := range sb.sbr.Status.Conditions {
 						expected := conditionsv1.Condition{}
 						got := conditionsv1.Condition{}
 						if len(c.Type) > 0 {
@@ -396,16 +396,16 @@ func TestServiceBinder_Bind(t *testing.T) {
 	logger := log.NewLog("service-binder")
 
 	t.Run("single bind golden path", assertBind(args{
-		options: &ServiceBinderOptions{
-			Logger:                 logger,
-			DynClient:              f.FakeDynClient(),
-			DetectBindingResources: false,
-			SBR:                    sbrSingleService,
-			Binding: &Binding{
-				EnvVars:    map[string][]byte{},
-				VolumeKeys: []string{},
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: false,
+			sbr:                    sbrSingleService,
+			binding: &binding{
+				envVars:    map[string][]byte{},
+				volumeKeys: []string{},
 			},
-			RESTMapper: testutils.BuildTestRESTMapper(),
+			restMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -433,18 +433,18 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}))
 
 	t.Run("single bind golden path and custom env vars", assertBind(args{
-		options: &ServiceBinderOptions{
-			Logger:                 logger,
-			DynClient:              f.FakeDynClient(),
-			DetectBindingResources: false,
-			SBR:                    sbrSingleServiceWithCustomEnvVar,
-			Binding: &Binding{
-				EnvVars: map[string][]byte{
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: false,
+			sbr:                    sbrSingleServiceWithCustomEnvVar,
+			binding: &binding{
+				envVars: map[string][]byte{
 					"MY_DB_NAME": []byte("db1"),
 				},
-				VolumeKeys: []string{},
+				volumeKeys: []string{},
 			},
-			RESTMapper: testutils.BuildTestRESTMapper(),
+			restMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -475,16 +475,16 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}))
 
 	t.Run("bind with binding resource detection", assertBind(args{
-		options: &ServiceBinderOptions{
-			Logger:                 logger,
-			DynClient:              f.FakeDynClient(),
-			DetectBindingResources: true,
-			SBR:                    sbrSingleService,
-			Binding: &Binding{
-				EnvVars:    map[string][]byte{},
-				VolumeKeys: []string{},
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: true,
+			sbr:                    sbrSingleService,
+			binding: &binding{
+				envVars:    map[string][]byte{},
+				volumeKeys: []string{},
 			},
-			RESTMapper: testutils.BuildTestRESTMapper(),
+			restMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -495,51 +495,51 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}))
 
 	t.Run("empty applicationSelector", assertBind(args{
-		options: &ServiceBinderOptions{
-			Logger:                 logger,
-			DynClient:              f.FakeDynClient(),
-			DetectBindingResources: true,
-			SBR:                    sbrEmptyAppSelector,
-			Binding: &Binding{
-				EnvVars:    map[string][]byte{},
-				VolumeKeys: []string{},
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: true,
+			sbr:                    sbrEmptyAppSelector,
+			binding: &binding{
+				envVars:    map[string][]byte{},
+				volumeKeys: []string{},
 			},
-			RESTMapper: testutils.BuildTestRESTMapper(),
+			restMapper: testutils.BuildTestRESTMapper(),
 		},
-		wantErr: EmptyApplicationSelectorErr,
+		wantErr: emptyApplicationSelectorErr,
 		wantConditions: []wantedCondition{
 			{
 				Type:    BindingReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  BindingFail,
-				Message: EmptyApplicationSelectorErr.Error(),
+				Reason:  bindingFail,
+				Message: emptyApplicationSelectorErr.Error(),
 			},
 		},
 	}))
 
 	// Missing SBR returns an InvalidOptionsErr
 	t.Run("bind missing SBR", assertBind(args{
-		options: &ServiceBinderOptions{
-			Logger:                 logger,
-			DynClient:              f.FakeDynClient(),
-			DetectBindingResources: false,
-			SBR:                    nil,
-			RESTMapper:             testutils.BuildTestRESTMapper(),
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: false,
+			sbr:                    nil,
+			restMapper:             testutils.BuildTestRESTMapper(),
 		},
-		wantBuildErr: ErrInvalidServiceBinderOptions("SBR"),
+		wantBuildErr: errInvalidServiceBinderOptions("SBR"),
 	}))
 
 	t.Run("multiple services bind golden path", assertBind(args{
-		options: &ServiceBinderOptions{
-			Logger:                 logger,
-			DynClient:              f.FakeDynClient(),
-			DetectBindingResources: false,
-			SBR:                    sbrMultipleServices,
-			Binding: &Binding{
-				EnvVars:    map[string][]byte{},
-				VolumeKeys: []string{},
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: false,
+			sbr:                    sbrMultipleServices,
+			binding: &binding{
+				envVars:    map[string][]byte{},
+				volumeKeys: []string{},
 			},
-			RESTMapper: testutils.BuildTestRESTMapper(),
+			restMapper: testutils.BuildTestRESTMapper(),
 		},
 		wantConditions: []wantedCondition{
 			{

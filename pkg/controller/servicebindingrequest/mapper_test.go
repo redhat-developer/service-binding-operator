@@ -14,7 +14,7 @@ import (
 )
 
 func TestSBRRequestMapperMap(t *testing.T) {
-	mapper := &SBRRequestMapper{}
+	mapper := &sbrRequestMapper{}
 
 	u := &unstructured.Unstructured{}
 	u.SetNamespace("mapper-unit")
@@ -37,7 +37,7 @@ func TestSBRRequestMapperMap(t *testing.T) {
 
 	// it should also understand a actual SBR as well, so return not empty
 	sbr := &unstructured.Unstructured{}
-	sbr.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind))
+	sbr.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind))
 	sbr.SetNamespace("ns")
 	sbr.SetName("name")
 	mapObj = handler.MapObject{Meta: u, Object: sbr.DeepCopyObject()}

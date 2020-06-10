@@ -123,7 +123,7 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 				"user":     "user",
 			},
 		}
-		require.Equal(t, expected, got[0].EnvVars)
+		require.Equal(t, expected, got[0].envVars)
 
 	})
 }
