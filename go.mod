@@ -22,7 +22,7 @@ require (
 	k8s.io/apiextensions-apiserver v0.18.2
 	k8s.io/apimachinery v0.18.3
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.17.4
+	k8s.io/code-generator v0.18.2
 	k8s.io/gengo v0.0.0-20191010091904-7fa3014cb28f
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
 	knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67 // indirect
@@ -34,12 +34,10 @@ require (
 
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v13.3.2+incompatible // Required by OLM
 
-// requested by operator-sdk 0.16
-// https://sdk.operatorframework.io/docs/migration/version-upgrade-guide/#v016x
+// requested by operator-sdk 0.17
+// https://sdk.operatorframework.io/docs/migration/version-upgrade-guide/#v017x
 replace (
 	github.com/docker/docker => github.com/moby/moby v0.7.3-0.20190826074503-38ab9da00309 // Required by Helm
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20191016113550-5357c4baaf65
-	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20191004115801-a2eda9f80ab8
 	k8s.io/apiserver => k8s.io/apiserver v0.18.3
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20191016114015-74ad18325ed5
 	k8s.io/client-go => k8s.io/client-go v0.17.4 // Required by prometheus-operator
