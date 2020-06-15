@@ -40,6 +40,8 @@ type result struct {
 	Type bindingType
 	// Path is the nested location the collected data can be found in the Data field.
 	Path string
+	// RawData is...
+	RawData map[string]interface{}
 }
 
 // handler should be implemented by types that want to offer a mechanism to provide binding data to
