@@ -98,7 +98,7 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	FullCRDName := CRDPlural + "." + CRDName
 	annotations := map[string]string{
 		"servicebindingoperator.redhat.io/status.dbCredentials-password": "binding:env:object:secret",
-		"servicebindingoperator.redhat.io/status.dbCredentials-user":     "binding:env:object:secret",
+		"servicebindingoperator.redhat.io/status.dbCredentials-username": "binding:env:object:secret",
 	}
 
 	crd := apiextensionv1beta1.CustomResourceDefinition{
@@ -364,7 +364,7 @@ func SecretMock(ns, name string) *corev1.Secret {
 			Name:      name,
 		},
 		Data: map[string][]byte{
-			"user":     []byte("user"),
+			"username": []byte("user"),
 			"password": []byte("password"),
 		},
 	}
@@ -382,7 +382,7 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 			Name:      name,
 		},
 		Data: map[string]string{
-			"user":     "user",
+			"username": "user",
 			"password": "password",
 		},
 	}
