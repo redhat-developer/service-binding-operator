@@ -191,8 +191,15 @@ func buildOwnedResourceContext(
 	outputPath string,
 ) (*serviceContext, error) {
 	svcCtx, err := buildServiceContext(
-		client, obj.GetNamespace(), obj.GetObjectKind().GroupVersionKind(), obj.GetName(),
-		ownerEnvVarPrefix, restMapper, nil)
+		reconcilerLog.WithName("buildServiceContext"),
+		client,
+		obj.GetNamespace(),
+		obj.GetObjectKind().GroupVersionKind(),
+		obj.GetName(),
+		ownerEnvVarPrefix,
+		restMapper,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

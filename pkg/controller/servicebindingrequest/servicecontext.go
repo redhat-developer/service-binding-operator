@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 // serviceContext contains information related to a service.
@@ -49,6 +50,7 @@ func stringValueOrDefault(val *string, defaultVal string) string {
 // buildServiceContexts return a collection of ServiceContext values from the given service
 // selectors.
 func buildServiceContexts(
+	logger *log.Log,
 	client dynamic.Interface,
 	defaultNs string,
 	selectors []v1alpha1.BackingServiceSelector,
@@ -61,8 +63,9 @@ SELECTORS:
 	for _, s := range selectors {
 		ns := stringValueOrDefault(s.Namespace, defaultNs)
 		gvk := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
-		svcCtx, err := buildServiceContext(
-			client, ns, gvk, s.ResourceRef, s.EnvVarPrefix, restMapper, s.Id)
+		svcCtx, err := buildServiceContext(logger.WithName("buildServiceContexts"), client, ns, gvk,
+			s.ResourceRef, s.EnvVarPrefix, restMapper, s.Id)
+
 		if err != nil {
 			// best effort approach; should not break in common cases such as a unknown annotation
 			// prefix (other annotations might exist in the resource) or, in the case of a valid
@@ -128,10 +131,64 @@ func findOwnedResourcesCtxs(
 	)
 }
 
+func merge(dst map[string]interface{}, src map[string]interface{}) (map[string]interface{}, error) {
+	merged := map[string]interface{}{}
+
+	err := mergo.Merge(&merged, src, mergo.WithOverride, mergo.WithOverrideEmptySlice)
+	if err != nil {
+		return nil, err
+	}
+
+	err = mergo.Merge(&merged, dst)
+	if err != nil {
+		return nil, err
+	}
+
+	return merged, nil
+}
+
+func runHandler(
+	client dynamic.Interface,
+	obj *unstructured.Unstructured,
+	outputObj *unstructured.Unstructured,
+	key string,
+	value string,
+	envVars map[string]interface{},
+	volumeKeys *[]string,
+	restMapper meta.RESTMapper,
+) error {
+	h, err := annotations.BuildHandler(client, obj, key, value, restMapper)
+	if err != nil {
+		return err
+	}
+	r, err := h.Handle()
+	if err != nil {
+		return err
+	}
+
+	if newObj, err := merge(outputObj.Object, r.RawData); err != nil {
+		return err
+	} else {
+		outputObj.Object = newObj
+	}
+
+	err = mergo.Merge(&envVars, r.Data, mergo.WithAppendSlice, mergo.WithOverride)
+	if err != nil {
+		return err
+	}
+
+	if r.Type == annotations.BindingTypeVolumeMount {
+		*volumeKeys = []string(append(*volumeKeys, r.Path))
+	}
+
+	return nil
+}
+
 // buildServiceContext inspects g the API server searching for the service resources, associated CRD
 // and OLM's CRDDescription if present, and processes those with relevant annotations to compose a
 // ServiceContext.
 func buildServiceContext(
+	logger *log.Log,
 	client dynamic.Interface,
 	ns string,
 	gvk schema.GroupVersionKind,
@@ -180,37 +237,19 @@ func buildServiceContext(
 	volumeKeys := make([]string, 0)
 	envVars := make(map[string]interface{})
 
-	for annotationKey, annotationValue := range anns {
-		h, err := annotations.BuildHandler(
-			client,
-			obj,
-			annotationKey,
-			annotationValue,
-			restMapper,
-		)
-		if err != nil {
-			if err == annotations.ErrInvalidAnnotationPrefix || annotations.IsErrHandlerNotFound(err) {
-				continue
-			}
-			return nil, err
-		}
-		r, err := h.Handle()
-		if err != nil {
-			continue
-		}
+	// outputObj will be used to keep the changes processed by the handler.
+	outputObj := obj.DeepCopy()
 
-		err = mergo.Merge(&envVars, r.Data, mergo.WithAppendSlice, mergo.WithOverride)
+	for k, v := range anns {
+		// runHandler modifies 'outputObj', 'envVars' and 'volumeKeys' in place.
+		err := runHandler(client, obj, outputObj, k, v, envVars, &volumeKeys, restMapper)
 		if err != nil {
-			return nil, err
-		}
-
-		if r.Type == annotations.BindingTypeVolumeMount {
-			volumeKeys = append(volumeKeys, r.Path)
+			logger.Debug("Failed executing runHandler", "Error", err)
 		}
 	}
 
 	serviceCtx := &serviceContext{
-		service:      obj,
+		service:      outputObj,
 		envVars:      envVars,
 		volumeKeys:   volumeKeys,
 		envVarPrefix: envVarPrefix,

@@ -150,6 +150,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	serviceCtxs, err := buildServiceContexts(
+		logger.WithName("buildServiceContexts"),
 		r.dynClient,
 		sbr.GetNamespace(),
 		selectors,
