@@ -3,9 +3,13 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
+	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +23,6 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 func init() {
@@ -36,16 +39,83 @@ func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	return nil
 }
 
+func TestBindingCustomSecretPath(t *testing.T) {
+	ns := "custombinder"
+	name := "service-binding-request-custom"
+	matchLabels := map[string]string{
+		"appx": "x",
+	}
+
+	f := mocks.NewFake(t, ns)
+	sbrSecretPath := f.AddMockedServiceBindingRequest(name, &ns, "ref-custom-podspec", "deployment", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredDeployment("deployment", matchLabels)
+
+	customSecretPath := "metadata.clusterName"
+	sbrSecretPath.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+		PodSpecPath: &v1alpha1.PodSpecPath{
+			Containers: defaultPathToContainers,
+			Volumes:    defaultPathToVolumes,
+		},
+		CustomSecretPath: &customSecretPath,
+	}
+	binderForsbrSecretPath := newBinder(
+		context.TODO(),
+		f.FakeDynClient(),
+		sbrSecretPath,
+		[]string{},
+		testutils.BuildTestRESTMapper(),
+	)
+	require.NotNil(t, binderForsbrSecretPath)
+
+	t.Run("custom-path", func(t *testing.T) {
+		secretPath := binderForsbrSecretPath.getSecretFieldPath()
+		expectedSecretPath := []string{"metadata", "clusterName"}
+		require.True(t, reflect.DeepEqual(secretPath, expectedSecretPath))
+	})
+
+	t.Run("update custom secret path ", func(t *testing.T) {
+		list, err := binderForsbrSecretPath.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		updatedDeployment, err := binderForsbrSecretPath.updateSecretField(&list.Items[0])
+		require.NoError(t, err)
+		require.NotNil(t, updatedDeployment)
+
+		customSecretPathSlice := strings.Split(customSecretPath, ".")
+
+		customSecretInMeta, found, err := unstructured.NestedFieldCopy(list.Items[0].Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, name, customSecretInMeta)
+	})
+}
+
 func TestBinderNew(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	matchLabels := map[string]string{
-		"connects-to": "database",
-		"environment": "binder",
+		"appx": "x",
 	}
+
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
+	sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+		PodSpecPath: &v1alpha1.PodSpecPath{
+			Containers: defaultPathToContainers,
+			Volumes:    defaultPathToVolumes,
+		},
+	}
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
+
+	binder := newBinder(
+		context.TODO(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+		testutils.BuildTestRESTMapper(),
+	)
+	require.NotNil(t, binder)
 
 	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
 		"service-binding-request-with-ref",
@@ -53,7 +123,7 @@ func TestBinderNew(t *testing.T) {
 		"ref",
 		"ref",
 		deploymentsGVR,
-		map[string]string{},
+		matchLabels,
 	)
 
 	t.Run("search-using-resourceref", func(t *testing.T) {
@@ -145,16 +215,7 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
-		// make sure SBR annonation is added
-		deployment := appsv1.Deployment{}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedObjects[0].Object, &deployment)
-		require.NoError(t, err)
-
-		sbrName, err := getSBRNamespacedNameFromObject(&deployment)
-		require.NoError(t, err)
-		require.Equal(t, types.NamespacedName{Name: name, Namespace: ns}, sbrName)
-
-		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -230,9 +291,7 @@ func TestBinderNew(t *testing.T) {
 		err = binder.remove(list)
 		require.NoError(t, err)
 
-		list, err = binder.search()
-		require.NoError(t, err)
-		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -256,6 +315,17 @@ func TestBinderNew(t *testing.T) {
 		// making sure no volume mounts are present
 		require.Nil(t, c.VolumeMounts)
 	})
+
+	t.Run("podspec-path-default", func(t *testing.T) {
+		containersPath := binder.getContainersPath()
+		expectedContainersPath := []string{"spec", "template", "spec", "containers"}
+		require.True(t, reflect.DeepEqual(containersPath, expectedContainersPath))
+
+		volumesPath := binder.getVolumesPath()
+		expectedVolumesPath := []string{"spec", "template", "spec", "volumes"}
+		require.True(t, reflect.DeepEqual(volumesPath, expectedVolumesPath))
+	})
+
 }
 
 func TestBinderAppendEnvVar(t *testing.T) {

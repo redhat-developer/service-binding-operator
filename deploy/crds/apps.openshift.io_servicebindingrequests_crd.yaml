@@ -39,6 +39,30 @@ spec:
               description: ApplicationSelector is used to identify the application
                 connecting to the backing service operator.
               properties:
+                bindingPath:
+                  description: BindingPath refers to the path in the application workload's
+                    schema where the binding workload would be referenced.
+                  properties:
+                    customSecretPath:
+                      description: CustomSecret defines the path to a string field
+                        where the secret needs to be assigned.
+                      type: string
+                    podSpecPath:
+                      description: PodSpecPath overrides the default podSpec path
+                      properties:
+                        containers:
+                          description: 'Containers defines the path to the corev1.Containers
+                            reference Example: "spec.template.spec.containers"'
+                          type: string
+                        volumes:
+                          description: 'Containers defines the path to the corev1.Volumes
+                            reference Example: "spec.template.spec.volumes"'
+                          type: string
+                      required:
+                      - containers
+                      - volumes
+                      type: object
+                  type: object
                 group:
                   type: string
                 labelSelector:
@@ -255,7 +279,10 @@ spec:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
             mountPathPrefix:
-              description: MountPathPrefix is the prefix for volume mount
+              description: "Important: Run \"operator-sdk generate k8s\" to regenerate
+                code after modifying this file Add custom validation using kubebuilder
+                tags: \thttps://book.kubebuilder.io/beyond_basics/generating_crd.html
+                MountPathPrefix is the prefix for volume mount"
               type: string
           type: object
         status:

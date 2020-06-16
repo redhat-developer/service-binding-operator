@@ -29,8 +29,8 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
-		"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequest":       schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref),
+		"./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus": schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref),
 	}
 }
 
@@ -62,19 +62,19 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequest(ref common.ReferenceCal
 					},
 					"spec": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec"),
+							Ref: ref("./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec"),
 						},
 					},
 					"status": {
 						SchemaProps: spec.SchemaProps{
-							Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
+							Ref: ref("./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"./pkg/apis/apps/v1alpha1.ServiceBindingRequestSpec", "./pkg/apis/apps/v1alpha1.ServiceBindingRequestStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -112,7 +112,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BoundApplication"),
+										Ref: ref("./pkg/apis/apps/v1alpha1.BoundApplication"),
 									},
 								},
 							},
@@ -123,6 +123,6 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 			},
 		},
 		Dependencies: []string{
-			"github.com/openshift/custom-resource-status/conditions/v1.Condition", "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1.BoundApplication"},
+			"./pkg/apis/apps/v1alpha1.BoundApplication", "github.com/openshift/custom-resource-status/conditions/v1.Condition"},
 	}
 }
