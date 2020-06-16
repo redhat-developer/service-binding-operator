@@ -160,7 +160,7 @@ func PostgresDatabaseCRMock(ns, name string) PostgresDatabase {
 }
 
 func UnstructuredSecretMock(ns, name string) (*unstructured.Unstructured, error) {
-	s := SecretMock(ns, name)
+	s := SecretMock(ns, name, nil)
 	return converter.ToUnstructured(&s)
 }
 
@@ -353,7 +353,14 @@ func UnstructuredDatabaseCRMock(ns, name string) (*unstructured.Unstructured, er
 }
 
 // SecretMock returns a Secret based on PostgreSQL operator usage.
-func SecretMock(ns, name string) *corev1.Secret {
+func SecretMock(ns, name string, data map[string][]byte) *corev1.Secret {
+	if data == nil {
+		data = map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("password"),
+		}
+	}
+
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -363,10 +370,7 @@ func SecretMock(ns, name string) *corev1.Secret {
 			Namespace: ns,
 			Name:      name,
 		},
-		Data: map[string][]byte{
-			"username": []byte("user"),
-			"password": []byte("password"),
-		},
+		Data: data,
 	}
 }
 

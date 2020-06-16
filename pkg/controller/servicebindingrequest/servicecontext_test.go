@@ -36,20 +36,20 @@ func TestBuildServiceContexts(t *testing.T) {
 
 	t.Run("existing selectors", func(t *testing.T) {
 		serviceCtxs, err := buildServiceContexts(
-			f.FakeDynClient(), ns, extractServiceSelectors(sbr), false, restMapper)
+			nil, f.FakeDynClient(), ns, extractServiceSelectors(sbr), false, restMapper)
 		require.NoError(t, err)
 		require.NotEmpty(t, serviceCtxs)
 	})
 
 	t.Run("empty selectors", func(t *testing.T) {
-		serviceCtxs, err := buildServiceContexts(f.FakeDynClient(), ns, nil, false, restMapper)
+		serviceCtxs, err := buildServiceContexts(nil, f.FakeDynClient(), ns, nil, false, restMapper)
 		require.NoError(t, err)
 		require.Empty(t, serviceCtxs)
 	})
 
 	t.Run("services in different namespace", func(t *testing.T) {
 		serviceCtxs, err := buildServiceContexts(
-			f.FakeDynClient(), ns, extractServiceSelectors(sbr), false, restMapper)
+			nil, f.FakeDynClient(), ns, extractServiceSelectors(sbr), false, restMapper)
 		require.NoError(t, err)
 		require.NotEmpty(t, serviceCtxs)
 	})
@@ -167,7 +167,7 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 			restMapper := testutils.BuildTestRESTMapper()
 
 			for _, secret := range tC.secrets {
-				secret := mocks.SecretMock("test", secret)
+				secret := mocks.SecretMock("test", secret, nil)
 				us := &unstructured.Unstructured{}
 				uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
 				require.NoError(t, err)

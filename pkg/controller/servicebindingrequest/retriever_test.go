@@ -37,7 +37,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
-	f.AddNamespacedMockedSecret("db-credentials", backingServiceNs)
+	f.AddNamespacedMockedSecret("db-credentials", backingServiceNs, nil)
 
 	cr, err := mocks.UnstructuredDatabaseCRMock(backingServiceNs, crName)
 	require.NoError(t, err)

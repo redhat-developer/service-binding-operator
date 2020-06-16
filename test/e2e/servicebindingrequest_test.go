@@ -306,7 +306,7 @@ func CreateDB(
 	}, 10*time.Second, 1*time.Second)
 
 	t.Log("Creating Database credentials secret mock object...")
-	dbSecret := mocks.SecretMock(ns, secretName)
+	dbSecret := mocks.SecretMock(ns, secretName, nil)
 	require.NoError(t, f.Client.Create(ctx, dbSecret, cleanupOpts))
 
 	return db
