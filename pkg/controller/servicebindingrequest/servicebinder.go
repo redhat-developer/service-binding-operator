@@ -9,6 +9,7 @@ import (
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,6 +29,11 @@ const (
 	// time in seconds to wait before requeuing requests
 	requeueAfter int64 = 45
 )
+
+// defaultPathToContainers has the logical path logical path
+// to find containers on supported objects
+// Used as []string{"spec", "template", "spec", "containers"}
+const defaultPathToContainers = "spec.template.spec.containers"
 
 // groupVersion represents the service binding request resource's group version.
 var groupVersion = v1alpha1.SchemeGroupVersion.WithResource(serviceBindingRequestResource)
@@ -371,6 +377,18 @@ func (b *serviceBinder) setApplicationObjects(
 	sbrStatus.Applications = boundApps
 }
 
+// set default value for application selector
+func ensureDefaults(applicationSelector *v1alpha1.ApplicationSelector) {
+	if applicationSelector.LabelSelector == nil {
+		applicationSelector.LabelSelector = &metav1.LabelSelector{}
+	}
+	if applicationSelector.BindingPath == nil {
+		applicationSelector.BindingPath = &v1alpha1.BindingPath{
+			ContainersPath: defaultPathToContainers,
+		}
+	}
+}
+
 // buildServiceBinder creates a new binding manager according to options.
 func buildServiceBinder(
 	ctx context.Context,
@@ -400,6 +418,8 @@ func buildServiceBinder(
 		options.binding.volumeKeys,
 		options.restMapper,
 	)
+
+	ensureDefaults(&options.sbr.Spec.ApplicationSelector)
 
 	return &serviceBinder{
 		logger:    options.logger,

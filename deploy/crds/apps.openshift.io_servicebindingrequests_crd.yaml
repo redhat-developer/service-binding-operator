@@ -39,6 +39,20 @@ spec:
               description: ApplicationSelector is used to identify the application
                 connecting to the backing service operator.
               properties:
+                bindingPath:
+                  description: BindingPath refers to the path in the application workload's
+                    schema where the binding workload would be referenced.
+                  properties:
+                    containersPath:
+                      description: 'ContainersPath defines the path to the corev1.Containers
+                        reference The default location is going to this: "spec.template.spec.containers"'
+                      type: string
+                    secretPath:
+                      description: SecretPath defines the path to a string field where
+                        the secret needs to be assigned. The default name is going
+                        to the value of the name of SBR CR (metadata.name)
+                      type: string
+                  type: object
                 group:
                   type: string
                 labelSelector:
@@ -266,8 +280,8 @@ spec:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
             applications:
-              description: ApplicationObjects contains all the application objects
-                filtered by label
+              description: Applications contain all the applications filtered by name
+                or label
               items:
                 description: BoundApplication defines the application workloads to
                   which the binding secret has injected.

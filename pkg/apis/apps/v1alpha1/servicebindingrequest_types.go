@@ -81,6 +81,32 @@ type ApplicationSelector struct {
 	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
 	metav1.GroupVersionResource `json:",inline"`
 	ResourceRef                 string `json:"resourceRef,omitempty"`
+
+	// BindingPath refers to the paths in the application workload's schema
+	// where the binding workload would be referenced.
+	// If BindingPath is not specified the default path locations is going to
+	// be used.  The default location for ContainersPath is
+	// going to be: "spec.template.spec.containers" and if SecretPath
+	// is not specified, the name of the secret object is not going
+	// to be specified.
+	// +optional
+	BindingPath *BindingPath `json:"bindingPath,omitempty"`
+}
+
+// BindingPath defines the path to the field where the binding would be
+// embedded in the workload
+type BindingPath struct {
+	// ContainersPath defines the path to the corev1.Containers reference
+	// If BindingPath is not specified, the default location is
+	// going to be: "spec.template.spec.containers"
+	// +optional
+	ContainersPath string `json:"containersPath"`
+
+	// SecretPath defines the path to a string field where
+	// the name of the secret object is going to be assigned.
+	// Note: The name of the secret object is same as that of the name of SBR CR (metadata.name)
+	// +optional
+	SecretPath string `json:"secretPath"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

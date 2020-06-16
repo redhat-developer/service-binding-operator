@@ -276,3 +276,30 @@ def then_envFrom_contains(context, app_name, sbr_name1, sbr_name2):
 def then_envFrom_contains_intermediate_secret_name(context, intermediate_secret_name):
     assert context.application.get_deployment_with_intermediate_secret(
         intermediate_secret_name, wait=True, timeout=120) is not None, f"There is no deployment with intermediate secret {intermediate_secret_name}"
+
+
+@given(u'The CRD "{crd_name}" is present')
+def create_crd(context, crd_name):
+    openshift = Openshift()
+    yaml = context.text
+    output = openshift.oc_apply(yaml)
+    result = re.search(rf'.*customresourcedefinition.apiextensions.k8s.io/{crd_name}.*(created|unchanged)', output)
+    result | should_not.be_none.desc("CRD {crd_name} Created")
+
+
+# STEP
+@given(u'The application CR "{cr_name}" is present')
+def create_cr(context, cr_name):
+    openshift = Openshift()
+    yaml = context.text
+    output = openshift.oc_apply(yaml)
+    result = re.search(rf'.*{cr_name}.*(created|unchanged)', output)
+    result | should_not.be_none.desc("CRD {cr_name} Created")
+
+
+@then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
+def verify_injected_secretRef(context, secret_ref, cr_name, crd_name, json_path):
+    time.sleep(60)
+    openshift = Openshift()
+    result = openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path, wait=True, timeout=180)
+    result | should.be_equal_to(secret_ref).desc(f'Failed to inject secretRef "{secret_ref}" in "{cr_name}" at path "{json_path}"')
