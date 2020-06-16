@@ -56,12 +56,21 @@ func buildServiceContexts(
 	restMapper meta.RESTMapper,
 ) (serviceContextList, error) {
 	svcCtxs := make(serviceContextList, 0)
+
+SELECTORS:
 	for _, s := range selectors {
 		ns := stringValueOrDefault(s.Namespace, defaultNs)
 		gvk := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 		svcCtx, err := buildServiceContext(
 			client, ns, gvk, s.ResourceRef, s.EnvVarPrefix, restMapper, s.Id)
 		if err != nil {
+			// best effort approach; should not break in common cases such as a unknown annotation
+			// prefix (other annotations might exist in the resource) or, in the case of a valid
+			// annotation, the handler expected for the annotation can't be found.
+			if err == annotations.ErrInvalidAnnotationPrefix || annotations.IsErrHandlerNotFound(err) {
+				logger.Trace("Continuing to next selector", "Error", err)
+				continue SELECTORS
+			}
 			return nil, err
 		}
 		svcCtxs = append(svcCtxs, svcCtx)
