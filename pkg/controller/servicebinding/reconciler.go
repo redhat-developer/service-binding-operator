@@ -137,11 +137,16 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return RequeueError(ErrEmptyBackingServiceSelectors)
 	}
 
+	detectBindingResources := false
+	if sbr.Spec.DetectBindingResources != nil && *sbr.Spec.DetectBindingResources {
+		detectBindingResources = true
+	}
+
 	serviceCtxs, err := buildServiceContexts(
 		r.dynClient,
 		sbr.GetNamespace(),
 		selectors,
-		sbr.Spec.DetectBindingResources,
+		detectBindingResources,
 		r.RestMapper,
 	)
 	if err != nil {
@@ -160,7 +165,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	options := &ServiceBinderOptions{
 		DynClient:              r.dynClient,
-		DetectBindingResources: sbr.Spec.DetectBindingResources,
+		DetectBindingResources: detectBindingResources,
 		SBR:                    sbr,
 		Logger:                 logger,
 		Objects:                serviceCtxs.GetServices(),

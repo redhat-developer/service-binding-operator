@@ -174,7 +174,16 @@ func (in *ServiceBindingSpec) DeepCopyInto(out *ServiceBindingSpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	in.Application.DeepCopyInto(&out.Application)
+	if in.Application != nil {
+		in, out := &in.Application, &out.Application
+		*out = new(Application)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.DetectBindingResources != nil {
+		in, out := &in.DetectBindingResources, &out.DetectBindingResources
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

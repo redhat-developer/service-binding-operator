@@ -29,12 +29,12 @@ type ServiceBindingSpec struct {
 	// backing service operator. When not provided, a managed binding secret
 	// is created but not bound to any application workload.
 	// +optional
-	Application Application `json:"application,omitempty"`
+	Application *Application `json:"application,omitempty"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
 	// +optional
-	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
+	DetectBindingResources *bool `json:"detectBindingResources,omitempty"`
 }
 
 // ServiceBindingStatus defines the observed state of ServiceBinding
