@@ -502,7 +502,8 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 	updatedObjs := []*unstructured.Unstructured{}
 
 	for _, obj := range objs.Items {
-		// modify the copy of the original object and use the original one later for comparison
+		// store a copy of the original object to later be used in a comparison
+		originalObj := obj.DeepCopy()
 		name := obj.GetName()
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		log.Debug("Inspecting object...")
@@ -517,7 +518,6 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		}
 
 		if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
-
 			updatedObj, err = b.updateSpecContainers(&obj)
 			if err != nil {
 				return nil, err
@@ -530,20 +530,18 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(&obj, updatedObj); err != nil {
+		if specsAreEqual, err := nestedMapComparison(originalObj, updatedObj, "spec"); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
 			continue
 		}
-
 		if b.modifier != nil {
 			err = b.modifier.ModifyExtraFields(updatedObj)
 			if err != nil {
 				return nil, err
 			}
 		}
-
 		log.Debug("Updating object...")
 		gk := updatedObj.GroupVersionKind().GroupKind()
 		version := updatedObj.GroupVersionKind().Version
@@ -554,13 +552,11 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		updated, err := b.dynClient.Resource(mapping.Resource).
 			Namespace(updatedObj.GetNamespace()).
 			Update(updatedObj, metav1.UpdateOptions{})
-
 		if err != nil {
 			return nil, err
 		}
 		updatedObjs = append(updatedObjs, updated)
 	}
-
 	return updatedObjs, nil
 }
 
