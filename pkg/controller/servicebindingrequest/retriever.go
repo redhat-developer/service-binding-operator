@@ -85,6 +85,20 @@ func (r *retriever) processServiceContext(
 		return nil, nil, err
 	}
 
+	// add an entry in the custom environment variable context with the informed 'id'.
+	//
+	// `{{ .db_testing.status.connectionUrl }}`
+	if svcCtx.id != nil {
+		err = unstructured.SetNestedField(
+			customEnvVarCtx,
+			svcCtx.service.Object,
+			*svcCtx.id,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
 	envVars := make(map[string][]byte, len(svcEnvVars))
 	for k, v := range svcEnvVars {
 		envVars[k] = []byte(v)
