@@ -229,7 +229,7 @@ func (b *binder) extractSpecContainers(obj *unstructured.Unstructured) ([]interf
 	return containers, nil
 }
 
-// updateSpecSecretString extract the specific secret field from
+// updateSecretField extract the specific secret field from
 // the object, and triggers an update.
 func (b *binder) updateSecretField(
 	obj *unstructured.Unstructured,

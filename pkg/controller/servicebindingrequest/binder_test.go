@@ -67,13 +67,13 @@ func TestBindingCustomSecretPath(t *testing.T) {
 	)
 	require.NotNil(t, binderForsbrSecretPath)
 
-	t.Run("custom-path", func(t *testing.T) {
+	t.Run("custom secret field path", func(t *testing.T) {
 		secretPath := binderForsbrSecretPath.getSecretFieldPath()
 		expectedSecretPath := []string{"metadata", "clusterName"}
 		require.True(t, reflect.DeepEqual(secretPath, expectedSecretPath))
 	})
 
-	t.Run("update custom secret path ", func(t *testing.T) {
+	t.Run("update custom secret field path ", func(t *testing.T) {
 		list, err := binderForsbrSecretPath.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
@@ -95,7 +95,8 @@ func TestBinderNew(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
 	matchLabels := map[string]string{
-		"appx": "x",
+		"connects-to": "database",
+		"environment": "binder",
 	}
 
 	f := mocks.NewFake(t, ns)

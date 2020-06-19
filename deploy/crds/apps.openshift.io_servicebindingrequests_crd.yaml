@@ -279,10 +279,7 @@ spec:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
             mountPathPrefix:
-              description: "Important: Run \"operator-sdk generate k8s\" to regenerate
-                code after modifying this file Add custom validation using kubebuilder
-                tags: \thttps://book.kubebuilder.io/beyond_basics/generating_crd.html
-                MountPathPrefix is the prefix for volume mount"
+              description: MountPathPrefix is the prefix for volume mount
               type: string
           type: object
         status:
