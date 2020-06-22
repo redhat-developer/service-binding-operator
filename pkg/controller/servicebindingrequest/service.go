@@ -170,11 +170,11 @@ func getOwnedResources(
 		if err != nil {
 			return resources, err
 		}
-		for _, item := range lst.Items {
+		for idx, item := range lst.Items {
 			owners := item.GetOwnerReferences()
 			for _, owner := range owners {
 				if owner.UID == uid {
-					resources = append(resources, &item)
+					resources = append(resources, &lst.Items[idx])
 				}
 			}
 		}
