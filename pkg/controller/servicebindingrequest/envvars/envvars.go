@@ -67,6 +67,8 @@ func Build(obj interface{}, path ...string) (map[string]string, error) {
 		return buildString(strconv.FormatFloat(val, 'f', -1, 64), path), nil
 	case []interface{}:
 		return buildSliceOfInterface(val, path)
+	case bool:
+		return buildString(strconv.FormatBool(val), path), nil
 	default:
 		return nil, errUnsupportedType
 	}
