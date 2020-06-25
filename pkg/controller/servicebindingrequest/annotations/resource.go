@@ -47,7 +47,7 @@ func discoverRelatedResourceName(obj map[string]interface{}, bi *bindingInfo) (s
 		strings.Split(bi.ResourceReferencePath, ".")...,
 	)
 	if !ok {
-		return "", resourceNameFieldNotFoundErr
+		return "", errResourceNameFieldNotFound(bi.ResourceReferencePath)
 	}
 	if err != nil {
 		return "", err
