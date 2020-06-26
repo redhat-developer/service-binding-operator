@@ -37,13 +37,6 @@ func (b *serviceBinder) message(err error) string {
 	return err.Error()
 }
 
-type SecretOwnerReference struct {
-	Name       string
-	UID        types.UID
-	Kind       string
-	APIVersion string
-}
-
 // serviceBinderOptions is BuildServiceBinder arguments.
 type serviceBinderOptions struct {
 	logger                 *log.Log
@@ -249,7 +242,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 
 	b.logger.Info("Saving data on intermediary secret...")
 
-	secretOwnerReference := SecretOwnerReference{
+	secretOwnerReference := v1.OwnerReference{
 		Name:       b.sbr.Name,
 		UID:        b.sbr.UID,
 		Kind:       b.sbr.Kind,

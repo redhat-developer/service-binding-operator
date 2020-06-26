@@ -4,6 +4,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 
@@ -27,7 +28,7 @@ func (s *secret) buildResourceClient() dynamic.ResourceInterface {
 
 // createOrUpdate will take informed payload and either create a new secret or update an existing
 // one. It can return error when Kubernetes client does.
-func (s *secret) createOrUpdate(payload map[string][]byte, secretOwnerReference SecretOwnerReference) (*unstructured.Unstructured, error) {
+func (s *secret) createOrUpdate(payload map[string][]byte, secretOwnerReference v1.OwnerReference) (*unstructured.Unstructured, error) {
 	logger := s.logger.WithValues("Namespace", s.ns, "Name", s.name)
 	reference := metav1.OwnerReference{
 		Name:       secretOwnerReference.Name,
@@ -68,7 +69,7 @@ func (s *secret) createOrUpdate(payload map[string][]byte, secretOwnerReference 
 
 // commit will store informed data as a secret, commit it against the API server. It can forward
 // errors from custom environment parser component, or from the API server itself.
-func (s *secret) commit(payload map[string][]byte, secretOwnerReference SecretOwnerReference) (*unstructured.Unstructured, error) {
+func (s *secret) commit(payload map[string][]byte, secretOwnerReference v1.OwnerReference) (*unstructured.Unstructured, error) {
 	return s.createOrUpdate(payload, secretOwnerReference)
 }
 
