@@ -37,6 +37,13 @@ func (b *serviceBinder) message(err error) string {
 	return err.Error()
 }
 
+type SecretOwnerReference struct {
+	Name       string
+	UID        types.UID
+	Kind       string
+	APIVersion string
+}
+
 // serviceBinderOptions is BuildServiceBinder arguments.
 type serviceBinderOptions struct {
 	logger                 *log.Log
@@ -152,12 +159,6 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 		return requeueError(err)
 	}
 
-	logger.Info("Deleting intermediary secret")
-	if err := b.secret.delete(); err != nil {
-		logger.Error(err, "On deleting intermediary secret.")
-		return requeueError(err)
-	}
-
 	logger.Debug("Removing resource finalizers...")
 	b.sbr.SetFinalizers(removeStringSlice(b.sbr.GetFinalizers(), finalizer))
 	if _, err := b.updateServiceBindingRequest(b.sbr); err != nil {
@@ -247,7 +248,15 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	sbrStatus := b.sbr.Status.DeepCopy()
 
 	b.logger.Info("Saving data on intermediary secret...")
-	secretObj, err := b.secret.commit(b.envVars)
+
+	secretOwnerReference := SecretOwnerReference{
+		Name:       b.sbr.Name,
+		UID:        b.sbr.UID,
+		Kind:       b.sbr.Kind,
+		APIVersion: b.sbr.APIVersion,
+	}
+
+	secretObj, err := b.secret.commit(b.envVars, secretOwnerReference)
 	if err != nil {
 		b.logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.sbr, sbrStatus, nil)

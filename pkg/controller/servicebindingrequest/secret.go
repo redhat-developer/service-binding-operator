@@ -27,12 +27,19 @@ func (s *secret) buildResourceClient() dynamic.ResourceInterface {
 
 // createOrUpdate will take informed payload and either create a new secret or update an existing
 // one. It can return error when Kubernetes client does.
-func (s *secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstructured, error) {
+func (s *secret) createOrUpdate(payload map[string][]byte, secretOwnerReference SecretOwnerReference) (*unstructured.Unstructured, error) {
 	logger := s.logger.WithValues("Namespace", s.ns, "Name", s.name)
+	reference := metav1.OwnerReference{
+		Name:       secretOwnerReference.Name,
+		UID:        secretOwnerReference.UID,
+		Kind:       secretOwnerReference.Kind,
+		APIVersion: secretOwnerReference.APIVersion,
+	}
 	secretObj := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.ns,
-			Name:      s.name,
+			Namespace:       s.ns,
+			Name:            s.name,
+			OwnerReferences: []metav1.OwnerReference{reference},
 		},
 		Data: payload,
 	}
@@ -61,8 +68,8 @@ func (s *secret) createOrUpdate(payload map[string][]byte) (*unstructured.Unstru
 
 // commit will store informed data as a secret, commit it against the API server. It can forward
 // errors from custom environment parser component, or from the API server itself.
-func (s *secret) commit(payload map[string][]byte) (*unstructured.Unstructured, error) {
-	return s.createOrUpdate(payload)
+func (s *secret) commit(payload map[string][]byte, secretOwnerReference SecretOwnerReference) (*unstructured.Unstructured, error) {
+	return s.createOrUpdate(payload, secretOwnerReference)
 }
 
 // get an unstructured object from the secret handled by this component. It can return errors in case
