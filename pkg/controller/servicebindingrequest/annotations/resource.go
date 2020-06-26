@@ -115,6 +115,14 @@ func (h *resourceHandler) Handle() (result, error) {
 		return result{}, err
 	}
 
+	// get resource's kind.
+	gvk, err := h.restMapper.KindFor(h.relatedGroupVersionResource)
+	if err != nil {
+		return result{}, err
+	}
+
+	outputPathParts := []string{strings.ToLower(gvk.Kind)}
+
 	if mapVal, ok := val.(map[string]interface{}); ok {
 		tmpVal := make(map[string]interface{})
 		for k, v := range mapVal {
@@ -130,6 +138,7 @@ func (h *resourceHandler) Handle() (result, error) {
 		if err != nil {
 			return result{}, err
 		}
+		outputPathParts = append(outputPathParts, nested.NewPath(h.bindingInfo.SourcePath).GetParts()...)
 	}
 
 	typ, err := discoverBindingType(h.bindingInfo.Value)
@@ -137,17 +146,8 @@ func (h *resourceHandler) Handle() (result, error) {
 		return result{}, err
 	}
 
-	// get resource's kind.
-	gvk, err := h.restMapper.KindFor(h.relatedGroupVersionResource)
-	if err != nil {
-		return result{}, err
-	}
-
 	// prefix the output path with the kind of the resource.
-	outputPath := strings.Join([]string{
-		strings.ToLower(gvk.Kind),
-		h.bindingInfo.SourcePath,
-	}, ".")
+	outputPath := strings.Join(outputPathParts, ".")
 
 	return result{
 		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
