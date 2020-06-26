@@ -1,6 +1,9 @@
 package servicebindingrequest
 
 import (
+	"encoding/base64"
+	"reflect"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,15 +50,32 @@ func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1
 	resourceClient := s.buildResourceClient()
 
 	logger.Debug("Attempt to create secret...")
-	_, err = resourceClient.Create(u, metav1.CreateOptions{})
-	if err != nil && !errors.IsAlreadyExists(err) {
+	existingSecret, err := resourceClient.Get(s.name, metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			_, err := resourceClient.Create(u, metav1.CreateOptions{})
+			return u, err
+		}
 		return nil, err
 	}
-
-	logger.Debug("Secret already exists, updating contents instead...")
-	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
+	existingSecretData, _, _ := unstructured.NestedMap(existingSecret.Object, "data")
+	existingSecretDataStr := make(map[string]string)
+	for k, v := range existingSecretData {
+		existingSecretDataStr[k] = v.(string)
+	}
+	payloadStr := make(map[string]string)
+	for k, v := range payload {
+		payloadStr[k] = base64.StdEncoding.EncodeToString(v)
+	}
+	eq := reflect.DeepEqual(existingSecretDataStr, payloadStr)
+	if eq {
+		logger.Debug("Secret data is same. Skip Update")
+	} else {
+		logger.Debug("Secret data is different. Update Secret")
+		_, err = resourceClient.Update(u, metav1.UpdateOptions{})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return u, nil
 }
