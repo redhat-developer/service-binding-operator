@@ -95,3 +95,13 @@ The following example scenarios are available:
 [Binding an Imported app to an Off-cluster Operator Managed IBM Cloud Service](examples/nodejs_ibmcloud_operator/README.md)
 
 [Binding an Imported app in one namespace with an In-cluster Managed PostgreSQL Database in another namespace](examples/nodejs_postgresql_namespaces/README.md)
+
+## Community, discussion, contribution, and support
+
+The Service Binding community meets weekly on Thursdays at 11:15 AM UTC via [Google Meet](https://meet.google.com/jti-pujt-zqs).
+
+Meeting Agenda is maintained [here](https://github.com/redhat-developer/service-binding-operator/issues?q=is%3Aissue+is%3Aopen+label%3Ameeting)
+
+Please file bug reports on [Github](https://github.com/redhat-developer/service-binding-operator/issues/new). For any other questions, reach out on `service-binding-support@redhat.com`.
+
+
