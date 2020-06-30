@@ -508,6 +508,7 @@ func serviceBindingRequestTest(
 	steps []Step,
 ) {
 	// making sure resource names employed during test are unique
+	rand.Seed(time.Now().UnixNano())
 	randomSuffix := rand.Int()
 	csvName := fmt.Sprintf("cluster-service-version-%d", randomSuffix)
 	sbrName := fmt.Sprintf("e2e-service-binding-request-%d", randomSuffix)
@@ -583,7 +584,7 @@ func serviceBindingRequestTest(
 			return false
 		}
 		return true
-	}, 60*time.Second, 2*time.Second)
+	}, 600*time.Second, 2*time.Second)
 	// checking intermediary secret contents, right after deployment the secrets must be in place
 	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
 	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
