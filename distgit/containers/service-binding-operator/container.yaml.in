@@ -1,4 +1,7 @@
 ---
+platforms:
+    only:
+        - x86_64
 compose:
     packages:
         - jq
