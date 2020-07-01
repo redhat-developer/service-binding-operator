@@ -87,6 +87,29 @@ type ApplicationSelector struct {
 	BindingPath *BindingPath `json:"bindingPath,omitempty"`
 }
 
+var (
+	// DefaultContainersPath has the logical path logical path
+	// to find containers on supported objects
+	// Used as []string{"spec", "template", "spec", "containers"}
+	DefaultPathToContainers = "spec.template.spec.containers"
+
+	// DefaultPathToVolumes is the logical path to find volumes on supported objects
+	// used as []string{"spec", "template", "spec", "volumes"}
+	DefaultPathToVolumes = "spec.template.spec.volumes"
+)
+
+// SetDefaults set default value for binding path
+func (applicationSelector *ApplicationSelector) SetDefaults() {
+	if applicationSelector.BindingPath == nil {
+		applicationSelector.BindingPath = &BindingPath{
+			PodSpecPath: &PodSpecPath{
+				Containers: DefaultPathToContainers,
+				Volumes:    DefaultPathToVolumes,
+			},
+		}
+	}
+}
+
 // BindingPath defines the path to the field where the binding would be
 // embedded in the workload
 type BindingPath struct {

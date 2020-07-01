@@ -53,8 +53,8 @@ func TestBindingCustomSecretPath(t *testing.T) {
 	customSecretPath := "metadata.clusterName"
 	sbrSecretPath.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
 		PodSpecPath: &v1alpha1.PodSpecPath{
-			Containers: defaultPathToContainers,
-			Volumes:    defaultPathToVolumes,
+			Containers: v1alpha1.DefaultPathToContainers,
+			Volumes:    v1alpha1.DefaultPathToVolumes,
 		},
 		CustomSecretPath: &customSecretPath,
 	}
@@ -103,8 +103,8 @@ func TestBinderNew(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
 	sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
 		PodSpecPath: &v1alpha1.PodSpecPath{
-			Containers: defaultPathToContainers,
-			Volumes:    defaultPathToVolumes,
+			Containers: v1alpha1.DefaultPathToContainers,
+			Volumes:    v1alpha1.DefaultPathToVolumes,
 		},
 	}
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)

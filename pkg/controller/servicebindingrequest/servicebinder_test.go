@@ -97,8 +97,8 @@ func TestServiceBinder_Bind(t *testing.T) {
 			} else {
 				// user has NOT provided BindingPath information explicitly
 
-				require.Equal(t, defaultPathToContainers, computedBindingPath.PodSpecPath.Containers)
-				require.Equal(t, defaultPathToVolumes, computedBindingPath.PodSpecPath.Volumes)
+				require.Equal(t, v1alpha1.DefaultPathToContainers, computedBindingPath.PodSpecPath.Containers)
+				require.Equal(t, v1alpha1.DefaultPathToVolumes, computedBindingPath.PodSpecPath.Volumes)
 				require.Nil(t, computedBindingPath.CustomSecretPath)
 			}
 		}

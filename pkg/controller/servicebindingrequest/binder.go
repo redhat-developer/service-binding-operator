@@ -24,18 +24,6 @@ import (
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-var (
-	// containersPath has the logical path logical path
-	// to find containers on supported objects
-	// Used as []string{"spec", "template", "spec", "containers"}
-
-	defaultPathToContainers = "spec.template.spec.containers"
-
-	// logical path to find volumes on supported objects
-	// used as []string{"spec", "template", "spec", "volumes"}
-	defaultPathToVolumes = "spec.template.spec.volumes"
-)
-
 // changeTriggerEnv hijacking environment in order to trigger a change
 const changeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 

@@ -341,14 +341,7 @@ func buildServiceBinder(
 		options.restMapper,
 	)
 
-	if options.sbr.Spec.ApplicationSelector.BindingPath == nil {
-		options.sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
-			PodSpecPath: &v1alpha1.PodSpecPath{
-				Containers: defaultPathToContainers,
-				Volumes:    defaultPathToVolumes,
-			},
-		}
-	}
+	options.sbr.Spec.ApplicationSelector.SetDefaults()
 
 	return &serviceBinder{
 		logger:    options.logger,
