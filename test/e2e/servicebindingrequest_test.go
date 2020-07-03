@@ -257,7 +257,7 @@ func updateSBRSecret(
 	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
-) {
+) error {
 	sbrSecret := &corev1.Secret{}
 	require.NoError(t, f.Client.Get(ctx, namespacedName, sbrSecret))
 
@@ -271,7 +271,7 @@ func updateSBRSecret(
 		sbrSecret.Data[k] = []byte("bogus")
 	}
 
-	require.NoError(t, f.Client.Update(ctx, sbrSecret))
+	return f.Client.Update(ctx, sbrSecret)
 }
 
 // retry the informed method a few times, with sleep between attempts.
@@ -591,9 +591,12 @@ func serviceBindingRequestTest(
 	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
 	require.NotNil(t, sbrSecret)
 
-	// editing intermediary secret in order to trigger update event
-	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
-	updateSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+	require.Eventually(t, func() bool {
+		// editing intermediary secret in order to trigger update event
+		t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
+		err := updateSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+		return err != nil
+	}, 60*time.Second, 2*time.Second)
 
 	// retrying a few times to see if secret is back on original state, waiting for operator to
 	// reconcile again when detecting the change
