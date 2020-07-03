@@ -50,7 +50,7 @@ var (
 	// Intermediate secret should have following data
 	// for postgres operator
 	postgresSecretAssertion = map[string]string{
-		"DATABASE_SECRET_USER":     "user",
+		"DATABASE_SECRET_USERNAME": "user",
 		"DATABASE_SECRET_PASSWORD": "password",
 	}
 
