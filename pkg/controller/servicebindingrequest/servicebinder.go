@@ -242,14 +242,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 
 	b.logger.Info("Saving data on intermediary secret...")
 
-	secretOwnerReference := v1.OwnerReference{
-		Name:       b.sbr.Name,
-		UID:        b.sbr.UID,
-		Kind:       b.sbr.Kind,
-		APIVersion: b.sbr.APIVersion,
-	}
-
-	secretObj, err := b.secret.commit(b.envVars, secretOwnerReference)
+	secretObj, err := b.secret.createOrUpdate(b.envVars, b.sbr.AsOwnerReference())
 	if err != nil {
 		b.logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.sbr, sbrStatus, nil)

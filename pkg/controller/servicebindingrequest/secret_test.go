@@ -44,21 +44,16 @@ func TestSecretNew(t *testing.T) {
 		assertSecretNamespacedName(t, u, ns, name)
 	})
 
-	t.Run("Delete", func(t *testing.T) {
-		err := s.delete()
-		assert.NoError(t, err)
-	})
-
-	t.Run("Commit", func(t *testing.T) {
-		u, err := s.commit(data, secretOwnerReference)
-		assert.NoError(t, err)
-		assertSecretNamespacedName(t, u, ns, name)
-	})
-
 	t.Run("Get", func(t *testing.T) {
 		u, found, err := s.get()
 		assert.NoError(t, err)
 		assert.True(t, found)
 		assertSecretNamespacedName(t, u, ns, name)
 	})
+
+	t.Run("Delete", func(t *testing.T) {
+		err := s.delete()
+		assert.NoError(t, err)
+	})
+
 }

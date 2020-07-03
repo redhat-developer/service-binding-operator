@@ -60,12 +60,6 @@ func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1
 	return u, nil
 }
 
-// commit will store informed data as a secret, commit it against the API server. It can forward
-// errors from custom environment parser component, or from the API server itself.
-func (s *secret) commit(payload map[string][]byte, secretOwnerReference metav1.OwnerReference) (*unstructured.Unstructured, error) {
-	return s.createOrUpdate(payload, secretOwnerReference)
-}
-
 // get an unstructured object from the secret handled by this component. It can return errors in case
 // the API server does.
 func (s *secret) get() (*unstructured.Unstructured, bool, error) {
