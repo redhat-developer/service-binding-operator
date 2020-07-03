@@ -50,10 +50,4 @@ func TestSecretNew(t *testing.T) {
 		assert.True(t, found)
 		assertSecretNamespacedName(t, u, ns, name)
 	})
-
-	t.Run("Delete", func(t *testing.T) {
-		err := s.delete()
-		assert.NoError(t, err)
-	})
-
 }

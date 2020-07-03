@@ -71,16 +71,6 @@ func (s *secret) get() (*unstructured.Unstructured, bool, error) {
 	return u, u != nil, nil
 }
 
-// delete the secret represented by this component. It can return error when the API server does.
-func (s *secret) delete() error {
-	resourceClient := s.buildResourceClient()
-	err := resourceClient.Delete(s.name, &metav1.DeleteOptions{})
-	if err != nil && !errors.IsNotFound(err) {
-		return err
-	}
-	return nil
-}
-
 // newSecret instantiate a new Secret.
 func newSecret(
 	client dynamic.Interface,
