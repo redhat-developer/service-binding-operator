@@ -96,6 +96,8 @@ The following example scenarios are available:
 
 [Binding an Imported app in one namespace with an In-cluster Managed PostgreSQL Database in another namespace](examples/nodejs_postgresql_namespaces/README.md)
 
+[Binding an Imported app to a Route/Ingress][examples/route_k8s_resource/README.md]
+
 ## Community, discussion, contribution, and support
 
 The Service Binding community meets weekly on Thursdays at 11:15 AM UTC via [Google Meet](https://meet.google.com/jti-pujt-zqs).
