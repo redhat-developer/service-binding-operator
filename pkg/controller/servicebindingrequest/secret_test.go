@@ -15,6 +15,7 @@ var secretOwnerReference = v1.OwnerReference{
 	UID:        "c77ca1ae-72d0-4fdd-809f-58fdd37facf3",
 	Kind:       "ServiceBindingRequest",
 	APIVersion: "apps.openshift.io/v1alpha1",
+	Controller: true,
 }
 
 func assertSecretNamespacedName(t *testing.T, u *unstructured.Unstructured, ns, name string) {
