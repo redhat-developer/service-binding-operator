@@ -27,19 +27,13 @@ func (s *secret) buildResourceClient() dynamic.ResourceInterface {
 
 // createOrUpdate will take informed payload and either create a new secret or update an existing
 // one. It can return error when Kubernetes client does.
-func (s *secret) createOrUpdate(payload map[string][]byte, secretOwnerReference metav1.OwnerReference) (*unstructured.Unstructured, error) {
+func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1.OwnerReference) (*unstructured.Unstructured, error) {
 	logger := s.logger.WithValues("Namespace", s.ns, "Name", s.name)
-	reference := metav1.OwnerReference{
-		Name:       secretOwnerReference.Name,
-		UID:        secretOwnerReference.UID,
-		Kind:       secretOwnerReference.Kind,
-		APIVersion: secretOwnerReference.APIVersion,
-	}
 	secretObj := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:       s.ns,
 			Name:            s.name,
-			OwnerReferences: []metav1.OwnerReference{reference},
+			OwnerReferences: []metav1.OwnerReference{ownerReference},
 		},
 		Data: payload,
 	}
