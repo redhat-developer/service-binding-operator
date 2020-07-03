@@ -4,7 +4,6 @@ import (
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
@@ -113,9 +112,9 @@ func init() {
 	SchemeBuilder.Register(&ServiceBindingRequest{}, &ServiceBindingRequestList{})
 }
 
-func (sbr ServiceBindingRequest) AsOwnerReference() v1.OwnerReference {
+func (sbr ServiceBindingRequest) AsOwnerReference() metav1.OwnerReference {
 	var sbrController bool = true
-	return v1.OwnerReference{
+	return metav1.OwnerReference{
 		Name:       sbr.Name,
 		UID:        sbr.UID,
 		Kind:       sbr.Kind,
