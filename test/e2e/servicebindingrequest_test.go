@@ -288,6 +288,14 @@ func CreateDB(
 	ns := namespacedName.Namespace
 	resourceRef := namespacedName.Name
 
+	// order is important: the operator will follow first the database resource,
+	// then the secret holding the credential; in the case the secret is not
+	// there, default values will be set for each of the contributed
+	// configuration values declared in the Database custom resource definition.
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName, nil)
+	require.NoError(t, f.Client.Create(ctx, dbSecret, cleanupOpts))
+
 	db := mocks.DatabaseCRMock(ns, resourceRef)
 	require.NoError(t, f.Client.Create(ctx, db, cleanupOpts))
 
@@ -304,10 +312,6 @@ func CreateDB(
 		}
 		return true
 	}, 10*time.Second, 1*time.Second)
-
-	t.Log("Creating Database credentials secret mock object...")
-	dbSecret := mocks.SecretMock(ns, secretName, nil)
-	require.NoError(t, f.Client.Create(ctx, dbSecret, cleanupOpts))
 
 	return db
 }
