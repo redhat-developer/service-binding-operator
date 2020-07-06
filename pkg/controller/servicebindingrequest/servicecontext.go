@@ -23,6 +23,8 @@ type serviceContext struct {
 	volumeKeys []string
 	// envVarPrefix indicates the prefix to use in environment variables.
 	envVarPrefix *string
+	// Id indicates a name the service can be referred in custom environment variables.
+	id *string
 }
 
 // serviceContextList is a list of ServiceContext values.
@@ -58,7 +60,7 @@ func buildServiceContexts(
 		ns := stringValueOrDefault(s.Namespace, defaultNs)
 		gvk := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 		svcCtx, err := buildServiceContext(
-			client, ns, gvk, s.ResourceRef, s.EnvVarPrefix, restMapper)
+			client, ns, gvk, s.ResourceRef, s.EnvVarPrefix, restMapper, s.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -127,6 +129,7 @@ func buildServiceContext(
 	resourceRef string,
 	envVarPrefix *string,
 	restMapper meta.RESTMapper,
+	id *string,
 ) (*serviceContext, error) {
 	obj, err := findService(client, ns, gvk, resourceRef)
 	if err != nil {
@@ -202,6 +205,7 @@ func buildServiceContext(
 		envVars:      envVars,
 		volumeKeys:   volumeKeys,
 		envVarPrefix: envVarPrefix,
+		id:           id,
 	}
 
 	return serviceCtx, nil

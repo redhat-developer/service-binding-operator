@@ -63,6 +63,16 @@ func (in *BackingServiceSelector) DeepCopyInto(out *BackingServiceSelector) {
 		*out = new(string)
 		**out = **in
 	}
+	if in.EnvVarPrefix != nil {
+		in, out := &in.EnvVarPrefix, &out.EnvVarPrefix
+		*out = new(string)
+		**out = **in
+	}
+	if in.Id != nil {
+		in, out := &in.Id, &out.Id
+		*out = new(string)
+		**out = **in
+	}
 	return
 }
 

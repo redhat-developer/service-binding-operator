@@ -170,11 +170,11 @@ func getOwnedResources(
 		if err != nil {
 			return resources, err
 		}
-		for _, item := range lst.Items {
+		for idx, item := range lst.Items {
 			owners := item.GetOwnerReferences()
 			for _, owner := range owners {
 				if owner.UID == uid {
-					resources = append(resources, &item)
+					resources = append(resources, &lst.Items[idx])
 				}
 			}
 		}
@@ -192,7 +192,7 @@ func buildOwnedResourceContext(
 ) (*serviceContext, error) {
 	svcCtx, err := buildServiceContext(
 		client, obj.GetNamespace(), obj.GetObjectKind().GroupVersionKind(), obj.GetName(),
-		ownerEnvVarPrefix, restMapper)
+		ownerEnvVarPrefix, restMapper, nil)
 	if err != nil {
 		return nil, err
 	}

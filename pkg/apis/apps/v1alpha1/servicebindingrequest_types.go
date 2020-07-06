@@ -65,6 +65,7 @@ type BackingServiceSelector struct {
 	// +optional
 	Namespace    *string `json:"namespace,omitempty"`
 	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
+	Id           *string `json:"id,omitempty"`
 }
 
 // BoundApplication defines the application workloads to which the binding secret has
