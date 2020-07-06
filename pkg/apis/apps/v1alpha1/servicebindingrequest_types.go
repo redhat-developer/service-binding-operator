@@ -113,12 +113,12 @@ func init() {
 }
 
 func (sbr ServiceBindingRequest) AsOwnerReference() metav1.OwnerReference {
-	var sbrController bool = true
+	var ownerRefController bool = true
 	return metav1.OwnerReference{
 		Name:       sbr.Name,
 		UID:        sbr.UID,
 		Kind:       sbr.Kind,
 		APIVersion: sbr.APIVersion,
-		Controller: &sbrController,
+		Controller: &ownerRefController,
 	}
 }

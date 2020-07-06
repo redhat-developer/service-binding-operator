@@ -10,12 +10,13 @@ import (
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
+var ownerRefController bool = true
 var secretOwnerReference = v1.OwnerReference{
 	Name:       "binding-request",
 	UID:        "c77ca1ae-72d0-4fdd-809f-58fdd37facf3",
 	Kind:       "ServiceBindingRequest",
 	APIVersion: "apps.openshift.io/v1alpha1",
-	Controller: true,
+	Controller: &ownerRefController,
 }
 
 func assertSecretNamespacedName(t *testing.T, u *unstructured.Unstructured, ns, name string) {
