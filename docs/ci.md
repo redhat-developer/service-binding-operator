@@ -105,7 +105,7 @@ configuration file at the top-level directory of the source code:
 
 The `unit` target runs the unit tests.  Some of the tests make use of mock
 objects. The unit tests don't require a dedicated OpenShift cluster, unlike
-end-to-end tests.
+end-to-end tests. It runs `test-unit` Makefile target.
 
 ### e2e
 
