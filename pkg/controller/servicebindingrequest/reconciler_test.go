@@ -303,7 +303,6 @@ func TestApplicationNotFound(t *testing.T) {
 	d := appsv1.Deployment{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
 	require.NoError(t, err)
-
 	sbrOutput2, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
@@ -321,11 +320,14 @@ func TestApplicationNotFound(t *testing.T) {
 
 	// Update Credentials
 	s.Data["password"] = []byte("abc123")
+	// Update resourceVersion
+	s.ObjectMeta.ResourceVersion = "112200"
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&s)
 	require.NoError(t, err)
 	updated := unstructured.Unstructured{Object: obj}
 	_, err = fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Update(&updated, metav1.UpdateOptions{})
 	require.NoError(t, err)
+
 	time.Sleep(1 * time.Second)
 	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
 	r.resourceWatcher = newFakeResourceWatcher(mapper)
