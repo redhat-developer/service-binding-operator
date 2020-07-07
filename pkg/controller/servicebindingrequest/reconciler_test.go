@@ -311,6 +311,33 @@ func TestApplicationNotFound(t *testing.T) {
 
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
+}
+
+func TestReconcilerUpdateCredentials(t *testing.T) {
+	backingServiceResourceRef := "backingService"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredSecret("db-credentials")
+	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	d := appsv1.Deployment{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+	require.NoError(t, err)
 
 	u, err = fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
 	require.NoError(t, err)
@@ -329,12 +356,11 @@ func TestApplicationNotFound(t *testing.T) {
 	require.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
-	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
-	r.resourceWatcher = newFakeResourceWatcher(mapper)
-	res, err = r.Reconcile(reconcileRequest())
+	res, err := r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 	sbrOutput3, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
