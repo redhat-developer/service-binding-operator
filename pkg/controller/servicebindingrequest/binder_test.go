@@ -172,7 +172,6 @@ func TestBinderNew(t *testing.T) {
 		envVar := getEnvVar(c.Env, changeTriggerEnv)
 		require.NotNil(t, envVar)
 		require.NotEmpty(t, envVar.Value)
-		require.NoError(t, err)
 
 		uSecret, err := fakeDynClient.Resource(secretsGVR).Get(name, metav1.GetOptions{})
 		require.NoError(t, err)
