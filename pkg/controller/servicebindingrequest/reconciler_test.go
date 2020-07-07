@@ -325,7 +325,7 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 
 	// Update Credentials
 	s.Data["password"] = []byte("abc123")
-	// Update resourceVersion
+	// Update resourceVersion for postgresdb
 	s.ObjectMeta.ResourceVersion = "112200"
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&s)
 	require.NoError(t, err)
@@ -344,7 +344,10 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 	require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
 	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
-	require.Equal(t, s.Data["password"], []byte("abc123"))
+	fetchSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, fetchSecret.GetName(), reconcilerName)
+	require.Equal(t, fetchSecret.GetResourceVersion(), "")
 	require.Equal(t, 1, len(sbrOutput.Status.Applications))
 }
 
