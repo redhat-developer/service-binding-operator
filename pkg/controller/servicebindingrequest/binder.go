@@ -505,16 +505,14 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
-			updatedObj, err = b.updateSpecContainers(&obj)
-			if err != nil {
-				return nil, err
-			}
+		updatedObj, err = b.updateSpecContainers(&obj)
+		if err != nil {
+			return nil, err
+		}
 
-			if len(b.volumeKeys) > 0 {
-				if updatedObj, err = b.updateSpecVolumes(&obj); err != nil {
-					return nil, err
-				}
+		if len(b.volumeKeys) > 0 {
+			if updatedObj, err = b.updateSpecVolumes(&obj); err != nil {
+				return nil, err
 			}
 		}
 
