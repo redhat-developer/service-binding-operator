@@ -55,7 +55,7 @@ spec:
                             reference Example: "spec.template.spec.containers"'
                           type: string
                         volumes:
-                          description: 'Containers defines the path to the corev1.Volumes
+                          description: 'Volumes defines the path to the corev1.Volumes
                             reference Example: "spec.template.spec.volumes"'
                           type: string
                       required:
