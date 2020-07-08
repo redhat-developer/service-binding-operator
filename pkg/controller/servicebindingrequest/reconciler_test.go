@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -75,6 +76,34 @@ func requireConditionPresentAndFalse(t *testing.T, condition conditionsv1.Condit
 	)
 }
 
+type fakeResourceWatcher struct {
+	record map[schema.GroupVersionKind]bool
+	mapper meta.RESTMapper
+}
+
+var _ ResourceWatcher = (*fakeResourceWatcher)(nil)
+
+func (f *fakeResourceWatcher) AddWatchForGVR(gvr schema.GroupVersionResource) error {
+	gvk, err := f.mapper.KindFor(gvr)
+	if err != nil {
+		return err
+	}
+	f.record[gvk] = true
+	return nil
+}
+
+func (f *fakeResourceWatcher) AddWatchForGVK(gvk schema.GroupVersionKind) error {
+	f.record[gvk] = true
+	return nil
+}
+
+func newFakeResourceWatcher(mapper meta.RESTMapper) *fakeResourceWatcher {
+	return &fakeResourceWatcher{
+		record: make(map[schema.GroupVersionKind]bool),
+		mapper: mapper,
+	}
+}
+
 // TestApplicationSelectorByName tests discovery of application by name
 func TestApplicationSelectorByName(t *testing.T) {
 	backingServiceResourceRef := "backingServiceRef"
@@ -88,16 +117,18 @@ func TestApplicationSelectorByName(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("test-application-selector-by-name", func(t *testing.T) {
 
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
@@ -135,10 +166,12 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("reconcile-using-secret", func(t *testing.T) {
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
@@ -158,7 +191,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
 
 		namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
@@ -196,10 +229,12 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("reconcile-using-volume", func(t *testing.T) {
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
@@ -236,7 +271,9 @@ func TestApplicationNotFound(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	// Reconcile without deployment
 	res, err := reconciler.Reconcile(reconcileRequest())
@@ -244,7 +281,7 @@ func TestApplicationNotFound(t *testing.T) {
 	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
@@ -254,8 +291,9 @@ func TestApplicationNotFound(t *testing.T) {
 	// Reconcile with deployment
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 	fakeDynClient = f.FakeDynClient()
-	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
-	res, err = reconciler.Reconcile(reconcileRequest())
+	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+	res, err = r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
@@ -266,7 +304,7 @@ func TestApplicationNotFound(t *testing.T) {
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
 	require.NoError(t, err)
 
-	sbrOutput2, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput2, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput2.Status.Conditions)
@@ -289,12 +327,13 @@ func TestApplicationNotFound(t *testing.T) {
 	_, err = fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Update(&updated, metav1.UpdateOptions{})
 	require.NoError(t, err)
 	time.Sleep(1 * time.Second)
-	reconciler = &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
-	res, err = reconciler.Reconcile(reconcileRequest())
+	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+	res, err = r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
-	sbrOutput3, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput3, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	u, err = fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
@@ -332,23 +371,18 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	fakeDynClient := f.FakeDynClient()
-
-	restMapper := testutils.BuildTestRESTMapper()
-
-	reconciler := &Reconciler{
-		dynClient:  fakeDynClient,
-		scheme:     f.S,
-		RestMapper: restMapper,
-	}
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	t.Run("test-reconciler-reconcile-with-conflicting-application-selector", func(t *testing.T) {
 
-		res, err := reconciler.Reconcile(reconcileRequest())
+		res, err := r.Reconcile(reconcileRequest())
 		require.NoError(t, err)
 		require.False(t, res.Requeue)
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-		sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
 		expectedStatus := v1alpha1.BoundApplication{
@@ -378,14 +412,17 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	f.AddMockedUnstructuredServiceBindingRequestWithoutApplication(reconcilerName, backingServiceResourceRef)
 	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
 
-	reconciler := &Reconciler{dynClient: f.FakeDynClient(), RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
-	res, err := reconciler.Reconcile(reconcileRequest())
+	res, err := r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)

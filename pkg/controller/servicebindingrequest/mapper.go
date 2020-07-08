@@ -10,25 +10,25 @@ var (
 	mapperLog = log.NewLog("mapper")
 )
 
-// SBRRequestMapper is the handler.Mapper interface implementation. It should influence the
+// sbrRequestMapper is the handler.Mapper interface implementation. It should influence the
 // enqueue process considering the resources informed.
-type SBRRequestMapper struct{}
+type sbrRequestMapper struct{}
 
 // Map execute the mapping of a resource with the requests it would produce. Here we inspect the
 // given object trying to identify if this object is part of a SBR, or a actual SBR resource.
-func (m *SBRRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
+func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 	log := mapperLog.WithValues(
 		"Object.Namespace", obj.Meta.GetNamespace(),
 		"Object.Name", obj.Meta.GetName(),
 	)
 	toReconcile := []reconcile.Request{}
 
-	sbrNamespacedName, err := GetSBRNamespacedNameFromObject(obj.Object)
+	sbrNamespacedName, err := getSBRNamespacedNameFromObject(obj.Object)
 	if err != nil {
 		log.Error(err, "on inspecting object for annotations for SBR object")
 		return toReconcile
 	}
-	if IsNamespacedNameEmpty(sbrNamespacedName) {
+	if isNamespacedNameEmpty(sbrNamespacedName) {
 		log.Debug("not able to extract SBR namespaced-name")
 		return toReconcile
 	}

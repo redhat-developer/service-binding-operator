@@ -28,7 +28,7 @@ func TestFindService(t *testing.T) {
 		cr, err := findService(
 			f.FakeDynClient(), "", db.GetObjectKind().GroupVersionKind(), resourceRef)
 		require.Error(t, err)
-		require.Equal(t, err, ErrUnspecifiedBackingServiceNamespace)
+		require.Equal(t, err, errUnspecifiedBackingServiceNamespace)
 		require.Nil(t, cr)
 	})
 

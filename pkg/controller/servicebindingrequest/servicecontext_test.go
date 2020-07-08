@@ -123,51 +123,74 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 				"user":     "user",
 			},
 		}
-		require.Equal(t, expected, got[0].EnvVars)
+		require.Equal(t, expected, got[0].envVars)
 
 	})
 }
 
-func TestFindOwnedResourcesCtxs_Secret(t *testing.T) {
-	f := mocks.NewFake(t, "test")
-	cr := mocks.DatabaseCRMock("test", "test")
-	reference := metav1.OwnerReference{
-		APIVersion:         cr.APIVersion,
-		Kind:               cr.Kind,
-		Name:               cr.Name,
-		UID:                cr.UID,
-		Controller:         &trueBool,
-		BlockOwnerDeletion: &trueBool,
+func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
+	testCases := []struct {
+		desc    string
+		secrets []string
+	}{
+		{
+			desc:    "backend cr creating only one secret should returns only one child",
+			secrets: []string{"test_database"},
+		},
+		{
+			desc:    "backend cr creating multiple secrets should returns only multiple children",
+			secrets: []string{"test_database", "test_database2"},
+		},
 	}
-	secret := mocks.SecretMock("test", "test_database")
-	us := &unstructured.Unstructured{}
-	uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
-	require.NoError(t, err)
-	us.Object = uc
-	us.SetOwnerReferences([]metav1.OwnerReference{reference})
-	route, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mocks.RouteCRMock("test", "test"))
-	require.NoError(t, err)
-	usRoute := &unstructured.Unstructured{Object: route}
-	usRoute.SetOwnerReferences([]metav1.OwnerReference{reference})
-	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	f.S.AddKnownTypes(routev1.SchemeGroupVersion, &routev1.Route{})
-	f.AddMockResource(cr)
-	f.AddMockResource(us)
-	f.AddMockResource(&unstructured.Unstructured{Object: route})
 
-	restMapper := testutils.BuildTestRESTMapper()
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			f := mocks.NewFake(t, "test")
+			cr := mocks.DatabaseCRMock("test", "test")
+			reference := metav1.OwnerReference{
+				APIVersion:         cr.APIVersion,
+				Kind:               cr.Kind,
+				Name:               cr.Name,
+				UID:                cr.UID,
+				Controller:         &trueBool,
+				BlockOwnerDeletion: &trueBool,
+			}
+			route, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mocks.RouteCRMock("test", "test"))
+			require.NoError(t, err)
+			usRoute := &unstructured.Unstructured{Object: route}
+			usRoute.SetOwnerReferences([]metav1.OwnerReference{reference})
+			f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
+			f.S.AddKnownTypes(routev1.SchemeGroupVersion, &routev1.Route{})
+			f.AddMockResource(cr)
+			f.AddMockResource(&unstructured.Unstructured{Object: route})
 
-	t.Run("existing selectors", func(t *testing.T) {
-		ownedResourcesCtxs, err := findOwnedResourcesCtxs(
-			f.FakeDynClient(),
-			cr.GetNamespace(),
-			cr.GetName(),
-			cr.GetUID(),
-			cr.GroupVersionKind(),
-			nil,
-			restMapper,
-		)
-		require.NoError(t, err)
-		require.NotEmpty(t, ownedResourcesCtxs)
-	})
+			restMapper := testutils.BuildTestRESTMapper()
+
+			for _, secret := range tC.secrets {
+				secret := mocks.SecretMock("test", secret)
+				us := &unstructured.Unstructured{}
+				uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
+				require.NoError(t, err)
+				us.Object = uc
+				us.SetOwnerReferences([]metav1.OwnerReference{reference})
+				f.AddMockResource(us)
+			}
+
+			ownedResourcesCtxs, err := findOwnedResourcesCtxs(
+				f.FakeDynClient(),
+				cr.GetNamespace(),
+				cr.GetName(),
+				cr.GetUID(),
+				cr.GroupVersionKind(),
+				nil,
+				restMapper,
+			)
+			require.NoError(t, err)
+			require.NotEmpty(t, ownedResourcesCtxs)
+			require.EqualValues(t, len(tC.secrets), len(ownedResourcesCtxs))
+			for idx, resource := range ownedResourcesCtxs {
+				require.Equal(t, tC.secrets[idx], resource.service.GetName())
+			}
+		})
+	}
 }

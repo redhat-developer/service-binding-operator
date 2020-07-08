@@ -8,9 +8,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -54,7 +57,7 @@ func TestBinderNew(t *testing.T) {
 	)
 
 	t.Run("search-using-resourceref", func(t *testing.T) {
-		binderForSBRWithResourceRef := NewBinder(
+		binderForSBRWithResourceRef := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbrWithResourceRef,
@@ -69,7 +72,7 @@ func TestBinderNew(t *testing.T) {
 	})
 
 	t.Run("search", func(t *testing.T) {
-		binder := NewBinder(
+		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
@@ -84,7 +87,7 @@ func TestBinderNew(t *testing.T) {
 	})
 
 	t.Run("appendEnvFrom-removeEnvFrom", func(t *testing.T) {
-		binder := NewBinder(
+		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
@@ -107,7 +110,7 @@ func TestBinderNew(t *testing.T) {
 
 	t.Run("appendEnv", func(t *testing.T) {
 
-		binder := NewBinder(
+		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
@@ -125,7 +128,7 @@ func TestBinderNew(t *testing.T) {
 
 	t.Run("update", func(t *testing.T) {
 
-		binder := NewBinder(
+		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
@@ -142,6 +145,15 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
+		// make sure SBR annonation is added
+		deployment := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedObjects[0].Object, &deployment)
+		require.NoError(t, err)
+
+		sbrName, err := getSBRNamespacedNameFromObject(&deployment)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{Name: name, Namespace: ns}, sbrName)
+
 		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
 		require.NoError(t, err)
 		require.True(t, found)
@@ -154,7 +166,7 @@ func TestBinderNew(t *testing.T) {
 
 		// special env-var should exist to trigger a side effect such as Pod restart when the
 		// intermediate secret has been modified
-		envVar := getEnvVar(c.Env, ChangeTriggerEnv)
+		envVar := getEnvVar(c.Env, changeTriggerEnv)
 		require.NotNil(t, envVar)
 		require.NotEmpty(t, envVar.Value)
 
@@ -165,7 +177,7 @@ func TestBinderNew(t *testing.T) {
 	})
 
 	t.Run("update with extra modifier present", func(t *testing.T) {
-		binder := NewBinder(
+		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
@@ -174,7 +186,7 @@ func TestBinderNew(t *testing.T) {
 		)
 		// test binder with extra modifier present
 		ch := make(chan struct{})
-		binder.modifier = ExtraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
+		binder.modifier = extraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
 			close(ch)
 			return nil
 		})
@@ -198,7 +210,7 @@ func TestBinderNew(t *testing.T) {
 
 	t.Run("remove", func(t *testing.T) {
 
-		binder := NewBinder(
+		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
@@ -225,6 +237,15 @@ func TestBinderNew(t *testing.T) {
 		require.True(t, found)
 		require.Len(t, containers, 1)
 
+		// make sure SBR annonation is removed
+		deployment := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[0].Object, &deployment)
+		require.NoError(t, err)
+
+		sbrName, err := getSBRNamespacedNameFromObject(&deployment)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, sbrName)
+
 		c := corev1.Container{}
 		u := containers[0].(map[string]interface{})
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
@@ -246,8 +267,8 @@ func TestBinderAppendEnvVar(t *testing.T) {
 		},
 	}
 
-	binder := &Binder{}
-	updatedEnvVarList := binder.appendEnvVar(envList, envName, "someothervalue")
+	b := &binder{}
+	updatedEnvVarList := b.appendEnvVar(envList, envName, "someothervalue")
 
 	// validate that no new key is added.
 	// the existing key should be overwritten with the new value.
@@ -263,7 +284,7 @@ func TestBinderApplicationName(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
 	f.AddMockedUnstructuredDeployment("applicationResourceRef", nil)
 
-	binder := NewBinder(
+	binder := newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
@@ -287,7 +308,7 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentConfigsGVR, nil)
 	f.AddMockedUnstructuredDeploymentConfig("applicationResourceRef", nil)
 
-	binder := NewBinder(
+	binder := newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
@@ -317,7 +338,7 @@ func TestBindTwoApplications(t *testing.T) {
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef1", matchLabels1)
 	sbr1 := f.AddMockedServiceBindingRequest(name1, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels1)
-	binder1 := NewBinder(
+	binder1 := newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr1,
@@ -333,7 +354,7 @@ func TestBindTwoApplications(t *testing.T) {
 	}
 	f.AddMockedUnstructuredDeployment("applicationResourceRef2", matchLabels2)
 	sbr2 := f.AddMockedServiceBindingRequest(name2, nil, "backingServiceResourceRef", "", deploymentsGVR, matchLabels2)
-	binder2 := NewBinder(
+	binder2 := newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr2,
@@ -366,7 +387,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "", "knative-app", gvr, matchLabels)
 	f.AddMockedUnstructuredKnativeService("knative-app", matchLabels)
 
-	binder := NewBinder(
+	binder := newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
@@ -400,7 +421,7 @@ func Test_extraFieldsModifier(t *testing.T) {
 	f := mocks.NewFake(t, ns)
 	deploy := mocks.DeploymentMock(ns, "deployment-fake", matchLabels)
 	sbr := mocks.ServiceBindingRequestMock(ns, name, nil, "", deploy.Name, deploymentsGVR, matchLabels)
-	binder := NewBinder(
+	binder := newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
@@ -415,7 +436,7 @@ func Test_extraFieldsModifier(t *testing.T) {
 	ksvc := mocks.KnativeServiceMock(ns, "knative-app-with-rev-name", matchLabels)
 	sbr = mocks.ServiceBindingRequestMock(ns, name, nil, "", ksvc.Name, gvr, matchLabels)
 
-	binder = NewBinder(
+	binder = newBinder(
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,

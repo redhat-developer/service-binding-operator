@@ -43,6 +43,6 @@ func TestDiscoverBindingType(t *testing.T) {
 	t.Run("unknown/secret", assertDiscoverBindingType(args{
 		value:     "binding:unknown:object:secret",
 		expected:  BindingTypeEnvVar,
-		wantedErr: UnknownBindingTypeErr("unknown"),
+		wantedErr: unknownBindingTypeErr("unknown"),
 	}))
 }
