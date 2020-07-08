@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
@@ -377,10 +376,15 @@ func (b *binder) updateContainer(container interface{}) (map[string]interface{},
 	// effectively binding the application with intermediary secret
 	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
 
+	secretRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+	existingSecret, err := b.dynClient.Resource(secretRes).Namespace(b.sbr.GetNamespace()).Get(b.sbr.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	// add a special environment variable that is only used to trigger a change in the declaration,
 	// attempting to force a side effect (in case of a Deployment, it would result in its Pods to be
 	// restarted)
-	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, time.Now().Format(time.RFC3339))
+	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, existingSecret.GetResourceVersion())
 
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries

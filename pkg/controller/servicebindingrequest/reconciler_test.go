@@ -282,7 +282,6 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	d := appsv1.Deployment{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
 	require.NoError(t, err)
-
 	sbrOutput2, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
@@ -290,6 +289,33 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
+}
+
+func TestReconcilerUpdateCredentials(t *testing.T) {
+	backingServiceResourceRef := "backingService"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingRequest(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredSecret("db-credentials")
+	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	d := appsv1.Deployment{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+	require.NoError(t, err)
 
 	u, err = fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
 	require.NoError(t, err)
@@ -299,25 +325,30 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	// Update Credentials
 	s.Data["password"] = []byte("abc123")
+	// Update resourceVersion for postgresdb
+	s.ObjectMeta.ResourceVersion = "112200"
 	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&s)
 	require.NoError(t, err)
 	updated := unstructured.Unstructured{Object: obj}
 	_, err = fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Update(&updated, metav1.UpdateOptions{})
 	require.NoError(t, err)
+
 	time.Sleep(1 * time.Second)
-	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
-	r.resourceWatcher = newFakeResourceWatcher(mapper)
-	res, err = r.Reconcile(reconcileRequest())
+	res, err := r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
-	sbrOutput3, err := r.getServiceBindingRequest(namespacedName)
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
-	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
-	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
-	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
-	require.Equal(t, s.Data["password"], []byte("abc123"))
-	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
+	require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
+	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+	require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
+	fetchSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, fetchSecret.GetName(), reconcilerName)
+	require.Equal(t, fetchSecret.GetResourceVersion(), "")
+	require.Equal(t, 1, len(sbrOutput.Status.Applications))
 }
 
 //TestReconcilerReconcileWithConflictingAppSelc tests when sbr has conflicting ApplicationSel such as MatchLabels=App1 and ResourceRef=App2 it should prioritise the ResourceRef

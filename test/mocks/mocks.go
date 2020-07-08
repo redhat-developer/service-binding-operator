@@ -360,8 +360,9 @@ func SecretMock(ns, name string) *corev1.Secret {
 			APIVersion: "v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
+			Namespace:       ns,
+			Name:            name,
+			ResourceVersion: "116076",
 		},
 		Data: map[string][]byte{
 			"user":     []byte("user"),
