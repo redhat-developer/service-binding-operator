@@ -88,7 +88,7 @@ type ApplicationSelector struct {
 	BindingPath *BindingPath `json:"bindingPath,omitempty"`
 }
 
-var (
+const (
 	// DefaultContainersPath has the logical path logical path
 	// to find containers on supported objects
 	// Used as []string{"spec", "template", "spec", "containers"}
