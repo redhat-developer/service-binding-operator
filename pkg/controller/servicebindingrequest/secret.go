@@ -59,15 +59,15 @@ func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1
 		return nil, err
 	}
 	existingSecretData, _, _ := unstructured.NestedMap(existingSecret.Object, "data")
-	existingSecretDataStr := make(map[string]string)
-	for k, v := range existingSecretData {
-		existingSecretDataStr[k] = v.(string)
-	}
 	payloadStr := make(map[string]string)
 	for k, v := range payload {
 		payloadStr[k] = base64.StdEncoding.EncodeToString(v)
 	}
-	eq := reflect.DeepEqual(existingSecretDataStr, payloadStr)
+	payloadInterim := make(map[string]interface{})
+	for k, v := range payloadStr {
+		payloadInterim[k] = reflect.ValueOf(v).Interface()
+	}
+	eq := nestedMapComparison(existingSecretData, payloadInterim)
 	if eq {
 		logger.Debug("Secret data is same. Skip Update")
 	} else {

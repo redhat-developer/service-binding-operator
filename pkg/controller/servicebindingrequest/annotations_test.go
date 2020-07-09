@@ -109,11 +109,11 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		newObj := setSBRAnnotations(namespacedName, u)
 
 		// we are not modifying the origin object
-		equal, err := nestedMapComparison(u, originCopy)
+		equal, err := nestedUnstructuredComparison(u, originCopy)
 		require.NoError(t, err)
 		require.True(t, equal)
 
-		equal, err = nestedMapComparison(u, newObj, []string{"metadata", "annotations"}...)
+		equal, err = nestedUnstructuredComparison(u, newObj, []string{"metadata", "annotations"}...)
 		require.NoError(t, err)
 		require.False(t, equal)
 
@@ -123,7 +123,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 
 		// assert nothing else is changed
 		newObj.SetAnnotations(nil)
-		equal, err = nestedMapComparison(u, newObj)
+		equal, err = nestedUnstructuredComparison(u, newObj)
 		require.NoError(t, err)
 		require.True(t, equal)
 	})
@@ -133,11 +133,11 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		newObj := removeSBRAnnotations(u)
 
 		// we are not modifying the origin object
-		equal, err := nestedMapComparison(u, originCopy)
+		equal, err := nestedUnstructuredComparison(u, originCopy)
 		require.NoError(t, err)
 		require.True(t, equal)
 
-		equal, err = nestedMapComparison(u, newObj, []string{"metadata", "annotations"}...)
+		equal, err = nestedUnstructuredComparison(u, newObj, []string{"metadata", "annotations"}...)
 		require.NoError(t, err)
 		require.False(t, equal)
 
@@ -147,7 +147,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 
 		// assert nothing else is changed
 		newObj.SetAnnotations(u.GetAnnotations())
-		equal, err = nestedMapComparison(u, newObj)
+		equal, err = nestedUnstructuredComparison(u, newObj)
 		require.NoError(t, err)
 		require.True(t, equal)
 	})

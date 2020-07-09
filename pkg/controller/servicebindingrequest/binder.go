@@ -445,8 +445,8 @@ func (b *binder) removeVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	return cleanVolumeMounts
 }
 
-// nestedMapComparison compares a nested field from two objects.
-func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
+// nestedUnstructuredComparison compares a nested field from two objects.
+func nestedUnstructuredComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
 	var (
 		aMap map[string]interface{}
 		bMap map[string]interface{}
@@ -467,9 +467,14 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 		return false, nil
 	}
 
-	result := cmp.DeepEqual(aMap, bMap)()
+	result := nestedMapComparison(aMap, bMap)
+	return result, nil
+}
 
-	return result.Success(), nil
+func nestedMapComparison(a, b map[string]interface{}) bool {
+	val := cmp.DeepEqual(a, b)()
+	return val.Success()
+
 }
 
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
@@ -499,7 +504,7 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(&obj, updatedObj); err != nil {
+		if specsAreEqual, err := nestedUnstructuredComparison(&obj, updatedObj); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
