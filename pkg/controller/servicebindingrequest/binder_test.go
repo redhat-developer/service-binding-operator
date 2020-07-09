@@ -56,7 +56,7 @@ func TestBinderNew(t *testing.T) {
 		map[string]string{},
 	)
 
-	f.AddMockedUnstructuredSecret(name)
+	f.AddMockedUnstructuredSecretRV(name)
 	fakeDynClient := f.FakeDynClient()
 
 	t.Run("search-using-resourceref", func(t *testing.T) {
