@@ -188,7 +188,7 @@ setup-venv:
 
 # Generate namespace name for test
 out/test-namespace:
-	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > $(OUTPUT_DIR)/test-namespace
+	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]' | head -c 8)" > $(OUTPUT_DIR)/test-namespace
 
 .PHONY: get-test-namespace
 get-test-namespace: out/test-namespace
