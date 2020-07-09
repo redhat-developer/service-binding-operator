@@ -146,13 +146,13 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				Type:    CollectionReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  EmptyServiceSelectorsReason,
-				Message: ErrEmptyBackingServiceSelectors.Error(),
+				Message: errEmptyBackingServiceSelectors.Error(),
 			},
 			conditionsv1.Condition{
 				Type:    InjectionReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  EmptyServiceSelectorsReason,
-				Message: ErrEmptyBackingServiceSelectors.Error(),
+				Message: errEmptyBackingServiceSelectors.Error(),
 			},
 		)
 		if updateErr == nil {

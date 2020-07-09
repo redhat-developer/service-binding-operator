@@ -276,8 +276,8 @@ func TestApplicationNotFound(t *testing.T) {
 	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	// Reconcile without deployment
-	res, err := reconciler.Reconcile(reconcileRequest())
-	require.EqualError(t, err, ErrApplicationNotFound.Error())
+	res, err := r.Reconcile(reconcileRequest())
+	require.EqualError(t, err, errApplicationNotFound.Error())
 	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}

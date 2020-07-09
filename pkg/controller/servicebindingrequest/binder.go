@@ -85,7 +85,7 @@ func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 		Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, ErrApplicationNotFound
+			return nil, errApplicationNotFound
 		}
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 	}
 
 	if len(objList.Items) == 0 {
-		return nil, ErrApplicationNotFound
+		return nil, errApplicationNotFound
 	}
 
 	return objList, nil

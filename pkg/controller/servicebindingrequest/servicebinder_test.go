@@ -106,10 +106,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 				// proceed to find whether conditions match wanted conditions
 				for _, c := range args.wantConditions {
 					if c.Status == corev1.ConditionTrue {
-						requireConditionPresentAndTrue(t, c.Type, sb.SBR.Status.Conditions)
+						requireConditionPresentAndTrue(t, c.Type, sb.sbr.Status.Conditions)
 					}
 					if c.Status == corev1.ConditionFalse {
-						requireConditionPresentAndFalse(t, c.Type, sb.SBR.Status.Conditions)
+						requireConditionPresentAndFalse(t, c.Type, sb.sbr.Status.Conditions)
 					}
 				}
 			}
@@ -510,7 +510,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				Type:    InjectionReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  EmptyApplicationSelectorReason,
-				Message: ErrEmptyApplicationSelector.Error(),
+				Message: errEmptyApplicationSelector.Error(),
 			},
 		},
 	}))
