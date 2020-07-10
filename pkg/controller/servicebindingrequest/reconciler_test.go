@@ -415,15 +415,17 @@ func TestServiceNotFound(t *testing.T) {
 	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
 
 	fakeDynClient := f.FakeDynClient()
-	reconciler := &Reconciler{dynClient: fakeDynClient, RestMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
 	// Reconcile without service
-	res, err := reconciler.Reconcile(reconcileRequest())
+	res, err := r.Reconcile(reconcileRequest())
 	require.NoError(t, err)
 	require.True(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
-	sbrOutput, err := reconciler.getServiceBindingRequest(namespacedName)
+	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
 	require.True(t,

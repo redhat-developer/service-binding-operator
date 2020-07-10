@@ -158,18 +158,18 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.restMapper,
 	)
 	if err != nil {
-		if err == ErrServiceNotFound {
+		if err == errServiceNotFound {
 			conditionsv1.SetStatusCondition(&sbr.Status.Conditions, conditionsv1.Condition{
 				Type:    BindingReady,
 				Status:  corev1.ConditionFalse,
 				Reason:  ServiceNotFoundReason,
-				Message: ErrServiceNotFound.Error(),
+				Message: errServiceNotFound.Error(),
 			})
 			_, updateErr := updateServiceBindingRequestStatus(r.dynClient, sbr)
 			if updateErr == nil {
-				return RequeueError(updateErr)
+				return requeueError(updateErr)
 			}
-			return RequeueError(ErrServiceNotFound)
+			return requeueError(errServiceNotFound)
 		}
 		return requeueError(err)
 	}

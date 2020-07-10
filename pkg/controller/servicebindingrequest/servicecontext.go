@@ -134,7 +134,7 @@ func buildServiceContext(
 	obj, err := findService(client, ns, gvk, resourceRef)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			return nil, ErrServiceNotFound
+			return nil, errServiceNotFound
 		}
 		return nil, err
 	}
