@@ -504,7 +504,7 @@ func serviceBindingRequestTest(
 	t.Log("Inspecting SBR status...")
 	require.Eventually(t, func() bool {
 		t.Logf("Inspecting SBR: '%s'", sbrNamespacedName)
-		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
+		err := assertSBRStatus(todoCtx, t, f, sbrNamespacedName)
 		if err != nil {
 			t.Logf("Error on inspecting SBR: '%#v'", err)
 			return false
