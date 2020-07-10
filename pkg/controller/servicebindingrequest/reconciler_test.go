@@ -481,8 +481,8 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName1, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -518,8 +518,8 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName2, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
