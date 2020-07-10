@@ -164,3 +164,14 @@ type ServiceBindingRequestList struct {
 func init() {
 	SchemeBuilder.Register(&ServiceBindingRequest{}, &ServiceBindingRequestList{})
 }
+
+func (sbr ServiceBindingRequest) AsOwnerReference() metav1.OwnerReference {
+	var ownerRefController bool = true
+	return metav1.OwnerReference{
+		Name:       sbr.Name,
+		UID:        sbr.UID,
+		Kind:       sbr.Kind,
+		APIVersion: sbr.APIVersion,
+		Controller: &ownerRefController,
+	}
+}

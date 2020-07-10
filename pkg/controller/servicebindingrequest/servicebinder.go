@@ -152,12 +152,6 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 		return requeueError(err)
 	}
 
-	logger.Info("Deleting intermediary secret")
-	if err := b.secret.delete(); err != nil {
-		logger.Error(err, "On deleting intermediary secret.")
-		return requeueError(err)
-	}
-
 	logger.Debug("Removing resource finalizers...")
 	b.sbr.SetFinalizers(removeStringSlice(b.sbr.GetFinalizers(), finalizer))
 	if _, err := b.updateServiceBindingRequest(b.sbr); err != nil {
@@ -247,7 +241,8 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	sbrStatus := b.sbr.Status.DeepCopy()
 
 	b.logger.Info("Saving data on intermediary secret...")
-	secretObj, err := b.secret.commit(b.envVars)
+
+	secretObj, err := b.secret.createOrUpdate(b.envVars, b.sbr.AsOwnerReference())
 	if err != nil {
 		b.logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.sbr, sbrStatus, nil)
