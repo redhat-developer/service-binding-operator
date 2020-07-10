@@ -44,7 +44,7 @@ const (
 
 var (
 	retryInterval  = time.Second * 5
-	timeout        = time.Second * 180
+	timeout        = time.Second * 120
 	cleanupTimeout = time.Second * 5
 
 	// Intermediate secret should have following data
@@ -331,10 +331,14 @@ func CreateApp(
 
 	// waiting for application deployment to reach one replica
 	t.Log("Waiting for application deployment reach one replica...")
-	require.NoError(
-		t,
-		e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout),
-	)
+	require.Eventually(t, func() bool {
+		err := e2eutil.WaitForDeployment(t, f.KubeClient, ns, appName, 1, retryInterval, timeout)
+		if err != nil {
+			t.Log(err)
+			return false
+		}
+		return true
+	}, 120*time.Second, 2*time.Second)
 
 	// retrieveing deployment, to inspect its contents
 	t.Logf("Reading application deployment '%s'", appName)
