@@ -45,6 +45,8 @@ endif
 
 ZAP_FLAGS = $(ZAP_ENCODER_FLAG) $(ZAP_LEVEL_FLAG)
 
+SKIP_CLEANUP_ERROR ?= true
+
 # Create output directory for artifacts and test results. ./out is supposed to
 # be a safe place for all targets to write to while knowing that all content
 # inside of ./out is wiped once "make clean" is run.
@@ -219,7 +221,7 @@ test-e2e: e2e-setup deploy-crds
 		operator-sdk --verbose test local ./test/e2e \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--skip-cleanup-error=true \
+			--skip-cleanup-error=$(SKIP_CLEANUP_ERROR) \
 			--go-test-flags "-timeout=110m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS) \
