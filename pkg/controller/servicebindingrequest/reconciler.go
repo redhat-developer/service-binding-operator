@@ -200,6 +200,15 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Error(err, "Error add watching application GVR")
 	}
 
+	if sbr.GetDeletionTimestamp() != nil && sbr.GetOwnerReferences() != nil {
+		logger := logger.WithName("Deleting SBR when it has ownerReference")
+		logger.Debug("Removing resource finalizers...")
+		sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), finalizer))
+		if _, err := updateServiceBindingRequest(r.dynClient, sbr); err != nil {
+			return noRequeue(err)
+		}
+		return done()
+	}
 	if sbr.GetDeletionTimestamp() != nil {
 		logger := logger.WithName("unbind")
 		logger.Info("Executing unbinding steps...")
