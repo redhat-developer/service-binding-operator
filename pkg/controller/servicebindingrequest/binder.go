@@ -499,7 +499,7 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		var updatedObj *unstructured.Unstructured
 		var err error
 		if b.sbr.Spec.ApplicationSelector.BindingPath.CustomSecretPath != nil {
-			updatedObj, err = b.updateSecretField(&obj)
+			_, err = b.updateSecretField(&obj)
 			if err != nil {
 				return nil, err
 			}
