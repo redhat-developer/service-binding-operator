@@ -45,7 +45,7 @@ const (
 
 var (
 	retryInterval  = time.Second * 5
-	timeout        = time.Second * 120
+	timeout        = time.Second * 180
 	cleanupTimeout = time.Second * 5
 
 	// Intermediate secret should have following data
@@ -268,7 +268,7 @@ func updateSBRSecret(
 	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
-) {
+) error {
 	sbrSecret := &corev1.Secret{}
 	require.NoError(t, f.Client.Get(ctx, namespacedName, sbrSecret))
 
@@ -282,20 +282,7 @@ func updateSBRSecret(
 		sbrSecret.Data[k] = []byte("bogus")
 	}
 
-	require.NoError(t, f.Client.Update(ctx, sbrSecret))
-}
-
-// retry the informed method a few times, with sleep between attempts.
-func retry(attempts int, sleep time.Duration, fn func() error) error {
-	var err error
-	for i := attempts; i > 0; i-- {
-		err = fn()
-		if err == nil {
-			break
-		}
-		time.Sleep(sleep)
-	}
-	return err
+	return f.Client.Update(ctx, sbrSecret)
 }
 
 // CreateDB implements end-to-end step for the creation of a Database CR along with the dependend
@@ -432,83 +419,6 @@ func CreateCSV(
 	require.NoError(t, f.Client.Create(ctx, &csv, cleanupOpts))
 }
 
-// inspectDeployment assert deployment resource in a retry loop.
-func inspectDeployment(
-	ctx context.Context,
-	t *testing.T,
-	f *framework.Framework,
-	namespacedName types.NamespacedName,
-	sbrName string,
-) {
-	err := retry(10, 5*time.Second, func() error {
-		t.Logf("Inspecting deployment '%s'", namespacedName)
-		_, err := assertDeploymentEnvFrom(ctx, f, namespacedName, sbrName)
-		if err != nil {
-			t.Logf("Error on inspecting deployment: '%s'", err)
-		}
-		return err
-	})
-	t.Logf("Deployment: Result after attempts, error: '%#v'", err)
-	require.NoError(t, err)
-}
-
-// inspectSBRStatus retry assert SBR status to make sure it's in "success" state.
-func inspectSBRStatus(
-	ctx context.Context,
-	t *testing.T,
-	f *framework.Framework,
-	namespacedName types.NamespacedName,
-) {
-	err := retry(10, 5*time.Second, func() error {
-		t.Logf("Inspecting SBR: '%s'", namespacedName)
-		err := assertSBRStatus(ctx, t, f, namespacedName)
-		if err != nil {
-			t.Logf("Error on inspecting SBR: '%#v'", err)
-		}
-		return err
-	})
-	t.Logf("SBR-Status: Result after attempts, error: '%#v'", err)
-	require.NoError(t, err)
-}
-
-// inspectSBRSecret retry assert on intermediary secret, making sure it contains expected content.
-func inspectSBRSecret(
-	ctx context.Context,
-	t *testing.T,
-	f *framework.Framework,
-	namespacedName types.NamespacedName,
-	assertKeys map[string]string,
-) {
-	err := retry(10, 5*time.Second, func() error {
-		t.Logf("Inspecting secret '%s'...", namespacedName)
-		_, err := assertSBRSecret(ctx, f, namespacedName, assertKeys)
-		if err != nil {
-			t.Logf("Secret inspection error: '%#v'", err)
-		}
-		return err
-	})
-	t.Logf("Secret: Result after attempts, error: '%#v'", err)
-	require.NoError(t, err)
-}
-
-func inspectSecretNotFound(
-	ctx context.Context,
-	t *testing.T,
-	f *framework.Framework,
-	namespacedName types.NamespacedName,
-) {
-	err := retry(10, 5*time.Second, func() error {
-		t.Logf("Searching for secret '%s'...", namespacedName)
-		err := assertSecretNotFound(ctx, f, namespacedName)
-		if err != nil {
-			t.Logf("Secret search error: '%#v'", err)
-		}
-		return err
-	})
-	t.Logf("Secret: Result after attempts, error: '%#v'", err)
-	require.NoError(t, err)
-}
-
 // serviceBindingRequestTest executes the actual end-to-end testing, simulating the components and
 // expecting for changes caused by the operator.
 func serviceBindingRequestTest(
@@ -519,6 +429,7 @@ func serviceBindingRequestTest(
 	steps []Step,
 ) {
 	// making sure resource names employed during test are unique
+	rand.Seed(time.Now().UnixNano())
 	randomSuffix := rand.Int()
 	csvName := fmt.Sprintf("cluster-service-version-%d", randomSuffix)
 	sbrName := fmt.Sprintf("e2e-service-binding-request-%d", randomSuffix)
@@ -536,6 +447,7 @@ func serviceBindingRequestTest(
 	deploymentNamespacedName := types.NamespacedName{Namespace: ns, Name: appName}
 	sbrNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
 	csvNamespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
+	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
 
 	cleanupOpts := cleanupOptions(ctx)
 
@@ -577,15 +489,32 @@ func serviceBindingRequestTest(
 	// retrying a few times to identify SBO changes in deployment, this loop is waiting for the
 	// operator reconciliation.
 	t.Log("Inspecting deployment structure...")
-	inspectDeployment(todoCtx, t, f, deploymentNamespacedName, sbrName)
+	require.Eventually(t, func() bool {
+		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
+		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
+		if err != nil {
+			t.Logf("Error on inspecting deployment: '%s'", err)
+			return false
+		}
+		t.Logf("Deployment: Result after attempts, error: '%#v'", err)
+		return true
+	}, 120*time.Second, 2*time.Second)
 
 	// retrying a few times to identify SBR status change to "success"
 	t.Log("Inspecting SBR status...")
-	inspectSBRStatus(todoCtx, t, f, sbrNamespacedName)
+	require.Eventually(t, func() bool {
+		t.Logf("Inspecting SBR: '%s'", sbrNamespacedName)
+		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
+		if err != nil {
+			t.Logf("Error on inspecting SBR: '%#v'", err)
+			return false
+		}
+		t.Logf("SBR-Status: Result after attempts, error: '%#v'", err)
+		return true
+	}, 120*time.Second, 2*time.Second)
 
 	require.Eventually(t, func() bool {
 		// checking intermediary secret contents, right after deployment the secrets must be in place
-		intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
 		sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
 		if err != nil {
 			// it can be that assertSBRSecret returns nil until service configuration values can be
@@ -594,33 +523,59 @@ func serviceBindingRequestTest(
 			return false
 		}
 		return true
-	}, 60*time.Second, 2*time.Second)
-	// checking intermediary secret contents, right after deployment the secrets must be in place
-	intermediarySecretNamespacedName := types.NamespacedName{Namespace: ns, Name: sbrName}
-	sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
-	require.NoError(t, err, "Intermediary secret contents are invalid: %v", sbrSecret)
-	require.NotNil(t, sbrSecret)
+	}, 120*time.Second, 2*time.Second)
 
 	// editing intermediary secret in order to trigger update event
-	t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
-	updateSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+	require.Eventually(t, func() bool {
+		t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
+		err := updateSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
+		if err != nil {
+			t.Log(err)
+			return false
+		}
+		return true
+	}, 120*time.Second, 2*time.Second)
 
 	// retrying a few times to see if secret is back on original state, waiting for operator to
 	// reconcile again when detecting the change
 	t.Log("Inspecting intermediary secret...")
-	inspectSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName, assertKeys)
+	require.Eventually(t, func() bool {
+		t.Logf("Inspecting secret '%s'...", intermediarySecretNamespacedName)
+		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
+		if err != nil {
+			t.Logf("Secret inspection error: '%#v'", err)
+			return false
+		}
+		t.Logf("Secret: Result after attempts, error: '%#v'", err)
+		return true
+	}, 120*time.Second, 2*time.Second)
 
 	// executing deletion of the request, triggering unbinding actions
-	err = f.Client.Delete(todoCtx, sbr)
+	err := f.Client.Delete(todoCtx, sbr)
 	require.NoError(t, err, "expect deletion to not return errors")
 
 	// after deletion, secret should not be found anymore
-	inspectSecretNotFound(todoCtx, t, f, sbrNamespacedName)
+	require.Eventually(t, func() bool {
+		t.Logf("Searching for secret '%s'...", intermediarySecretNamespacedName)
+		err := assertSecretNotFound(todoCtx, f, intermediarySecretNamespacedName)
+		if err != nil {
+			t.Logf("Secret search error: '%#v'", err)
+			return false
+		}
+		t.Logf("Secret: Result after attempts, error: '%#v'", err)
+		return true
+	}, 120*time.Second, 2*time.Second)
 
 	// after deletion, deployment should not contain envFrom directive anymore
-	_, err = assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
-	require.Error(t, err, "expect deployment not to be carrying envFrom directive")
-
+	require.Eventually(t, func() bool {
+		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
+		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
+		if err != nil {
+			t.Log("expect deployment not to be carrying envFrom directive")
+			return true
+		}
+		return false
+	}, 120*time.Second, 2*time.Second)
 }
 
 func CreateEtcdCluster(

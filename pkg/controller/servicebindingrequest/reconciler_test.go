@@ -428,3 +428,114 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
 }
+
+func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
+	applicationResourceRef := "applicationResourceRef"
+	backingServiceResourceRef1 := "backingServiceRef1"
+	backingServiceResourceRef2 := "backingServiceRef2"
+
+	sbrName1 := "binding-request1"
+	sbrName2 := "binding-request2"
+
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredDeployment(applicationResourceRef, nil)
+	f.AddMockedUnstructuredServiceBindingRequest(sbrName1, backingServiceResourceRef1, applicationResourceRef, deploymentsGVR, nil)
+	f.AddMockedUnstructuredServiceBindingRequest(sbrName2, backingServiceResourceRef2, applicationResourceRef, deploymentsGVR, nil)
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef1)
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef2)
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	t.Run("test-bind-two-sbrs-with-single-application", func(t *testing.T) {
+		// Reconciling first sbr
+		// First sbr reconcile request
+		req := reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: reconcilerNs,
+				Name:      sbrName1,
+			},
+		}
+
+		// Reconcile first sbr
+		res, err := r.Reconcile(req)
+		require.NoError(t, err)
+		require.False(t, res.Requeue)
+
+		// Get sbr after reconciling
+		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: sbrName1}
+		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
+		require.NoError(t, err)
+
+		// expected sbr assertion
+		expectedStatus := v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: applicationResourceRef,
+			},
+		}
+
+		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
+		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		require.Equal(t, sbrName1, sbrOutput.Status.Secret)
+		require.Len(t, sbrOutput.Status.Applications, 1)
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
+
+		// Reconciling second sbr
+		// Second sbr reconcile request
+		req = reconcile.Request{
+			NamespacedName: types.NamespacedName{
+				Namespace: reconcilerNs,
+				Name:      sbrName2,
+			},
+		}
+
+		// Reconcile second sbr
+		res, err = r.Reconcile(req)
+		require.NoError(t, err)
+		require.False(t, res.Requeue)
+
+		// Get sbr after reconciling
+		namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: sbrName2}
+		sbrOutput, err = r.getServiceBindingRequest(namespacedName)
+		require.NoError(t, err)
+
+		// expected sbr assertion
+		expectedStatus = v1alpha1.BoundApplication{
+			GroupVersionKind: v1.GroupVersionKind{
+				Group:   deploymentsGVR.Group,
+				Version: deploymentsGVR.Version,
+				Kind:    "Deployment",
+			},
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: applicationResourceRef,
+			},
+		}
+
+		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
+		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		require.Equal(t, sbrName2, sbrOutput.Status.Secret)
+		require.Len(t, sbrOutput.Status.Applications, 1)
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
+
+		// Get applicationResourceRef deployment
+		resourceClient := r.dynClient.Resource(deploymentsGVR).Namespace(namespacedName.Namespace)
+		u, err := resourceClient.Get(applicationResourceRef, metav1.GetOptions{})
+		require.NoError(t, err)
+		dep := &appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, dep)
+		require.NoError(t, err)
+
+		// Assert SBR name with secretRef object in containers env var
+		// Expected secretRef=binding-request1
+		require.Equal(t, sbrName1, dep.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.LocalObjectReference.Name)
+		// Expected secretRef=binding-request2
+		require.Equal(t, sbrName2, dep.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.LocalObjectReference.Name)
+	})
+}
