@@ -28,7 +28,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 
 	// not containing annotations, should return empty
 	t.Run("returns-empty", func(t *testing.T) {
-		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
@@ -36,7 +36,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// with annotations in place it should return the actual values
 	t.Run("from-annotations", func(t *testing.T) {
 		u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"})
-		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
 	})
@@ -44,7 +44,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// incomplete annotations, only name present
 	t.Run("only-name-from-annotations", func(t *testing.T) {
 		u.SetAnnotations(map[string]string{sbrNameAnnotation: "name"})
-		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
@@ -52,7 +52,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// incomplete annotations, namespace annotation is present but an empty string
 	t.Run("namespace-empty-from-annotations", func(t *testing.T) {
 		u.SetAnnotations(map[string]string{sbrNameAnnotation: "name", sbrNamespaceAnnotation: ""})
-		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
@@ -60,7 +60,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// incomplete annotations, only namespace present
 	t.Run("only-namespace-from-annotations", func(t *testing.T) {
 		u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "namespace"})
-		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
@@ -68,7 +68,7 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// incomplete annotations, name annotation is present but an empty string
 	t.Run("name-empty-from-annotations", func(t *testing.T) {
 		u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "namespace", sbrNameAnnotation: ""})
-		namespacedName, err := GetSBRNamespacedNameFromObject(u.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(u.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, namespacedName)
 	})
@@ -76,10 +76,10 @@ func TestAnnotationsGetSBRNamespacedNameFromObject(t *testing.T) {
 	// it should also understand a actual SBR as well, so return not empty
 	t.Run("actual-sbr-object", func(t *testing.T) {
 		sbr := &unstructured.Unstructured{}
-		sbr.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(ServiceBindingRequestKind))
+		sbr.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind))
 		sbr.SetNamespace("ns")
 		sbr.SetName("name")
-		namespacedName, err := GetSBRNamespacedNameFromObject(sbr.DeepCopyObject())
+		namespacedName, err := getSBRNamespacedNameFromObject(sbr.DeepCopyObject())
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{Namespace: "ns", Name: "name"}, namespacedName)
 	})
@@ -106,7 +106,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 
 	t.Run("SetSBRAnnotations", func(t *testing.T) {
 		originCopy := u.DeepCopy()
-		newObj := SetSBRAnnotations(namespacedName, u)
+		newObj := setSBRAnnotations(namespacedName, u)
 
 		// we are not modifying the origin object
 		equal, err := nestedMapComparison(u, originCopy)
@@ -117,7 +117,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, equal)
 
-		objNamespacedName, err := GetSBRNamespacedNameFromObject(newObj)
+		objNamespacedName, err := getSBRNamespacedNameFromObject(newObj)
 		require.NoError(t, err)
 		require.Equal(t, namespacedName, objNamespacedName)
 
@@ -130,7 +130,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 
 	t.Run("RemoveSBRAnnotations", func(t *testing.T) {
 		originCopy := u.DeepCopy()
-		newObj := RemoveSBRAnnotations(u)
+		newObj := removeSBRAnnotations(u)
 
 		// we are not modifying the origin object
 		equal, err := nestedMapComparison(u, originCopy)
@@ -141,7 +141,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		require.NoError(t, err)
 		require.False(t, equal)
 
-		objNamespacedName, err := GetSBRNamespacedNameFromObject(newObj)
+		objNamespacedName, err := getSBRNamespacedNameFromObject(newObj)
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, objNamespacedName)
 
@@ -153,25 +153,25 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 	})
 
 	t.Run("SetAndUpdateSBRAnnotations", func(t *testing.T) {
-		err := SetAndUpdateSBRAnnotations(client, namespacedName, objs)
+		err := setAndUpdateSBRAnnotations(client, namespacedName, objs)
 		require.NoError(t, err)
 
 		u, err := deploymentResource.Get(ns, metav1.GetOptions{})
 		require.NoError(t, err)
 
-		objNamespacedName, err := GetSBRNamespacedNameFromObject(u)
+		objNamespacedName, err := getSBRNamespacedNameFromObject(u)
 		require.NoError(t, err)
 		require.Equal(t, namespacedName, objNamespacedName)
 	})
 
 	t.Run("RemoveAndUpdateSBRAnnotations", func(t *testing.T) {
-		err := RemoveAndUpdateSBRAnnotations(client, objs)
+		err := removeAndUpdateSBRAnnotations(client, objs)
 		require.NoError(t, err)
 
 		u, err := deploymentResource.Get(ns, metav1.GetOptions{})
 		require.NoError(t, err)
 
-		objNamespacedName, err := GetSBRNamespacedNameFromObject(u)
+		objNamespacedName, err := getSBRNamespacedNameFromObject(u)
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{}, objNamespacedName)
 	})

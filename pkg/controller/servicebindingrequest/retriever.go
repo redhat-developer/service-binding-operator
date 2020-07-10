@@ -12,8 +12,8 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-// Retriever reads all data referred in plan instance, and store in a secret.
-type Retriever struct {
+// retriever reads all data referred in plan instance, and store in a secret.
+type retriever struct {
 	logger *log.Log          // logger instance
 	client dynamic.Interface // Kubernetes API client
 }
@@ -32,23 +32,23 @@ func createServiceIndexPath(name string, gvk schema.GroupVersionKind) []string {
 
 }
 
-func buildServiceEnvVars(svcCtx *ServiceContext, globalEnvVarPrefix string) (map[string]string, error) {
+func buildServiceEnvVars(svcCtx *serviceContext, globalEnvVarPrefix string) (map[string]string, error) {
 	prefixes := []string{}
 	if len(globalEnvVarPrefix) > 0 {
 		prefixes = append(prefixes, globalEnvVarPrefix)
 	}
-	if svcCtx.EnvVarPrefix != nil && len(*svcCtx.EnvVarPrefix) > 0 {
-		prefixes = append(prefixes, *svcCtx.EnvVarPrefix)
+	if svcCtx.envVarPrefix != nil && len(*svcCtx.envVarPrefix) > 0 {
+		prefixes = append(prefixes, *svcCtx.envVarPrefix)
 	}
-	if svcCtx.EnvVarPrefix == nil {
-		prefixes = append(prefixes, svcCtx.Service.GroupVersionKind().Kind)
+	if svcCtx.envVarPrefix == nil {
+		prefixes = append(prefixes, svcCtx.service.GroupVersionKind().Kind)
 	}
 
-	return envvars.Build(svcCtx.EnvVars, prefixes...)
+	return envvars.Build(svcCtx.envVars, prefixes...)
 }
 
-func (r *Retriever) processServiceContext(
-	svcCtx *ServiceContext,
+func (r *retriever) processServiceContext(
+	svcCtx *serviceContext,
 	customEnvVarCtx map[string]interface{},
 	globalEnvVarPrefix string,
 ) (map[string][]byte, []string, error) {
@@ -58,15 +58,15 @@ func (r *Retriever) processServiceContext(
 	}
 
 	// contribute the entire resource to the context shared with the custom env parser
-	gvk := svcCtx.Service.GetObjectKind().GroupVersionKind()
+	gvk := svcCtx.service.GetObjectKind().GroupVersionKind()
 
 	// add an entry in the custom environment variable context, allowing the user to use the
 	// following expression:
 	//
 	// `{{ index "v1alpha1" "postgresql.baiju.dev" "Database", "db-testing", "status", "connectionUrl" }}`
 	err = unstructured.SetNestedField(
-		customEnvVarCtx, svcCtx.Service.Object, gvk.Version, gvk.Group, gvk.Kind,
-		svcCtx.Service.GetName())
+		customEnvVarCtx, svcCtx.service.Object, gvk.Version, gvk.Group, gvk.Kind,
+		svcCtx.service.GetName())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -78,11 +78,25 @@ func (r *Retriever) processServiceContext(
 	// `{{ .v1alpha1.postgresql_baiju_dev.Database.db_testing.status.connectionUrl }}`
 	err = unstructured.SetNestedField(
 		customEnvVarCtx,
-		svcCtx.Service.Object,
-		createServiceIndexPath(svcCtx.Service.GetName(), svcCtx.Service.GroupVersionKind())...,
+		svcCtx.service.Object,
+		createServiceIndexPath(svcCtx.service.GetName(), svcCtx.service.GroupVersionKind())...,
 	)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	// add an entry in the custom environment variable context with the informed 'id'.
+	//
+	// `{{ .db_testing.status.connectionUrl }}`
+	if svcCtx.id != nil {
+		err = unstructured.SetNestedField(
+			customEnvVarCtx,
+			svcCtx.service.Object,
+			*svcCtx.id,
+		)
+		if err != nil {
+			return nil, nil, err
+		}
 	}
 
 	envVars := make(map[string][]byte, len(svcEnvVars))
@@ -91,15 +105,15 @@ func (r *Retriever) processServiceContext(
 	}
 
 	var volumeKeys []string
-	volumeKeys = append(volumeKeys, svcCtx.VolumeKeys...)
+	volumeKeys = append(volumeKeys, svcCtx.volumeKeys...)
 
 	return envVars, volumeKeys, nil
 }
 
 // ProcessServiceContexts returns environment variables and volume keys from a ServiceContext slice.
-func (r *Retriever) ProcessServiceContexts(
+func (r *retriever) ProcessServiceContexts(
 	globalEnvVarPrefix string,
-	svcCtxs ServiceContextList,
+	svcCtxs serviceContextList,
 	envVarTemplates []corev1.EnvVar,
 ) (map[string][]byte, []string, error) {
 	customEnvVarCtx := make(map[string]interface{})
@@ -117,7 +131,7 @@ func (r *Retriever) ProcessServiceContexts(
 		volumeKeys = append(volumeKeys, v...)
 	}
 
-	envParser := NewCustomEnvParser(envVarTemplates, customEnvVarCtx)
+	envParser := newCustomEnvParser(envVarTemplates, customEnvVarCtx)
 	customEnvVars, err := envParser.Parse()
 	if err != nil {
 		r.logger.Error(
@@ -141,8 +155,8 @@ func (r *Retriever) ProcessServiceContexts(
 // NewRetriever instantiate a new retriever instance.
 func NewRetriever(
 	client dynamic.Interface,
-) *Retriever {
-	return &Retriever{
+) *retriever {
+	return &retriever{
 		logger: log.NewLog("retriever"),
 		client: client,
 	}

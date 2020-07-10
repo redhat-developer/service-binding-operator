@@ -148,7 +148,6 @@ GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
 # -- Variables for uploading code coverage reports to Codecov.io --
 # This default path is set by the OpenShift CI
 CODECOV_TOKEN_PATH ?= "/usr/local/redhat-developer-service-binding-operator-codecov-token/token"
-CODECOV_TOKEN ?= @$(CODECOV_TOKEN_PATH)
 REPO_OWNER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].org')
 REPO_NAME := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].repo')
 BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
@@ -189,7 +188,7 @@ setup-venv:
 
 # Generate namespace name for test
 out/test-namespace:
-	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > $(OUTPUT_DIR)/test-namespace
+	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]' | head -c 8)" > $(OUTPUT_DIR)/test-namespace
 
 .PHONY: get-test-namespace
 get-test-namespace: out/test-namespace
@@ -220,7 +219,8 @@ test-e2e: e2e-setup deploy-crds
 		operator-sdk --verbose test local ./test/e2e \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m" \
+			--skip-cleanup-error=true \
+			--go-test-flags "-timeout=110m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS) \
 			| tee $(LOGS_DIR)/e2e/test-e2e.log
@@ -396,7 +396,7 @@ upload-codecov-report:
 ifneq ($(PR_COMMIT), null)
 	@echo "uploading test coverage report for pull-request #$(PULL_NUMBER)..."
 	@/bin/bash <(curl -s https://codecov.io/bash) \
-		-t $(CODECOV_TOKEN) \
+		-t $(shell tr -d ' \n' <$CODECOV_TOKEN_PATH) \
 		-f $(GOCOV_DIR)/*.txt \
 		-C $(PR_COMMIT) \
 		-r $(REPO_OWNER)/$(REPO_NAME) \
@@ -405,7 +405,7 @@ ifneq ($(PR_COMMIT), null)
 else
 	@echo "uploading test coverage report after PR was merged..."
 	@/bin/bash <(curl -s https://codecov.io/bash) \
-		-t $(CODECOV_TOKEN) \
+		-t $(shell tr -d ' \n' <$CODECOV_TOKEN_PATH) \
 		-f $(GOCOV_DIR)/*.txt \
 		-C $(BASE_COMMIT) \
 		-r $(REPO_OWNER)/$(REPO_NAME) \

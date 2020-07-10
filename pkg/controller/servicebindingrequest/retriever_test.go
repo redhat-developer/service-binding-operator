@@ -2,22 +2,38 @@ package servicebindingrequest
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
-func TestRetriever(t *testing.T) {
+func toIndexTemplate(obj *unstructured.Unstructured, fieldPath string) string {
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	name := obj.GetName()
+	parts := strings.Split(fieldPath, ".")
+	var newParts []string
+	for _, part := range parts {
+		newParts = append(newParts, fmt.Sprintf(`%q`, part))
+	}
+	indexArg := strings.Join(newParts, " ")
+	return fmt.Sprintf(
+		`{{ index . %q %q %q %q %s }}`, gvk.Version, gvk.Group, gvk.Kind, name, indexArg)
+}
+
+func TestRetrieverProcessServiceContexts(t *testing.T) {
+
 	logf.SetLogger(logf.ZapLogger(true))
 
 	ns := "testing"
-	backingServiceNs := "backing-servicec-ns"
+	backingServiceNs := "backing-service-ns"
 	crName := "db-testing"
+	crId := "db_testing"
 
 	f := mocks.NewFake(t, ns)
 	f.AddMockedUnstructuredCSV("csv")
@@ -26,47 +42,99 @@ func TestRetriever(t *testing.T) {
 	cr, err := mocks.UnstructuredDatabaseCRMock(backingServiceNs, crName)
 	require.NoError(t, err)
 
-	crInSameNamespace, err := mocks.UnstructuredDatabaseCRMock(ns, crName)
-	require.NoError(t, err)
-
-	serviceCtxs := ServiceContextList{
-		{
-			Service: cr,
-		},
-		{
-			Service: crInSameNamespace,
-		},
-	}
-
 	fakeDynClient := f.FakeDynClient()
 
-	toTmpl := func(obj *unstructured.Unstructured) string {
-		gvk := obj.GetObjectKind().GroupVersionKind()
-		name := obj.GetName()
-		return fmt.Sprintf(`{{ index . %q %q %q %q "metadata" "name" }}`, gvk.Version, gvk.Group, gvk.Kind, name)
+	type testCase struct {
+		dataMapping  []corev1.EnvVar
+		envVarPrefix string
+		expected     map[string][]byte
+		name         string
+		svcCtxs      serviceContextList
 	}
 
-	actual, _, err := NewRetriever(fakeDynClient).ProcessServiceContexts(
-		"SERVICE_BINDING",
-		serviceCtxs,
-		[]v1.EnvVar{
-			{Name: "SAME_NAMESPACE", Value: toTmpl(crInSameNamespace)},
-			{Name: "OTHER_NAMESPACE", Value: toTmpl(cr)},
-			{Name: "DIRECT_ACCESS", Value: `{{ .v1alpha1.postgresql_baiju_dev.Database.db_testing.metadata.name }}`},
+	testCases := []testCase{
+		{
+			name:         "access with index should return correct value",
+			envVarPrefix: "SERVICE_BINDING",
+			svcCtxs: serviceContextList{
+				{service: cr},
+			},
+			dataMapping: []corev1.EnvVar{
+				{Name: "SAME_NAMESPACE", Value: toIndexTemplate(cr, "metadata.name")},
+			},
+			expected: map[string][]byte{
+				"SERVICE_BINDING_SAME_NAMESPACE": []byte(cr.GetName()),
+			},
 		},
-	)
-	require.NoError(t, err)
-	require.Equal(t, map[string][]byte{
-		"SERVICE_BINDING_SAME_NAMESPACE":  []byte(crInSameNamespace.GetName()),
-		"SERVICE_BINDING_OTHER_NAMESPACE": []byte(cr.GetName()),
-		"SERVICE_BINDING_DIRECT_ACCESS":   []byte(cr.GetName()),
-	}, actual)
+		{
+			name:         "direct access with apiVersion and kind should return correct value",
+			envVarPrefix: "SERVICE_BINDING",
+			svcCtxs: serviceContextList{
+				{service: cr},
+			},
+			dataMapping: []corev1.EnvVar{
+				{
+					Name:  "DIRECT_ACCESS",
+					Value: `{{ .v1alpha1.postgresql_baiju_dev.Database.db_testing.metadata.name }}`,
+				},
+			},
+			expected: map[string][]byte{
+				"SERVICE_BINDING_DIRECT_ACCESS": []byte(cr.GetName()),
+			},
+		},
+		{
+			name:         "direct access with declared id should return correct value",
+			envVarPrefix: "SERVICE_BINDING",
+			svcCtxs: serviceContextList{
+				{
+					service: cr,
+					id:      &crId,
+				},
+			},
+			dataMapping: []corev1.EnvVar{
+				{
+					Name:  "ID_ACCESS",
+					Value: `{{ .db_testing.metadata.name }}`,
+				},
+			},
+			expected: map[string][]byte{
+				"SERVICE_BINDING_ID_ACCESS": []byte(cr.GetName()),
+			},
+		},
+		{
+			name:         "direct access without declared id should return <no value>",
+			envVarPrefix: "SERVICE_BINDING",
+			svcCtxs: serviceContextList{
+				{
+					service: cr,
+				},
+			},
+			dataMapping: []corev1.EnvVar{
+				{
+					Name:  "ID_ACCESS",
+					Value: `{{ .db_testing.metadata.name }}`,
+				},
+			},
+			expected: map[string][]byte{
+				"SERVICE_BINDING_ID_ACCESS": []byte("<no value>"),
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, _, err := NewRetriever(fakeDynClient).ProcessServiceContexts(
+				tc.envVarPrefix, tc.svcCtxs, tc.dataMapping)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, got)
+		})
+	}
 }
 
 func TestBuildServiceEnvVars(t *testing.T) {
 
 	type testCase struct {
-		ctx                *ServiceContext
+		ctx                *serviceContext
 		globalEnvVarPrefix string
 		expected           map[string]string
 	}
@@ -80,9 +148,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 	testCases := []testCase{
 		{
 			globalEnvVarPrefix: "",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &emptyString,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &emptyString,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -92,9 +160,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "globalprefix",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &emptyString,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &emptyString,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -104,9 +172,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "globalprefix",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &serviceEnvVarPrefix,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &serviceEnvVarPrefix,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -116,10 +184,10 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "",
-			ctx: &ServiceContext{
-				Service:      cr,
-				EnvVarPrefix: nil,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				service:      cr,
+				envVarPrefix: nil,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
@@ -129,9 +197,9 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		},
 		{
 			globalEnvVarPrefix: "",
-			ctx: &ServiceContext{
-				EnvVarPrefix: &serviceEnvVarPrefix,
-				EnvVars: map[string]interface{}{
+			ctx: &serviceContext{
+				envVarPrefix: &serviceEnvVarPrefix,
+				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},

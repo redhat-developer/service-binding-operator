@@ -13,26 +13,28 @@ import (
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 )
 
-// ServiceContext contains information related to a service.
-type ServiceContext struct {
-	// Service is the resource of the service being evaluated.
-	Service *unstructured.Unstructured
-	// EnvVars contains the service's contributed environment variables.
-	EnvVars map[string]interface{}
-	// VolumeKeys contains the keys that should be mounted as volume from the binding secret.
-	VolumeKeys []string
-	// EnvVarPrefix indicates the prefix to use in environment variables.
-	EnvVarPrefix *string
+// serviceContext contains information related to a service.
+type serviceContext struct {
+	// service is the resource of the service being evaluated.
+	service *unstructured.Unstructured
+	// envVars contains the service's contributed environment variables.
+	envVars map[string]interface{}
+	// volumeKeys contains the keys that should be mounted as volume from the binding secret.
+	volumeKeys []string
+	// envVarPrefix indicates the prefix to use in environment variables.
+	envVarPrefix *string
+	// Id indicates a name the service can be referred in custom environment variables.
+	id *string
 }
 
-// ServiceContextList is a list of ServiceContext values.
-type ServiceContextList []*ServiceContext
+// serviceContextList is a list of ServiceContext values.
+type serviceContextList []*serviceContext
 
-// GetServices returns a slice of service unstructured objects contained in the collection.
-func (sc ServiceContextList) GetServices() []*unstructured.Unstructured {
+// getServices returns a slice of service unstructured objects contained in the collection.
+func (sc serviceContextList) getServices() []*unstructured.Unstructured {
 	var crs []*unstructured.Unstructured
 	for _, s := range sc {
-		crs = append(crs, s.Service)
+		crs = append(crs, s.service)
 	}
 	return crs
 }
@@ -52,13 +54,13 @@ func buildServiceContexts(
 	selectors []v1alpha1.BackingServiceSelector,
 	includeServiceOwnedResources bool,
 	restMapper meta.RESTMapper,
-) (ServiceContextList, error) {
-	svcCtxs := make(ServiceContextList, 0)
+) (serviceContextList, error) {
+	svcCtxs := make(serviceContextList, 0)
 	for _, s := range selectors {
 		ns := stringValueOrDefault(s.Namespace, defaultNs)
 		gvk := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 		svcCtx, err := buildServiceContext(
-			client, ns, gvk, s.ResourceRef, s.EnvVarPrefix, restMapper)
+			client, ns, gvk, s.ResourceRef, s.EnvVarPrefix, restMapper, s.Id)
 		if err != nil {
 			return nil, err
 		}
@@ -66,15 +68,15 @@ func buildServiceContexts(
 
 		if includeServiceOwnedResources {
 			// use the selector's kind as owned resources environment variable prefix
-			svcEnvVarPrefix := svcCtx.EnvVarPrefix
+			svcEnvVarPrefix := svcCtx.envVarPrefix
 			if svcEnvVarPrefix == nil {
 				svcEnvVarPrefix = &s.Kind
 			}
 			ownedResourcesCtxs, err := findOwnedResourcesCtxs(
 				client,
 				ns,
-				svcCtx.Service.GetName(),
-				svcCtx.Service.GetUID(),
+				svcCtx.service.GetName(),
+				svcCtx.service.GetUID(),
 				gvk,
 				svcEnvVarPrefix,
 				restMapper,
@@ -97,7 +99,7 @@ func findOwnedResourcesCtxs(
 	gvk schema.GroupVersionKind,
 	envVarPrefix *string,
 	restMapper meta.RESTMapper,
-) (ServiceContextList, error) {
+) (serviceContextList, error) {
 	ownedResources, err := getOwnedResources(
 		client,
 		ns,
@@ -127,7 +129,8 @@ func buildServiceContext(
 	resourceRef string,
 	envVarPrefix *string,
 	restMapper meta.RESTMapper,
-) (*ServiceContext, error) {
+	id *string,
+) (*serviceContext, error) {
 	obj, err := findService(client, ns, gvk, resourceRef)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -200,11 +203,12 @@ func buildServiceContext(
 		}
 	}
 
-	serviceCtx := &ServiceContext{
-		Service:      obj,
-		EnvVars:      envVars,
-		VolumeKeys:   volumeKeys,
-		EnvVarPrefix: envVarPrefix,
+	serviceCtx := &serviceContext{
+		service:      obj,
+		envVars:      envVars,
+		volumeKeys:   volumeKeys,
+		envVarPrefix: envVarPrefix,
+		id:           id,
 	}
 
 	return serviceCtx, nil

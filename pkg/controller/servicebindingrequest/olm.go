@@ -20,9 +20,9 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-// OLM represents the actions this operator needs to take upon Operator-Lifecycle-Manager resources,
+// olm represents the actions this operator needs to take upon Operator-Lifecycle-Manager resources,
 // like ClusterServiceVersions (CSV) and CRDDescriptions.
-type OLM struct {
+type olm struct {
 	client dynamic.Interface // kubernetes dynamic client
 	ns     string            // namespace
 	logger *log.Log          // logger instance
@@ -37,7 +37,7 @@ var (
 )
 
 // listCSVs simple list to all CSV objects in the cluster.
-func (o *OLM) listCSVs() ([]unstructured.Unstructured, error) {
+func (o *olm) listCSVs() ([]unstructured.Unstructured, error) {
 	log := o.logger
 	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
 	resourceClient := o.client.Resource(gvr).Namespace(o.ns)
@@ -53,7 +53,7 @@ func (o *OLM) listCSVs() ([]unstructured.Unstructured, error) {
 }
 
 // extractOwnedCRDs from a list of CSV objects.
-func (o *OLM) extractOwnedCRDs(
+func (o *olm) extractOwnedCRDs(
 	csvs []unstructured.Unstructured,
 ) ([]unstructured.Unstructured, error) {
 	crds := []unstructured.Unstructured{}
@@ -80,7 +80,7 @@ func (o *OLM) extractOwnedCRDs(
 }
 
 // ListCSVOwnedCRDs return a unstructured list of CRD objects from "owned" section in CSVs.
-func (o *OLM) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
+func (o *olm) ListCSVOwnedCRDs() ([]unstructured.Unstructured, error) {
 	log := o.logger
 	csvs, err := o.listCSVs()
 	if err != nil {
@@ -96,7 +96,7 @@ type eachCRDDescriptionFn func(crdDescription *olmv1alpha1.CRDDescription)
 // loopCRDDescriptions takes a list of CRDDescriptions (extracted from "owned") and converts to a
 // actual type instance, before calling out for informed function. This method can return error in
 // case of issues to convert unstructured into CRDDescription.
-func (o *OLM) loopCRDDescriptions(
+func (o *olm) loopCRDDescriptions(
 	crdDescriptions []unstructured.Unstructured,
 	fn eachCRDDescriptionFn,
 ) error {
@@ -118,8 +118,8 @@ func (o *OLM) loopCRDDescriptions(
 	return nil
 }
 
-// SelectCRDByGVK return a single CRD based on a given GVK.
-func (o *OLM) SelectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
+// selectCRDByGVK return a single CRD based on a given GVK.
+func (o *olm) selectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	log := o.logger.WithValues("Selector.GVK", gvk)
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
@@ -286,7 +286,7 @@ func buildDescriptorsFromAnnotations(in map[string]string) (
 }
 
 // extractGVKs loop owned objects and extract the GVK information from them.
-func (o *OLM) extractGVKs(
+func (o *olm) extractGVKs(
 	crdDescriptions []unstructured.Unstructured,
 ) ([]schema.GroupVersionKind, error) {
 	log := o.logger
@@ -306,8 +306,8 @@ func (o *OLM) extractGVKs(
 	return gvks, nil
 }
 
-// ListCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
-func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
+// listCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
+func (o *olm) listCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
 	log := o.logger
 	ownedCRDs, err := o.ListCSVOwnedCRDs()
 	if err != nil {
@@ -317,8 +317,8 @@ func (o *OLM) ListCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
 	return o.extractGVKs(ownedCRDs)
 }
 
-// ListGVKsFromCSVNamespacedName return the list of owned GVKs for a given CSV namespaced named.
-func (o *OLM) ListGVKsFromCSVNamespacedName(
+// listGVKsFromCSVNamespacedName return the list of owned GVKs for a given CSV namespaced named.
+func (o *olm) listGVKsFromCSVNamespacedName(
 	namespacedName types.NamespacedName,
 ) ([]schema.GroupVersionKind, error) {
 	log := o.logger.WithValues("CSV.NamespacedName", namespacedName)
@@ -347,9 +347,9 @@ func (o *OLM) ListGVKsFromCSVNamespacedName(
 	return o.extractGVKs(ownedCRDs)
 }
 
-// NewOLM instantiate a new OLM.
-func NewOLM(client dynamic.Interface, ns string) *OLM {
-	return &OLM{
+// newOLM instantiate a new OLM.
+func newOLM(client dynamic.Interface, ns string) *olm {
+	return &olm{
 		client: client,
 		ns:     ns,
 		logger: olmLog,

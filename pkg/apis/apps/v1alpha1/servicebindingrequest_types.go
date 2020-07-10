@@ -53,7 +53,7 @@ type ServiceBindingRequestStatus struct {
 	Conditions []conditionsv1.Condition `json:"conditions"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
-	// ApplicationObjects contains all the application objects filtered by label
+	// Applications contain all the applications filtered by name or label
 	// +optional
 	Applications []BoundApplication `json:"applications,omitempty"`
 }
@@ -65,6 +65,7 @@ type BackingServiceSelector struct {
 	// +optional
 	Namespace    *string `json:"namespace,omitempty"`
 	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
+	Id           *string `json:"id,omitempty"`
 }
 
 // BoundApplication defines the application workloads to which the binding secret has
@@ -110,4 +111,15 @@ type ServiceBindingRequestList struct {
 
 func init() {
 	SchemeBuilder.Register(&ServiceBindingRequest{}, &ServiceBindingRequestList{})
+}
+
+func (sbr ServiceBindingRequest) AsOwnerReference() metav1.OwnerReference {
+	var ownerRefController bool = true
+	return metav1.OwnerReference{
+		Name:       sbr.Name,
+		UID:        sbr.UID,
+		Kind:       sbr.Kind,
+		APIVersion: sbr.APIVersion,
+		Controller: &ownerRefController,
+	}
 }

@@ -283,7 +283,6 @@ func (c *dynamicResourceClient) List(opts metav1.ListOptions) (*unstructured.Uns
 			Invokes(testing.NewListAction(c.resource, schema.GroupVersionKind{Group: "fake-dynamic-client-group", Version: "v1", Kind: "" /*List is appended by the tracker automatically*/}, c.namespace, opts), &metav1.Status{Status: "dynamic list fail"})
 
 	}
-
 	if obj == nil {
 		return nil, err
 	}
@@ -292,7 +291,6 @@ func (c *dynamicResourceClient) List(opts metav1.ListOptions) (*unstructured.Uns
 	if label == nil {
 		label = labels.Everything()
 	}
-
 	retUnstructured := &unstructured.Unstructured{}
 	if err := c.client.scheme.Convert(obj, retUnstructured, nil); err != nil {
 		return nil, err
@@ -301,7 +299,6 @@ func (c *dynamicResourceClient) List(opts metav1.ListOptions) (*unstructured.Uns
 	if err != nil {
 		return nil, err
 	}
-
 	list := &unstructured.UnstructuredList{}
 	list.SetResourceVersion(entireList.GetResourceVersion())
 	for i := range entireList.Items {

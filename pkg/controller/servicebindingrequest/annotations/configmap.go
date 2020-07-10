@@ -7,24 +7,24 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-const ConfigMapValue = "binding:env:object:configmap"
+const configMapValue = "binding:env:object:configmap"
 
 // IsConfigMap returns true if the annotation value should trigger config map handler.
-func IsConfigMap(s string) bool {
-	return ConfigMapValue == s
+func isConfigMap(s string) bool {
+	return configMapValue == s
 }
 
 // NewConfigMapHandler constructs an annotation handler that can extract related data from config
 // maps.
-func NewConfigMapHandler(
+func newConfigMapHandler(
 	client dynamic.Interface,
-	bindingInfo *BindingInfo,
+	bi *bindingInfo,
 	resource unstructured.Unstructured,
 	restMapper meta.RESTMapper,
-) (Handler, error) {
+) (handler, error) {
 	return NewResourceHandler(
 		client,
-		bindingInfo,
+		bi,
 		resource,
 		schema.GroupVersionResource{
 			Version:  "v1",

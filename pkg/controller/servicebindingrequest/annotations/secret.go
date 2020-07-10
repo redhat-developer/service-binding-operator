@@ -10,12 +10,12 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-const SecretValue = "binding:env:object:secret"
-const VolumeMountSecretValue = "binding:volumemount:secret"
+const secretValue = "binding:env:object:secret"
+const volumeMountSecretValue = "binding:volumemount:secret"
 
 // IsSecret returns true if the annotation value should trigger the secret handler.
-func IsSecret(s string) bool {
-	return SecretValue == s || VolumeMountSecretValue == s
+func isSecret(s string) bool {
+	return secretValue == s || volumeMountSecretValue == s
 }
 
 // decodeBase64String asserts whether val is a string and returns its decoded value.
@@ -32,15 +32,15 @@ func base64StringValue(v interface{}) (string, error) {
 }
 
 // NewSecretHandler constructs a SecretHandler.
-func NewSecretHandler(
+func newSecretHandler(
 	client dynamic.Interface,
-	bindingInfo *BindingInfo,
+	bi *bindingInfo,
 	resource unstructured.Unstructured,
 	restMapper meta.RESTMapper,
-) (Handler, error) {
+) (handler, error) {
 	h, err := NewResourceHandler(
 		client,
-		bindingInfo,
+		bi,
 		resource,
 		schema.GroupVersionResource{
 			Version:  "v1",
