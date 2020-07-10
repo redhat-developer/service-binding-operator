@@ -76,7 +76,7 @@ func TestBindingCustomSecretPath(t *testing.T) {
 	t.Run("update custom secret field path ", func(t *testing.T) {
 		list, err := binderForsbrSecretPath.search()
 		require.NoError(t, err)
-		require.Equal(t, 1, len(list.Items))
+		require.Len(t, list.Items, 1)
 
 		updatedDeployment, err := binderForsbrSecretPath.updateSecretField(&list.Items[0])
 		require.NoError(t, err)
