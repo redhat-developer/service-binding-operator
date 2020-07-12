@@ -216,6 +216,15 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
+		// make sure SBR annonation is added
+		deployment := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedObjects[0].Object, &deployment)
+		require.NoError(t, err)
+
+		sbrName, err := getSBRNamespacedNameFromObject(&deployment)
+		require.NoError(t, err)
+		require.Equal(t, types.NamespacedName{}, sbrName)
+
 		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
