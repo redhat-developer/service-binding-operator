@@ -314,7 +314,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		b.logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
-	sbrStatus.Secret = secretObj.GetName()
+	b.sbr.Status.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
 		return b.handleApplicationError(EmptyApplicationSelectorReason, errEmptyApplicationSelector)
@@ -336,11 +336,11 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		return b.onError(err, b.sbr, sbrStatus, updatedObjects)
 	}
 
-	conditionsv1.SetStatusCondition(&b.sbr.Status.Conditions, conditionsv1.Condition{
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   CollectionReady,
 		Status: corev1.ConditionTrue,
 	})
-	conditionsv1.SetStatusCondition(&b.sbr.Status.Conditions, conditionsv1.Condition{
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   InjectionReady,
 		Status: corev1.ConditionTrue,
 	})
