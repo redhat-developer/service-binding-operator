@@ -305,14 +305,16 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 
 // bind configures binding between the Service Binding Request and its related objects.
 func (b *serviceBinder) bind() (reconcile.Result, error) {
+	sbrStatus := b.sbr.Status.DeepCopy()
+
 	b.logger.Info("Saving data on intermediary secret...")
 
 	secretObj, err := b.secret.createOrUpdate(b.envVars, b.sbr.AsOwnerReference())
 	if err != nil {
 		b.logger.Error(err, "On saving secret data..")
-		return b.onError(err, b.sbr, &b.sbr.Status, nil)
+		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
-	b.sbr.Status.Secret = secretObj.GetName()
+	sbrStatus.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
 		return b.handleApplicationError(EmptyApplicationSelectorReason, errEmptyApplicationSelector)
@@ -323,15 +325,15 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		if errors.Is(err, errApplicationNotFound) {
 			return b.handleApplicationError(ApplicationNotFoundReason, errApplicationNotFound)
 		}
-		return b.onError(err, b.sbr, &b.sbr.Status, nil)
+		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
-	b.setApplicationObjects(&b.sbr.Status, updatedObjects)
+	b.setApplicationObjects(sbrStatus, updatedObjects)
 
 	// annotating objects related to binding
 	namespacedName := types.NamespacedName{Namespace: b.sbr.GetNamespace(), Name: b.sbr.GetName()}
 	if err = setAndUpdateSBRAnnotations(b.dynClient, namespacedName, append(b.objects, secretObj)); err != nil {
 		b.logger.Error(err, "On setting annotations in related objects.")
-		return b.onError(err, b.sbr, &b.sbr.Status, updatedObjects)
+		return b.onError(err, b.sbr, sbrStatus, updatedObjects)
 	}
 
 	conditionsv1.SetStatusCondition(&b.sbr.Status.Conditions, conditionsv1.Condition{
@@ -344,7 +346,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	})
 
 	// updating status of request instance
-	sbr, err := b.updateStatusServiceBindingRequest(b.sbr, &b.sbr.Status)
+	sbr, err := b.updateStatusServiceBindingRequest(b.sbr, sbrStatus)
 	if err != nil {
 		return requeueOnConflict(err)
 	}
