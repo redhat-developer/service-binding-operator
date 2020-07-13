@@ -154,7 +154,7 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 	}
 
 	logger.Debug("Removing resource finalizers...")
-	b.sbr.SetFinalizers(removeStringSlice(b.sbr.GetFinalizers(), finalizer))
+	removeFinalizer(b.sbr)
 	if _, err := b.updateServiceBindingRequest(b.sbr); err != nil {
 		return noRequeue(err)
 	}
@@ -255,6 +255,14 @@ func isApplicationSelectorEmpty(
 	return false
 }
 
+func addFinalizer(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.SetFinalizers(append(removeStringSlice(sbr.GetFinalizers(), finalizer), finalizer))
+}
+
+func removeFinalizer(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), finalizer))
+}
+
 // handleApplicationError handles scenarios when:
 // 1. applicationSelector not declared in the Service Binding Request
 // 2. application not found
@@ -277,7 +285,7 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 	}
 
 	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(removeStringSlice(b.sbr.GetFinalizers(), finalizer), finalizer))
+	addFinalizer(b.sbr)
 	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
 		return noRequeue(err)
 	}
@@ -285,7 +293,7 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 	b.logger.Info(applicationError.Error())
 
 	if errors.Is(applicationError, errApplicationNotFound) {
-		sbr.SetFinalizers(nil)
+		removeFinalizer(b.sbr)
 		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
 			return noRequeue(err)
 		}
@@ -342,10 +350,8 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	}
 
 	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(removeStringSlice(b.sbr.GetFinalizers(), finalizer), finalizer))
-	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
-		return noRequeue(err)
-	}
+	addFinalizer(sbr)
+
 	b.logger.Info("All done!")
 	return done()
 }
