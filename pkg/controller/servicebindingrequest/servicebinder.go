@@ -314,6 +314,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		b.logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
+	sbrStatus.Secret = secretObj.GetName()
 	b.sbr.Status.Secret = secretObj.GetName()
 
 	if isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
