@@ -281,13 +281,13 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 	// updating status of request instance
 	sbr, err := b.updateStatusServiceBindingRequest(b.sbr, &b.sbr.Status)
 	if err != nil {
-		return requeueOnConflict(err)
+		return requeueError(err)
 	}
 
 	// appending finalizer, should be later removed upon resource deletion
 	addFinalizer(b.sbr)
 	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
-		return noRequeue(err)
+		return requeueError(err)
 	}
 
 	b.logger.Info(applicationError.Error())
@@ -295,7 +295,7 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 	if errors.Is(applicationError, errApplicationNotFound) {
 		removeFinalizer(b.sbr)
 		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
-			return noRequeue(err)
+			return requeueError(err)
 		}
 		return requeueOnNotFound(errApplicationNotFound, requeueAfter)
 	}
