@@ -205,7 +205,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.Debug("Removing resource finalizers...")
 		sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), finalizer))
 		if _, err := updateServiceBindingRequest(r.dynClient, sbr); err != nil {
-			return noRequeue(err)
+			return requeueError(err)
 		}
 		return done()
 	}
