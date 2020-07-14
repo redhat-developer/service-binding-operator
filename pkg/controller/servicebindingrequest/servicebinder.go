@@ -351,6 +351,10 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	// appending finalizer, should be later removed upon resource deletion
 	addFinalizer(sbr)
 
+	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
+		return requeueError(err)
+	}
+
 	b.logger.Info("All done!")
 	return done()
 }
