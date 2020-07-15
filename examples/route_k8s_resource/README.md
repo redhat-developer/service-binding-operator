@@ -99,22 +99,22 @@ cat <<EOS |kubectl apply -f -
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
 
-metadata: 
+metadata:
   name: binding-request
   namespace: service-binding-demo
 
-spec: 
-  applicationSelector: 
-    group: ""
+spec:
+  applicationSelector:
+    group: apps
     resource: deployments
     resourceRef: nodejs-rest-http-crud-git
     version: v1
 
-  backingServiceSelectors:                                                                                                        
-   - group: route.openshift.io
+  backingServiceSelectors:
+    - group: route.openshift.io
       version: v1
       kind: Route # <--- not NECESSARILY a CR
-      resourceRef: example 
+      resourceRef: example
 EOS
 ```
 
