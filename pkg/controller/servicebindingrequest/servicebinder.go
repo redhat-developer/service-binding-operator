@@ -290,7 +290,8 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
 			return requeueError(err)
 		}
-		return requeueOnNotFound(errApplicationNotFound, requeueAfter)
+		return requeue(applicationError, requeueAfter)
+
 	}
 
 	return done()
