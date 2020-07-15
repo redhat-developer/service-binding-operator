@@ -31,7 +31,8 @@ Feature: Bind an application to a service
             """
         Then application should be re-deployed
         And application should be connected to the DB "db-demo-a-d-s"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding Request "binding-request-a-d-s" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-d-s" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-a-d-s" should be changed to "True"
 
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, Service Binding Request and DB
         Given Imported Nodejs application "nodejs-rest-http-crud-a-s-d" is running
@@ -56,7 +57,8 @@ Feature: Bind an application to a service
         When DB "db-demo-a-s-d" is running
         Then application should be re-deployed
         And application should be connected to the DB "db-demo-a-s-d"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding Request "binding-request-a-s-d" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-s-d" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-a-s-d" should be changed to "True"
 
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: DB, Application and Service Binding Request
         Given DB "db-demo-d-a-s" is running
@@ -81,7 +83,8 @@ Feature: Bind an application to a service
             """
         Then application should be re-deployed
         And application should be connected to the DB "db-demo-d-a-s"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding Request "binding-request-d-a-s" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-d-a-s" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-d-s-d" should be changed to "True"
 
     # Currently disabled as not supported by SBO
     @disabled
@@ -108,7 +111,8 @@ Feature: Bind an application to a service
         When Imported Nodejs application "nodejs-rest-http-crud-d-s-a" is running
         Then application should be re-deployed
         And application should be connected to the DB "db-demo-d-s-a"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding Request "binding-request-d-s-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-d-s-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-d-s-a" should be changed to "True"
 
     # Currently disabled as not supported by SBO
     @disabled
@@ -135,7 +139,8 @@ Feature: Bind an application to a service
         When DB "db-demo-s-a-d" is running
         Then application should be re-deployed
         And application should be connected to the DB "db-demo-s-a-d"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding Request "binding-request-s-a-d" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-s-a-d" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-s-a-d" should be changed to "True"
 
     # Currently disabled as not supported by SBO
     @disabled
@@ -162,10 +167,9 @@ Feature: Bind an application to a service
         When Imported Nodejs application "nodejs-rest-http-crud-s-d-a" is running
         Then application should be re-deployed
         And application should be connected to the DB "db-demo-s-d-a"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding Request "binding-request-s-d-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-s-d-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-s-d-a" should be changed to "True"
 
-    # Currently disabled until https://github.com/redhat-developer/service-binding-operator/pull/498 is merged
-    @disabled
     @negative
     Scenario: Attempt to bind a non existing application to PostgreSQL database
         Given DB "db-demo-missing-app" is running
@@ -193,8 +197,6 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-missing-app" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding Request "binding-request-missing-app" should be changed to "ApplicationNotFound"
 
-    # Currently disabled until https://github.com/redhat-developer/service-binding-operator/pull/498 is merged
-    @disabled
     @negative
     Scenario: Service Binding Request without application selector
         Given Imported Nodejs application "nodejs-empty-app" is running

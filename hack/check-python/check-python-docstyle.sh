@@ -50,4 +50,3 @@ else
     echo "Documentation strings should be added and/or fixed in $fail source files out of $total files"
     exit 1
 fi
-

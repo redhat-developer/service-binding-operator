@@ -50,4 +50,3 @@ else
     echo "$fail source files out of $total files seems to contain dead code and/or unused imports"
     exit 1
 fi
-

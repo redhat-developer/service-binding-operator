@@ -50,4 +50,3 @@ else
     echo "$fail source files out of $total files needs to be checked and fixed"
     exit 1
 fi
-
