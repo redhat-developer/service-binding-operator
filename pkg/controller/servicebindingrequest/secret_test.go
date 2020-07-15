@@ -47,9 +47,8 @@ func TestSecretNew(t *testing.T) {
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		u, found, err := s.get()
+		u, err := s.get()
 		assert.NoError(t, err)
-		assert.True(t, found)
 		assertSecretNamespacedName(t, u, ns, name)
 	})
 }

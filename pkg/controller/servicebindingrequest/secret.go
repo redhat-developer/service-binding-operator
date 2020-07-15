@@ -50,11 +50,14 @@ func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1
 	resourceClient := s.buildResourceClient()
 
 	logger.Debug("Attempt to create secret...")
-	existingSecret, err := resourceClient.Get(s.name, metav1.GetOptions{})
+	existingSecret, err := s.get()
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err := resourceClient.Create(u, metav1.CreateOptions{})
-			return u, err
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
 		}
 		return nil, err
 	}
@@ -82,13 +85,13 @@ func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1
 
 // get an unstructured object from the secret handled by this component. It can return errors in case
 // the API server does.
-func (s *secret) get() (*unstructured.Unstructured, bool, error) {
+func (s *secret) get() (*unstructured.Unstructured, error) {
 	resourceClient := s.buildResourceClient()
 	u, err := resourceClient.Get(s.name, metav1.GetOptions{})
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, false, err
+	if err != nil {
+		return nil, err
 	}
-	return u, u != nil, nil
+	return u, nil
 }
 
 // newSecret instantiate a new Secret.
