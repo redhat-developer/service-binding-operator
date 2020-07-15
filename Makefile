@@ -164,7 +164,7 @@ YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" 
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
 lint-yaml: ${YAML_FILES}
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint==1.23.0
 	$(Q)$(OUTPUT_DIR)/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
