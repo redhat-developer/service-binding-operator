@@ -247,12 +247,9 @@ func isApplicationSelectorEmpty(
 	application v1alpha1.ApplicationSelector,
 ) bool {
 	var emptyApplication v1alpha1.ApplicationSelector
-	if application == emptyApplication ||
+	return application == emptyApplication ||
 		application.ResourceRef == "" &&
-			application.LabelSelector.MatchLabels == nil {
-		return true
-	}
-	return false
+			application.LabelSelector.MatchLabels == nil
 }
 
 func addFinalizer(sbr *v1alpha1.ServiceBindingRequest) {
