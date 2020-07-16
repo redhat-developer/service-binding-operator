@@ -332,14 +332,7 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
 	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
-	u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
-	require.NoError(t, err)
-
-	d := appsv1.Deployment{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
-	require.NoError(t, err)
-
-	u, err = fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
+	u, err := fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
 	require.NoError(t, err)
 	s := corev1.Secret{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &s)
@@ -362,13 +355,6 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 	sbrOutput3, err := r.getServiceBindingRequest(namespacedName)
-	require.NoError(t, err)
-
-	u, err = fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
-	require.NoError(t, err)
-
-	d = appsv1.Deployment{}
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
 	require.NoError(t, err)
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput3.Status.Conditions)
