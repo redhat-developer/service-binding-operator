@@ -149,10 +149,17 @@ func (h *resourceHandler) Handle() (result, error) {
 	// prefix the output path with the kind of the resource.
 	outputPath := strings.Join(outputPathParts, ".")
 
+	rawDataPath := strings.Join([]string{
+		h.bindingInfo.ResourceReferencePath,
+		h.bindingInfo.SourcePath,
+	}, ".")
+
 	return result{
 		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
 		Type: typ,
 		Path: outputPath,
+
+		RawData: nested.ComposeValue(val, nested.NewPath(rawDataPath)),
 	}, nil
 }
 

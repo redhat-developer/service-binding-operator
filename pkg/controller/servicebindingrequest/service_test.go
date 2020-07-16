@@ -50,7 +50,7 @@ func TestPlannerWithExplicitBackingServiceNamespace(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredCSV("cluster-service-version")
 	db := f.AddMockedDatabaseCR(resourceRef, backingServiceNamespace)
-	f.AddNamespacedMockedSecret("db-credentials", backingServiceNamespace)
+	f.AddNamespacedMockedSecret("db-credentials", backingServiceNamespace, nil)
 
 	t.Run("findService", func(t *testing.T) {
 		cr, err := findService(
