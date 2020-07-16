@@ -127,7 +127,7 @@ spec:
             channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel))
         return self.oc_apply(operator_subscription)
 
-    def wait_for_package_manifest(self, package_name, operator_source_name, operator_channel, interval=5, timeout=60):
+    def wait_for_package_manifest(self, package_name, operator_source_name, operator_channel, interval=5, timeout=120):
         current_csv = self.get_current_csv(package_name, operator_source_name, operator_channel)
         start = 0
         if current_csv is not None:
@@ -165,14 +165,26 @@ spec:
         exit_code | should.be_equal_to(0)
         return env, env_from
 
-    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path):
+    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False):
         output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
-        if exit_code == 0:
-            return output
-        return None
+        if exit_code != 0:
+            if wait:
+                attempts = 5
+                while exit_code != 0 and attempts > 0:
+                    output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
+                    attempts -= 1
+                    time.sleep(5)
+        exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
+        return output
 
-    def get_resource_info_by_jq(self, resource_type, name, namespace, jq_expression):
+    def get_resource_info_by_jq(self, resource_type, name, namespace, jq_expression, wait=False):
         output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq -rc \'{jq_expression}\'')
-        if exit_code == 0:
-            return output.rstrip("\n")
-        return None
+        if exit_code != 0:
+            if wait:
+                attempts = 5
+                while exit_code != 0 and attempts > 0:
+                    output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq -rc \'{jq_expression}\'')
+                    attempts -= 1
+                    time.sleep(5)
+        exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
+        return output.rstrip("\n")

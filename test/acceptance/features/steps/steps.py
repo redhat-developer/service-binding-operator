@@ -173,9 +173,9 @@ def then_app_is_connected_to_db(context, db_name):
 def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
     openshift = Openshift()
     openshift.search_resource_in_namespace("servicebindingrequests", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
-    result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path)
+    result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path, wait=True)
     result | should_not.be_none.desc("jsonpath result")
-    re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jsonpath result matches \"{json_value_regex}\"")
+    re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jsonpath result \"{result}\" should match \"{json_value_regex}\"")
 
 
 # STEP
@@ -183,6 +183,6 @@ def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
 def then_sbo_jq_is(context, jq_expression, sbr_name, json_value_regex):
     openshift = Openshift()
     openshift.search_resource_in_namespace("servicebindingrequests", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
-    result = openshift.get_resource_info_by_jq("sbr", sbr_name, context.namespace.name, jq_expression)
+    result = openshift.get_resource_info_by_jq("sbr", sbr_name, context.namespace.name, jq_expression, wait=True)
     result | should_not.be_none.desc("jq result")
-    re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jq result matches \"{json_value_regex}\"")
+    re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jq result \"{result}\" should match \"{json_value_regex}\"")

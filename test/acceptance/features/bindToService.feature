@@ -193,7 +193,6 @@ Feature: Bind an application to a service
                     resourceRef: db-demo-missing-app
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-missing-app" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding Request "binding-request-missing-app" should be changed to "ApplicationNotFound"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-missing-app" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding Request "binding-request-missing-app" should be changed to "ApplicationNotFound"
 
@@ -215,6 +214,5 @@ Feature: Bind an application to a service
                     resourceRef: db-demo-empty-app
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-empty-app" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding Request "binding-request-empty-app" should be changed to "EmptyApplicationSelector"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-empty-app" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding Request "binding-request-empty-app" should be changed to "EmptyApplicationSelector"

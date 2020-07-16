@@ -36,7 +36,7 @@ spec:
 
     def is_running(self, wait=False):
         if wait:
-            pod_name = self.openshift.wait_for_pod(self.pod_name_pattern.format(name=self.name), self.namespace)
+            pod_name = self.openshift.wait_for_pod(self.pod_name_pattern.format(name=self.name), self.namespace, timeout=120)
         else:
             pod_name = self.openshift.search_pod_in_namespace(self.pod_name_pattern.format(name=self.name), self.namespace)
         if pod_name is not None:
