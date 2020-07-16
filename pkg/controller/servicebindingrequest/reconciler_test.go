@@ -50,6 +50,32 @@ func reconcileRequest() reconcile.Request {
 	}
 }
 
+func requireConditionPresentAndTrue(t *testing.T, condition conditionsv1.ConditionType, sbrConditions []conditionsv1.Condition) {
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrConditions,
+			condition,
+			corev1.ConditionTrue,
+		),
+		"%+v should exist and be true; existing conditions: %+v",
+		condition,
+		sbrConditions,
+	)
+}
+
+func requireConditionPresentAndFalse(t *testing.T, condition conditionsv1.ConditionType, sbrConditions []conditionsv1.Condition) {
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbrConditions,
+			condition,
+			corev1.ConditionFalse,
+		),
+		"%+v should exist and be false; existing conditions: %+v",
+		condition,
+		sbrConditions,
+	)
+}
+
 type fakeResourceWatcher struct {
 	record map[schema.GroupVersionKind]bool
 	mapper meta.RESTMapper
@@ -105,8 +131,9 @@ func TestApplicationSelectorByName(t *testing.T) {
 		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
 			GroupVersionKind: v1.GroupVersionKind{
@@ -167,8 +194,9 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 		require.NoError(t, err)
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
@@ -229,7 +257,7 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	})
 }
 
-func TestReconcilerGenericBinding(t *testing.T) {
+func TestApplicationNotFound(t *testing.T) {
 	backingServiceResourceRef := "backingService1"
 	matchLabels := map[string]string{
 		"connects-to": "database",
@@ -249,22 +277,15 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	// Reconcile without deployment
 	res, err := r.Reconcile(reconcileRequest())
-	require.NoError(t, err)
-	require.False(t, res.Requeue)
+	require.EqualError(t, err, errApplicationNotFound.Error())
+	require.True(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.True(t,
-		conditionsv1.IsStatusConditionPresentAndEqual(
-			sbrOutput.Status.Conditions,
-			BindingReady,
-			corev1.ConditionTrue,
-		),
-		"Ready condition should exist and true; existing conditions: %+v",
-		sbrOutput.Status.Conditions,
-	)
+	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
 	require.Len(t, sbrOutput.Status.Applications, 0)
 
 	// Reconcile with deployment
@@ -286,8 +307,9 @@ func TestReconcilerGenericBinding(t *testing.T) {
 	sbrOutput2, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, BindingReady, sbrOutput2.Status.Conditions[0].Type)
-	require.Equal(t, corev1.ConditionTrue, sbrOutput2.Status.Conditions[0].Status)
+	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput2.Status.Conditions)
+
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 
@@ -313,8 +335,17 @@ func TestReconcilerGenericBinding(t *testing.T) {
 
 	sbrOutput3, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
-	require.Equal(t, BindingReady, sbrOutput3.Status.Conditions[0].Type)
-	require.Equal(t, corev1.ConditionTrue, sbrOutput3.Status.Conditions[0].Status)
+
+	u, err = fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	d = appsv1.Deployment{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+	require.NoError(t, err)
+
+	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput3.Status.Conditions)
+	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput3.Status.Conditions)
+
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
@@ -365,8 +396,9 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -393,11 +425,8 @@ func TestEmptyApplicationSelector(t *testing.T) {
 	sbrOutput, err := r.getServiceBindingRequest(namespacedName)
 	require.NoError(t, err)
 
-	require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-	// Currently the Conditions[0].Status would be true as application's absence won't cause error
-	// TODO New steps to conditions to be introduced - InjectionReady, CollectionReady
-	require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
-	require.Equal(t, 0, len(sbrOutput.Status.Applications))
+	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
 }
 
 func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
@@ -452,8 +481,8 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName1, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -489,8 +518,8 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			},
 		}
 
-		require.Equal(t, BindingReady, sbrOutput.Status.Conditions[0].Type)
-		require.Equal(t, corev1.ConditionTrue, sbrOutput.Status.Conditions[0].Status)
+		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName2, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
