@@ -105,31 +105,14 @@ func TestServiceBinder_Bind(t *testing.T) {
 			if len(args.wantConditions) > 0 {
 				// proceed to find whether conditions match wanted conditions
 				for _, c := range args.wantConditions {
-					for _, cond := range sb.sbr.Status.Conditions {
-						expected := conditionsv1.Condition{}
-						got := conditionsv1.Condition{}
-						if len(c.Type) > 0 {
-							expected.Type = c.Type
-							got.Type = cond.Type
-						}
-						if len(c.Status) > 0 {
-							expected.Status = c.Status
-							got.Status = cond.Status
-						}
-						if len(c.Reason) > 0 {
-							expected.Reason = c.Reason
-							got.Reason = cond.Reason
-						}
-						if len(c.Message) > 0 {
-							expected.Message = c.Message
-							got.Message = cond.Message
-						}
-
-						require.Equal(t, expected, got)
+					if c.Status == corev1.ConditionTrue {
+						requireConditionPresentAndTrue(t, c.Type, sb.sbr.Status.Conditions)
+					}
+					if c.Status == corev1.ConditionFalse {
+						requireConditionPresentAndFalse(t, c.Type, sb.sbr.Status.Conditions)
 					}
 				}
 			}
-
 			// regardless of the result, verify the actions expected by the reconciliation
 			// process have been issued if user has specified wanted actions
 			if len(args.wantActions) > 0 {
@@ -409,7 +392,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   BindingReady,
+				Type:   CollectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:   InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -448,7 +435,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   BindingReady,
+				Type:   CollectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:   InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -488,7 +479,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   BindingReady,
+				Type:   CollectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:   InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -506,13 +501,16 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},
-		wantErr: emptyApplicationSelectorErr,
 		wantConditions: []wantedCondition{
 			{
-				Type:    BindingReady,
+				Type:   CollectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:    InjectionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  bindingFail,
-				Message: emptyApplicationSelectorErr.Error(),
+				Reason:  EmptyApplicationSelectorReason,
+				Message: errEmptyApplicationSelector.Error(),
 			},
 		},
 	}))
@@ -543,7 +541,11 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   BindingReady,
+				Type:   CollectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:   InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 		},

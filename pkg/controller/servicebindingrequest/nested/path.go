@@ -72,6 +72,19 @@ func (p path) adjustedPath() path {
 	return p
 }
 
+// GetParts returns the path parts.
+//
+// For example, if the path contains the string 'a.b.c', returns a []string
+// containing 'a', 'b' and 'c'.
+func (p path) GetParts() []string {
+	var parts []string
+	clean := p.clean()
+	for _, f := range clean {
+		parts = append(parts, f.Name)
+	}
+	return parts
+}
+
 // lastField returns the last field from the receiver.
 func (p path) lastField() (field, bool) {
 	if len(p) > 0 {

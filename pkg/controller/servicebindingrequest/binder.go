@@ -2,11 +2,11 @@ package servicebindingrequest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,9 +62,6 @@ func (f extraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured)
 	return f(u)
 }
 
-var emptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
-var applicationNotFound = errors.New("Application is already deleted")
-
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	// If Application name is present
@@ -73,7 +70,7 @@ func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
 		return b.getApplicationByLabelSelector()
 	} else {
-		return nil, emptyApplicationSelectorErr
+		return nil, errEmptyApplicationSelector
 	}
 }
 
@@ -87,11 +84,13 @@ func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 	object, err := b.dynClient.Resource(gvr).Namespace(ns).
 		Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, errApplicationNotFound
+		}
 		return nil, err
 	}
 
-	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
-	return objList, nil
+	return &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}, nil
 }
 
 func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
@@ -105,7 +104,17 @@ func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 	opts := metav1.ListOptions{
 		LabelSelector: labels.Set(matchLabels).String(),
 	}
-	return b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+
+	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(objList.Items) == 0 {
+		return nil, errApplicationNotFound
+	}
+
+	return objList, nil
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
@@ -570,9 +579,6 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *binder) unbind() error {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
-			return nil
-		}
 		return err
 	}
 	return b.remove(objs)
@@ -583,9 +589,6 @@ func (b *binder) unbind() error {
 func (b *binder) bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return b.update(objs)
