@@ -1,8 +1,6 @@
 package accumulator
 
 import (
-	"errors"
-
 	"github.com/imdario/mergo"
 )
 
@@ -10,9 +8,6 @@ const valuesKey = "values"
 
 // accumulator is a value accumulator.
 type accumulator map[string]interface{}
-
-// unsupportedTypeErr is returned when an unsupported type is encountered.
-var unsupportedTypeErr = errors.New("unsupported type")
 
 // Accumulate accumulates the `val` value. An error is returned in the case
 // `val` contains an unsupported type.
@@ -28,7 +23,7 @@ func (a accumulator) Accumulate(val interface{}) error {
 	case []map[string]interface{}, []string, []int:
 		b[valuesKey] = v
 	default:
-		return unsupportedTypeErr
+		b[valuesKey] = v
 	}
 	return mergo.Merge(&a, b, mergo.WithAppendSlice, mergo.WithOverride, mergo.WithTypeCheck)
 }

@@ -109,12 +109,8 @@ func TestSecretHandler(t *testing.T) {
 		},
 		expected: map[string]interface{}{
 			"secret": map[string]interface{}{
-				"status": map[string]interface{}{
-					"dbCredentials": map[string]interface{}{
-						"username": "AzureDiamond",
-						"password": "hunter2",
-					},
-				},
+				"username": "AzureDiamond",
+				"password": "hunter2",
 			},
 		},
 	}))

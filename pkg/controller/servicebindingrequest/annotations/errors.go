@@ -1,7 +1,6 @@
 package annotations
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -11,7 +10,11 @@ func (e invalidArgumentErr) Error() string {
 	return fmt.Sprintf("invalid argument value for path %q", string(e))
 }
 
-var resourceNameFieldNotFoundErr = errors.New("secret name field not found")
+type errResourceNameFieldNotFound string
+
+func (e errResourceNameFieldNotFound) Error() string {
+	return fmt.Sprintf("secret name field %q not found", string(e))
+}
 
 type unknownBindingTypeErr string
 
