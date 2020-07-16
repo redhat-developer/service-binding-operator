@@ -220,7 +220,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if sbr.GetDeletionTimestamp() != nil && sbr.GetOwnerReferences() != nil {
 		logger := logger.WithName("Deleting SBR when it has ownerReference")
 		logger.Debug("Removing resource finalizers...")
-		sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), finalizer))
+		removeFinalizer(sbr)
 		if _, err := updateServiceBindingRequest(r.dynClient, sbr); err != nil {
 			return requeueError(err)
 		}
