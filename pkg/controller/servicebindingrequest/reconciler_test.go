@@ -103,6 +103,21 @@ func newFakeResourceWatcher(mapper meta.RESTMapper) *fakeResourceWatcher {
 		mapper: mapper,
 	}
 }
+func TestSBRNotFound(t *testing.T) {
+	f := mocks.NewFake(t, reconcilerNs)
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	t.Run("if SBR does not exist, reconcile should succeed", func(t *testing.T) {
+
+		res, err := r.Reconcile(reconcileRequest())
+		require.NoError(t, err)
+		require.False(t, res.Requeue)
+	})
+}
 
 // TestApplicationSelectorByName tests discovery of application by name
 func TestApplicationSelectorByName(t *testing.T) {

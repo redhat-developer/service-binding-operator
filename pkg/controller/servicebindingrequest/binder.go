@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -579,6 +580,9 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *binder) unbind() error {
 	objs, err := b.search()
 	if err != nil {
+		if k8sapierrors.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
 	return b.remove(objs)
@@ -589,6 +593,9 @@ func (b *binder) unbind() error {
 func (b *binder) bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
+		if k8sapierrors.IsNotFound(err) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return b.update(objs)

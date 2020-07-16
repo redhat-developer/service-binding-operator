@@ -11,8 +11,11 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -477,6 +480,65 @@ func Test_extraFieldsModifier(t *testing.T) {
 		ksvc.Spec.Template.Name = ""
 		// the rest fields shoud not be modified
 		assert.Equal(t, ksvc, modified)
+	})
+
+}
+
+func TestBindAndUnbind(t *testing.T) {
+
+	t.Run("with bound application exists, bind and unbind should succeed", func(t *testing.T) {
+		ns := "binder"
+		name := "service-binding-request"
+		f := mocks.NewFake(t, ns)
+		sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
+		f.AddMockedUnstructuredDeployment("applicationResourceRef", nil)
+
+		binder := newBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+		require.NotNil(t, binder)
+		// ensure there is not error when search application
+		_, err := binder.search()
+		require.NoError(t, err)
+		_, err = binder.bind()
+		require.NoError(t, err)
+		err = binder.unbind()
+		require.NoError(t, err)
+	})
+
+	t.Run("with bound application being deleted, unbind should succeed", func(t *testing.T) {
+		ns := "binder"
+		name := "service-binding-request"
+		f := mocks.NewFake(t, ns)
+		sbr := f.AddMockedServiceBindingRequest(name, nil, "backingServiceResourceRef", "applicationResourceRef", deploymentsGVR, nil)
+		f.AddMockedUnstructuredDeployment("applicationResourceRef", nil)
+
+		binder := newBinder(
+			context.TODO(),
+			f.FakeDynClient(),
+			sbr,
+			[]string{},
+			testutils.BuildTestRESTMapper(),
+		)
+		require.NotNil(t, binder)
+		// ensure there is not error when search application
+		list, err := binder.search()
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(list.Items))
+		_, err = binder.bind()
+		require.NoError(t, err)
+		//delete the application
+		err = binder.dynClient.Resource(schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}).Namespace("binder").Delete("applicationResourceRef", &metav1.DeleteOptions{})
+		require.NoError(t, err)
+		// there should be notfound error, but the unbind should success
+		_, err = binder.search()
+		require.True(t, k8sapierrors.IsNotFound(err))
+		err = binder.unbind()
+		require.NoError(t, err)
 	})
 
 }

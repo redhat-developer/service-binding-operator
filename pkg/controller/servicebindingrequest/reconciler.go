@@ -2,10 +2,10 @@ package servicebindingrequest
 
 import (
 	"context"
-	"errors"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8sapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -116,8 +116,8 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		if errors.Is(err, errApplicationNotFound) {
-			logger.Info("SBR deleted after application deletion")
+		if k8sapierrors.IsNotFound(err) {
+			logger.Info("SBR has been deleted", "sbr", request.NamespacedName.String())
 			return done()
 		}
 		logger.Error(err, "On retrieving service-binding-request instance.")
