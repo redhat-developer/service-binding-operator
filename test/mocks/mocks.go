@@ -164,6 +164,11 @@ func UnstructuredSecretMock(ns, name string) (*unstructured.Unstructured, error)
 	return converter.ToUnstructured(&s)
 }
 
+func UnstructuredSecretMockRV(ns, name string) (*unstructured.Unstructured, error) {
+	s := SecretMockRV(ns, name)
+	return converter.ToUnstructured(&s)
+}
+
 func UnstructuredPostgresDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
 	c := PostgresDatabaseCRMock(ns, name)
 	return converter.ToUnstructured(&c)
@@ -371,6 +376,25 @@ func SecretMock(ns, name string, data map[string][]byte) *corev1.Secret {
 			Name:      name,
 		},
 		Data: data,
+	}
+}
+
+// SecretMockRV returns a Secret with a resourceVersion.
+func SecretMockRV(ns, name string) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:       ns,
+			Name:            name,
+			ResourceVersion: "116076",
+		},
+		Data: map[string][]byte{
+			"user":     []byte("user"),
+			"password": []byte("password"),
+		},
 	}
 }
 

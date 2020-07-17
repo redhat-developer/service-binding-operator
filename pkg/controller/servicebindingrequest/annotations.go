@@ -123,7 +123,7 @@ func setAndUpdateSBRAnnotations(
 ) error {
 	for _, obj := range objs {
 		newObj := setSBRAnnotations(namespacedName, obj)
-		equal, err := nestedMapComparison(obj, newObj, []string{"metadata", "annotations"}...)
+		equal, err := nestedUnstructuredComparison(obj, newObj, []string{"metadata", "annotations"}...)
 		if err != nil {
 			return err
 		}
@@ -154,7 +154,7 @@ func removeSBRAnnotations(obj *unstructured.Unstructured) *unstructured.Unstruct
 func removeAndUpdateSBRAnnotations(client dynamic.Interface, objs []*unstructured.Unstructured) error {
 	for _, obj := range objs {
 		newObj := removeSBRAnnotations(obj)
-		equal, err := nestedMapComparison(obj, newObj, []string{"metadata", "annotations"}...)
+		equal, err := nestedUnstructuredComparison(obj, newObj, []string{"metadata", "annotations"}...)
 		if err != nil {
 			return err
 		}

@@ -54,7 +54,7 @@ func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (bool,
 		return false, err
 	}
 
-	return nestedMapComparison(
+	return nestedUnstructuredComparison(
 		&unstructured.Unstructured{Object: mapNew},
 		&unstructured.Unstructured{Object: mapOld},
 		fields...,
