@@ -104,7 +104,11 @@ spec:
                 service operator. Deprecation Notice: In the upcoming release, this
                 field would be depcreated. It would be mandatory to set "backingServiceSelectors".'
               properties:
+                envVarPrefix:
+                  type: string
                 group:
+                  type: string
+                id:
                   type: string
                 kind:
                   type: string
@@ -113,10 +117,6 @@ spec:
                 resourceRef:
                   type: string
                 version:
-                  type: string
-                envVarPrefix:
-                  type: string
-                id:
                   type: string
               required:
               - group
@@ -132,7 +132,11 @@ spec:
                 description: BackingServiceSelector defines the selector based on
                   resource name, version, and resource kind
                 properties:
+                  envVarPrefix:
+                    type: string
                   group:
+                    type: string
+                  id:
                     type: string
                   kind:
                     type: string
@@ -141,10 +145,6 @@ spec:
                   resourceRef:
                     type: string
                   version:
-                    type: string
-                  envVarPrefix:
-                    type: string
-                  id:
                     type: string
                 required:
                 - group
