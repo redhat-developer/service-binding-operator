@@ -1,7 +1,6 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  creationTimestamp: null
   name: service-binding-operator
 rules:
   - apiGroups:
@@ -14,6 +13,7 @@ rules:
       - events
       - configmaps
       - secrets
+      - pods/log
     verbs:
       - "*"
   - apiGroups:
@@ -23,8 +23,19 @@ rules:
       - daemonsets
       - replicasets
       - statefulsets
+      - deployments/finalizers
     verbs:
       - "*"
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+      - customresourcedefinitions/status
+    verbs:
+      - get
+      - list
+      - patch
+      - watch
   - apiGroups:
       - monitoring.coreos.com
     resources:
@@ -61,3 +72,10 @@ rules:
       - serving.knative.dev
     resources:
       - services
+  - apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+    verbs:
+      - get
+      - list
