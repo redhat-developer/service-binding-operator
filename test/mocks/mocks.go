@@ -98,7 +98,7 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	FullCRDName := CRDPlural + "." + CRDName
 	annotations := map[string]string{
 		"servicebindingoperator.redhat.io/status.dbCredentials-password": "binding:env:object:secret",
-		"servicebindingoperator.redhat.io/status.dbCredentials-user":     "binding:env:object:secret",
+		"servicebindingoperator.redhat.io/status.dbCredentials-username": "binding:env:object:secret",
 	}
 
 	crd := apiextensionv1beta1.CustomResourceDefinition{
@@ -160,7 +160,12 @@ func PostgresDatabaseCRMock(ns, name string) PostgresDatabase {
 }
 
 func UnstructuredSecretMock(ns, name string) (*unstructured.Unstructured, error) {
-	s := SecretMock(ns, name)
+	s := SecretMock(ns, name, nil)
+	return converter.ToUnstructured(&s)
+}
+
+func UnstructuredSecretMockRV(ns, name string) (*unstructured.Unstructured, error) {
+	s := SecretMockRV(ns, name)
 	return converter.ToUnstructured(&s)
 }
 
@@ -353,7 +358,14 @@ func UnstructuredDatabaseCRMock(ns, name string) (*unstructured.Unstructured, er
 }
 
 // SecretMock returns a Secret based on PostgreSQL operator usage.
-func SecretMock(ns, name string) *corev1.Secret {
+func SecretMock(ns, name string, data map[string][]byte) *corev1.Secret {
+	if data == nil {
+		data = map[string][]byte{
+			"username": []byte("user"),
+			"password": []byte("password"),
+		}
+	}
+
 	return &corev1.Secret{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Secret",
@@ -362,6 +374,22 @@ func SecretMock(ns, name string) *corev1.Secret {
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
+		},
+		Data: data,
+	}
+}
+
+// SecretMockRV returns a Secret with a resourceVersion.
+func SecretMockRV(ns, name string) *corev1.Secret {
+	return &corev1.Secret{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:       ns,
+			Name:            name,
+			ResourceVersion: "116076",
 		},
 		Data: map[string][]byte{
 			"user":     []byte("user"),
@@ -382,7 +410,7 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 			Name:      name,
 		},
 		Data: map[string]string{
-			"user":     "user",
+			"username": "user",
 			"password": "password",
 		},
 	}

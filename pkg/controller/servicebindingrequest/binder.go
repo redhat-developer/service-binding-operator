@@ -2,11 +2,10 @@ package servicebindingrequest
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
-	"time"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -62,9 +61,6 @@ func (f extraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured)
 	return f(u)
 }
 
-var emptyApplicationSelectorErr = errors.New("application ResourceRef or MatchLabel not found")
-var applicationNotFound = errors.New("Application is already deleted")
-
 // search objects based in Kind/APIVersion, which contain the labels defined in ApplicationSelector.
 func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	// If Application name is present
@@ -73,7 +69,7 @@ func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	} else if b.sbr.Spec.ApplicationSelector.LabelSelector != nil {
 		return b.getApplicationByLabelSelector()
 	} else {
-		return nil, emptyApplicationSelectorErr
+		return nil, errEmptyApplicationSelector
 	}
 }
 
@@ -87,11 +83,13 @@ func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 	object, err := b.dynClient.Resource(gvr).Namespace(ns).
 		Get(b.sbr.Spec.ApplicationSelector.ResourceRef, metav1.GetOptions{})
 	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil, errApplicationNotFound
+		}
 		return nil, err
 	}
 
-	objList := &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}
-	return objList, nil
+	return &unstructured.UnstructuredList{Items: []unstructured.Unstructured{*object}}, nil
 }
 
 func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
@@ -105,7 +103,17 @@ func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 	opts := metav1.ListOptions{
 		LabelSelector: labels.Set(matchLabels).String(),
 	}
-	return b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+
+	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(opts)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(objList.Items) == 0 {
+		return nil, errApplicationNotFound
+	}
+
+	return objList, nil
 }
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
@@ -377,10 +385,15 @@ func (b *binder) updateContainer(container interface{}) (map[string]interface{},
 	// effectively binding the application with intermediary secret
 	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
 
+	secretRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
+	existingSecret, err := b.dynClient.Resource(secretRes).Namespace(b.sbr.GetNamespace()).Get(b.sbr.GetName(), metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
 	// add a special environment variable that is only used to trigger a change in the declaration,
 	// attempting to force a side effect (in case of a Deployment, it would result in its Pods to be
 	// restarted)
-	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, time.Now().Format(time.RFC3339))
+	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, existingSecret.GetResourceVersion())
 
 	if len(b.volumeKeys) > 0 {
 		// and adding volume mount entries
@@ -441,8 +454,8 @@ func (b *binder) removeVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	return cleanVolumeMounts
 }
 
-// nestedMapComparison compares a nested field from two objects.
-func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
+// nestedUnstructuredComparison compares a nested field from two objects.
+func nestedUnstructuredComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
 	var (
 		aMap map[string]interface{}
 		bMap map[string]interface{}
@@ -463,9 +476,14 @@ func nestedMapComparison(a, b *unstructured.Unstructured, fields ...string) (boo
 		return false, nil
 	}
 
-	result := cmp.DeepEqual(aMap, bMap)()
+	result := nestedMapComparison(aMap, bMap)
+	return result, nil
+}
 
-	return result.Success(), nil
+func nestedMapComparison(a, b map[string]interface{}) bool {
+	val := cmp.DeepEqual(a, b)()
+	return val.Success()
+
 }
 
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
@@ -495,7 +513,7 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(&obj, updatedObj); err != nil {
+		if specsAreEqual, err := nestedUnstructuredComparison(&obj, updatedObj); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
@@ -570,9 +588,6 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 func (b *binder) unbind() error {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
-			return nil
-		}
 		return err
 	}
 	return b.remove(objs)
@@ -583,9 +598,6 @@ func (b *binder) unbind() error {
 func (b *binder) bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
-			return nil, nil
-		}
 		return nil, err
 	}
 	return b.update(objs)

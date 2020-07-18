@@ -187,10 +187,18 @@ func (f *Fake) AddMockedUnstructuredSecret(name string) *unstructured.Unstructur
 	return s
 }
 
+// AddMockedUnstructuredSecret add mocked object from SecretMock. This secret is created with a resourceVersion
+func (f *Fake) AddMockedUnstructuredSecretRV(name string) *unstructured.Unstructured {
+	s, err := UnstructuredSecretMockRV(f.ns, name)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, s)
+	return s
+}
+
 // AddNamespacedMockedSecret add mocked object from SecretMock in a namespace
 // which isn't necessarily same as that of the ServiceBindingRequest namespace.
-func (f *Fake) AddNamespacedMockedSecret(name string, namespace string) {
-	f.objs = append(f.objs, SecretMock(namespace, name))
+func (f *Fake) AddNamespacedMockedSecret(name string, namespace string, data map[string][]byte) {
+	f.objs = append(f.objs, SecretMock(namespace, name, data))
 }
 
 // AddMockedUnstructuredConfigMap add mocked object from ConfigMapMock.

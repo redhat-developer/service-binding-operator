@@ -3,6 +3,7 @@ package servicebindingrequest
 import (
 	"context"
 	"errors"
+	"sort"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -19,11 +20,19 @@ import (
 )
 
 const (
-	// BindingReady indicates that the binding succeeded
-	BindingReady conditionsv1.ConditionType = "Ready"
+	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
+	CollectionReady conditionsv1.ConditionType = "CollectionReady"
+	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
+	// If status is true, it indicates that the binding succeeded
+	InjectionReady conditionsv1.ConditionType = "InjectionReady"
 	// EmptyServiceSelectorsReason is used when the ServiceBindingRequest has empty
 	// backingServiceSelectors.
 	EmptyServiceSelectorsReason = "EmptyServiceSelectors"
+	// EmptyApplicationSelectorReason is used when the ServiceBindingRequest has empty
+	// applicationSelector.
+	EmptyApplicationSelectorReason = "EmptyApplicationSelector"
+	// ApplicationNotFoundReason is used when the application is not found.
+	ApplicationNotFoundReason = "ApplicationNotFound"
 )
 
 // Reconciler reconciles a ServiceBindingRequest object
@@ -67,6 +76,21 @@ func (r *reconciler) getServiceBindingRequest(
 	return sbr, nil
 }
 
+// distinctServiceSelectors returns the distinct elements from the given service selector slice.
+func distinctServiceSelectors(selectors []v1alpha1.BackingServiceSelector) []v1alpha1.BackingServiceSelector {
+	distinct := make(map[v1alpha1.BackingServiceSelector]bool)
+	for _, v := range selectors {
+		distinct[v] = true
+	}
+
+	var output []v1alpha1.BackingServiceSelector
+	for k := range distinct {
+		output = append(output, k)
+	}
+
+	return output
+}
+
 // extractServiceSelectors returns a list of all BackingServiceSelector items from a
 // ServiceBindingRequest.
 //
@@ -84,7 +108,17 @@ func extractServiceSelectors(
 	if inSelectors != nil {
 		selectors = append(selectors, *inSelectors...)
 	}
-	return selectors
+
+	// FIXME(isuttonl): sorting selectors using name and namespace can be more robust.
+	sort.Slice(selectors, func(i, j int) bool {
+		a := selectors[i].ResourceRef < selectors[j].ResourceRef
+		b := selectors[j].Namespace != nil &&
+			selectors[i].Namespace != nil &&
+			*selectors[i].Namespace < *selectors[j].Namespace
+		return a && b
+	})
+
+	return distinctServiceSelectors(selectors)
 }
 
 // Reconcile a ServiceBindingRequest by the following steps:
@@ -108,7 +142,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	// fetch and validate namespaced ServiceBindingRequest instance
 	sbr, err := r.getServiceBindingRequest(request.NamespacedName)
 	if err != nil {
-		if errors.Is(err, applicationNotFound) {
+		if errors.Is(err, errApplicationNotFound) {
 			logger.Info("SBR deleted after application deletion")
 			return done()
 		}
@@ -131,13 +165,22 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	selectors := extractServiceSelectors(sbr)
 	if len(selectors) == 0 {
-		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, conditionsv1.Condition{
-			Type:    BindingReady,
-			Status:  corev1.ConditionFalse,
-			Reason:  EmptyServiceSelectorsReason,
-			Message: "The spec.backingServiceSelectors field is empty.",
-		})
-		_, updateErr := updateServiceBindingRequestStatus(r.dynClient, sbr)
+		_, updateErr := updateServiceBindingRequestStatus(
+			r.dynClient,
+			sbr,
+			conditionsv1.Condition{
+				Type:    CollectionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  EmptyServiceSelectorsReason,
+				Message: errEmptyBackingServiceSelectors.Error(),
+			},
+			conditionsv1.Condition{
+				Type:    InjectionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  EmptyServiceSelectorsReason,
+				Message: errEmptyBackingServiceSelectors.Error(),
+			},
+		)
 		if updateErr == nil {
 			return done()
 		}
@@ -150,6 +193,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	serviceCtxs, err := buildServiceContexts(
+		logger.WithName("buildServiceContexts"),
 		r.dynClient,
 		sbr.GetNamespace(),
 		selectors,

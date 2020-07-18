@@ -45,6 +45,8 @@ endif
 
 ZAP_FLAGS = $(ZAP_ENCODER_FLAG) $(ZAP_LEVEL_FLAG)
 
+SKIP_CLEANUP_ERROR ?= true
+
 # Create output directory for artifacts and test results. ./out is supposed to
 # be a safe place for all targets to write to while knowing that all content
 # inside of ./out is wiped once "make clean" is run.
@@ -154,17 +156,20 @@ BASE_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].base_sha')
 PR_COMMIT := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].sha')
 PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 
+# -- Variables for acceptance tests
+TEST_ACCEPTANCE_START_SBO ?= local
+
 ## -- Static code analysis (lint) targets --
 
 .PHONY: lint
 ## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
-lint: setup-venv lint-go-code lint-yaml
+lint: setup-venv lint-go-code lint-yaml lint-python-code
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
 lint-yaml: ${YAML_FILES}
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint
+	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint==1.23.0
 	$(Q)$(OUTPUT_DIR)/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
@@ -177,6 +182,11 @@ lint-go-code: $(GOLANGCI_LINT_BIN)
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
 
+## -- Check the python code
+.PHONY: lint-python-code
+lint-python-code:
+	$(Q)./hack/check-python/lint-python-code.sh
+
 .PHONY: setup-venv
 ## Setup virtual environment
 setup-venv:
@@ -188,7 +198,7 @@ setup-venv:
 
 # Generate namespace name for test
 out/test-namespace:
-	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]')" > $(OUTPUT_DIR)/test-namespace
+	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]' | head -c 8)" > $(OUTPUT_DIR)/test-namespace
 
 .PHONY: get-test-namespace
 get-test-namespace: out/test-namespace
@@ -219,7 +229,8 @@ test-e2e: e2e-setup deploy-crds
 		operator-sdk --verbose test local ./test/e2e \
 			--namespace $(TEST_NAMESPACE) \
 			--up-local \
-			--go-test-flags "-timeout=15m" \
+			--skip-cleanup-error=$(SKIP_CLEANUP_ERROR) \
+			--go-test-flags "-timeout=110m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS) \
 			| tee $(LOGS_DIR)/e2e/test-e2e.log
@@ -263,6 +274,31 @@ test-unit-with-coverage:
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
 		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
+
+.PHONY: test-acceptance-setup
+## Setup the environment for the acceptance tests
+ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
+test-acceptance-setup:
+	$(Q)echo "Starting local SBO instance"
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" ./hack/deploy-sbo-local.sh))
+else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
+test-acceptance-setup:
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
+endif
+
+.PHONY: set-test-namespace
+set-test-namespace: get-test-namespace
+	$(Q)oc project $(TEST_NAMESPACE)
+
+.PHONY: test-acceptance
+## Runs acceptance tests
+test-acceptance: e2e-setup set-test-namespace deploy-clean deploy-rbac deploy-crds test-acceptance-setup
+	$(Q)echo "Running acceptance tests"
+	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
+		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
+		TEST_NAMESPACE=$(TEST_NAMESPACE) \
+		behave -v --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
+	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -478,3 +514,4 @@ dev-release:
 validate-release: setup-venv
 	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yq==2.10.0
 	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="alpha" ./hack/validate-release.sh
+

@@ -40,6 +40,11 @@ type result struct {
 	Type bindingType
 	// Path is the nested location the collected data can be found in the Data field.
 	Path string
+	// RawData contains the annotation data collected by an annotation handler
+	// inside a deep structure with its root being composed by the path where
+	// the external resource name was extracted and the path within the external
+	// resource.
+	RawData map[string]interface{}
 }
 
 // handler should be implemented by types that want to offer a mechanism to provide binding data to

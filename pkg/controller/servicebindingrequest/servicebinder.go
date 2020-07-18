@@ -2,6 +2,7 @@ package servicebindingrequest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
@@ -153,7 +154,7 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 	}
 
 	logger.Debug("Removing resource finalizers...")
-	b.sbr.SetFinalizers(removeStringSlice(b.sbr.GetFinalizers(), finalizer))
+	removeFinalizer(b.sbr)
 	if _, err := b.updateServiceBindingRequest(b.sbr); err != nil {
 		return noRequeue(err)
 	}
@@ -166,7 +167,11 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 func updateServiceBindingRequestStatus(
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBindingRequest,
+	conditions ...conditionsv1.Condition,
 ) (*v1alpha1.ServiceBindingRequest, error) {
+	for _, v := range conditions {
+		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, v)
+	}
 	u, err := converter.ToUnstructured(sbr)
 	if err != nil {
 		return nil, err
@@ -222,7 +227,7 @@ func (b *serviceBinder) onError(
 		b.setApplicationObjects(sbrStatus, objs)
 	}
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:    BindingReady,
+		Type:    InjectionReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  bindingFail,
 		Message: b.message(err),
@@ -234,6 +239,62 @@ func (b *serviceBinder) onError(
 	b.sbr = newSbr
 
 	return requeueOnNotFound(err, requeueAfter)
+}
+
+// isApplicationSelectorEmpty returns true if applicationSelector is not declared in
+// the Service Binding Request.
+func isApplicationSelectorEmpty(
+	application v1alpha1.ApplicationSelector,
+) bool {
+	var emptyApplication v1alpha1.ApplicationSelector
+	return application == emptyApplication ||
+		application.ResourceRef == "" &&
+			application.LabelSelector.MatchLabels == nil
+}
+
+func addFinalizer(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.SetFinalizers(append(removeStringSlice(sbr.GetFinalizers(), finalizer), finalizer))
+}
+
+func removeFinalizer(sbr *v1alpha1.ServiceBindingRequest) {
+	sbr.SetFinalizers(removeStringSlice(sbr.GetFinalizers(), finalizer))
+}
+
+// handleApplicationError handles scenarios when:
+// 1. applicationSelector not declared in the Service Binding Request
+// 2. application not found
+func (b *serviceBinder) handleApplicationError(reason string, applicationError error, sbrStatus *v1alpha1.ServiceBindingRequestStatus) (reconcile.Result, error) {
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type:    InjectionReady,
+		Status:  corev1.ConditionFalse,
+		Reason:  reason,
+		Message: applicationError.Error(),
+	})
+
+	// updating status of request instance
+	sbr, err := b.updateStatusServiceBindingRequest(b.sbr, sbrStatus)
+	if err != nil {
+		return requeueError(err)
+	}
+
+	// appending finalizer, should be later removed upon resource deletion
+	addFinalizer(b.sbr)
+	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
+		return requeueError(err)
+	}
+
+	b.logger.Info(applicationError.Error())
+
+	if errors.Is(applicationError, errApplicationNotFound) {
+		removeFinalizer(b.sbr)
+		if _, err = b.updateServiceBindingRequest(sbr); err != nil {
+			return requeueError(err)
+		}
+		return requeue(applicationError, requeueAfter)
+
+	}
+
+	return done()
 }
 
 // bind configures binding between the Service Binding Request and its related objects.
@@ -249,10 +310,21 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	}
 	sbrStatus.Secret = secretObj.GetName()
 
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type:   CollectionReady,
+		Status: corev1.ConditionTrue,
+	})
+
+	if isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
+		return b.handleApplicationError(EmptyApplicationSelectorReason, errEmptyApplicationSelector, sbrStatus)
+	}
 	updatedObjects, err := b.binder.bind()
 	if err != nil {
 		b.logger.Error(err, "On binding application.")
-		return b.onError(err, b.sbr, sbrStatus, updatedObjects)
+		if errors.Is(err, errApplicationNotFound) {
+			return b.handleApplicationError(ApplicationNotFoundReason, errApplicationNotFound, sbrStatus)
+		}
+		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
 	b.setApplicationObjects(sbrStatus, updatedObjects)
 
@@ -264,7 +336,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	}
 
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   BindingReady,
+		Type:   InjectionReady,
 		Status: corev1.ConditionTrue,
 	})
 
@@ -275,9 +347,10 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	}
 
 	// appending finalizer, should be later removed upon resource deletion
-	sbr.SetFinalizers(append(removeStringSlice(b.sbr.GetFinalizers(), finalizer), finalizer))
+	addFinalizer(sbr)
+
 	if _, err = b.updateServiceBindingRequest(sbr); err != nil {
-		return noRequeue(err)
+		return requeueError(err)
 	}
 
 	b.logger.Info("All done!")

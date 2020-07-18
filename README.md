@@ -96,7 +96,7 @@ The following example scenarios are available:
 
 [Binding an Imported app in one namespace with an In-cluster Managed PostgreSQL Database in another namespace](examples/nodejs_postgresql_namespaces/README.md)
 
-[Binding an Imported app to a Route/Ingress][examples/route_k8s_resource/README.md]
+[Binding an Imported app to a Route/Ingress](examples/route_k8s_resource/README.md)
 
 ## Community, discussion, contribution, and support
 
