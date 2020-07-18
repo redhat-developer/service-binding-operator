@@ -1,6 +1,6 @@
 ## Binding an Imported app to an In-cluster Operator Managed Etcd Database.
 
-1. Install Etcd operator using operator hub, 
+1. Install Etcd operator using operator hub,
    follow https://operatorhub.io/operator/etcd
 2. Create an Etcd cluster.
  ```yaml
@@ -16,31 +16,46 @@
 Test application : https://github.com/akashshinde/node-todo.git
 ![](https://i.imgur.com/WGQZ1nj.png)
 
-4. Create SBR.
+Note: This example assumes the app is deployed using a K8s Deployment if using a OCP DeploymentConfig change the group and resource in the applicationSelector to
+
+```
+    group: apps.openshift.io
+    version: v1
+    resource: deploymentconfigs
+```
+
+4. Add the labels to the deployment or deployment config
+
+```
+oc label deployment node-todo-git 'connects-to=etcd' 'environment=demo'
+```
+
+5. Create SBR.
 ```yaml
 apiVersion: apps.openshift.io/v1alpha1
 kind: ServiceBindingRequest
 metadata:
-  name: binding-request
+  name: node-binding-request
 spec:
   applicationSelector:
-    matchLabels:
-      connects-to: etcd
-      environment: demo
-    group: apps.openshift.io
+    labelSelector:
+      matchLabels:
+        connects-to: etcd
+        environment: demo
+    group: apps
+    resource: deployments
     version: v1
-    resource: deploymentconfigs
     resourceRef: ""
   backingServiceSelector:
     group: etcd.database.coreos.com
     version: v1beta2
     kind: EtcdCluster
-    resourceRef: etcd-cluster-example
+    resourceRef: etcd-cluster
   mountPathPrefix: “”
   customEnvVar: []
   detectBindingResources: true
 ```
-5. Application should be binded to the Etcd database automatically.
+6. Application should be binded to the Etcd database automatically.
 ![](https://i.imgur.com/JjORDrJ.png)
 
 
