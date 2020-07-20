@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -15,6 +14,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -126,6 +126,9 @@ func TestBinderNew(t *testing.T) {
 		deploymentsGVR,
 		matchLabels,
 	)
+
+	f.AddMockedUnstructuredSecretRV(name)
+	fakeDynClient := f.FakeDynClient()
 
 	t.Run("search-using-resourceref", func(t *testing.T) {
 		binderForSBRWithResourceRef := newBinder(
@@ -241,9 +244,12 @@ func TestBinderNew(t *testing.T) {
 		require.NotNil(t, envVar)
 		require.NotEmpty(t, envVar.Value)
 
-		parsedTime, err := time.Parse(time.RFC3339, envVar.Value)
+		uSecret, err := fakeDynClient.Resource(secretsGVR).Get(name, metav1.GetOptions{})
 		require.NoError(t, err)
-		require.True(t, parsedTime.Before(time.Now()))
+		s := corev1.Secret{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(uSecret.Object, &s)
+		require.NoError(t, err)
+		require.Equal(t, s.ObjectMeta.ResourceVersion, envVar.Value)
 
 	})
 

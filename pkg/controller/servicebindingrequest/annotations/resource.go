@@ -47,7 +47,7 @@ func discoverRelatedResourceName(obj map[string]interface{}, bi *bindingInfo) (s
 		strings.Split(bi.ResourceReferencePath, ".")...,
 	)
 	if !ok {
-		return "", resourceNameFieldNotFoundErr
+		return "", errResourceNameFieldNotFound(bi.ResourceReferencePath)
 	}
 	if err != nil {
 		return "", err
@@ -115,6 +115,14 @@ func (h *resourceHandler) Handle() (result, error) {
 		return result{}, err
 	}
 
+	// get resource's kind.
+	gvk, err := h.restMapper.KindFor(h.relatedGroupVersionResource)
+	if err != nil {
+		return result{}, err
+	}
+
+	outputPathParts := []string{strings.ToLower(gvk.Kind)}
+
 	if mapVal, ok := val.(map[string]interface{}); ok {
 		tmpVal := make(map[string]interface{})
 		for k, v := range mapVal {
@@ -130,6 +138,7 @@ func (h *resourceHandler) Handle() (result, error) {
 		if err != nil {
 			return result{}, err
 		}
+		outputPathParts = append(outputPathParts, nested.NewPath(h.bindingInfo.SourcePath).GetParts()...)
 	}
 
 	typ, err := discoverBindingType(h.bindingInfo.Value)
@@ -137,15 +146,11 @@ func (h *resourceHandler) Handle() (result, error) {
 		return result{}, err
 	}
 
-	// get resource's kind.
-	gvk, err := h.restMapper.KindFor(h.relatedGroupVersionResource)
-	if err != nil {
-		return result{}, err
-	}
-
 	// prefix the output path with the kind of the resource.
-	outputPath := strings.Join([]string{
-		strings.ToLower(gvk.Kind),
+	outputPath := strings.Join(outputPathParts, ".")
+
+	rawDataPath := strings.Join([]string{
+		h.bindingInfo.ResourceReferencePath,
 		h.bindingInfo.SourcePath,
 	}, ".")
 
@@ -153,6 +158,8 @@ func (h *resourceHandler) Handle() (result, error) {
 		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
 		Type: typ,
 		Path: outputPath,
+
+		RawData: nested.ComposeValue(val, nested.NewPath(rawDataPath)),
 	}, nil
 }
 

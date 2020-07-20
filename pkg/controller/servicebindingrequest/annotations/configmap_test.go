@@ -110,12 +110,8 @@ func TestConfigMapHandler(t *testing.T) {
 		},
 		expected: map[string]interface{}{
 			"configmap": map[string]interface{}{
-				"status": map[string]interface{}{
-					"dbCredentials": map[string]interface{}{
-						"username": "AzureDiamond",
-						"password": "hunter2",
-					},
-				},
+				"username": "AzureDiamond",
+				"password": "hunter2",
 			},
 		},
 	}))

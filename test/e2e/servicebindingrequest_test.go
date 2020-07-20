@@ -24,6 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
+	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest"
@@ -50,7 +51,7 @@ var (
 	// Intermediate secret should have following data
 	// for postgres operator
 	postgresSecretAssertion = map[string]string{
-		"DATABASE_SECRET_USER":     "user",
+		"DATABASE_SECRET_USERNAME": "user",
 		"DATABASE_SECRET_PASSWORD": "password",
 	}
 
@@ -94,15 +95,19 @@ func TestAddSchemesToFramework(t *testing.T) {
 			ServiceBindingRequest(t, []Step{AppStep, DBStep, SBRStep})
 		})
 		t.Run("scenario-db-sbr-app", func(t *testing.T) {
+			t.Skip("Currently disabled as not supported by SBO")
 			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
 		})
 		t.Run("scenario-app-sbr-db", func(t *testing.T) {
+			t.Skip("Currently disabled as not supported by SBO")
 			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
 		})
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
+			t.Skip("Currently disabled as not supported by SBO")
 			ServiceBindingRequest(t, []Step{SBRStep, DBStep, AppStep})
 		})
 		t.Run("scenario-sbr-app-db", func(t *testing.T) {
+			t.Skip("Currently disabled as not supported by SBO")
 			ServiceBindingRequest(t, []Step{SBRStep, AppStep, DBStep})
 		})
 		t.Run("scenario-csv-db-app-sbr", func(t *testing.T) {
@@ -186,6 +191,7 @@ func assertDeploymentEnvFrom(
 // assertSBRStatus will determine if SBR is on "success" state
 func assertSBRStatus(
 	ctx context.Context,
+	t *testing.T,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
 ) error {
@@ -194,16 +200,25 @@ func assertSBRStatus(
 		return err
 	}
 
-	for i, condition := range sbr.Status.Conditions {
-		if condition.Type != servicebindingrequest.BindingReady && condition.Status != corev1.ConditionTrue {
-			return fmt.Errorf(
-				"Condition.Type and Condition.Status is '%s' and '%s' instead of '%s' and '%s'",
-				sbr.Status.Conditions[i].Type,
-				sbr.Status.Conditions[i].Status,
-				servicebindingrequest.BindingReady,
-				corev1.ConditionTrue)
-		}
-	}
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbr.Status.Conditions,
+			servicebindingrequest.CollectionReady,
+			corev1.ConditionTrue,
+		),
+		"CollectionReady condition should exist and true; existing conditions: %+v",
+		sbr.Status.Conditions,
+	)
+
+	require.True(t,
+		conditionsv1.IsStatusConditionPresentAndEqual(
+			sbr.Status.Conditions,
+			servicebindingrequest.InjectionReady,
+			corev1.ConditionTrue,
+		),
+		"InjectionReady condition should exist and true; existing conditions: %+v",
+		sbr.Status.Conditions,
+	)
 	return nil
 }
 
@@ -288,6 +303,14 @@ func CreateDB(
 	ns := namespacedName.Namespace
 	resourceRef := namespacedName.Name
 
+	// order is important: the operator will follow first the database resource,
+	// then the secret holding the credential; in the case the secret is not
+	// there, default values will be set for each of the contributed
+	// configuration values declared in the Database custom resource definition.
+	t.Log("Creating Database credentials secret mock object...")
+	dbSecret := mocks.SecretMock(ns, secretName, nil)
+	require.NoError(t, f.Client.Create(ctx, dbSecret, cleanupOpts))
+
 	db := mocks.DatabaseCRMock(ns, resourceRef)
 	require.NoError(t, f.Client.Create(ctx, db, cleanupOpts))
 
@@ -304,10 +327,6 @@ func CreateDB(
 		}
 		return true
 	}, 10*time.Second, 1*time.Second)
-
-	t.Log("Creating Database credentials secret mock object...")
-	dbSecret := mocks.SecretMock(ns, secretName)
-	require.NoError(t, f.Client.Create(ctx, dbSecret, cleanupOpts))
 
 	return db
 }
@@ -479,10 +498,10 @@ func serviceBindingRequestTest(
 	// operator reconciliation.
 	t.Log("Inspecting deployment structure...")
 	require.Eventually(t, func() bool {
-		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
+		t.Logf("Inspecting deployment: '%s'", deploymentNamespacedName)
 		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
 		if err != nil {
-			t.Logf("Error on inspecting deployment: '%s'", err)
+			t.Logf("Error on inspecting deployment: '%#v'", err)
 			return false
 		}
 		t.Logf("Deployment: Result after attempts, error: '%#v'", err)
@@ -493,7 +512,7 @@ func serviceBindingRequestTest(
 	t.Log("Inspecting SBR status...")
 	require.Eventually(t, func() bool {
 		t.Logf("Inspecting SBR: '%s'", sbrNamespacedName)
-		err := assertSBRStatus(todoCtx, f, sbrNamespacedName)
+		err := assertSBRStatus(todoCtx, t, f, sbrNamespacedName)
 		if err != nil {
 			t.Logf("Error on inspecting SBR: '%#v'", err)
 			return false
@@ -502,26 +521,31 @@ func serviceBindingRequestTest(
 		return true
 	}, 120*time.Second, 2*time.Second)
 
+	// checking intermediary secret contents, right after deployment the secrets must be in place
+	t.Log("Checking intermediary secret contents...")
 	require.Eventually(t, func() bool {
-		// checking intermediary secret contents, right after deployment the secrets must be in place
+		t.Logf("Inspecting SBR secret: '%s'", intermediarySecretNamespacedName)
 		sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
 		if err != nil {
 			// it can be that assertSBRSecret returns nil until service configuration values can be
 			// collected.
-			t.Logf("binding secret contents are invalid: %v", sbrSecret)
+			t.Logf("Binding secret contents are invalid: '%#v'", sbrSecret)
 			return false
 		}
+		t.Logf("SBR-Secret: Result after attempts, error: '%#v'", err)
 		return true
 	}, 120*time.Second, 2*time.Second)
 
 	// editing intermediary secret in order to trigger update event
+	t.Log("Editing intermediary secret in order to trigger update event...")
 	require.Eventually(t, func() bool {
-		t.Logf("Updating intermediary secret to have bogus data: '%s'", intermediarySecretNamespacedName)
+		t.Logf("Updating intermediary secret: '%s'", intermediarySecretNamespacedName)
 		err := updateSBRSecret(todoCtx, t, f, intermediarySecretNamespacedName)
 		if err != nil {
-			t.Log(err)
+			t.Logf("Error on updating intermediary secrets: '%#v'", err)
 			return false
 		}
+		t.Logf("SBR-Secret: Result after update, error: '%#v'", err)
 		return true
 	}, 120*time.Second, 2*time.Second)
 
@@ -529,7 +553,7 @@ func serviceBindingRequestTest(
 	// reconcile again when detecting the change
 	t.Log("Inspecting intermediary secret...")
 	require.Eventually(t, func() bool {
-		t.Logf("Inspecting secret '%s'...", intermediarySecretNamespacedName)
+		t.Logf("Inspecting secret: '%s'", intermediarySecretNamespacedName)
 		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
 		if err != nil {
 			t.Logf("Secret inspection error: '%#v'", err)
@@ -540,12 +564,14 @@ func serviceBindingRequestTest(
 	}, 120*time.Second, 2*time.Second)
 
 	// executing deletion of the request, triggering unbinding actions
+	t.Log("Executing deletion of the request, triggering unbinding actions...")
 	err := f.Client.Delete(todoCtx, sbr)
 	require.NoError(t, err, "expect deletion to not return errors")
 
 	// after deletion, secret should not be found anymore
+	t.Log("Looking for intermediary secrets after deleting sbr...")
 	require.Eventually(t, func() bool {
-		t.Logf("Searching for secret '%s'...", intermediarySecretNamespacedName)
+		t.Logf("Searching for secret: '%s'", intermediarySecretNamespacedName)
 		err := assertSecretNotFound(todoCtx, f, intermediarySecretNamespacedName)
 		if err != nil {
 			t.Logf("Secret search error: '%#v'", err)
@@ -556,13 +582,16 @@ func serviceBindingRequestTest(
 	}, 120*time.Second, 2*time.Second)
 
 	// after deletion, deployment should not contain envFrom directive anymore
+	t.Log("Looking for envFrom directive in deployment after deleting sbr...")
 	require.Eventually(t, func() bool {
-		t.Logf("Inspecting deployment '%s'", deploymentNamespacedName)
+		t.Log("Expect deployment not to be carrying envFrom directive")
+		t.Logf("Inspecting deployment: '%s'", deploymentNamespacedName)
 		_, err := assertDeploymentEnvFrom(todoCtx, f, deploymentNamespacedName, sbrName)
 		if err != nil {
-			t.Log("expect deployment not to be carrying envFrom directive")
+			t.Logf("Did not find envFrom directive, error: '%#v'", err)
 			return true
 		}
+		t.Logf("Deployment contains envFrom directive, error: '%#v'", err)
 		return false
 	}, 120*time.Second, 2*time.Second)
 }

@@ -65,6 +65,10 @@ func Build(obj interface{}, path ...string) (map[string]string, error) {
 		return buildString(strconv.FormatInt(val, 10), path), nil
 	case float64:
 		return buildString(strconv.FormatFloat(val, 'f', -1, 64), path), nil
+	case []interface{}:
+		return buildSliceOfInterface(val, path)
+	case bool:
+		return buildString(strconv.FormatBool(val), path), nil
 	default:
 		return nil, errUnsupportedType
 	}
@@ -98,6 +102,19 @@ func buildMap(obj map[string]interface{}, path []string) (map[string]string, err
 	envVars := make(map[string]string)
 	for k, v := range obj {
 		if err := buildInner(path, k, v, envVars); err != nil {
+			return nil, err
+		}
+	}
+	return envVars, nil
+}
+
+// buildSliceOfInterface retrurns a slice containing environment variables for
+// all the leaves present in the given 'obj' slice.
+func buildSliceOfInterface(obj []interface{}, acc []string) (map[string]string, error) {
+	envVars := make(map[string]string)
+	for i, v := range obj {
+		k := strconv.Itoa(i)
+		if err := buildInner(acc, k, v, envVars); err != nil {
 			return nil, err
 		}
 	}

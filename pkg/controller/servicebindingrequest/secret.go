@@ -1,6 +1,9 @@
 package servicebindingrequest
 
 import (
+	"encoding/base64"
+	"reflect"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -47,28 +50,48 @@ func (s *secret) createOrUpdate(payload map[string][]byte, ownerReference metav1
 	resourceClient := s.buildResourceClient()
 
 	logger.Debug("Attempt to create secret...")
-	_, err = resourceClient.Create(u, metav1.CreateOptions{})
-	if err != nil && !errors.IsAlreadyExists(err) {
+	existingSecret, err := s.get()
+	if err != nil {
+		if errors.IsNotFound(err) {
+			_, err := resourceClient.Create(u, metav1.CreateOptions{})
+			if err != nil {
+				return nil, err
+			}
+			return u, nil
+		}
 		return nil, err
 	}
-
-	logger.Debug("Secret already exists, updating contents instead...")
-	_, err = resourceClient.Update(u, metav1.UpdateOptions{})
-	if err != nil {
-		return nil, err
+	existingSecretData, _, _ := unstructured.NestedMap(existingSecret.Object, "data")
+	payloadStr := make(map[string]string)
+	for k, v := range payload {
+		payloadStr[k] = base64.StdEncoding.EncodeToString(v)
+	}
+	payloadInterim := make(map[string]interface{})
+	for k, v := range payloadStr {
+		payloadInterim[k] = reflect.ValueOf(v).Interface()
+	}
+	eq := nestedMapComparison(existingSecretData, payloadInterim)
+	if eq {
+		logger.Debug("Secret data is same. Skip Update")
+	} else {
+		logger.Debug("Secret data is different. Update Secret")
+		_, err = resourceClient.Update(u, metav1.UpdateOptions{})
+		if err != nil {
+			return nil, err
+		}
 	}
 	return u, nil
 }
 
 // get an unstructured object from the secret handled by this component. It can return errors in case
 // the API server does.
-func (s *secret) get() (*unstructured.Unstructured, bool, error) {
+func (s *secret) get() (*unstructured.Unstructured, error) {
 	resourceClient := s.buildResourceClient()
 	u, err := resourceClient.Get(s.name, metav1.GetOptions{})
-	if err != nil && !errors.IsNotFound(err) {
-		return nil, false, err
+	if err != nil {
+		return nil, err
 	}
-	return u, u != nil, nil
+	return u, nil
 }
 
 // newSecret instantiate a new Secret.

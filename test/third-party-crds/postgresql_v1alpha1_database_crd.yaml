@@ -12,7 +12,7 @@ metadata:
     servicebindingoperator.redhat.io/status.dbConnectionIP: binding:env:attribute
     servicebindingoperator.redhat.io/status.dbConnectionPort: binding:env:attribute
     servicebindingoperator.redhat.io/status.dbCredentials-password: binding:env:object:secret
-    servicebindingoperator.redhat.io/status.dbCredentials-user: binding:env:object:secret
+    servicebindingoperator.redhat.io/status.dbCredentials-username: binding:env:object:secret
     servicebindingoperator.redhat.io/status.dbName: binding:env:attribute
 spec:
   group: postgresql.baiju.dev
