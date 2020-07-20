@@ -13,12 +13,12 @@ echo
 # checks for the whole directories
 for directory in $directories
 do
-    files=$(find "$directory" -path "$directory/venv" -prune -o -name '*.py' -print)
+    files=$(find "$directory" -path "$PYTHON_VENV_DIR" -prune -o -name '*.py' -print)
 
     for source in $files
     do
         echo "$source"
-        pycodestyle "$source"
+        $PYTHON_VENV_DIR/bin/pycodestyle "$source"
         if [ $? -eq 0 ]
         then
             echo "    Pass"
