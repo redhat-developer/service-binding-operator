@@ -534,7 +534,7 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if specsAreEqual, err := nestedMapComparison(originalObj, updatedObj, "spec"); err != nil {
+		if specsAreEqual, err := nestedUnstructuredComparison(originalObj, updatedObj, "spec"); err != nil {
 			log.Error(err, "")
 			continue
 		} else if specsAreEqual {
