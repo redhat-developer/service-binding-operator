@@ -129,6 +129,9 @@ func (p path) clean() path {
 
 // NewPath creates a new path with the given string in the format 'a.b.c'.
 func NewPath(s string) path {
+	if s == "" {
+		return path{}
+	}
 	parts := strings.Split(s, ".")
 	return newPathWithParts(parts)
 }
