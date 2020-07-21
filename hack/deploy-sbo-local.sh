@@ -5,8 +5,6 @@ ZAP_FLAGS=${ZAP_FLAGS:-}
 
 SBO_LOCAL_LOG=out/sbo-local.log
 
-killall operator-sdk service-binding-operator-local
-
 operator-sdk --verbose run --local --namespace="$OPERATOR_NAMESPACE" --operator-flags "$ZAP_FLAGS" > $SBO_LOCAL_LOG 2>&1 &
 
 SBO_PID=$!

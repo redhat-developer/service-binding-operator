@@ -7,7 +7,7 @@ function check_files() {
     for source in $1
     do
         echo "$source"
-        pyflakes "$source"
+        $PYTHON_VENV_DIR/bin/pyflakes "$source"
         if [ $? -eq 0 ]
         then
             echo "    Pass"
@@ -36,7 +36,8 @@ echo
 # checks for the whole directories
 for directory in $directories
 do
-    files=$(find "$directory" -path "$directory/venv" -prune -o -name '*.py' -print)
+    pwd
+    files=$(find "$directory" -path "$PYTHON_VENV_DIR" -prune -o -name '*.py' -print)
 
     check_files "$files"
 done

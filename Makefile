@@ -146,6 +146,7 @@ OLM_CATALOG_DIR ?= $(shell echo ${PWD})/deploy/olm-catalog
 CRDS_DIR ?= $(shell echo ${PWD})/deploy/crds
 LOGS_DIR ?= $(OUTPUT_DIR)/logs
 GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
+PYTHON_VENV_DIR=$(OUTPUT_DIR)/venv3
 
 # -- Variables for uploading code coverage reports to Codecov.io --
 # This default path is set by the OpenShift CI
@@ -169,8 +170,8 @@ YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" 
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
 lint-yaml: ${YAML_FILES}
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yamllint==1.23.0
-	$(Q)$(OUTPUT_DIR)/venv3/bin/yamllint -c .yamllint $(YAML_FILES)
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install yamllint==1.23.0
+	$(Q)$(PYTHON_VENV_DIR)/bin/yamllint -c .yamllint $(YAML_FILES)
 
 .PHONY: lint-go-code
 ## Checks the code with golangci-lint
@@ -184,15 +185,15 @@ $(GOLANGCI_LINT_BIN):
 
 ## -- Check the python code
 .PHONY: lint-python-code
-lint-python-code:
-	$(Q)./hack/check-python/lint-python-code.sh
+lint-python-code: setup-venv
+	$(Q)PYTHON_VENV_DIR=$(PYTHON_VENV_DIR) ./hack/check-python/lint-python-code.sh
 
 .PHONY: setup-venv
 ## Setup virtual environment
 setup-venv:
-	$(Q)python3 -m venv $(OUTPUT_DIR)/venv3
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
+	$(Q)python3 -m venv $(PYTHON_VENV_DIR)
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade setuptools
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
 
 ## -- Test targets --
 
@@ -277,6 +278,7 @@ test-unit-with-coverage:
 
 .PHONY: test-acceptance-setup
 ## Setup the environment for the acceptance tests
+test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup:
 	$(Q)echo "Starting local SBO instance"
@@ -285,6 +287,7 @@ else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
 endif
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r test/acceptance/features/requirements.txt
 
 .PHONY: set-test-namespace
 set-test-namespace: get-test-namespace
@@ -297,7 +300,7 @@ test-acceptance: e2e-setup set-test-namespace deploy-clean deploy-rbac deploy-cr
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		behave -v --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
+		$(PYTHON_VENV_DIR)/bin/behave -v --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
 
 .PHONY: test
@@ -487,20 +490,20 @@ push-to-manifest-repo:
 .PHONY: prepare-bundle-to-quay
 ## Prepare manifest bundle to quay application
 prepare-bundle-to-quay:
-	$(Q)python3.7 -m venv $(OUTPUT_DIR)/venv3
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade setuptools
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install --upgrade pip
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install operator-courier==2.1.2
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier --version
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(MANIFESTS_TMP)
+	$(Q)python3.7 -m venv $(PYTHON_VENV_DIR)
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade setuptools
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install operator-courier==2.1.2
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier --version
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(MANIFESTS_TMP)
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
 ## -- Target to push bundle to quay
 .PHONY: push-bundle-to-quay
 ## Push manifest bundle to quay application
 push-bundle-to-quay:
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier verify $(SBR_MANIFESTS)
-	$(Q)$(OUTPUT_DIR)/venv3/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(SBR_MANIFESTS)
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 
 ## -- Target for validating the operator --
 .PHONY: dev-release
@@ -512,6 +515,6 @@ dev-release:
 .PHONY: validate-release
 ## validate the operator by installing the releases
 validate-release: setup-venv
-	$(Q)$(OUTPUT_DIR)/venv3/bin/pip install yq==2.10.0
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install yq==2.10.0
 	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="alpha" ./hack/validate-release.sh
 

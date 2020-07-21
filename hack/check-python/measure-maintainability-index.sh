@@ -7,5 +7,5 @@
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 pushd "${SCRIPT_DIR}/.."
-radon mi -s -i venv .
+$PYTHON_VENV_DIR/bin/radon mi -s -i "$PYTHON_VENV_DIR" .
 popd
