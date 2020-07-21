@@ -14,9 +14,9 @@ class DbOperator():
 
     name = ""
     namespace = ""
-    operator_source_name = "pmacik-olm-registry"
-    operator_registry_image = "quay.io/pmacik/olm:v1"
-    operator_registry_channel = "stable"
+    operator_catalog_source_name = "pmacik-olm-registry"
+    operator_catalog_image = "quay.io/pmacik/olm:v1"
+    operator_catalog_channel = "stable"
     package_name = "db-operators"
 
     def __init__(self, name="postgresql-operator", namespace="openshift-operators"):
@@ -36,14 +36,14 @@ class DbOperator():
             return False
 
     def install_catalog_source(self):
-        install_src_output = self.openshift.create_catalog_source(self.operator_source_name, self.operator_registry_image)
-        if re.search(r'.*catalogsource.operators.coreos.com/%s\s(unchanged|created)' % self.operator_source_name, install_src_output) is None:
-            print("Failed to create {} catalog source".format(self.operator_source_name))
+        install_src_output = self.openshift.create_catalog_source(self.operator_catalog_source_name, self.operator_catalog_image)
+        if re.search(r'.*catalogsource.operators.coreos.com/%s\s(unchanged|created)' % self.operator_catalog_source_name, install_src_output) is None:
+            print("Failed to create {} catalog source".format(self.operator_catalog_source_name))
             return False
-        return self.openshift.wait_for_package_manifest(self.package_name, self.operator_source_name, self.operator_registry_channel)
+        return self.openshift.wait_for_package_manifest(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
 
     def install_operator_subscription(self):
-        install_sub_output = self.openshift.create_operator_subscription(self.package_name, self.operator_source_name, self.operator_registry_channel)
+        install_sub_output = self.openshift.create_operator_subscription(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
         if re.search(r'.*subscription.operators.coreos.com/%s\s(unchanged|created)' % self.package_name, install_sub_output) is None:
             print("Failed to create {} operator subscription".format(self.package_name))
             return False

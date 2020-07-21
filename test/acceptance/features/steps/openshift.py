@@ -17,7 +17,7 @@ metadata:
     namespace: openshift-marketplace
 spec:
     sourceType: grpc
-    image: {registry_image}
+    image: {catalog_image}
     displayName: {name} OLM registry
     updateStrategy:
         registryPoll:
@@ -104,8 +104,8 @@ spec:
         (output, exit_code) = self.cmd.run("oc apply -f -", yaml)
         return output
 
-    def create_catalog_source(self, name, registry_image):
-        catalog_source = self.catalog_source_yaml_template.format(name=name, registry_image=registry_image)
+    def create_catalog_source(self, name, catalog_image):
+        catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image)
         return self.oc_apply(catalog_source)
 
     def get_current_csv(self, package_name, catalog, channel):
