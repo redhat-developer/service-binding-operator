@@ -367,7 +367,8 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Name: "empty-app-selector",
 		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
-			ApplicationSelector: v1alpha1.ApplicationSelector{},
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				LabelSelector: &metav1.LabelSelector{}},
 			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
