@@ -368,6 +368,7 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 # STEP
 @given(u'The openshift route is present')
 @given(u'Namespace is present')
+@given(u'Catalog source is present')
 @given(u'Backend service CSV is installed')
 @given(u'The Custom Resource Definition is present')
 @given(u'The Custom Resource is present')
