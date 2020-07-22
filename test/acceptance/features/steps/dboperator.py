@@ -14,8 +14,8 @@ class DbOperator():
 
     name = ""
     namespace = ""
-    operator_catalog_source_name = "pmacik-olm-registry"
-    operator_catalog_image = "quay.io/pmacik/olm:v1"
+    operator_catalog_source_name = "sample-db-operators"
+    operator_catalog_image = "quay.io/redhat-developer/sample-db-operators-olm:v1"
     operator_catalog_channel = "stable"
     package_name = "db-operators"
 
