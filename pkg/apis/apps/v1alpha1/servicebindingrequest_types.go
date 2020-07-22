@@ -132,6 +132,7 @@ type PodSpecPath struct {
 
 	// Containers defines the path to the corev1.Volumes reference
 	// Example: "spec.template.spec.volumes"
+	// +optional
 	Volumes string `json:"volumes"`
 }
 

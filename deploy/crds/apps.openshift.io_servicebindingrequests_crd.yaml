@@ -55,12 +55,11 @@ spec:
                             reference Example: "spec.template.spec.containers"'
                           type: string
                         volumes:
-                          description: 'Volumes defines the path to the corev1.Volumes
+                          description: 'Containers defines the path to the corev1.Volumes
                             reference Example: "spec.template.spec.volumes"'
                           type: string
                       required:
                       - containers
-                      - volumes
                       type: object
                   type: object
                 group:
@@ -290,8 +289,8 @@ spec:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
             applications:
-              description: ApplicationObjects contains all the application objects
-                filtered by label
+              description: Applications contain all the applications filtered by name
+                or label
               items:
                 description: BoundApplication defines the application workloads to
                   which the binding secret has injected.
