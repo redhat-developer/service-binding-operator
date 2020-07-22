@@ -199,13 +199,14 @@ spec:
     version: v1alpha1
     kind: Database
     resourceRef: db-demo
+    id: postgresDB
   customEnvVar:
     - name: JDBC_URL
-      value: 'jdbc:postgresql://{{ .status.dbConnectionIP }}:{{ .status.dbConnectionPort }}/{{ .status.dbName }}'
+      value: 'jdbc:postgresql://{{ postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ postgresDB.status.dbName }}'
     - name: DB_USER
-      value: '{{ index .status.dbConfigMap "db.username" }}'
+      value: '{{ postgresDB.status.dbConfigMap.username }}'
     - name: DB_PASSWORD
-      value: '{{ index .status.dbConfigMap "db.password" }}'
+      value: '{{ postgresDB.status.dbConfigMap.password }}'
 EOS
 ```
 
