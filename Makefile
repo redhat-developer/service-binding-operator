@@ -300,7 +300,7 @@ test-acceptance: e2e-setup set-test-namespace deploy-clean deploy-rbac deploy-cr
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		$(PYTHON_VENV_DIR)/bin/behave -v --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
+		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(OUTPUT_DIR)/acceptance-tests $(V_FLAG) --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
 
 .PHONY: test
