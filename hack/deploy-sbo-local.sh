@@ -5,6 +5,18 @@ ZAP_FLAGS=${ZAP_FLAGS:-}
 
 SBO_LOCAL_LOG=out/sbo-local.log
 
+_killall(){
+    which killall &> /dev/null
+    if [ $? -eq 0 ]; then
+        killall $1
+    else
+        for i in "$(ps -l | grep $1)"; do if [ -n "$i" ]; then kill $(echo "$i" | sed -e 's,\s\+,#,g' | cut -d "#" -f4); fi; done
+    fi
+}
+
+_killall operator-sdk
+_killall service-binding-operator-local
+
 operator-sdk --verbose run --local --namespace="$OPERATOR_NAMESPACE" --operator-flags "$ZAP_FLAGS" > $SBO_LOCAL_LOG 2>&1 &
 
 SBO_PID=$!
