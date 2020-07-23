@@ -15,6 +15,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/annotations"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/nested"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 var (
@@ -160,6 +161,7 @@ var bindableResources = []bindableResource{
 }
 
 func getOwnedResources(
+	logger *log.Log,
 	client dynamic.Interface,
 	ns string,
 	gvk schema.GroupVersionKind,
@@ -170,10 +172,15 @@ func getOwnedResources(
 	error,
 ) {
 	var resources []*unstructured.Unstructured
+BINDING_RESOURCES:
 	for _, br := range bindableResources {
 		lst, err := client.Resource(br.gvr).Namespace(ns).List(metav1.ListOptions{})
 		if err != nil {
-			return resources, err
+			// if err == k8serrors.NewNotFound() {
+			logger.Debug("Resource not found in Bindable Resources", "Error", err)
+			continue BINDING_RESOURCES
+			// }
+			// return resources, err
 		}
 		for idx, item := range lst.Items {
 			owners := item.GetOwnerReferences()
