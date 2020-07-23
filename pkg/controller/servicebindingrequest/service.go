@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -176,11 +177,11 @@ BINDING_RESOURCES:
 	for _, br := range bindableResources {
 		lst, err := client.Resource(br.gvr).Namespace(ns).List(metav1.ListOptions{})
 		if err != nil {
-			// if err == k8serrors.NewNotFound() {
-			logger.Debug("Resource not found in Bindable Resources", "Error", err)
-			continue BINDING_RESOURCES
-			// }
-			// return resources, err
+			if k8serrors.IsNotFound(err) {
+				logger.Debug("Resource not found in Bindable Resources", "Error", err)
+				continue BINDING_RESOURCES
+			}
+			return resources, err
 		}
 		for idx, item := range lst.Items {
 			owners := item.GetOwnerReferences()
