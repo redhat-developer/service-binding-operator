@@ -120,8 +120,6 @@ func (h *resourceHandler) Handle() (result, error) {
 		return result{}, err
 	}
 
-	outputPathParts := []string{strings.ToLower(gvk.Kind)}
-
 	if mapVal, ok := val.(map[string]interface{}); ok {
 		tmpVal := make(map[string]interface{})
 		for k, v := range mapVal {
@@ -137,7 +135,6 @@ func (h *resourceHandler) Handle() (result, error) {
 		if err != nil {
 			return result{}, err
 		}
-		outputPathParts = append(outputPathParts, nested.NewPath(h.bindingInfo.SourcePath).GetParts()...)
 	}
 
 	typ, err := discoverBindingType(h.bindingInfo.Value)
