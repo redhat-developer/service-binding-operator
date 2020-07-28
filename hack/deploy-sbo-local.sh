@@ -3,7 +3,10 @@
 OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE:-}
 ZAP_FLAGS=${ZAP_FLAGS:-}
 
-SBO_LOCAL_LOG=out/sbo-local.log
+OUTPUT="${OUTPUT:-out/acceptance-tests}"
+mkdir -p "$OUTPUT"
+
+SBO_LOCAL_LOG="$OUTPUT/sbo-local.log"
 
 _killall(){
     which killall &> /dev/null

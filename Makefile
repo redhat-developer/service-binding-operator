@@ -159,6 +159,8 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 
 # -- Variables for acceptance tests
 TEST_ACCEPTANCE_START_SBO ?= local
+TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
+TEST_ACCEPTANCE_ARTIFACTS ?= /tmp/artifacts
 
 ## -- Static code analysis (lint) targets --
 
@@ -282,7 +284,7 @@ test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup:
 	$(Q)echo "Starting local SBO instance"
-	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" ./hack/deploy-sbo-local.sh))
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" ./hack/deploy-sbo-local.sh))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
@@ -300,8 +302,15 @@ test-acceptance: e2e-setup set-test-namespace deploy-clean deploy-rbac deploy-cr
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(OUTPUT_DIR)/acceptance-tests $(V_FLAG) --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
+		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
+
+.PHONY: test-acceptance-artifacts
+## Collect artifacts from acceptance tests to be archived in CI
+test-acceptance-artifacts:
+	$(Q)echo "Gathering acceptance tests artifacts"
+	$(Q)mkdir -p $(TEST_ACCEPTANCE_ARTIFACTS) \
+	    && cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
