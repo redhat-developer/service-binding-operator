@@ -159,6 +159,8 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 
 # -- Variables for acceptance tests
 TEST_ACCEPTANCE_START_SBO ?= local
+TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
+TEST_ACCEPTANCE_ARTIFACTS ?= /tmp/artifacts
 
 ## -- Static code analysis (lint) targets --
 
@@ -282,7 +284,7 @@ test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup:
 	$(Q)echo "Starting local SBO instance"
-	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" ./hack/deploy-sbo-local.sh))
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" ./hack/deploy-sbo-local.sh))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
@@ -300,8 +302,15 @@ test-acceptance: e2e-setup set-test-namespace deploy-clean deploy-rbac deploy-cr
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(OUTPUT_DIR)/acceptance-tests $(V_FLAG) --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
+		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
+
+.PHONY: test-acceptance-artifacts
+## Collect artifacts from acceptance tests to be archived in CI
+test-acceptance-artifacts:
+	$(Q)echo "Gathering acceptance tests artifacts"
+	$(Q)mkdir -p $(TEST_ACCEPTANCE_ARTIFACTS) \
+	    && cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
 
 .PHONY: test
 ## Test: Runs unit and integration (e2e) tests
@@ -450,15 +459,9 @@ else
 		-Z > codecov-upload.log
 endif
 
-## -- Target for maintaining consistent crd copies --
 
-.PHONY: consistent-crds-manifests-upstream
-## Copy crd from deploy/crds to manifests-upstream/
-consistent-crds-manifests-upstream:
-	$(Q)cd ./manifests-upstream/${OPERATOR_VERSION}/ && ln -srf ../../deploy/crds/apps_v1alpha1_servicebindingrequest_crd.yaml \
-	servicebindingrequests.apps.openshift.io.crd.yaml
+## -- Bundle validation, push and release targets
 
-## -- Target for merge to master dev release --
 .PHONY: merge-to-master-release
 ## Make a dev release on every merge to master
 merge-to-master-release:
@@ -468,7 +471,6 @@ merge-to-master-release:
 	docker push "$(OPERATOR_IMAGE_REF)"
 
 
-## -- Target for pushing manifest bundle to service-binding-operator-manifest repo --
 .PHONY: push-to-manifest-repo
 ## Push manifest bundle to service-binding-operator-manifest repo
 push-to-manifest-repo:
@@ -486,7 +488,6 @@ push-to-manifest-repo:
 	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 
-## -- Target for preparing manifest bundle to quay application --
 .PHONY: prepare-bundle-to-quay
 ## Prepare manifest bundle to quay application
 prepare-bundle-to-quay:
@@ -498,23 +499,21 @@ prepare-bundle-to-quay:
 	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(MANIFESTS_TMP)
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
-## -- Target to push bundle to quay
+
 .PHONY: push-bundle-to-quay
 ## Push manifest bundle to quay application
 push-bundle-to-quay:
 	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(SBR_MANIFESTS)
 	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 
-## -- Target for validating the operator --
+
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
 dev-release:
 	BUNDLE_VERSION=$(BUNDLE_VERSION) ./hack/dev-release.sh
 
-## -- Target to validate release --
 .PHONY: validate-release
 ## validate the operator by installing the releases
 validate-release: setup-venv
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install yq==2.10.0
 	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="alpha" ./hack/validate-release.sh
-
