@@ -9,17 +9,19 @@ nodejs_app = "https://github.com/pmacik/nodejs-rest-http-crud"
 class Openshift(object):
     def __init__(self):
         self.cmd = Command()
-        self.operator_source_yaml_template = '''
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
+        self.catalog_source_yaml_template = '''
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
 metadata:
     name: {name}
     namespace: openshift-marketplace
 spec:
-    type: appregistry
-    endpoint: https://quay.io/cnr
-    registryNamespace: {registry_namespace}
+    sourceType: grpc
+    image: {catalog_image}
+    displayName: {name} OLM registry
+    updateStrategy:
+        registryPoll:
+            interval: 30m
 '''
         self.operator_subscription_yaml_template = '''
 ---
@@ -102,9 +104,9 @@ spec:
         (output, exit_code) = self.cmd.run("oc apply -f -", yaml)
         return output
 
-    def create_operator_source(self, name, registry_namespace):
-        operator_source = self.operator_source_yaml_template.format(name=name, registry_namespace=registry_namespace)
-        return self.oc_apply(operator_source)
+    def create_catalog_source(self, name, catalog_image):
+        catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image)
+        return self.oc_apply(catalog_source)
 
     def get_current_csv(self, package_name, catalog, channel):
         cmd = f'oc get packagemanifests -o json | jq -r \'.items[] \
