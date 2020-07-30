@@ -173,13 +173,12 @@ func getOwnedResources(
 	error,
 ) {
 	var resources []*unstructured.Unstructured
-BINDING_RESOURCES:
 	for _, br := range bindableResources {
 		lst, err := client.Resource(br.gvr).Namespace(ns).List(metav1.ListOptions{})
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
 				logger.Debug("Resource not found in Bindable Resources", "Error", err)
-				continue BINDING_RESOURCES
+				continue
 			}
 			return resources, err
 		}
