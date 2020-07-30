@@ -58,8 +58,6 @@ spec:
                           description: 'Containers defines the path to the corev1.Volumes
                             reference Example: "spec.template.spec.volumes"'
                           type: string
-                      required:
-                      - containers
                       type: object
                   type: object
                 group:

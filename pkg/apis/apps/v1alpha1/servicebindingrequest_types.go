@@ -128,6 +128,7 @@ type BindingPath struct {
 type PodSpecPath struct {
 	// Containers defines the path to the corev1.Containers reference
 	// Example: "spec.template.spec.containers"
+	// +optional
 	Containers string `json:"containers"`
 
 	// Containers defines the path to the corev1.Volumes reference
