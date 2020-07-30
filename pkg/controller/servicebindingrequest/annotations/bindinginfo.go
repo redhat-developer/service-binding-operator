@@ -38,21 +38,24 @@ func NewBindingInfo(name string, value string) (*bindingInfo, error) {
 	if len(cleanName) == 0 {
 		return nil, ErrEmptyAnnotationName
 	}
-
 	parts := strings.SplitN(cleanName, "-", 2)
 
 	resourceReferencePath := parts[0]
-	sourcePath := parts[0]
-
+	// sourcePath := parts[0]
+	sourcePath := ""
+	descriptor := ""
 	// the annotation is a reference to another manifest
 	if len(parts) == 2 {
 		sourcePath = parts[1]
+		descriptor = strings.Join([]string{value, sourcePath}, ":")
+	} else {
+		descriptor = strings.Join([]string{value, resourceReferencePath}, ":")
 	}
 
 	return &bindingInfo{
 		ResourceReferencePath: resourceReferencePath,
 		SourcePath:            sourcePath,
-		Descriptor:            strings.Join([]string{value, sourcePath}, ":"),
+		Descriptor:            descriptor,
 		Value:                 value,
 	}, nil
 }

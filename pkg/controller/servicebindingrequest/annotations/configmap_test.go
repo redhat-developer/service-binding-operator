@@ -16,11 +16,12 @@ import (
 
 func TestConfigMapHandler(t *testing.T) {
 	type args struct {
-		name      string
-		value     string
-		service   map[string]interface{}
-		resources []runtime.Object
-		expected  map[string]interface{}
+		name            string
+		value           string
+		service         map[string]interface{}
+		resources       []runtime.Object
+		expectedData    map[string]interface{}
+		expectedRawData map[string]interface{}
 	}
 
 	assertHandler := func(args args) func(*testing.T) {
@@ -45,7 +46,8 @@ func TestConfigMapHandler(t *testing.T) {
 			got, err := handler.Handle()
 			require.NoError(t, err)
 			require.NotNil(t, got)
-			require.Equal(t, args.expected, got.Data)
+			require.Equal(t, args.expectedData, got.Data)
+			require.Equal(t, args.expectedRawData, got.RawData)
 		}
 	}
 
@@ -75,9 +77,16 @@ func TestConfigMapHandler(t *testing.T) {
 				},
 			},
 		},
-		expected: map[string]interface{}{
+		expectedData: map[string]interface{}{
 			"configmap": map[string]interface{}{
 				"password": "hunter2",
+			},
+		},
+		expectedRawData: map[string]interface{}{
+			"status": map[string]interface{}{
+				"dbCredentials": map[string]interface{}{
+					"password": "hunter2",
+				},
 			},
 		},
 	}))
@@ -108,10 +117,18 @@ func TestConfigMapHandler(t *testing.T) {
 				},
 			},
 		},
-		expected: map[string]interface{}{
+		expectedData: map[string]interface{}{
 			"configmap": map[string]interface{}{
 				"username": "AzureDiamond",
 				"password": "hunter2",
+			},
+		},
+		expectedRawData: map[string]interface{}{
+			"status": map[string]interface{}{
+				"dbCredentials": map[string]interface{}{
+					"username": "AzureDiamond",
+					"password": "hunter2",
+				},
 			},
 		},
 	}))

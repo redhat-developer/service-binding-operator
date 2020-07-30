@@ -85,7 +85,7 @@ func discoverBindingType(val string) (bindingType, error) {
 // the resulting slice.
 func getInputPathFields(bi *bindingInfo, inputPathPrefix *string) []string {
 	inputPathFields := []string{}
-	if bi.ResourceReferencePath != bi.SourcePath {
+	if bi.SourcePath != "" {
 		inputPathFields = append(inputPathFields, bi.SourcePath)
 	}
 	if inputPathPrefix != nil && len(*inputPathPrefix) > 0 {
@@ -105,7 +105,6 @@ func (h *resourceHandler) Handle() (result, error) {
 	if err != nil {
 		return result{}, err
 	}
-
 	inputPathFields := getInputPathFields(h.bindingInfo, h.inputPathRoot)
 	val, ok, err := unstructured.NestedFieldCopy(resource.Object, inputPathFields...)
 	if !ok {
@@ -120,8 +119,6 @@ func (h *resourceHandler) Handle() (result, error) {
 	if err != nil {
 		return result{}, err
 	}
-
-	outputPathParts := []string{strings.ToLower(gvk.Kind)}
 
 	if mapVal, ok := val.(map[string]interface{}); ok {
 		tmpVal := make(map[string]interface{})
@@ -138,7 +135,6 @@ func (h *resourceHandler) Handle() (result, error) {
 		if err != nil {
 			return result{}, err
 		}
-		outputPathParts = append(outputPathParts, nested.NewPath(h.bindingInfo.SourcePath).GetParts()...)
 	}
 
 	typ, err := discoverBindingType(h.bindingInfo.Value)
@@ -147,18 +143,27 @@ func (h *resourceHandler) Handle() (result, error) {
 	}
 
 	// prefix the output path with the kind of the resource.
-	outputPath := strings.Join(outputPathParts, ".")
+	outputPath := ""
+	rawDataPath := ""
 
-	rawDataPath := strings.Join([]string{
-		h.bindingInfo.ResourceReferencePath,
-		h.bindingInfo.SourcePath,
-	}, ".")
+	if h.bindingInfo.SourcePath == "" {
+		outputPath = strings.ToLower(gvk.Kind)
+		rawDataPath = h.bindingInfo.ResourceReferencePath
+	} else {
+		outputPath = strings.Join([]string{
+			strings.ToLower(gvk.Kind),
+			h.bindingInfo.SourcePath,
+		}, ".")
+		rawDataPath = strings.Join([]string{
+			h.bindingInfo.ResourceReferencePath,
+			h.bindingInfo.SourcePath,
+		}, ".")
+	}
 
 	return result{
-		Data: nested.ComposeValue(val, nested.NewPath(outputPath)),
-		Type: typ,
-		Path: outputPath,
-
+		Data:    nested.ComposeValue(val, nested.NewPath(outputPath)),
+		Type:    typ,
+		Path:    outputPath,
 		RawData: nested.ComposeValue(val, nested.NewPath(rawDataPath)),
 	}, nil
 }
@@ -187,10 +192,6 @@ func NewResourceHandler(
 
 	if bi == nil {
 		return nil, invalidArgumentErr("bi")
-	}
-
-	if len(bi.SourcePath) == 0 {
-		return nil, invalidArgumentErr("bi.Path")
 	}
 
 	if len(bi.ResourceReferencePath) == 0 {
