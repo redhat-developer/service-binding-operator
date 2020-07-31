@@ -85,6 +85,7 @@ SELECTORS:
 				svcEnvVarPrefix = &s.Kind
 			}
 			ownedResourcesCtxs, err := findOwnedResourcesCtxs(
+				logger,
 				client,
 				ns,
 				svcCtx.service.GetName(),
@@ -104,6 +105,7 @@ SELECTORS:
 }
 
 func findOwnedResourcesCtxs(
+	logger *log.Log,
 	client dynamic.Interface,
 	ns string,
 	name string,
@@ -113,6 +115,7 @@ func findOwnedResourcesCtxs(
 	restMapper meta.RESTMapper,
 ) (serviceContextList, error) {
 	ownedResources, err := getOwnedResources(
+		logger,
 		client,
 		ns,
 		gvk,
