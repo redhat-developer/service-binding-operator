@@ -12,7 +12,10 @@ var (
 
 // sbrRequestMapper is the handler.Mapper interface implementation. It should influence the
 // enqueue process considering the resources informed.
-type sbrRequestMapper struct{}
+type sbrRequestMapper struct {
+	client     dynamic.Interface
+	restMapper meta.RESTMapper
+}
 
 // Map execute the mapping of a resource with the requests it would produce. Here we inspect the
 // given object trying to identify if this object is part of a SBR, or a actual SBR resource.
