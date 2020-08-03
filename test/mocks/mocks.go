@@ -465,6 +465,10 @@ func ServiceBindingRequestMock(
 			Namespace: ns,
 			Name:      name,
 		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceBindingRequest",
+			APIVersion: "apps.openshift.io/v1alpha1",
+		},
 		Spec: v1alpha1.ServiceBindingRequestSpec{
 			MountPathPrefix: "/var/redhat",
 			CustomEnvVar:    []corev1.EnvVar{},
