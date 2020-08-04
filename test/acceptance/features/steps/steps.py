@@ -15,6 +15,7 @@ from postgres_db import PostgresDB
 from namespace import Namespace
 from nodejs_application import NodeJSApp
 from service_binding_request import ServiceBindingRequest
+import time
 
 
 # STEP
@@ -186,3 +187,13 @@ def then_sbo_jq_is(context, jq_expression, sbr_name, json_value_regex):
     result = openshift.get_resource_info_by_jq("sbr", sbr_name, context.namespace.name, jq_expression, wait=True)
     result | should_not.be_none.desc("jq result")
     re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jq result \"{result}\" should match \"{json_value_regex}\"")
+
+
+# STEP
+@then(u'"{app_name}" deployment must contain SBR name "{sbr_name1}" and "{sbr_name2}"')
+def then_envFrom_contains(context, app_name, sbr_name1, sbr_name2):
+    time.sleep(60)
+    openshift = Openshift()
+    result = openshift.get_deployment_envFrom_info(app_name, context.namespace.name)
+    result | should.be_equal_to("[map[secretRef:map[name:binding-request-1]] map[secretRef:map[name:binding-request-2]]]")\
+        .desc(f'{app_name} deployment should contain secretRef: {sbr_name1} and {sbr_name2}')

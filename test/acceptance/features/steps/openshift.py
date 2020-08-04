@@ -159,13 +159,16 @@ spec:
         return deployment_status
 
     def get_deployment_env_info(self, name, namespace):
-        env_cmd = f'oc get deploy {name} -n {namespace} "jsonpath={{.spec.template.spec.containers[0].env}}"'
+        env_cmd = f'oc get deploy {name} -n {namespace} -o "jsonpath={{.spec.template.spec.containers[0].env}}"'
         env, exit_code = self.cmd.run(env_cmd)
         exit_code | should.be_equal_to(0)
-        env_from_cmd = f'oc get deploy {name} -n {namespace} "jsonpath={{.spec.template.spec.containers[0].envFrom}}"'
+        return env
+
+    def get_deployment_envFrom_info(self, name, namespace):
+        env_from_cmd = f'oc get deploy {name} -n {namespace} -o "jsonpath={{.spec.template.spec.containers[0].envFrom}}"'
         env_from, exit_code = self.cmd.run(env_from_cmd)
         exit_code | should.be_equal_to(0)
-        return env, env_from
+        return env_from
 
     def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False):
         output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
