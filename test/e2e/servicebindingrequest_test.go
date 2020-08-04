@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"math/rand"
@@ -17,6 +16,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	framework "github.com/operator-framework/operator-sdk/pkg/test"
 	"github.com/operator-framework/operator-sdk/pkg/test/e2eutil"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -48,20 +48,26 @@ var (
 	timeout        = time.Second * 180
 	cleanupTimeout = time.Second * 5
 
-	// Intermediate secret should have following data
-	// for postgres operator
-	postgresSecretAssertion = map[string]string{
+	deploymentsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
+)
+
+func assertPostgresSecret(t *testing.T, got map[string][]byte) {
+	expected := map[string]string{
 		"DATABASE_SECRET_USERNAME": "user",
 		"DATABASE_SECRET_PASSWORD": "password",
 	}
 
-	// Intermediate secret should have following data
-	// for etcd operator
-	etcdSecretAssertion = map[string]string{
-		"ETCDCLUSTER_CLUSTERIP": "172.30.0.129",
+	for k, v := range expected {
+		assert.Contains(t, got, k)
+		assert.Equalf(t, []byte(v), got[k], "key %s (%s) is different than expected (%s)",
+			k, got[k], []byte(v))
 	}
-	deploymentsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
-)
+}
+
+func assertEtcdSecret(t *testing.T, got map[string][]byte) {
+	const expected = "ETCDCLUSTER_CLUSTERIP"
+	assert.Contains(t, got, expected, "key should exist")
+}
 
 // TestAddSchemesToFramework starting point of the test, it declare the CRDs that will be using
 // during end-to-end tests.
@@ -220,29 +226,19 @@ func assertSBRStatus(
 
 // assertSBRSecret execute the inspection in a secret created by the operator.
 func assertSBRSecret(
+	t *testing.T,
 	ctx context.Context,
 	f *framework.Framework,
 	namespacedName types.NamespacedName,
-	assertKeys map[string]string,
-) (*corev1.Secret, error) {
+	assertKeysFunc func(*testing.T, map[string][]byte),
+) (*corev1.Secret, bool) {
 	sbrSecret := &corev1.Secret{}
-	if err := f.Client.Get(ctx, namespacedName, sbrSecret); err != nil {
-		return nil, err
-	}
-
-	for k, v := range assertKeys {
-		if _, contains := sbrSecret.Data[k]; !contains {
-			return nil, fmt.Errorf("can't find %q in data", k)
-		}
-		actual := sbrSecret.Data[k]
-		expected := []byte(v)
-		if !bytes.Equal(expected, actual) {
-			return nil, fmt.Errorf("key %s (%s) is different than expected (%s)",
-				k, actual, expected)
-		}
-	}
-
-	return sbrSecret, nil
+	ok := t.Run("assert-sbr-secret", func(t *testing.T) {
+		err := f.Client.Get(ctx, namespacedName, sbrSecret)
+		require.NoError(t, err)
+		assertKeysFunc(t, sbrSecret.Data)
+	})
+	return sbrSecret, ok
 }
 
 // assertSecretNotFound execute assertion to make sure a secret is not found.
@@ -456,7 +452,7 @@ func serviceBindingRequestTest(
 	cleanupOpts := cleanupOptions(ctx)
 
 	todoCtx := context.TODO()
-	assertKeys := postgresSecretAssertion
+	assertKeys := assertPostgresSecret
 
 	var sbr *v1alpha1.ServiceBindingRequest
 	for _, step := range steps {
@@ -471,7 +467,7 @@ func serviceBindingRequestTest(
 			// creating service-binding-request, which will trigger actions in the controller
 			sbr = CreateSBR(todoCtx, t, f, cleanupOpts, sbrNamespacedName, resourceRef, deploymentsGVR, matchLabels, nil)
 		case SBREtcdStep:
-			assertKeys = etcdSecretAssertion
+			assertKeys = assertEtcdSecret
 			sbr = CreateSBR(todoCtx, t, f,
 				cleanupOpts,
 				sbrNamespacedName,
@@ -521,15 +517,16 @@ func serviceBindingRequestTest(
 	t.Log("Checking intermediary secret contents...")
 	require.Eventually(t, func() bool {
 		t.Logf("Inspecting SBR secret: '%s'", intermediarySecretNamespacedName)
-		sbrSecret, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
-		if err != nil {
-			// it can be that assertSBRSecret returns nil until service configuration values can be
-			// collected.
-			t.Logf("Binding secret contents are invalid: '%#v'", sbrSecret)
-			return false
-		}
-		t.Logf("SBR-Secret: Result after attempts, error: '%#v'", err)
-		return true
+		_, ok := assertSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName, assertKeys)
+		return ok
+		// if err != nil {
+		// 	// it can be that assertSBRSecret returns nil until service configuration values can be
+		// 	// collected.
+		// 	t.Logf("Binding secret contents are invalid: '%#v', error: '%#v'", sbrSecret, err)
+		// 	return false
+		// }
+		// t.Logf("SBR-Secret: Result after attempts, error: '%#v'", err)
+		// return true
 	}, 120*time.Second, 2*time.Second)
 
 	// editing intermediary secret in order to trigger update event
@@ -550,13 +547,14 @@ func serviceBindingRequestTest(
 	t.Log("Inspecting intermediary secret...")
 	require.Eventually(t, func() bool {
 		t.Logf("Inspecting secret: '%s'", intermediarySecretNamespacedName)
-		_, err := assertSBRSecret(todoCtx, f, intermediarySecretNamespacedName, assertKeys)
-		if err != nil {
-			t.Logf("Secret inspection error: '%#v'", err)
-			return false
-		}
-		t.Logf("Secret: Result after attempts, error: '%#v'", err)
-		return true
+		_, ok := assertSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName, assertKeys)
+		return ok
+		// if err != nil {
+		// 	t.Logf("Secret inspection error: '%#v'", err)
+		// 	return false
+		// }
+		// t.Logf("Secret: Result after attempts, error: '%#v'", err)
+		// return true
 	}, 120*time.Second, 2*time.Second)
 
 	// executing deletion of the request, triggering unbinding actions
