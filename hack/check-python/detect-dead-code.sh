@@ -36,7 +36,7 @@ echo
 # checks for the whole directories
 for directory in $directories
 do
-    files=$(find "$directory" -prune -o -name '*.py' -print)
+    files=$(find "$directory" -path "$PYTHON_VENV_DIR" -prune -o -name '*.py' -print)
 
     check_files "$files"
 done

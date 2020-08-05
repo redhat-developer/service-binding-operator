@@ -280,7 +280,7 @@ test-unit-with-coverage:
 
 .PHONY: test-acceptance-setup
 ## Setup the environment for the acceptance tests
-test-acceptance-setup: setup-venv
+test-acceptance-setup: setup-venv e2e-setup set-test-namespace deploy-rbac deploy-crds
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup:
 	$(Q)echo "Starting local SBO instance"
@@ -297,7 +297,7 @@ set-test-namespace: get-test-namespace
 
 .PHONY: test-acceptance
 ## Runs acceptance tests
-test-acceptance: e2e-setup set-test-namespace deploy-clean deploy-rbac deploy-crds test-acceptance-setup
+test-acceptance: test-acceptance-setup
 	$(Q)echo "Running acceptance tests"
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \

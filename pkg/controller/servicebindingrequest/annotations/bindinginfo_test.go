@@ -39,7 +39,7 @@ func TestNewBindingInfo(t *testing.T) {
 			want: &bindingInfo{
 				Descriptor:            "binding:status.connectionString",
 				ResourceReferencePath: "status.connectionString",
-				SourcePath:            "status.connectionString",
+				SourcePath:            "",
 				Value:                 "binding",
 			},
 			name:    "{path} annotation",

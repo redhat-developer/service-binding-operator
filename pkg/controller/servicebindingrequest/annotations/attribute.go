@@ -47,6 +47,10 @@ func newAttributeHandler(
 	if len(bi.ResourceReferencePath) > 0 {
 		outputPath = bi.ResourceReferencePath
 	}
+	inputPath := bi.SourcePath
+	if inputPath == "" {
+		inputPath = bi.ResourceReferencePath
+	}
 
 	// the current implementation removes "status." and "spec." from fields exported through
 	// annotations.
@@ -57,7 +61,7 @@ func newAttributeHandler(
 	}
 
 	return &attributeHandler{
-		inputPath:  bi.SourcePath,
+		inputPath:  inputPath,
 		outputPath: outputPath,
 		resource:   resource,
 	}

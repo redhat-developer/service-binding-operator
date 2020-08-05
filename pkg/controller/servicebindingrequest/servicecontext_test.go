@@ -189,11 +189,13 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 	f.AddMockResource(cr)
 	f.AddMockResource(us)
 	f.AddMockResource(&unstructured.Unstructured{Object: route})
+	logger := log.NewLog("testFindOwnedResourcesCtxs_cm")
 
 	restMapper := testutils.BuildTestRESTMapper()
 
 	t.Run("existing selectors", func(t *testing.T) {
 		got, err := findOwnedResourcesCtxs(
+			logger,
 			f.FakeDynClient(),
 			cr.GetNamespace(),
 			cr.GetName(),
@@ -251,6 +253,7 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 			f.S.AddKnownTypes(routev1.SchemeGroupVersion, &routev1.Route{})
 			f.AddMockResource(cr)
 			f.AddMockResource(&unstructured.Unstructured{Object: route})
+			logger := log.NewLog("testFindOwnedResourcesCtxs_secret")
 
 			restMapper := testutils.BuildTestRESTMapper()
 
@@ -265,6 +268,7 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 			}
 
 			ownedResourcesCtxs, err := findOwnedResourcesCtxs(
+				logger,
 				f.FakeDynClient(),
 				cr.GetNamespace(),
 				cr.GetName(),

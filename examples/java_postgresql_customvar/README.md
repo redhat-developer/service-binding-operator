@@ -202,11 +202,11 @@ spec:
     id: postgresDB
   customEnvVar:
     - name: JDBC_URL
-      value: 'jdbc:postgresql://{{ postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ postgresDB.status.dbName }}'
+      value: 'jdbc:postgresql://{{ .postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ .postgresDB.status.dbName }}'
     - name: DB_USER
-      value: '{{ postgresDB.status.dbConfigMap.username }}'
+      value: '{{ .postgresDB.status.dbCredentials.user }}'
     - name: DB_PASSWORD
-      value: '{{ postgresDB.status.dbConfigMap.password }}'
+      value: '{{ .postgresDB.status.dbCredentials.password }}'
 EOS
 ```
 

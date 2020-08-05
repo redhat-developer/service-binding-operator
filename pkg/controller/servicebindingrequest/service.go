@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -15,6 +16,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/annotations"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebindingrequest/nested"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 var (
@@ -160,6 +162,7 @@ var bindableResources = []bindableResource{
 }
 
 func getOwnedResources(
+	logger *log.Log,
 	client dynamic.Interface,
 	ns string,
 	gvk schema.GroupVersionKind,
@@ -173,6 +176,10 @@ func getOwnedResources(
 	for _, br := range bindableResources {
 		lst, err := client.Resource(br.gvr).Namespace(ns).List(metav1.ListOptions{})
 		if err != nil {
+			if k8serrors.IsNotFound(err) {
+				logger.Debug("Resource not found in Bindable Resources", "Error", err)
+				continue
+			}
 			return resources, err
 		}
 		for idx, item := range lst.Items {
