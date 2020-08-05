@@ -131,12 +131,13 @@ func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 		return requests
 	}
 
+	// note(isutton): The client handles retries on the operator behalf, so only unrecoverable errors
+	// are left.
+	//
+	// please see https://github.com/isutton/service-binding-operator/blob/e17445570bd3889bcf7499142350a3b81463c6be/vendor/k8s.io/client-go/rest/request.go#L723-L812
 	sbrList, err := m.client.Resource(groupVersion).List(metav1.ListOptions{})
 	if err != nil {
 		log.Error(err, "listing SBRs")
-		// NOTE: nothing to do anymore if obj isn't a SBR and there's an error listing SBRs; I'm not
-		// sure whether retrying in the same reconcile loop is the proper approach so we'll rely on
-		// the resync period to re-process all watched objects.
 		return []reconcile.Request{}
 	}
 
