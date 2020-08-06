@@ -110,11 +110,14 @@ func convertToRequests(t namespacedNameSet) []reconcile.Request {
 		)
 	}
 	return toReconcile
-
 }
 
 // Map execute the mapping of a resource with the requests it would produce. Here we inspect the
 // given object trying to identify if this object is part of a SBR, or a actual SBR resource.
+//
+// This method is responsible for ingesting arbitrary Kubernetes resources (for example corev1.Secret
+// or appsv1.Deployment) and lookup whether they are related to one or more existing Service Binding
+// Request resources.
 func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 	log := mapperLog.WithValues(
 		"Object.Namespace", obj.Meta.GetNamespace(),
@@ -152,29 +155,36 @@ ITEMS:
 		}
 
 		if isSecret(obj.Object) && isSecretOwnedBySBR(obj.Meta, sbr) {
-			log.Debug("current resource is a secret declared in SBR")
+			log.Debug("resource identified as a secret owned by the SBR")
 			namespacedNamesToReconcile.add(namespacedName)
+		} else {
+			log.Debug("resource is not a secret owned by the SBR")
 		}
 
 		if isSBRService(sbr, obj.Object) {
-			log.Debug("resource is declared as service in SBR")
+			log.Debug("resource identified as service in SBR")
 			namespacedNamesToReconcile.add(namespacedName)
 		} else {
-			log.Debug("resource does not match any declared service")
+			log.Debug("resource is not a service declared by the SBR")
 		}
 
 		if ok, err := isApplication(m.restMapper, sbr, obj.Object); err != nil {
-			log.Error(err, "verifying if resource is an application in SBR")
+			log.Error(err, "identifying resource resource as SBR application")
 			continue ITEMS
 		} else if !ok {
-			log.Debug("not an application")
+			log.Debug("resource is not an application declared by the SBR")
 			continue ITEMS
 		} else {
+			log.Debug("resource identified as an application in SBR")
 			namespacedNamesToReconcile.add(namespacedName)
 		}
 	}
 
 	requests := convertToRequests(namespacedNamesToReconcile)
-	log.Debug("did finish request mapper", "Requests", requests)
+	if count := len(requests); count > 0 {
+		log.Debug("found SBRs for resource", "Count", count)
+	} else {
+		log.Debug("no SBRs found for resource")
+	}
 	return requests
 }
