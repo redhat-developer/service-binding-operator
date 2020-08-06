@@ -169,7 +169,7 @@ ITEMS:
 		}
 
 		if ok, err := isSBRApplication(m.restMapper, sbr, obj.Object); err != nil {
-			log.Error(err, "identifying resource resource as SBR application")
+			log.Error(err, "identifying resource as SBR application")
 			continue ITEMS
 		} else if !ok {
 			log.Debug("resource is not an application declared by the SBR")
