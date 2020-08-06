@@ -52,8 +52,8 @@ func isSBRService(sbr *v1alpha1.ServiceBindingRequest, obj runtime.Object) bool 
 	return false
 }
 
-// isApplication checks whether the given obj is an application in given sbr.
-func isApplication(
+// isSBRApplication checks whether the given obj is an application in given sbr.
+func isSBRApplication(
 	restMapper meta.RESTMapper,
 	sbr *v1alpha1.ServiceBindingRequest,
 	obj runtime.Object,
@@ -168,7 +168,7 @@ ITEMS:
 			log.Debug("resource is not a service declared by the SBR")
 		}
 
-		if ok, err := isApplication(m.restMapper, sbr, obj.Object); err != nil {
+		if ok, err := isSBRApplication(m.restMapper, sbr, obj.Object); err != nil {
 			log.Error(err, "identifying resource resource as SBR application")
 			continue ITEMS
 		} else if !ok {
