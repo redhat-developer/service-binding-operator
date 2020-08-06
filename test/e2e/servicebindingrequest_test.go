@@ -519,14 +519,6 @@ func serviceBindingRequestTest(
 		t.Logf("Inspecting SBR secret: '%s'", intermediarySecretNamespacedName)
 		_, ok := assertSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName, assertKeys)
 		return ok
-		// if err != nil {
-		// 	// it can be that assertSBRSecret returns nil until service configuration values can be
-		// 	// collected.
-		// 	t.Logf("Binding secret contents are invalid: '%#v', error: '%#v'", sbrSecret, err)
-		// 	return false
-		// }
-		// t.Logf("SBR-Secret: Result after attempts, error: '%#v'", err)
-		// return true
 	}, 120*time.Second, 2*time.Second)
 
 	// editing intermediary secret in order to trigger update event
@@ -549,12 +541,6 @@ func serviceBindingRequestTest(
 		t.Logf("Inspecting secret: '%s'", intermediarySecretNamespacedName)
 		_, ok := assertSBRSecret(t, todoCtx, f, intermediarySecretNamespacedName, assertKeys)
 		return ok
-		// if err != nil {
-		// 	t.Logf("Secret inspection error: '%#v'", err)
-		// 	return false
-		// }
-		// t.Logf("Secret: Result after attempts, error: '%#v'", err)
-		// return true
 	}, 120*time.Second, 2*time.Second)
 
 	// executing deletion of the request, triggering unbinding actions
