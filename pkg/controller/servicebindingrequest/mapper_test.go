@@ -35,13 +35,15 @@ func TestSBRRequestMapperMap(t *testing.T) {
 				},
 				ResourceRef: "mapper-unit-deployment",
 			},
-			BackingServiceSelector: &v1alpha1.BackingServiceSelector{
-				GroupVersionKind: metav1.GroupVersionKind{
-					Group:   "",
-					Version: "v1",
-					Kind:    "Secret",
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   "",
+						Version: "v1",
+						Kind:    "Secret",
+					},
+					ResourceRef: "mapper-unit-secret",
 				},
-				ResourceRef: "mapper-unit-secret",
 			},
 		},
 	}
