@@ -8,7 +8,7 @@
  apiVersion: "etcd.database.coreos.com/v1beta2"
  kind: "EtcdCluster"
  metadata:
-  name: "etcd-cluster"
+  name: "etcd-cluster-example"
  spec:
   size: 3
   version: "3.2.13"
@@ -54,5 +54,3 @@ spec:
 
 6. Application should be binded to the Etcd database automatically.
 ![](https://i.imgur.com/JjORDrJ.png)
-
-
