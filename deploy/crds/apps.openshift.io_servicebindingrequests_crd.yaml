@@ -287,8 +287,8 @@ spec:
           description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
           properties:
             applications:
-              description: Applications contain all the applications related to the
-                ServiceBindingRequest
+              description: Applications contain all the applications filtered by name
+                or label
               items:
                 description: BoundApplication defines the application workloads to
                   which the binding secret has injected.
