@@ -36,7 +36,6 @@ func etcdClusterServiceMock(ns, name string) *corev1.Service {
 			Namespace: ns,
 		},
 		Spec: corev1.ServiceSpec{
-			ClusterIP: "172.30.0.129",
 			Ports: []corev1.ServicePort{
 				{
 					Name:       "tcp-1",
