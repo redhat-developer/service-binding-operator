@@ -4,44 +4,144 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 func TestSBRRequestMapperMap(t *testing.T) {
-	mapper := &sbrRequestMapper{}
+	sbr := &v1alpha1.ServiceBindingRequest{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "ServiceBindingRequest",
+			APIVersion: "apps.openshift.io/v1alpha1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "mapper-unit",
+			Name:      "mapper-unit-sbr",
+		},
+		Spec: v1alpha1.ServiceBindingRequestSpec{
+			ApplicationSelector: v1alpha1.ApplicationSelector{
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    "apps",
+					Version:  "v1",
+					Resource: "deployments",
+				},
+				ResourceRef: "mapper-unit-deployment",
+			},
+			BackingServiceSelectors: &[]v1alpha1.BackingServiceSelector{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   "",
+						Version: "v1",
+						Kind:    "Secret",
+					},
+					ResourceRef: "mapper-unit-secret",
+				},
+			},
+		},
+	}
 
-	u := &unstructured.Unstructured{}
-	u.SetNamespace("mapper-unit")
-	u.SetName("mapper-unit")
-	u.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
+	type testCase struct {
+		description         string
+		expectedRequestsLen int
+		buildMapObjectFn    func(*mocks.Fake) handler.MapObject
+		buildFakeFn         func() *mocks.Fake
+	}
 
-	// not containing annotations, should return empty
-	mapObj := handler.MapObject{Meta: u, Object: u.DeepCopyObject()}
-	mappedRequests := mapper.Map(mapObj)
-	require.Equal(t, 0, len(mappedRequests))
+	testCases := []testCase{
+		{
+			description: "no service bindings declared in namespace",
+			buildFakeFn: func() *mocks.Fake {
+				f := mocks.NewFake(t, reconcilerNs)
+				return f
+			},
+			buildMapObjectFn: func(f *mocks.Fake) handler.MapObject {
+				return handler.MapObject{
+					Meta: &metav1.ObjectMeta{
+						Namespace: "mapper-unit",
+						Name:      "mapper-unit-secret",
+					},
+					Object: &corev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
+					},
+				}
+			},
+			expectedRequestsLen: 0,
+		},
+		{
+			description: "resource declared as application of a service binding",
+			buildFakeFn: func() *mocks.Fake {
+				f := mocks.NewFake(t, reconcilerNs)
+				uSbr, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sbr)
+				require.NoError(t, err)
+				f.AddMockResource(&unstructured.Unstructured{Object: uSbr})
+				return f
+			},
+			buildMapObjectFn: func(f *mocks.Fake) handler.MapObject {
+				return handler.MapObject{
+					Meta: &metav1.ObjectMeta{
+						Namespace: "mapper-unit",
+						Name:      "mapper-unit-deployment",
+					},
+					Object: &appsv1.Deployment{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "apps/v1",
+							Kind:       "Deployment",
+						},
+					},
+				}
+			},
+			expectedRequestsLen: 1,
+		},
+		{
+			description: "resource declared as service of a service binding",
+			buildFakeFn: func() *mocks.Fake {
+				f := mocks.NewFake(t, reconcilerNs)
+				uSbr, err := runtime.DefaultUnstructuredConverter.ToUnstructured(sbr)
+				require.NoError(t, err)
+				f.AddMockResource(&unstructured.Unstructured{Object: uSbr})
+				return f
+			},
+			buildMapObjectFn: func(f *mocks.Fake) handler.MapObject {
+				return handler.MapObject{
+					Meta: &metav1.ObjectMeta{
+						Namespace: "mapper-unit",
+						Name:      "mapper-unit-secret",
+					},
+					Object: &corev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
+					},
+				}
+			},
+			expectedRequestsLen: 1,
+		},
+	}
 
-	request := reconcile.Request{NamespacedName: types.NamespacedName{Namespace: "ns", Name: "name"}}
-
-	// with annotations in place it should return the actual values
-	u.SetAnnotations(map[string]string{sbrNamespaceAnnotation: "ns", sbrNameAnnotation: "name"})
-	mapObj = handler.MapObject{Meta: u, Object: u.DeepCopyObject()}
-	mappedRequests = mapper.Map(mapObj)
-	require.Equal(t, 1, len(mappedRequests))
-	require.Equal(t, request, mappedRequests[0])
-
-	// it should also understand a actual SBR as well, so return not empty
-	sbr := &unstructured.Unstructured{}
-	sbr.SetGroupVersionKind(v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind))
-	sbr.SetNamespace("ns")
-	sbr.SetName("name")
-	mapObj = handler.MapObject{Meta: u, Object: sbr.DeepCopyObject()}
-	mappedRequests = mapper.Map(mapObj)
-	require.Equal(t, 1, len(mappedRequests))
-	require.Equal(t, request, mappedRequests[0])
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			f := tc.buildFakeFn()
+			mapObject := tc.buildMapObjectFn(f)
+			client := f.FakeDynClient()
+			restMapper := testutils.BuildTestRESTMapper()
+			mapper := &sbrRequestMapper{
+				client:     client,
+				restMapper: restMapper,
+			}
+			mappedRequests := mapper.Map(mapObject)
+			require.Len(t, mappedRequests, tc.expectedRequestsLen)
+		})
+	}
 }

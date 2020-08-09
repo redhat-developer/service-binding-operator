@@ -64,7 +64,10 @@ func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (bool,
 // newEnqueueRequestsForSBR returns a handler.EventHandler configured to map any incoming object to a
 // ServiceBindingRequest if it contains the required configuration.
 func (s *sbrController) newEnqueueRequestsForSBR() handler.EventHandler {
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &sbrRequestMapper{}}
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &sbrRequestMapper{
+		client:     s.Client,
+		restMapper: s.RestMapper,
+	}}
 }
 
 // createSourceForGVK creates a *source.Kind for the given gvk.

@@ -12,7 +12,6 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -327,13 +326,6 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
 	b.setApplicationObjects(sbrStatus, updatedObjects)
-
-	// annotating objects related to binding
-	namespacedName := types.NamespacedName{Namespace: b.sbr.GetNamespace(), Name: b.sbr.GetName()}
-	if err = setAndUpdateSBRAnnotations(b.dynClient, namespacedName, append(b.objects, secretObj)); err != nil {
-		b.logger.Error(err, "On setting annotations in related objects.")
-		return b.onError(err, b.sbr, sbrStatus, updatedObjects)
-	}
 
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   InjectionReady,
