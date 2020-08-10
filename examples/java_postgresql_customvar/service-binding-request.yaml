@@ -23,3 +23,9 @@ spec:
       value: '{{ .postgresDB.status.dbCredentials.user }}'
     - name: DB_PASSWORD
       value: '{{ .postgresDB.status.dbCredentials.password }}'
+    - name: TAGS
+      value: '{{ .postgresDB.spec.tags }}'
+    - name: ARCHIVE_USERLABEL
+      value: '{{ .postgresDB.spec.userLabels.archive }}'
+    - name: SECONDARY_SECRETNAME
+      value: '{{ .postgresDB.spec.secretName }}'

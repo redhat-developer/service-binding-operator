@@ -107,6 +107,55 @@ and install a `stable` version.
 
 This makes the `Database` custom resource available, that the application developer will use later.
 
+### Update the Database CRD
+
+Annotations are created to describe the values that should be collected and made available by the Service Binding Request's intermediary secret.
+ 
+
+```
+oc get crd databases.postgresql.baiju.dev -o yaml
+```
+ 
+The database CRD contains the list of annotations:
+
+```
+metadata:
+  annotations:
+    servicebindingoperator.redhat.io/spec.dbName: binding:env:attribute
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.host: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.name: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.password: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.port: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConfigMap-db.user: binding:env:object:configmap
+    servicebindingoperator.redhat.io/status.dbConnectionIP: binding:env:attribute
+    servicebindingoperator.redhat.io/status.dbConnectionPort: binding:env:attribute
+    servicebindingoperator.redhat.io/status.dbCredentials-password: binding:env:object:secret
+    servicebindingoperator.redhat.io/status.dbCredentials-user: binding:env:object:secret
+    servicebindingoperator.redhat.io/status.dbName: binding:env:attribute
+
+```
+
+We can add more annotations to collect values from different kinds of data structures.  
+
+To edit the CRD run the command:
+
+```
+oc edit crd databases.postgresql.baiju.dev
+```
+
+Add these annotations under `metadata.annotations` along with other annotations.
+
+```
+servicebindingoperator.redhat.io/spec.tags: binding:env:attribute
+servicebindingoperator.redhat.io/spec.userLabels.archive: binding:env:attribute
+servicebindingoperator.redhat.io/spec.secretName: binding:env:attribute
+```
+
+These annotations refer to data which can be either a number, string, boolean, or an object or a slice of arbitrary values. In the case of this example, 
+- `spec.tags` represents a sequence
+- `spec.userLabels` represents a mapping
+- `spec.secretName` represents a sequence of mapping
+
 ### Application Developer
 
 #### Create a namespace called `service-binding-demo`
@@ -165,6 +214,16 @@ spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
+  tags:
+          - "centos7-12.3"
+          - "centos7-12.4"
+  userLabels:
+          archive: "false"
+          environment: "demo"   
+  secretName:
+          - primarySecretName: "example-primaryuser"
+            secondarySecretName: "example-secondaryuser"
+          - rootSecretName: "example-secretuser"
 EOS
 ```
 
@@ -194,19 +253,25 @@ spec:
     group: apps
     version: v1
     resource: deployments
-  backingServiceSelector:
-    group: postgresql.baiju.dev
+  backingServiceSelectors:
+  - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
     resourceRef: db-demo
     id: postgresDB
   customEnvVar:
-    - name: JDBC_URL
-      value: 'jdbc:postgresql://{{ .postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ .postgresDB.status.dbName }}'
-    - name: DB_USER
-      value: '{{ .postgresDB.status.dbCredentials.user }}'
-    - name: DB_PASSWORD
-      value: '{{ .postgresDB.status.dbCredentials.password }}'
+  - name: JDBC_URL
+    value: 'jdbc:postgresql://{{ .postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ .postgresDB.status.dbName }}'
+  - name: DB_USER
+    value: '{{ .postgresDB.status.dbCredentials.user }}'
+  - name: DB_PASSWORD
+    value: '{{ .postgresDB.status.dbCredentials.password }}'
+  - name: TAGS
+    value: '{{ .postgresDB.spec.tags 0 }}'
+  - name: ARCHIVE_USERLABEL
+    value: '{{ .postgresDB.spec.userLabels.archive }}'
+  - name: SECONDARY_SECRETNAME
+    value: '{{ .postgresDB.spec.secretName }}'
 EOS
 ```
 
@@ -222,8 +287,60 @@ There are 2 parts in the request:
 * `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
-
 Once the new version is up, go to the application's route to check the UI. Now, it works!
+
+### Check the status of Service Binding Request
+
+`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+
+To check the status of Service Binding Request, run the command:
+
+```
+oc get sbr binding-request -n service-binding-demo -o yaml
+```
+
+Status of Service Binding Request on successful binding:
+
+```yaml
+status:
+  conditions:
+  - lastHeartbeatTime: "2020-08-12T07:05:22Z"
+    lastTransitionTime: "2020-08-12T06:39:13Z"
+    status: "True"
+    type: CollectionReady
+  - lastHeartbeatTime: "2020-08-12T07:05:22Z"
+    lastTransitionTime: "2020-08-12T06:39:13Z"
+    status: "True"
+    type: InjectionReady
+  secret: binding-request
+```
+
+where
+
+* Conditions represent the latest available observations of Service Binding Request's state
+* Secret represents the name of the secret created by the Service Binding Operator
+
+
+Conditions have two types `CollectionReady` and `InjectionReady` 
+
+where
+
+* `CollectionReady` type represents collection of secret from the service
+* `InjectionReady` type represents injection of secret into the application
+
+Conditions can have the following type, status and reason:
+
+| Type            | Status | Reason               | Type           | Status | Reason                   |
+| --------------- | ------ | -------------------- | -------------- | ------ | ------------------------ |
+| CollectionReady | False  | EmptyServiceSelector | InjectionReady | False  |                          |
+| CollectionReady | False  | ServiceNotFound      | InjectionReady | False  |                          |
+| CollectionReady | True   |                      | InjectionReady | False  | EmptyApplicationSelector |
+| CollectionReady | True   |                      | InjectionReady | False  | ApplicationNotFound      |
+| CollectionReady | True   |                      | InjectionReady | True   |                          |
+
+
+
+### Check secret injection into the application deployment
 
 When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
 
@@ -237,12 +354,43 @@ spec:
               name: binding-request
 ```
 
-#### ServiceBindingRequestStatus
+### Check the environment variable creation in the application pod
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+To list all the pods, run the command:
 
-| Field | Description |
-|-------|-------------|
-| Secret | The name of the intermediate secret |
+```
+➜  ~ oc get pods                               
+NAME                                   READY   STATUS      RESTARTS   AGE
+db-demo-postgresql-78b8466897-ht8x9    1/1     Running     0          15m
+java-rest-http-crud-1-build            0/1     Completed   0          51m
+java-rest-http-crud-666b8597cc-w7456   1/1     Running     0          15m
+```
 
-That's it, folks!
+To ssh into the application pod `java-rest-http-crud-666b8597cc-w7456`, run command:
+
+```
+oc exec -it java-rest-http-crud-666b8597cc-w7456 /bin/bash
+```
+
+Print all the environment variables that were injected into the application pod by Service Binding Operator:
+
+```
+[jboss@java-rest-http-crud-666b8597cc-w7456 ~]$ printenv | grep DATABASE_
+DATABASE_SECRET_USER=postgres
+DATABASE_TAGS_0=centos7-12.3
+DATABASE_TAGS_1=123
+DATABASE_SECRET_PASSWORD=password
+DATABASE_CONFIGMAP_DB_NAME=db-demo
+DATABASE_DBNAME=db-demo
+DATABASE_CONFIGMAP_DB_HOST=172.25.88.63
+DATABASE_DBCONNECTIONPORT=5432
+DATABASE_USERLABELS_ARCHIVE=false
+DATABASE_SECRETNAME_0_PRIMARYSECRETNAME=example-primaryuser
+DATABASE_SECRETNAME_0_SECONDARYSECRETNAME=example-secondaryuser
+DATABASE_SECRETNAME_1_ROOTSECRETNAME=example-secretuser
+DATABASE_CONFIGMAP_DB_PORT=5432
+DATABASE_DBCONNECTIONIP=172.25.88.63
+DATABASE_CONFIGMAP_DB_PASSWORD=password
+```
+
+Notice, distinct environment variables are produced for sibling properties with index number 0 and 1 in the variable name.
