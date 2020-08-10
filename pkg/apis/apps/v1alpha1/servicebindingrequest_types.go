@@ -113,15 +113,21 @@ func (applicationSelector *ApplicationSelector) SetDefaults() {
 		}
 	} else {
 		if applicationSelector.BindingPath.PodSpecPath == nil {
-			applicationSelector.BindingPath = &BindingPath{
-				PodSpecPath: &PodSpecPath{
-					Containers: DefaultPathToContainers,
-					Volumes:    DefaultPathToVolumes,
-				},
+			applicationSelector.BindingPath.PodSpecPath = &PodSpecPath{
+				Containers: DefaultPathToContainers,
+				Volumes:    DefaultPathToVolumes,
+			}
+		} else {
+			if applicationSelector.BindingPath.PodSpecPath.Containers == "" {
+				applicationSelector.BindingPath.PodSpecPath.Containers = DefaultPathToContainers
+			}
+			if applicationSelector.BindingPath.PodSpecPath.Volumes == "" {
+				applicationSelector.BindingPath.PodSpecPath.Volumes = DefaultPathToVolumes
 			}
 		}
 
 	}
+
 }
 
 // BindingPath defines the path to the field where the binding would be
