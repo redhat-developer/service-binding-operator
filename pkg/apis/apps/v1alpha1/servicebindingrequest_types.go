@@ -101,6 +101,9 @@ const (
 
 // SetDefaults set default value for binding path
 func (applicationSelector *ApplicationSelector) SetDefaults() {
+	if applicationSelector.LabelSelector == nil {
+		applicationSelector.LabelSelector = &metav1.LabelSelector{}
+	}
 	if applicationSelector.BindingPath == nil {
 		applicationSelector.BindingPath = &BindingPath{
 			PodSpecPath: &PodSpecPath{
@@ -108,6 +111,16 @@ func (applicationSelector *ApplicationSelector) SetDefaults() {
 				Volumes:    DefaultPathToVolumes,
 			},
 		}
+	} else {
+		if applicationSelector.BindingPath.PodSpecPath == nil {
+			applicationSelector.BindingPath = &BindingPath{
+				PodSpecPath: &PodSpecPath{
+					Containers: DefaultPathToContainers,
+					Volumes:    DefaultPathToVolumes,
+				},
+			}
+		}
+
 	}
 }
 

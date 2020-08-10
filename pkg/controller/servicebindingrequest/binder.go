@@ -254,36 +254,15 @@ func (b *binder) updateSpecContainers(
 }
 
 func (b *binder) getContainersPath() []string {
-	if !isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
-		if b.sbr.Spec.ApplicationSelector.BindingPath != nil {
-			if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
-				return strings.Split(b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath.Containers, ".")
-			}
-		}
-	}
-	return []string{}
+	return strings.Split(b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath.Containers, ".")
 }
 
 func (b *binder) getVolumesPath() []string {
-	if !isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
-		if b.sbr.Spec.ApplicationSelector.BindingPath != nil {
-			if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
-				return strings.Split(b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath.Volumes, ".")
-			}
-		}
-	}
-	return []string{}
+	return strings.Split(b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath.Volumes, ".")
 }
 
 func (b *binder) getSecretFieldPath() []string {
-	if !isApplicationSelectorEmpty(b.sbr.Spec.ApplicationSelector) {
-		if b.sbr.Spec.ApplicationSelector.BindingPath != nil {
-			if b.sbr.Spec.ApplicationSelector.BindingPath.PodSpecPath != nil {
-				return strings.Split(*b.sbr.Spec.ApplicationSelector.BindingPath.CustomSecretPath, ".")
-			}
-		}
-	}
-	return []string{}
+	return strings.Split(*b.sbr.Spec.ApplicationSelector.BindingPath.CustomSecretPath, ".")
 }
 
 // removeSpecContainers find and edit containers resource subset, removing bind related entries
