@@ -101,12 +101,7 @@ func TestBinderNew(t *testing.T) {
 
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
-	sbr.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
-		PodSpecPath: &v1alpha1.PodSpecPath{
-			Containers: v1alpha1.DefaultPathToContainers,
-			Volumes:    v1alpha1.DefaultPathToVolumes,
-		},
-	}
+	sbr.Spec.ApplicationSelector.SetDefaults()
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
 
 	binder := newBinder(
