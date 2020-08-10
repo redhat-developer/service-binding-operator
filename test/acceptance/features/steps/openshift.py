@@ -171,12 +171,13 @@ spec:
         return env_from
 
     def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False):
-        output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
+        cmd = f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"'
+        output, exit_code = self.cmd.run(cmd)
         if exit_code != 0:
             if wait:
                 attempts = 5
                 while exit_code != 0 and attempts > 0:
-                    output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
+                    output, exit_code = self.cmd.run(cmd)
                     attempts -= 1
                     time.sleep(5)
         exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
