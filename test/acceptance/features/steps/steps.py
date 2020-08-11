@@ -221,7 +221,6 @@ def create_cr(context, cr_name):
 
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
 def verify_injected_secretRef(context, secret_ref, cr_name, crd_name, json_path):
-    time.sleep(60)
     openshift = Openshift()
     result = openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path, wait=True)
     result | should.be_equal_to(secret_ref).desc(f'Failed to inject secretRef "{secret_ref}" in "{cr_name}" at path "{json_path}"')

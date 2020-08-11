@@ -173,10 +173,10 @@ spec:
     def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False):
         cmd = f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"'
         output, exit_code = self.cmd.run(cmd)
-        if exit_code != 0:
+        if exit_code != 0 or output == '':
             if wait:
-                attempts = 5
-                while exit_code != 0 and attempts > 0:
+                attempts = 12
+                while (exit_code != 0 or output == '') and attempts > 0:
                     output, exit_code = self.cmd.run(cmd)
                     attempts -= 1
                     time.sleep(5)
