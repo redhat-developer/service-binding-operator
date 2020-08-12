@@ -122,6 +122,7 @@ func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 	log := mapperLog.WithValues(
 		"Object.Namespace", obj.Meta.GetNamespace(),
 		"Object.Name", obj.Meta.GetName(),
+		"Object.GVK", obj.Object.GetObjectKind().GroupVersionKind,
 	)
 
 	namespacedNamesToReconcile := make(namespacedNameSet)
@@ -132,6 +133,8 @@ func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 		}
 		log.Debug("current resource is a SBR", "Requests", requests)
 		return requests
+	} else {
+		log.Debug("current resource is not a SBR")
 	}
 
 	// note(isutton): The client handles retries on the operator behalf, so only unrecoverable errors
@@ -147,6 +150,9 @@ func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 ITEMS:
 	for _, item := range sbrList.Items {
 		namespacedName := convertToNamespacedName(&item)
+
+		log := log.WithValues(
+			"SBR.Name", namespacedName.Name, "SBR.Namespace", namespacedName.Namespace)
 
 		sbr, err := convertToSBR(item.Object)
 		if err != nil {
