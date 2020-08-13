@@ -48,12 +48,8 @@ spec:
                 return True
         return False
 
-    def get_db_instance_name(self, project):
-        cmd = 'oc get db -n %s -o "jsonpath={.items[*].metadata.name}"' % project
-        return self.cmd.run(cmd)
-
     def get_connection_ip(self):
-        cmd = 'oc get db %s -o "jsonpath={.status.dbConnectionIP}"' % self.db_instance
+        cmd = f'oc get db {self.name} -n {self.namespace} -o jsonpath="{{.status.dbConnectionIP}}"'
         return self.cmd.run(cmd)
 
     def check_pod_status(self, status="Running"):

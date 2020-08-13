@@ -9,25 +9,26 @@ class Namespace():
         self.cmd = Command()
 
     def create(self):
-        create_namespace_output, exit_code = self.cmd.run("oc new-project {}".format(self.name))
-        if re.search(r'Now using project \"%s\"\son\sserver' % self.name, create_namespace_output) or \
-                re.search(r'.*Already\son\sproject\s\"%s\"\son\sserver.*' % self.name, create_namespace_output):
+        create_namespace_output, exit_code = self.cmd.run(f"oc new-project {self.name}")
+        if re.search(r'Now using project \"%s\"\son\sserver' % self.name, create_namespace_output) is not None or \
+                re.search(r'.*Already\son\sproject\s\"%s\"\son\sserver.*' % self.name, create_namespace_output) is not None:
             return True
-        elif re.search(r'.*project.project.openshift.io\s\"%s\"\salready exists' % self.name, create_namespace_output):
+        elif re.search(r'.*project.project.openshift.io\s\"%s\"\salready exists' % self.name, create_namespace_output) is not None:
             return self.switch_to()
         else:
-            print("Returned a different value {}".format(create_namespace_output))
+            print(f"Unexpected value returned '{create_namespace_output}'")
         return False
 
     def is_present(self):
-        output, exit_code = self.cmd.run('oc get ns {}'.format(self.name))
+        output, exit_code = self.cmd.run(f'oc get ns {self.name}')
         return exit_code == 0
 
     def switch_to(self):
-        create_namespace_output, exit_code = self.cmd.run('oc project {}'.format(self.name))
-        if re.search(r'Now using project \"%s\"\son\sserver' % self.name, create_namespace_output):
+        create_namespace_output, exit_code = self.cmd.run(f'oc project {self.name}')
+        if re.search(r'Now using project \"%s\"\son\sserver' % self.name, create_namespace_output) is not None:
             return True
-        elif re.search(r'.*Already\son\sproject\s\"%s\"\son\sserver.*' % self.name, create_namespace_output):
+        elif re.search(r'.*Already\son\sproject\s\"%s\"\son\sserver.*' % self.name, create_namespace_output) is not None:
             return True
         else:
-            return False
+            print(f"Unexpected namespace creating output: '{create_namespace_output}'")
+        return False
