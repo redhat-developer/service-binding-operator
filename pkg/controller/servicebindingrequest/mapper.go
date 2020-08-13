@@ -122,7 +122,7 @@ func (m *sbrRequestMapper) Map(obj handler.MapObject) []reconcile.Request {
 	log := mapperLog.WithValues(
 		"Object.Namespace", obj.Meta.GetNamespace(),
 		"Object.Name", obj.Meta.GetName(),
-		"Object.GVK", obj.Object.GetObjectKind().GroupVersionKind,
+		"Object.GVK", obj.Object.GetObjectKind().GroupVersionKind(),
 	)
 
 	namespacedNamesToReconcile := make(namespacedNameSet)
@@ -188,7 +188,7 @@ ITEMS:
 
 	requests := convertToRequests(namespacedNamesToReconcile)
 	if count := len(requests); count > 0 {
-		log.Debug("found SBRs for resource", "Count", count)
+		log.Debug("found SBRs for resource", "Count", count, "ResolvedSBRs", requests)
 	} else {
 		log.Debug("no SBRs found for resource")
 	}
