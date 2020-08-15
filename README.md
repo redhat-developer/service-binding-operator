@@ -107,3 +107,32 @@ Meeting Agenda is maintained [here](https://github.com/redhat-developer/service-
 Please file bug reports on [Github](https://github.com/redhat-developer/service-binding-operator/issues/new). For any other questions, reach out on `service-binding-support@redhat.com`.
 
 
+## Roadmap
+
+
+**Key**
+
+⚪️ Concept validated
+
+:white_check_mark: Works, has tests and at least one documented scenario
+
+
+
+### Maturity matrix
+
+| Feature                                        | Alpha                | Beta | GA |
+| -----------------------------------------------| -------------------- | ---- | -- |
+| Binding with Kubernetes resources              |  :white_check_mark:  |      |    |
+| Binding with CRD-backed services               |  :white_check_mark:  |      |    |
+| Binding with OLM CRD-backed services           |  :white_check_mark:  |      |    |
+| Binding with secrets/configmaps                |  :white_check_mark:  |      |    |
+| Binding of PodSpec-based workloads             |  :white_check_mark:  |      |    |
+| Binding of non-PodSpec-based workloads         |  ⚪️    |      |    |
+| Binding with multiple-backing services         |  :white_check_mark:  |      |    |
+| Custom binding variables                       |  :white_check_mark:  |      |    |
+| Auto-detect binding resources                  |  :white_check_mark:  |      |    |
+| Security: Validating admission webhook         |   ⚪️             |      |    |
+| Support on Kubernetes                         |   :white_check_mark: |      |    |
+| Support on OpenShift                          |   :white_check_mark: |      |    |
+| Adoption by third-party backing services  |    ⚪️   |      |    |
+
