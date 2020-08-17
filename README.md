@@ -15,19 +15,18 @@
 ## Introduction
 
 The goal of the Service Binding Operator is to enable application authors to
-import an application and run it on OpenShift with operator-backed services
-such as databases, without having to perform manual configuration of secrets,
+import an application and run it on Kubernetes with services
+such as databases represented as Kubernetes objects inclulding Operator-backed and chart-based backing services, without having to perform manual configuration of secrets,
 configmaps, etc.
 
-In order to make a service bindable, the operator provider needs to express
-the information needed by applications to bind with the services provided by
-the operator. In other words, the operator provider must express the
+In order to make a service bindable, the service provider needs to express
+the information needed by applications to bind with the services. In other words, the service provider must express the
 information that is “interesting” to applications.
 
-There are multiple methods for making operator managed backing services
-bindable, including the backing operator providing metadata in CRD
-annotations. Details on the methods for making backing services bindable
-are available in the [Operator Best Practices Guide](docs/OperatorBestPractices.md)
+There are multiple methods for making backing services
+bindable, including the backing service provider providing metadata as 
+annotations on the resource. Details on the methods for making backing services bindable
+are available in the [Backing Service Provider Best Practices Guide](docs/OperatorBestPractices.md)
 
 In order to make an imported application (for example, a NodeJS application)
 connect to a backing service (for example, a database):
