@@ -1,4 +1,4 @@
-# Backing Service Best Practices
+# Best Practices for Making a Kubernetes Resource Bindable
 
 ## Introduction
 
