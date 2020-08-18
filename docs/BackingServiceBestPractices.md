@@ -1,4 +1,4 @@
-# Backing Service Best Practices
+# Best Practices for Making a Kubernetes Resource Bindable
 
 ## Introduction
 
@@ -85,13 +85,28 @@ apiVersion: apiextensions.k8s.io/v1beta1
 metadata:
   name: databases.postgresql.baiju.dev
   annotations:
-    servicebindingoperator.redhat.io/status.dbConfigMap-password: 'binding:env:object:secret'
-    servicebindingoperator.redhat.io/status.dbConfigMap-username: 'binding:env:object:configmap'
+    servicebindingoperator.redhat.io/status.dbConfigMap-host: 'binding:env:object:configmap'
+    servicebindingoperator.redhat.io/status.dbCredentials-password: 'binding:env:object:secret'
+    servicebindingoperator.redhat.io/status.dbCredentials-username: 'binding:env:object:secret'
     servicebindingoperator.redhat.io/status.dbName: 'binding:env:attribute'
     servicebindingoperator.redhat.io/spec.Token.private: 'binding:volumemount:secret'
 spec:
   group: postgresql.baiju.dev
   version: v1alpha1
+```
+
+The following annotation indicates that the key `host` in the `configmap` referenced in `status.dbConfigMap`
+is "interesting" for binding.
+
+```
+servicebindingoperator.redhat.io/status.dbConfigMap-host: 'binding:env:object:configmap'
+```
+
+Similarly, the following annotation indicates that the key `password` in the `secret` referenced in `status.dbCredentials`
+is "interesting" for binding.
+
+```
+servicebindingoperator.redhat.io/status.dbCredentials-password: 'binding:env:object:secret'
 ```
 
 ### Operator Providing Metadata in OLM
