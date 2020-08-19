@@ -143,6 +143,10 @@ spec:
                 start += interval
         return False
 
+    def expose_deployment_service(self, name, namespace):
+        output, exit_code = self.cmd.run(f'oc expose deploy/{name} -n {namespace} --name={name}')
+        return re.search(r'.*%s\sexposed' % name, output)
+
     def expose_service_route(self, service_name, namespace):
         output, exit_code = self.cmd.run(f'oc expose svc/{service_name} -n {namespace} --name={service_name}')
         return re.search(r'.*%s\sexposed' % service_name, output)

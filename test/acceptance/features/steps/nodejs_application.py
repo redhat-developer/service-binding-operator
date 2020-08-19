@@ -7,9 +7,40 @@ import time
 
 class NodeJSApp(object):
 
-    nodejs_app = "https://github.com/pmacik/nodejs-rest-http-crud"
+    nodesj_app_image = "quay.io/pmacik/nodejs-rest-http-crud"
     api_end_point = 'http://{route_url}/api/status/dbNameCM'
     openshift = Openshift()
+
+    deployment_yaml_template = '''
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {name}
+  namespace: {namespace}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      deployment: {name}
+  template:
+    metadata:
+      labels:
+        deployment: {name}
+    spec:
+      containers:
+        - env:
+          image: {image}
+          imagePullPolicy: IfNotPresent
+          name: app
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources: {{}}
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {{}}
+    '''
 
     pod_name_pattern = "{name}.*$(?<!-build)"
 
@@ -46,20 +77,14 @@ class NodeJSApp(object):
             return False
 
     def install(self):
-        nodejs_app_arg = "nodejs~" + self.nodejs_app
-        cmd = f"oc new-app {nodejs_app_arg} --name {self.name} -n {self.namespace}"
-        (create_new_app_output, exit_code) = self.cmd.run(cmd)
-        if exit_code != 0:
-            return False
-        for pattern in [f'imagestream.image.openshift.io\\s\"{self.name}\"\\screated',
-                        f'deployment.apps\\s\"{self.name}\"\\screated',
-                        f'service\\s\"{self.name}\"\\screated']:
-            if not re.search(pattern, create_new_app_output):
-                return False
-        if not self.openshift.expose_service_route(self.name, self.namespace):
-            print("Unable to expose the service with build config")
-            return False
-        return True
+        create_new_app_output = self.openshift.oc_apply(self.deployment_yaml_template.format(
+            name=self.name, namespace=self.namespace, image=self.nodesj_app_image))
+
+        assert re.search(f'deployment.apps.*{self.name}.*created',
+                         create_new_app_output) is not None, f"Unable to create a deployment: {create_new_app_output}"
+        assert self.openshift.expose_deployment_service(self.name, self.namespace) is not None, "Unable to expose deployment service"
+        assert self.openshift.expose_service_route(self.name, self.namespace) is not None, "Unable to expose service route"
+        return self.is_running(wait=True)
 
     def get_db_name_from_api(self, interval=5, timeout=20):
         route_url = self.openshift.get_route_host(self.name, self.namespace)
