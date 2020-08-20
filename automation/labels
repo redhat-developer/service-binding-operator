@@ -1,6 +1,5 @@
 
-LABEL 	release="${CI_CONTAINER_RELEASE}" \
-      	version="${CI_CONTAINER_VERSION}" \
+LABEL 	version="${CI_CONTAINER_VERSION}" \
       	io.k8s.display-name="The Service Binding Operator" \
       	io.openshift.build.source-location="${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_URL}" \
       	io.openshift.build.commit.url="${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_URL}/commit/${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_COMMIT}" \

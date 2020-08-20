@@ -1,0 +1,20 @@
+
+FROM scratch
+
+COPY manifests /manifests/
+COPY metadata /metadata/
+
+LABEL com.redhat.component="service-binding-operator-metadata-container" \
+	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator-metadata"
+
+
+LABEL com.redhat.delivery.operator.bundle=true \
+      com.redhat.openshift.versions="v4.5" \
+      com.redhat.delivery.backport=false
+
+LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
+LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
+LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
+LABEL operators.operatorframework.io.bundle.package.v1=rh-service-binding-operator
+LABEL operators.operatorframework.io.bundle.channels.v1=4.5
+LABEL operators.operatorframework.io.bundle.channel.default.v1=4.5

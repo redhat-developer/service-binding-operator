@@ -1,0 +1,4 @@
+#!/bin/bash
+# Workaround for https://projects.engineering.redhat.com/browse/CPAAS-797
+
+echo "render templates no-op"
