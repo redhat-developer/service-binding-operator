@@ -57,7 +57,7 @@ class NodeJSApp(object):
         assert self.openshift.expose_service_route(self.name, self.namespace) is not None, "Unable to expose service route"
         return self.is_running(wait=True)
 
-    def get_db_name_from_api(self, interval=5, timeout=20):
+    def get_db_name_from_api(self, interval=5, timeout=60):
         route_url = self.openshift.get_route_host(self.name, self.namespace)
         if route_url is None:
             return None
