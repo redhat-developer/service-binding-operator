@@ -11,37 +11,6 @@ class NodeJSApp(object):
     api_end_point = 'http://{route_url}/api/status/dbNameCM'
     openshift = Openshift()
 
-    deployment_yaml_template = '''
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: {name}
-  namespace: {namespace}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      deployment: {name}
-  template:
-    metadata:
-      labels:
-        deployment: {name}
-    spec:
-      containers:
-        - env:
-          image: {image}
-          imagePullPolicy: IfNotPresent
-          name: app
-          ports:
-            - containerPort: 8080
-              protocol: TCP
-          resources: {{}}
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {{}}
-    '''
-
     pod_name_pattern = "{name}.*$(?<!-build)"
 
     name = ""
@@ -77,12 +46,14 @@ spec:
             return False
 
     def install(self):
-        create_new_app_output = self.openshift.oc_apply(self.deployment_yaml_template.format(
-            name=self.name, namespace=self.namespace, image=self.nodesj_app_image))
-
+        create_new_app_output, exit_code = self.cmd.run(f"oc new-app --docker-image={self.nodesj_app_image} --name={self.name} -n {self.namespace}")
+        assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app: {create_new_app_output}"
+        assert re.search(f'imagestream.image.openshift.io.*{self.name}.*created',
+                         create_new_app_output) is not None, f"Unable to create imagestream: {create_new_app_output}"
         assert re.search(f'deployment.apps.*{self.name}.*created',
-                         create_new_app_output) is not None, f"Unable to create a deployment: {create_new_app_output}"
-        assert self.openshift.expose_deployment_service(self.name, self.namespace) is not None, "Unable to expose deployment service"
+                         create_new_app_output) is not None, f"Unable to create deployment: {create_new_app_output}"
+        assert re.search(f'service.*{self.name}.*created',
+                         create_new_app_output) is not None, f"Unable to create service: {create_new_app_output}"
         assert self.openshift.expose_service_route(self.name, self.namespace) is not None, "Unable to expose service route"
         return self.is_running(wait=True)
 
