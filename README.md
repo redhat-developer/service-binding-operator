@@ -16,19 +16,19 @@
 
 The goal of the Service Binding Operator is to enable application authors to
 import an application and run it on Kubernetes with services
-such as databases represented as Kubernetes objects inclulding Operator-backed and chart-based backing services, without having to perform manual configuration of secrets,
-configmaps, etc.
+such as databases represented as Kubernetes objects including Operator-backed and chart-based backing services, without having to perform manual configuration of `Secrets`,
+`ConfigMaps`, etc.
 
-In order to make a service bindable, the service provider needs to express
+To make a service bindable, the service provider needs to express
 the information needed by applications to bind with the services. In other words, the service provider must express the
-information that is “interesting” to applications.
+information that's “interesting” to applications.
 
 There are multiple methods for making backing services
-bindable, including the backing service provider providing metadata as 
+bindable, including the backing service provider providing metadata as
 annotations on the resource. Details on the methods for making backing services bindable
 are available in the [Backing Service Provider Best Practices Guide](docs/OperatorBestPractices.md)
 
-In order to make an imported application (for example, a NodeJS application)
+To make an imported application (for example, a NodeJS application)
 connect to a backing service (for example, a database):
 
 * The app author (developer) creates a `ServiceBindingRequest` and specifies:
@@ -41,12 +41,12 @@ connect to a backing service (for example, a database):
   * Reads backing service operator CRD annotations to discover the
     binding attributes
   * Creates a binding secret for the backing service, example, an operator-managed database;
-  * Injects environment variables into the applications's `Deployment`, `DeploymentConfig`,
+  * Injects environment variables into the applications' `Deployment`, `DeploymentConfig`,
     `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
 
 ## Quick Start
 
-Clone the repository and run `make local` in an existing `kube:admin` openshift
+Clone the repository and run `make local` in an existing `kube:admin` OpenShift
 CLI session. Alternatively, install the operator using:
 
 ``` bash
@@ -68,14 +68,13 @@ EOS
 
 The best way to get started with the Service Binding Operator is to see it in action.
 
-We've included a number of examples scenarios for using the operator in this
+A number of example scenarios for using the operator are included in this
 repo. The examples are found in the "/examples" directory. Each of these
 examples illustrates a usage scenario for the operator. Each example also
 includes a README file with step-by-step instructions for how to run the
 example.
 
-We'll add more examples in the future. The following section in this README
-file includes links to the current set of examples.
+The following section in this README file includes links to the current set of examples.
 
 ## Example Scenarios
 
