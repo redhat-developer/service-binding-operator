@@ -24,7 +24,7 @@ operator-sdk --verbose run --local --namespace="$OPERATOR_NAMESPACE" --operator-
 
 SBO_PID=$!
 
-attempts=12
+attempts=24
 while [ -z "$(grep 'Starting workers' $SBO_LOCAL_LOG)" ]; do
     if [[ $attempts -ge 0 ]]; then
         sleep 5

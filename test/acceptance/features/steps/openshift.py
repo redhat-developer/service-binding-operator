@@ -170,26 +170,26 @@ spec:
         exit_code | should.be_equal_to(0)
         return env_from
 
-    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False):
+    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False, interval=5, timeout=120):
         output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
         if exit_code != 0:
             if wait:
-                attempts = 5
+                attempts = timeout/interval
                 while exit_code != 0 and attempts > 0:
                     output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"')
                     attempts -= 1
-                    time.sleep(5)
+                    time.sleep(interval)
         exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
         return output
 
-    def get_resource_info_by_jq(self, resource_type, name, namespace, jq_expression, wait=False):
+    def get_resource_info_by_jq(self, resource_type, name, namespace, jq_expression, wait=False, interval=5, timeout=120):
         output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq -rc \'{jq_expression}\'')
         if exit_code != 0:
             if wait:
-                attempts = 5
+                attempts = timeout/interval
                 while exit_code != 0 and attempts > 0:
                     output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq -rc \'{jq_expression}\'')
                     attempts -= 1
-                    time.sleep(5)
+                    time.sleep(interval)
         exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
         return output.rstrip("\n")
