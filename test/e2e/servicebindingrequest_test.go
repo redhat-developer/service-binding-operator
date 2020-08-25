@@ -105,6 +105,7 @@ func TestAddSchemesToFramework(t *testing.T) {
 			ServiceBindingRequest(t, []Step{DBStep, SBRStep, AppStep})
 		})
 		t.Run("scenario-app-sbr-db", func(t *testing.T) {
+			t.Skip("Currently disabled as not supported by SBO")
 			ServiceBindingRequest(t, []Step{AppStep, SBRStep, DBStep})
 		})
 		t.Run("scenario-sbr-db-app", func(t *testing.T) {
