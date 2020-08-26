@@ -4,7 +4,6 @@ from openshift import Openshift
 
 
 class ServiceBindingRequest(object):
-
     openshift = Openshift()
 
     def create(self, yaml):

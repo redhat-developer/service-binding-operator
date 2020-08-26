@@ -15,6 +15,10 @@ from postgres_db import PostgresDB
 from namespace import Namespace
 from nodejs_application import NodeJSApp
 from service_binding_request import ServiceBindingRequest
+from serverless_operator import ServerlessOperator
+from quarkus_application import QuarkusApplication
+from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
+from knative_serving import KnativeServing
 import time
 
 
@@ -104,9 +108,8 @@ def imported_nodejs_app_is_running(context, application_name):
         application.is_running(wait=True) | should.be_truthy.desc("Application is running")
     print("Nodejs application is running!!!")
     application.get_db_name_from_api() | should_not.be_none
-    context.nodejs_app_original_generation = application.get_observed_generation()
-    context.nodejs_app_original_pod_name = application.get_running_pod_name()
-    context.nodejs_app = application
+    context.application = application
+    context.application_type = "nodejs"
 
 
 # STEP
@@ -118,7 +121,7 @@ imported_nodejs_app_is_not_running_step = u'Imported Nodejs application "{applic
 def imported_nodejs_app_is_not_running(context, application_name):
     namespace = context.namespace
     application = NodeJSApp(application_name, namespace.name)
-    application.is_running() | should.be_falsy.desc("Aplication not running")
+    assert application.is_running() is False, "Application is running already"
 
 
 # STEP
@@ -146,26 +149,38 @@ sbr_is_applied_step = u'Service Binding Request is applied to connect the databa
 def sbr_is_applied(context):
     sbr_yaml = context.text
     sbr = ServiceBindingRequest()
-    if context.__contains__("nodejs_app"):
-        application = context.nodejs_app
-        context.nodejs_app_original_generation = application.get_observed_generation()
-        context.nodejs_app_original_pod_name = application.get_running_pod_name()
-    sbr.create(sbr_yaml) | should.be_truthy.desc("Service Binding Request Created")
+    if context.__contains__("application") and context.__contains__("application_type"):
+        application = context.application
+        if context.application_type == "nodejs":
+            context.application_original_generation = application.get_observed_generation()
+            context.application_original_pod_name = application.get_running_pod_name()
+        elif context.application_type == "knative":
+            context.application_original_generation = context.application.get_generation()
+        else:
+            assert False, f"Invalid application type in context.application_type={context.application_type}, valid are 'nodejs', 'knative'"
+    assert sbr.create(sbr_yaml) is not None, "Service binding request not created"
 
 
 # STEP
 @then(u'application should be re-deployed')
 def then_application_redeployed(context):
-    application = context.nodejs_app
-    application.get_redeployed_pod_name(context.nodejs_app_original_pod_name, timeout=120) | should_not.be_none.desc(
-        "There is a running pod of the application different from the original one before redeployment.")
+    application = context.application
+    if context.application_type == "nodejs":
+        application_pod_name = application.get_redeployed_pod_name(context.application_original_pod_name)
+        assert application_pod_name is not None, "There is no running application pod different from the original one before re-deployment."
+    elif context.application_type == "knative":
+        assert context.application_original_generation is not None, "application is never deployed"
+        application_rev_name = application.get_rev_name_redeployed_by_generation(context.application_original_generation)
+        assert application_rev_name is not None, "application is not redeployed"
+    else:
+        assert False, f"Invalid application type in context.application_type={context.application_type}, valid are 'nodejs', 'knative'"
 
 
 # STEP
 @then(u'application should be connected to the DB "{db_name}"')
 def then_app_is_connected_to_db(context, db_name):
-    application = context.nodejs_app
-    app_db_name = application.get_db_name_from_api()
+    application = context.application
+    app_db_name = application.get_db_name_from_api(wait=True)
     app_db_name | should.be_equal_to(db_name)
 
 
@@ -189,6 +204,63 @@ def then_sbo_jq_is(context, jq_expression, sbr_name, json_value_regex):
     re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jq result \"{result}\" should match \"{json_value_regex}\"")
 
 
+@given(u'Openshift Serverless Operator is running')
+def given_serverless_operator_is_running(context):
+    """
+    Checks if the serverless operator is up and running
+    """
+    serverless_operator = ServerlessOperator()
+    if not serverless_operator.is_running():
+        print("Serverless operator is not installed, installing...")
+        assert serverless_operator.install_operator_subscription() is True, "serverless operator subscription is not installed"
+        assert serverless_operator.is_running(wait=True) is True, "serverless operator not installed"
+    context.serverless_operator = serverless_operator
+
+
+@given(u'Quarkus s2i builder image is present')
+def given_quarkus_builder_image_is_present(context):
+    """
+    Checks if quarkus s2i builder image is present
+    """
+    builder_image = QuarkusS2IBuilderImage()
+    if not builder_image.is_present():
+        print("Builder image is not present, importing and patching...")
+        assert builder_image.import_and_patch() is True, "Quarkus image import from image registry and patch failed"
+        assert builder_image.is_present() is True, "Quarkus image is not present"
+
+
+@given(u'Knative serving is running')
+def given_knative_serving_is_running(context):
+    """
+    creates a KnativeServing object to install Knative Serving using the OpenShift Serverless Operator.
+    """
+    knative_namespace = Namespace("knative-serving")
+    assert knative_namespace.create() is True, "Knative serving namespace not created"
+    assert Namespace(context.namespace.name).switch_to() is True, "Unable to switch to the context namespace"
+    knative_serving = KnativeServing(namespace=knative_namespace.name)
+    if not knative_serving.is_present():
+        print("knative serving is not present, create knative serving")
+        assert knative_serving.create() is True, "Knative serving is not created"
+        assert knative_serving.is_present() is True, "Knative serving is not present"
+
+
+# STEP
+quarkus_app_is_imported_step = u'Quarkus application "{application_name}" is imported as Knative service'
+
+
+@given(quarkus_app_is_imported_step)
+@when(quarkus_app_is_imported_step)
+def quarkus_app_is_imported_as_knative_service(context, application_name):
+    namespace = context.namespace
+    application = QuarkusApplication(application_name, namespace.name)
+    if not application.is_imported():
+        print("application is not imported, trying to import it")
+        assert application.install() is True, "Quarkus application is not installed"
+        assert application.is_imported() is True, "Quarkus application is not imported"
+    context.application = application
+    context.application_type = "knative"
+
+
 # STEP
 @then(u'"{app_name}" deployment must contain SBR name "{sbr_name1}" and "{sbr_name2}"')
 def then_envFrom_contains(context, app_name, sbr_name1, sbr_name2):
@@ -197,3 +269,10 @@ def then_envFrom_contains(context, app_name, sbr_name1, sbr_name2):
     result = openshift.get_deployment_envFrom_info(app_name, context.namespace.name)
     result | should.be_equal_to("[map[secretRef:map[name:binding-request-1]] map[secretRef:map[name:binding-request-2]]]")\
         .desc(f'{app_name} deployment should contain secretRef: {sbr_name1} and {sbr_name2}')
+
+
+# STEP
+@then(u'deployment must contain intermediate secret "{intermediate_secret_name}"')
+def then_envFrom_contains_intermediate_secret_name(context, intermediate_secret_name):
+    assert context.application.get_deployment_with_intermediate_secret(
+        intermediate_secret_name, wait=True, timeout=120) is not None, f"There is no deployment with intermediate secret {intermediate_secret_name}"
