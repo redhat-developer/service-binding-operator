@@ -36,8 +36,8 @@ def given_namespace_is_used(context, namespace_name):
 # STEP
 @given(u'Namespace [{namespace_env}] is used')
 def given_namespace_from_env_is_used(context, namespace_env):
-    env = os.getenv(namespace_env, "")
-    env | should_not.be_none.desc(f"{namespace_env} env variable is set")
+    env = os.getenv(namespace_env)
+    assert env is not None, f"{namespace_env} environment variable needs to be set"
     print(f"{namespace_env} = {env}")
     given_namespace_is_used(context, env)
 
@@ -64,8 +64,8 @@ sbo_is_running_in_namespace_from_env_step = u'Service Binding Operator is runnin
 @given(sbo_is_running_in_namespace_from_env_step)
 @when(sbo_is_running_in_namespace_from_env_step)
 def sbo_is_running_in_namespace_from_env(context, operator_namespace_env):
-    env = os.getenv(operator_namespace_env, "")
-    env | should_not.be_none.desc(f"{operator_namespace_env} env variable is set")
+    env = os.getenv(operator_namespace_env)
+    assert env is not None, f"{operator_namespace_env} environment variable needs to be set"
     print(f"{operator_namespace_env} = {env}")
     sbo_is_running_in_namespace(context, env)
 
