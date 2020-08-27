@@ -12,10 +12,17 @@ class Command(object):
             self.path = os.getcwd()
         else:
             self.path = path
-        self.setenv("KUBECONFIG", os.getenv("KUBECONFIG"))
-        self.setenv("PATH", os.getenv("PATH"))
+
+        kubeconfig = os.getenv("KUBECONFIG")
+        assert kubeconfig is not None, "KUBECONFIG needs to be set in the environment"
+        self.setenv("KUBECONFIG", kubeconfig)
+
+        path = os.getenv("PATH")
+        assert path is not None, "PATH needs to be set in the environment"
+        self.setenv("PATH", path)
 
     def setenv(self, key, value):
+        assert key is not None and value is not None, f"Name or value of the environment variable cannot be None: [{key} = {value}]"
         self.env[key] = value
 
     def run(self, cmd, stdin=None):
