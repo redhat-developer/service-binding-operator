@@ -3,8 +3,11 @@ package servicebindingrequest
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +22,6 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 func init() {
@@ -36,6 +38,53 @@ func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	return nil
 }
 
+func TestBindingCustomSecretPath(t *testing.T) {
+	ns := "custombinder"
+	name := "service-binding-request-custom"
+	matchLabels := map[string]string{
+		"appx": "x",
+	}
+
+	f := mocks.NewFake(t, ns)
+	sbrSecretPath := f.AddMockedServiceBindingRequest(name, &ns, "ref-custom-podspec", "deployment", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredDeployment("deployment", matchLabels)
+
+	customSecretPath := "metadata.clusterName"
+	sbrSecretPath.Spec.ApplicationSelector.BindingPath = &v1alpha1.BindingPath{
+		SecretPath: customSecretPath,
+	}
+	binderForsbrSecretPath := newBinder(
+		context.TODO(),
+		f.FakeDynClient(),
+		sbrSecretPath,
+		[]string{},
+		testutils.BuildTestRESTMapper(),
+	)
+	require.NotNil(t, binderForsbrSecretPath)
+
+	t.Run("custom secret field path", func(t *testing.T) {
+		secretPath := binderForsbrSecretPath.getSecretFieldPath()
+		expectedSecretPath := []string{"metadata", "clusterName"}
+		require.Equal(t, expectedSecretPath, secretPath)
+	})
+
+	t.Run("update custom secret field path ", func(t *testing.T) {
+		list, err := binderForsbrSecretPath.search()
+		require.NoError(t, err)
+		require.Len(t, list.Items, 1)
+
+		obj := list.Items[0]
+		err = binderForsbrSecretPath.updateSecretField(&obj)
+		require.NoError(t, err)
+		customSecretPathSlice := strings.Split(customSecretPath, ".")
+
+		customSecretInMeta, found, err := unstructured.NestedFieldCopy(obj.Object, customSecretPathSlice...)
+		require.NoError(t, err)
+		require.True(t, found)
+		require.Equal(t, name, customSecretInMeta)
+	})
+}
+
 func TestBinderNew(t *testing.T) {
 	ns := "binder"
 	name := "service-binding-request"
@@ -43,9 +92,20 @@ func TestBinderNew(t *testing.T) {
 		"connects-to": "database",
 		"environment": "binder",
 	}
+
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBindingRequest(name, nil, "ref", "", deploymentsGVR, matchLabels)
+	ensureDefaults(&sbr.Spec.ApplicationSelector)
 	f.AddMockedUnstructuredDeployment("ref", matchLabels)
+
+	binder := newBinder(
+		context.TODO(),
+		f.FakeDynClient(),
+		sbr,
+		[]string{},
+		testutils.BuildTestRESTMapper(),
+	)
+	require.NotNil(t, binder)
 
 	sbrWithResourceRef := f.AddMockedServiceBindingRequest(
 		"service-binding-request-with-ref",
@@ -53,7 +113,7 @@ func TestBinderNew(t *testing.T) {
 		"ref",
 		"ref",
 		deploymentsGVR,
-		map[string]string{},
+		matchLabels,
 	)
 
 	f.AddMockedUnstructuredSecretRV(name)
@@ -157,7 +217,7 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, types.NamespacedName{Name: name, Namespace: ns}, sbrName)
 
-		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)
@@ -179,7 +239,6 @@ func TestBinderNew(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(uSecret.Object, &s)
 		require.NoError(t, err)
 		require.Equal(t, s.ObjectMeta.ResourceVersion, envVar.Value)
-
 	})
 
 	t.Run("update with extra modifier present", func(t *testing.T) {
@@ -236,9 +295,7 @@ func TestBinderNew(t *testing.T) {
 		err = binder.remove(list)
 		require.NoError(t, err)
 
-		list, err = binder.search()
-		require.NoError(t, err)
-		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, containersPath...)
+		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
 		require.Len(t, containers, 1)

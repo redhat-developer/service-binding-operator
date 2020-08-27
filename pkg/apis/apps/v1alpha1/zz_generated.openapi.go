@@ -107,7 +107,7 @@ func schema_pkg_apis_apps_v1alpha1_ServiceBindingRequestStatus(ref common.Refere
 					},
 					"applications": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ApplicationObjects contains all the application objects filtered by label",
+							Description: "Applications contain all the applications filtered by name or label",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{

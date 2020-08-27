@@ -24,13 +24,6 @@ import (
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
-var (
-	// containersPath logical path to find containers on supported objects
-	containersPath = []string{"spec", "template", "spec", "containers"}
-	// volumesPath logical path to find volumes on supported objects
-	volumesPath = []string{"spec", "template", "spec", "volumes"}
-)
-
 // changeTriggerEnv hijacking environment in order to trigger a change
 const changeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 
@@ -119,9 +112,9 @@ func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
 // to find data in informed Unstructured object.
 func (b *binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface{}, error) {
-	log := b.logger.WithValues("Volumes.NestedPath", volumesPath)
+	log := b.logger.WithValues("Volumes.NestedPath", b.getVolumesPath())
 	log.Debug("Reading volumes definitions...")
-	volumes, _, err := unstructured.NestedSlice(obj.Object, volumesPath...)
+	volumes, _, err := unstructured.NestedSlice(obj.Object, b.getVolumesPath()...)
 	if err != nil {
 		return nil, err
 	}
@@ -129,22 +122,20 @@ func (b *binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface
 }
 
 // updateSpecVolumes execute the inspection and update "volumes" entries in informed spec.
-func (b *binder) updateSpecVolumes(
-	obj *unstructured.Unstructured,
-) (*unstructured.Unstructured, error) {
+func (b *binder) updateSpecVolumes(obj *unstructured.Unstructured) error {
 	volumes, err := b.extractSpecVolumes(obj)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	volumes, err = b.updateVolumes(volumes)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err = unstructured.SetNestedSlice(obj.Object, volumes, volumesPath...); err != nil {
-		return nil, err
+	if err = unstructured.SetNestedSlice(obj.Object, volumes, b.getVolumesPath()...); err != nil {
+		return err
 	}
-	return obj, nil
+	return nil
 }
 
 // removeSpecVolumes based on extract volume subset, removing volume bind volume entry. It can return
@@ -158,7 +149,7 @@ func (b *binder) removeSpecVolumes(
 		return nil, err
 	}
 	volumes = b.removeVolumes(volumes)
-	if err = unstructured.SetNestedSlice(obj.Object, volumes, volumesPath...); err != nil {
+	if err = unstructured.SetNestedSlice(obj.Object, volumes, b.getVolumesPath()...); err != nil {
 		return nil, err
 	}
 	return obj, nil
@@ -219,55 +210,76 @@ func (b *binder) removeVolumes(volumes []interface{}) []interface{} {
 
 // extractSpecContainers search for
 func (b *binder) extractSpecContainers(obj *unstructured.Unstructured) ([]interface{}, error) {
-	log := b.logger.WithValues("Containers.NestedPath", containersPath)
+	log := b.logger.WithValues("Containers.NestedPath", b.getContainersPath())
 
-	containers, found, err := unstructured.NestedSlice(obj.Object, containersPath...)
+	containers, found, err := unstructured.NestedSlice(obj.Object, b.getContainersPath()...)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		err = fmt.Errorf("unable to find '%#v' in object kind '%s'", containersPath, obj.GetKind())
+		err = fmt.Errorf("unable to find '%#v' in object kind '%s'", b.getContainersPath(), obj.GetKind())
 		log.Error(err, "is this definition supported by this operator?")
 		return nil, err
 	}
-
 	return containers, nil
 }
 
+// updateSecretField extract the specific secret field from
+// the object, and triggers an update.
+func (b *binder) updateSecretField(obj *unstructured.Unstructured) error {
+	return unstructured.SetNestedField(obj.Object, b.sbr.GetName(), b.getSecretFieldPath()...)
+}
+
 // updateSpecContainers extract containers from object, and trigger update.
-func (b *binder) updateSpecContainers(
-	obj *unstructured.Unstructured,
-) (*unstructured.Unstructured, error) {
+func (b *binder) updateSpecContainers(obj *unstructured.Unstructured) error {
 	containers, err := b.extractSpecContainers(obj)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if containers, err = b.updateContainers(containers); err != nil {
-		return nil, err
+		return err
 	}
-	if err = unstructured.SetNestedSlice(obj.Object, containers, containersPath...); err != nil {
-		return nil, err
+	if err = unstructured.SetNestedSlice(obj.Object, containers, b.getContainersPath()...); err != nil {
+		return err
 	}
-	return obj, nil
+	return nil
+}
+
+func getContainersPath(applicationSelector *v1alpha1.ApplicationSelector) []string {
+	return strings.Split(applicationSelector.BindingPath.ContainersPath, ".")
+}
+
+func getSecretFieldPath(applicationSelector *v1alpha1.ApplicationSelector) []string {
+	return strings.Split(applicationSelector.BindingPath.SecretPath, ".")
+}
+
+func (b *binder) getContainersPath() []string {
+	return getContainersPath(&b.sbr.Spec.ApplicationSelector)
+}
+
+func (b *binder) getVolumesPath() []string {
+	return []string{"spec", "template", "spec", "volumes"}
+}
+
+func (b *binder) getSecretFieldPath() []string {
+	return getSecretFieldPath(&b.sbr.Spec.ApplicationSelector)
 }
 
 // removeSpecContainers find and edit containers resource subset, removing bind related entries
 // from the object. It can return error on extracting data, editing steps and final editing of to be
 // returned object.
-func (b *binder) removeSpecContainers(
-	obj *unstructured.Unstructured,
-) (*unstructured.Unstructured, error) {
+func (b *binder) removeSpecContainers(obj *unstructured.Unstructured) error {
 	containers, err := b.extractSpecContainers(obj)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if containers, err = b.removeContainers(containers); err != nil {
-		return nil, err
+		return err
 	}
-	if err = unstructured.SetNestedSlice(obj.Object, containers, containersPath...); err != nil {
-		return nil, err
+	if err = unstructured.SetNestedSlice(obj.Object, containers, b.getContainersPath()...); err != nil {
+		return err
 	}
-	return obj, nil
+	return nil
 }
 
 // updateContainers execute the update command per container found.
@@ -501,14 +513,23 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 
 		sbrNamespacedName := types.NamespacedName{Namespace: b.sbr.GetNamespace(), Name: b.sbr.GetName()}
 		updatedObj = setSBRAnnotations(sbrNamespacedName, updatedObj)
+		var err error
+		if b.sbr.Spec.ApplicationSelector.BindingPath.SecretPath != "" {
+			err = b.updateSecretField(updatedObj)
+			if err != nil {
+				return nil, err
+			}
+		}
 
-		updatedObj, err := b.updateSpecContainers(updatedObj)
-		if err != nil {
-			return nil, err
+		if b.sbr.Spec.ApplicationSelector.BindingPath.ContainersPath != "" {
+			err = b.updateSpecContainers(updatedObj)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		if len(b.volumeKeys) > 0 {
-			if updatedObj, err = b.updateSpecVolumes(updatedObj); err != nil {
+			if err = b.updateSpecVolumes(updatedObj); err != nil {
 				return nil, err
 			}
 		}
@@ -519,14 +540,12 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		} else if specsAreEqual {
 			continue
 		}
-
 		if b.modifier != nil {
 			err = b.modifier.ModifyExtraFields(updatedObj)
 			if err != nil {
 				return nil, err
 			}
 		}
-
 		log.Debug("Updating object...")
 		gk := updatedObj.GroupVersionKind().GroupKind()
 		version := updatedObj.GroupVersionKind().Version
@@ -537,13 +556,11 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		updated, err := b.dynClient.Resource(mapping.Resource).
 			Namespace(updatedObj.GetNamespace()).
 			Update(updatedObj, metav1.UpdateOptions{})
-
 		if err != nil {
 			return nil, err
 		}
 		updatedObjs = append(updatedObjs, updated)
 	}
-
 	return updatedObjs, nil
 }
 
@@ -553,11 +570,11 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Debug("Inspecting object...")
-		updatedObj, err := b.removeSpecContainers(&obj)
+		err := b.removeSpecContainers(&obj)
 		if err != nil {
 			return err
 		}
-		updatedObj = removeSBRAnnotations(updatedObj)
+		updatedObj := removeSBRAnnotations(&obj)
 
 		if len(b.volumeKeys) > 0 {
 			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {

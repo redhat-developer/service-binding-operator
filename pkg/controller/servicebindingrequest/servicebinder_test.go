@@ -8,6 +8,10 @@ import (
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
+	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -15,11 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
 	k8stesting "k8s.io/client-go/testing"
-
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/log"
-	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
-	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
 
 // objAssertionFunc implements an assertion of given obj in the context of given test t.
@@ -572,4 +571,52 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 		},
 	}))
+}
+
+func TestEnsureDefaults(t *testing.T) {
+	t.Run("label selector with non nil", func(t *testing.T) {
+		applicationSelector := &v1alpha1.ApplicationSelector{}
+		ensureDefaults(applicationSelector)
+		require.NotNil(t, applicationSelector.LabelSelector)
+	})
+
+	t.Run("empty label selector", func(t *testing.T) {
+		applicationSelector := &v1alpha1.ApplicationSelector{}
+		require.Nil(t, applicationSelector.LabelSelector)
+		ensureDefaults(applicationSelector)
+		require.NotNil(t, applicationSelector.LabelSelector)
+	})
+
+	t.Run("default pod spec path", func(t *testing.T) {
+		applicationSelector := &v1alpha1.ApplicationSelector{}
+		ensureDefaults(applicationSelector)
+		containersPath := getContainersPath(applicationSelector)
+		expectedContainersPath := []string{"spec", "template", "spec", "containers"}
+		require.Equal(t, expectedContainersPath, containersPath)
+	})
+
+	t.Run("container path with value", func(t *testing.T) {
+		applicationSelector := &v1alpha1.ApplicationSelector{}
+		applicationSelector.BindingPath = &v1alpha1.BindingPath{
+			ContainersPath: "spec.some.path",
+		}
+		ensureDefaults(applicationSelector)
+		containersPath := getContainersPath(applicationSelector)
+		expectedContainersPath := []string{"spec", "some", "path"}
+		require.Equal(t, expectedContainersPath, containersPath)
+	})
+	t.Run("container path with secret value", func(t *testing.T) {
+		applicationSelector := &v1alpha1.ApplicationSelector{}
+		applicationSelector.BindingPath = &v1alpha1.BindingPath{
+			SecretPath: "spec.some.path",
+		}
+		ensureDefaults(applicationSelector)
+		containersPath := getContainersPath(applicationSelector)
+		expectedContainersPath := []string{""}
+		require.Equal(t, expectedContainersPath, containersPath)
+		secretPath := getSecretFieldPath(applicationSelector)
+		expectedSecretPath := []string{"spec", "some", "path"}
+		require.Equal(t, expectedSecretPath, secretPath)
+	})
+
 }
