@@ -26,7 +26,7 @@ information that's “interesting” to applications.
 There are multiple methods for making backing services
 bindable, including the backing service provider providing metadata as
 annotations on the resource. Details on the methods for making backing services bindable
-are available in the [Backing Service Provider Best Practices Guide](docs/OperatorBestPractices.md)
+are available in the [Backing Service Provider Best Practices Guide](docs/BackingServiceBestPractices.md)
 
 To make an imported application (for example, a NodeJS application)
 connect to a backing service (for example, a database):

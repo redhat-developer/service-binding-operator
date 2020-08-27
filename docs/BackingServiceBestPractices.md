@@ -1,25 +1,58 @@
-# Operator Best Practices
+# Best Practices for Making a Kubernetes Resource Bindable
 
 ## Introduction
 
 The goals of the Service Binding Operator is to make it easier for
 applications developers to bind applications with needed backing
-services, without having to perform manual configuration of secrets,
-configmaps, etc. and to assist operator providers in promoting and
+services, without having to perform manual configuration of `secrets`,
+`configmaps`, etc. and to assist operator providers in promoting and
 expanding the adoption of their operators.
 
-When a ServiceBindingRequest is created the Service Binding Operator
+When a `ServiceBindingRequest` is created the Service Binding Operator
 collects binding information and shares it with application. The
 Binding Service Operator's controller injects the binding information
-into the application's "DeploymentConfig", "Deployment" or “Replicaset"
-as environment variables via an intermediate Secret called "binding-request".
-The binding also works with Knative services as it works with any "deployment"
-controller which has the podspec defined in the its jsonpath as
+into the application's `DeploymentConfig`, `Deployment` or `Replicaset`
+as environment variables via an intermediate Secret.
+The binding also works with Knative `Services` as it works with any API which has the podspec defined in the its jsonpath as
 "spec.template.spec.containers".
 
 This document provides "best practices" guidelines for the development of
 Operators that manage backing services to be bound together with applications
 by the Service Binding Operator.
+
+## Making a Kubernetes Resource Bindable
+
+In order to make backing service bindable, the Kubernetes resource representing the same needs to be annotated as a means to express what is "interesting" for applications.
+
+Example, in an `Ingress` or `Route` resource representing a backing service, the `host` and `port` among other things would be "interesting" for applications for connecting to the backing service.
+
+To do so, the Kubernetes resource may be annotated to meaningfully convey what is "interesting" for binding.
+
+``` yaml
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: example
+  namespace: service-binding-demo
+  annotations:
+    openshift.io/host.generated: 'true'
+    servicebindingoperator.redhat.io/spec.host: 'binding:env:attribute' #annotate here.
+spec:
+  host: example-sbo.apps.ci-ln-smyggvb-d5d6b.origin-ci-int-aws.dev.rhcloud.com
+  path: /
+  to:
+    kind: Service
+    name: example
+    weight: 100
+  port:
+    targetPort: 80
+  wildcardPolicy: None
+```
+
+## Making a Helm-Chart managed Backing Service Bindable
+
+Resources created from a Helm Chart are treated the same way as any other Kubernetes resource. The Kubernetes resource may be annotated the way in the chart templates to denote what is "interesting" for binding.
+
 
 ## Making an Operator Managed Backing Service Bindable
 
@@ -52,13 +85,28 @@ apiVersion: apiextensions.k8s.io/v1beta1
 metadata:
   name: databases.postgresql.baiju.dev
   annotations:
-    servicebindingoperator.redhat.io/status.dbConfigMap.password: 'binding:env:object:secret'
-    servicebindingoperator.redhat.io/status.dbConfigMap.username: 'binding:env:object:configmap'
+    servicebindingoperator.redhat.io/status.dbConfigMap-host: 'binding:env:object:configmap'
+    servicebindingoperator.redhat.io/status.dbCredentials-password: 'binding:env:object:secret'
+    servicebindingoperator.redhat.io/status.dbCredentials-username: 'binding:env:object:secret'
     servicebindingoperator.redhat.io/status.dbName: 'binding:env:attribute'
     servicebindingoperator.redhat.io/spec.Token.private: 'binding:volumemount:secret'
 spec:
   group: postgresql.baiju.dev
   version: v1alpha1
+```
+
+The following annotation indicates that the key `host` in the `configmap` referenced in `status.dbConfigMap`
+is "interesting" for binding.
+
+```
+servicebindingoperator.redhat.io/status.dbConfigMap-host: 'binding:env:object:configmap'
+```
+
+Similarly, the following annotation indicates that the key `password` in the `secret` referenced in `status.dbCredentials`
+is "interesting" for binding.
+
+```
+servicebindingoperator.redhat.io/status.dbCredentials-password: 'binding:env:object:secret'
 ```
 
 ### Operator Providing Metadata in OLM
