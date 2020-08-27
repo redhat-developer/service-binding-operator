@@ -267,8 +267,10 @@ def then_envFrom_contains(context, app_name, sbr_name1, sbr_name2):
     time.sleep(60)
     openshift = Openshift()
     result = openshift.get_deployment_envFrom_info(app_name, context.namespace.name)
-    result | should.be_equal_to("[map[secretRef:map[name:binding-request-1]] map[secretRef:map[name:binding-request-2]]]")\
-        .desc(f'{app_name} deployment should contain secretRef: {sbr_name1} and {sbr_name2}')
+    expected_result_1 = f'[map[secretRef:map[name:{sbr_name1}]] map[secretRef:map[name:{sbr_name2}]]]'
+    expected_result_2 = f'[{{"secretRef":{{"name":"{sbr_name1}"}}}},{{"secretRef":{{"name":"{sbr_name2}"}}}}]'
+    assert result == expected_result_1 or result == expected_result_2, \
+        f'\n{app_name} deployment should contain secretRef: {sbr_name1} and {sbr_name2}\nActual secretRef: {result}'
 
 
 # STEP
