@@ -333,3 +333,38 @@ spec:
             return lst
         print('Resource list is empty under namespace - {}'.format(namespace))
         return None
+
+    def get_deployment_names_of_given_pattern(self, deployment_name_pattern, namespace):
+        return self.search_resource_lst_in_namespace("deployment", deployment_name_pattern, namespace)
+
+    def get_deployment_with_intermediate_secret_of_given_pattern(self, intermediate_secret_name, deployment_name_pattern,
+                                                                 namespace, wait=False, interval=5, timeout=300):
+        expected_secretRef_1 = f'[{{"secretRef":{{"name":"{intermediate_secret_name}"}}}}]'
+        expected_secretRef_2 = f'[map[secretRef:map[name:{intermediate_secret_name}]]]'
+        if wait:
+            start = 0
+            while ((start + interval) <= timeout):
+                deployment_list = self.get_deployment_names_of_given_pattern(deployment_name_pattern, namespace)
+                if deployment_list is not None:
+                    for deployment in deployment_list:
+                        result = self.get_deployment_envFrom_info(deployment, namespace)
+                        if result == expected_secretRef_1 or result == expected_secretRef_2:
+                            return deployment
+                        else:
+                            print(f"\nUnexpected deployment's envFrom info: \nExpected: {expected_secretRef_1} or {expected_secretRef_2} \nbut was: {result}\n")
+                else:
+                    print(f"No deployment that matches {deployment_name_pattern} found.\n")
+                time.sleep(interval)
+                start += interval
+        else:
+            deployment_list = self.get_deployment_names_of_given_pattern(deployment_name_pattern)
+            if deployment_list is not None:
+                for deployment in deployment_list:
+                    result = self.get_deployment_envFrom_info(deployment, namespace)
+                    if result == expected_secretRef_1 or result == expected_secretRef_2:
+                        return deployment
+                    else:
+                        print(f"\nUnexpected deployment's envFrom info: \nExpected: {expected_secretRef_1} or {expected_secretRef_2} \nbut was: {result}\n")
+            else:
+                print(f"No deployment that matches {deployment_name_pattern} found.\n")
+        return None

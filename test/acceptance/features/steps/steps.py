@@ -275,4 +275,4 @@ def then_envFrom_contains(context, app_name, sbr_name1, sbr_name2):
 @then(u'deployment must contain intermediate secret "{intermediate_secret_name}"')
 def then_envFrom_contains_intermediate_secret_name(context, intermediate_secret_name):
     assert context.application.get_deployment_with_intermediate_secret(
-        intermediate_secret_name, wait=True, timeout=120) is not None, f"There is no deployment with intermediate secret {intermediate_secret_name}"
+        intermediate_secret_name) is not None, f"There is no deployment with intermediate secret {intermediate_secret_name}"
