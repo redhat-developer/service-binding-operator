@@ -108,8 +108,12 @@ class QuarkusApplication(object):
         return self.openshift.search_resource_lst_in_namespace("deployment", self.format_pattern(self.deployment_name_pattern), self.namespace)
 
     def get_deployment_with_intermediate_secret(self, intermediate_secret_name, wait=False, interval=5, timeout=300):
-        expected_secretRef_1 = f'[{{"secretRef":{{"name":"{intermediate_secret_name}"}}}}]'
-        expected_secretRef_2 = f'[map[secretRef:map[name:{intermediate_secret_name}]]]'
+
+        # Expected result from 'oc' (openshift client) v4.6
+        expected_secretRef_oc_46 = f'[{{"secretRef":{{"name":"{intermediate_secret_name}"}}}}]'
+        # Expected result from 'oc' (openshift client) v4.5
+        expected_secretRef_oc_45 = f'[map[secretRef:map[name:{intermediate_secret_name}]]]'
+
         deployment_name_pattern = self.format_pattern(self.deployment_name_pattern)
         if wait:
             start = 0
@@ -118,10 +122,11 @@ class QuarkusApplication(object):
                 if deployment_list is not None:
                     for deployment in deployment_list:
                         result = self.openshift.get_deployment_envFrom_info(deployment, self.namespace)
-                        if result == expected_secretRef_1 or result == expected_secretRef_2:
+                        if result == expected_secretRef_oc_45 or result == expected_secretRef_oc_46:
                             return deployment
                         else:
-                            print(f"\nUnexpected deployment's envFrom info: \nExpected: {expected_secretRef_1} or {expected_secretRef_2} \nbut was: {result}\n")
+                            print("\nUnexpected deployment's envFrom info: \n" +
+                                  f"Expected: {expected_secretRef_oc_45} or {expected_secretRef_oc_46} \nbut was: {result}\n")
                 else:
                     print(f"No deployment that matches {deployment_name_pattern} found.\n")
                 time.sleep(interval)
@@ -131,10 +136,11 @@ class QuarkusApplication(object):
             if deployment_list is not None:
                 for deployment in deployment_list:
                     result = self.openshift.get_deployment_envFrom_info(deployment, self.namespace)
-                    if result == expected_secretRef_1 or result == expected_secretRef_2:
+                    if result == expected_secretRef_oc_45 or result == expected_secretRef_oc_46:
                         return deployment
                     else:
-                        print(f"\nUnexpected deployment's envFrom info: \nExpected: {expected_secretRef_1} or {expected_secretRef_2} \nbut was: {result}\n")
+                        print("\nUnexpected deployment's envFrom info: \n" +
+                              f"Expected: {expected_secretRef_oc_45} or {expected_secretRef_oc_46} \nbut was: {result}\n")
             else:
                 print(f"No deployment that matches {deployment_name_pattern} found.\n")
         return None
