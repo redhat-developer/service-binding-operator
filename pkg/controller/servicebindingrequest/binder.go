@@ -347,7 +347,7 @@ func (b *binder) appendEnvVar(
 // part of the list or appended.
 func (b *binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
 	for _, env := range envList {
-		if env.SecretRef.Name == secret {
+		if env.SecretRef != nil && env.SecretRef.Name == secret {
 			b.logger.Debug("Directive 'envFrom' is already present!")
 			// secret name is already referenced
 			return envList
@@ -368,7 +368,7 @@ func (b *binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []
 func (b *binder) removeEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
 	var cleanEnvList []corev1.EnvFromSource
 	for _, env := range envList {
-		if env.SecretRef.Name != secret {
+		if env.SecretRef != nil && env.SecretRef.Name != secret {
 			cleanEnvList = append(cleanEnvList, env)
 		}
 	}
