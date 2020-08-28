@@ -182,18 +182,20 @@ func TestBinderNew(t *testing.T) {
 
 		require.NotNil(t, binder)
 		secretName := "secret"
+		configMapName := "configmap"
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
 		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
 		envFrom = append(envFrom, corev1.EnvFromSource{
 			ConfigMapRef: &corev1.ConfigMapEnvSource{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "test-configmap",
+					Name: configMapName,
 				},
 			},
 		})
 
 		list := binder.appendEnvFrom(envFrom, secretName)
 		require.Equal(t, 2, len(list))
+		require.Equal(t, configMapName, list[0].ConfigMapRef.Name)
 		require.Equal(t, secretName, list[1].SecretRef.Name)
 
 		list = binder.removeEnvFrom(envFrom, secretName)
