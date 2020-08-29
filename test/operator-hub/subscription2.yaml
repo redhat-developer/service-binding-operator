@@ -5,7 +5,7 @@ metadata:
   name: service-binding-operator
   namespace: openshift-operators
 spec:
-  channel: 'alpha'
+  channel: 'beta'
   installPlanApproval: Automatic
   name: service-binding-operator
   source: community-operators
