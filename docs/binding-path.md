@@ -3,7 +3,7 @@
 ## Containers Path
 
 If your application is using a custom resource and containers path should bind
-at a certain location, SBO provides an API to achieve that.  Here is an example
+at a custom location, SBO provides an API to achieve that.  Here is an example
 CR with containers in a custom location:
 
 ```
@@ -72,7 +72,7 @@ spec:
 ## Secret Path
 
 If your application is using a custom resource and secret path should bind at a
-certain location, SBO provides an API to achieve that.  Here is an example CR
+custom location, SBO provides an API to achieve that.  Here is an example CR
 with secret in a custom location:
 
 ```
