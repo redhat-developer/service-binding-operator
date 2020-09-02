@@ -265,6 +265,7 @@ test-unit:
 
 .PHONY: test-e2e-image
 ## Run e2e tests on operator image
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 test-e2e-image: push-image
 	$(info Running e2e test on operator image: $@)
 	$(eval NAMESPACE := test-image-$(shell </dev/urandom tr -dc 'a-z0-9' | head -c 7  ; echo))
@@ -278,6 +279,10 @@ test-e2e-image: push-image
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
+else
+test-e2e-image:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
@@ -331,6 +336,7 @@ test: test-unit test-e2e
 
 .PHONY: test-e2e-olm-ci
 ## OLM-E2E: Adds the operator as a subscription, and run e2e tests without any setup.
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
@@ -341,6 +347,10 @@ test-e2e-olm-ci:
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
+else
+test-e2e-olm-ci:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 ## -- Build Go binary and OCI image targets --
 
