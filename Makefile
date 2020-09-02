@@ -224,6 +224,9 @@ e2e-setup: e2e-cleanup e2e-create-namespace e2e-deploy-3rd-party-crds
 e2e-cleanup: get-test-namespace
 	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
+OBSOLETE_E2E_MESSAGE=WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests, \
+so they are disabled by default. If you need to run it anyway, set ENABLE_OBSOLETE_E2E=true in the environment.
+
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
 ifeq ($(ENABLE_OBSOLETE_E2E), true)
@@ -240,14 +243,18 @@ test-e2e: e2e-setup deploy-crds
 			| tee $(LOGS_DIR)/e2e/test-e2e.log
 else
 test-e2e:
-	$(info !WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests,")
-	$(info !          so they are disabled by default. If you need to run it anyway, set ENABLE_OBSOLETE_E2E=true in the environment.")
+	$(info $(OBSOLETE_E2E_MESSAGE))
 endif
 
 .PHONY: parse-test-e2e-operator-log
 ## Extract the local operator log from the logs of the last e2e tests run
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 parse-test-e2e-operator-log:
 	${HACK_DIR}/e2e-log-parser.sh ${LOGS_DIR}/e2e/test-e2e.log > ${LOGS_DIR}/e2e/local-operator.log
+else
+parse-test-e2e-operator-log:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
