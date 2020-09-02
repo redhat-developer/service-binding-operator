@@ -226,6 +226,7 @@ e2e-cleanup: get-test-namespace
 
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 test-e2e: e2e-setup deploy-crds
 	$(info Running E2E test: $@)
 	$(Q)set -o pipefail; GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
@@ -237,6 +238,11 @@ test-e2e: e2e-setup deploy-crds
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS) \
 			| tee $(LOGS_DIR)/e2e/test-e2e.log
+else
+test-e2e:
+	$(info !WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests,")
+	$(info !          so they are disabled by default. If you need to run it anyway, set ENABLE_OBSOLETE_E2E=true in the environment.")
+endif
 
 .PHONY: parse-test-e2e-operator-log
 ## Extract the local operator log from the logs of the last e2e tests run
