@@ -493,15 +493,18 @@ merge-to-master-release:
 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
 	$(Q)docker build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
 	docker push "$(OPERATOR_IMAGE_REF)"
+
+.PHONY: verify-image-using-sha256-digest
+## The image pushed to registry should be verified
+verify-image-using-sha256-digest:
 	$(eval AIR_GAP_OPERATOR_IMAGE_REF := $(shell docker inspect --format="{{index .RepoDigests 0}}" $(OPERATOR_IMAGE_REF)))
 	docker rmi "$(AIR_GAP_OPERATOR_IMAGE_REF)"
 	docker rmi "$(OPERATOR_IMAGE_REF)"
 	docker pull "$(AIR_GAP_OPERATOR_IMAGE_REF)"
 
-
 .PHONY: push-to-manifest-repo
 ## Push manifest bundle to service-binding-operator-manifest repo
-push-to-manifest-repo:
+push-to-manifest-repo: verify-image-using-sha256-digest
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
 	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=0.0.23
