@@ -225,8 +225,12 @@ e2e-setup: e2e-cleanup e2e-create-namespace e2e-deploy-3rd-party-crds
 e2e-cleanup: get-test-namespace
 	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
+OBSOLETE_E2E_MESSAGE=WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests, \
+so they are disabled by default. If you need to run it anyway, set ENABLE_OBSOLETE_E2E=true in the environment.
+
 .PHONY: test-e2e
 ## Runs the e2e tests locally from test/e2e dir
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 test-e2e: e2e-setup deploy-crds
 	$(info Running E2E test: $@)
 	$(Q)set -o pipefail; GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
@@ -238,11 +242,20 @@ test-e2e: e2e-setup deploy-crds
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS) \
 			| tee $(LOGS_DIR)/e2e/test-e2e.log
+else
+test-e2e:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 .PHONY: parse-test-e2e-operator-log
 ## Extract the local operator log from the logs of the last e2e tests run
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 parse-test-e2e-operator-log:
 	${HACK_DIR}/e2e-log-parser.sh ${LOGS_DIR}/e2e/test-e2e.log > ${LOGS_DIR}/e2e/local-operator.log
+else
+parse-test-e2e-operator-log:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
@@ -253,6 +266,7 @@ test-unit:
 
 .PHONY: test-e2e-image
 ## Run e2e tests on operator image
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 test-e2e-image: push-image
 	$(info Running e2e test on operator image: $@)
 	$(eval NAMESPACE := test-image-$(shell </dev/urandom tr -dc 'a-z0-9' | head -c 7  ; echo))
@@ -266,6 +280,10 @@ test-e2e-image: push-image
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
+else
+test-e2e-image:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
@@ -319,6 +337,7 @@ test: test-unit test-e2e
 
 .PHONY: test-e2e-olm-ci
 ## OLM-E2E: Adds the operator as a subscription, and run e2e tests without any setup.
+ifeq ($(ENABLE_OBSOLETE_E2E), true)
 test-e2e-olm-ci:
 	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
 	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
@@ -329,6 +348,10 @@ test-e2e-olm-ci:
 			--go-test-flags "-timeout=15m" \
 			--local-operator-flags "$(ZAP_FLAGS)" \
 			$(OPERATOR_SDK_EXTRA_ARGS)
+else
+test-e2e-olm-ci:
+	$(info $(OBSOLETE_E2E_MESSAGE))
+endif
 
 ## -- Build Go binary and OCI image targets --
 
