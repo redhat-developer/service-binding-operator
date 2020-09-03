@@ -104,4 +104,4 @@ Meeting Agenda is maintained [here](https://github.com/redhat-developer/service-
 
 Please file bug reports on [Github](https://github.com/redhat-developer/service-binding-operator/issues/new). For any other questions, reach out on [service-binding-support@redhat.com](https://www.redhat.com/mailman/listinfo/service-binding-support).
 
-
+Join the [service-binding-operator](https://app.slack.com/client/T09NY5SBT/C019LQYGC5C) channel in the [Kubernetes Workspace](https://slack.k8s.io/) for any discussions and collaboration with the community.
