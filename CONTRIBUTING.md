@@ -31,13 +31,10 @@ that will be useful in reproducing the bug.
 
 ### Suggesting Enhancements
 
-Enhancements and requests for new features are also tracked as
-[GitHub issues](https://github.com/redhat-developer/service-binding-operator/issues).
+Enhancements and requests for new features are also tracked as [GitHub issues](https://github.com/redhat-developer/service-binding-operator/issues) or [Enhancement Proposals](docs/proposals/README.md)
+
 As is the case with bugs, review the existing feature requests before logging
 a new request.
-
-Please describe the feature request fully and explain the benefits that will
-be derived if the feature is implemented.
 
 ### Pull Requests for Code and Documentation
 
