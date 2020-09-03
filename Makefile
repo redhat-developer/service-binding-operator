@@ -470,6 +470,10 @@ merge-to-master-release:
 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
 	$(Q)docker build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
 	docker push "$(OPERATOR_IMAGE_REF)"
+	$(eval AIR_GAP_OPERATOR_IMAGE_REF := $(shell docker inspect --format="{{index .RepoDigests 0}}" $(OPERATOR_IMAGE_REF)))
+	docker rmi "$(AIR_GAP_OPERATOR_IMAGE_REF)"
+	docker rmi "$(OPERATOR_IMAGE_REF)"
+	docker pull "$(AIR_GAP_OPERATOR_IMAGE_REF)"
 
 
 .PHONY: push-to-manifest-repo
@@ -481,7 +485,6 @@ push-to-manifest-repo:
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
 	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
-	$(eval AIR_GAP_OPERATOR_IMAGE_REF := $(shell docker inspect --format="{{index .RepoDigests 0}}" $(OPERATOR_IMAGE_REF)))
 	sed -i -e 's,REPLACE_IMAGE,$(AIR_GAP_OPERATOR_IMAGE_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,CSV_CREATION_TIMESTAMP,$(CSV_CREATION_TIMESTAMP),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
