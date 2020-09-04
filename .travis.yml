@@ -35,7 +35,6 @@ before_install:
 script:
   # Run merge-to-master-release
   - if [ "$TRAVIS_BRANCH" = "master" ]; then
-    make merge-to-master-release &&
     make push-to-manifest-repo &&
     make prepare-bundle-to-quay || exit 1;
     fi

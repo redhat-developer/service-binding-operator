@@ -496,11 +496,10 @@ merge-to-master-release:
 
 .PHONY: verify-image-using-sha256-digest
 ## The image pushed to registry should be verified
-verify-image-using-sha256-digest:
-	$(eval AIR_GAP_OPERATOR_IMAGE_REF := $(shell docker inspect --format="{{index .RepoDigests 0}}" $(OPERATOR_IMAGE_REF)))
-	docker rmi "$(AIR_GAP_OPERATOR_IMAGE_REF)"
-	docker rmi "$(OPERATOR_IMAGE_REF)"
-	docker pull "$(AIR_GAP_OPERATOR_IMAGE_REF)"
+verify-image-using-sha256-digest: merge-to-master-release
+	$(eval OPERATOR_IMAGE_DIGEST_REF := $(shell docker inspect --format="{{index .RepoDigests 0}}" $(OPERATOR_IMAGE_REF)))
+	docker rmi "$(OPERATOR_IMAGE_DIGEST_REF)" "$(OPERATOR_IMAGE_REF)"
+	docker pull "$(OPERATOR_IMAGE_DIGEST_REF)"
 
 .PHONY: push-to-manifest-repo
 ## Push manifest bundle to service-binding-operator-manifest repo
@@ -511,7 +510,7 @@ push-to-manifest-repo: verify-image-using-sha256-digest
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
 	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
-	sed -i -e 's,REPLACE_IMAGE,$(AIR_GAP_OPERATOR_IMAGE_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
+	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_DIGEST_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,CSV_CREATION_TIMESTAMP,$(CSV_CREATION_TIMESTAMP),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
 	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
