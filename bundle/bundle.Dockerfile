@@ -7,5 +7,5 @@ LABEL operators.operatorframework.io.bundle.package.v1=service-binding-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=4.6
 LABEL operators.operatorframework.io.bundle.channel.default.v1=
 
-COPY deploy/olm-catalog/service-binding-operator/manifests /manifests/
-COPY deploy/olm-catalog/service-binding-operator/metadata /metadata/
+COPY manifests /manifests/
+COPY metadata /metadata/
