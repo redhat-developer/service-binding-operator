@@ -334,3 +334,8 @@ spec:
             return lst
         print('Resource list is empty under namespace - {}'.format(namespace))
         return None
+
+    def oc_apply_yaml_file(self, yaml):
+        (output, exit_code) = self.cmd.run("oc apply -f " + yaml)
+        assert exit_code == 0, "Applying yaml file failed as the exit code is not 0"
+        return output

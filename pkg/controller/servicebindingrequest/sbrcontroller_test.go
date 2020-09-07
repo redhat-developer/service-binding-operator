@@ -94,25 +94,77 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 
 	// update verifies whether only the accepted manifests trigger the reconciliation process
 	t.Run("update", func(t *testing.T) {
-		deploymentA := &appsv1.Deployment{}
-		configMapA := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Generation: 1,
+		deploymentA := &appsv1.Deployment{
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "demo",
+					},
+				},
+			},
+			Status: appsv1.DeploymentStatus{
+				AvailableReplicas: 2,
 			},
 		}
-		configMapB := &corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{
-				Generation: 2,
+		deploymentB := &appsv1.Deployment{
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"app": "demo",
+					},
+				},
+			},
+			Status: appsv1.DeploymentStatus{
+				AvailableReplicas: 3,
+			},
+		}
+		deploymentC := &appsv1.Deployment{
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"new-app": "demo",
+					},
+				},
+			},
+			Status: appsv1.DeploymentStatus{
+				AvailableReplicas: 3,
 			},
 		}
 		secretA := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Generation: 1,
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
+			},
+			Data: map[string][]byte{
+				"user": []byte("username"),
 			},
 		}
+
 		secretB := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Generation: 2,
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: "v1",
+			},
+			Data: map[string][]byte{
+				"password": []byte("password"),
+			},
+		}
+		configMapA := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
+			},
+			Data: map[string]string{
+				"CP": "ConnectionPort",
+			},
+		}
+		configMapB := &corev1.ConfigMap{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "ConfigMap",
+				APIVersion: "v1",
+			},
+			Data: map[string]string{
+				"Host": "Hostname",
 			},
 		}
 
@@ -121,55 +173,53 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 			wanted bool
 			a      runtime.Object
 			b      runtime.Object
-			metaA  metav1.Object
-			metaB  metav1.Object
 		}{
 			{
-				name:   "non supported update",
+				name:   "Predicate evaluation false: non supported update as deployment spec is same",
 				wanted: false,
 				a:      deploymentA,
 				b:      deploymentA,
-				metaA:  deploymentA.GetObjectMeta(),
-				metaB:  deploymentA.GetObjectMeta(),
 			},
 			{
-				name:   "supported update no changes",
+				name:   "Predicate evaluation false: non supported update as there is no change in the ConfigMap",
 				wanted: false,
 				a:      configMapA,
 				b:      configMapA,
-				metaA:  configMapA.GetObjectMeta(),
-				metaB:  configMapA.GetObjectMeta(),
 			},
 			{
-				name:   "supported update no changes",
+				name:   "Predicate evaluation false: non supported update there is no change in the Secret",
 				wanted: false,
 				a:      secretA,
 				b:      secretA,
-				metaA:  secretA.GetObjectMeta(),
-				metaB:  secretA.GetObjectMeta(),
 			},
 			{
-				name:   "supported update generation changed",
+				name:   "Predicate evaluation true: supported update as there is an update in the ConfigMap",
 				wanted: true,
 				a:      configMapA,
 				b:      configMapB,
-				metaA:  configMapA.GetObjectMeta(),
-				metaB:  configMapB.GetObjectMeta(),
 			},
 			{
-				name:   "supported update generation changed",
+				name:   "Predicate evaluation true: supported update as there is an update in the Secret",
 				wanted: true,
 				a:      secretA,
 				b:      secretB,
-				metaA:  secretA.GetObjectMeta(),
-				metaB:  secretB.GetObjectMeta(),
+			},
+			{
+				name:   "Predicate evaluation true: supported update as the deployment status changed",
+				wanted: true,
+				a:      deploymentA,
+				b:      deploymentB,
+			},
+			{
+				name:   "Predicate evaluation true: supported update as the deployment spec changed",
+				wanted: true,
+				a:      deploymentB,
+				b:      deploymentC,
 			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				e := event.UpdateEvent{
-					MetaOld:   tt.metaA,
-					MetaNew:   tt.metaB,
 					ObjectOld: tt.a,
 					ObjectNew: tt.b,
 				}

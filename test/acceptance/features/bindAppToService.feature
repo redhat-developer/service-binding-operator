@@ -217,3 +217,55 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-empty-app" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding Request "binding-request-empty-app" should be changed to "EmptyApplicationSelector"
 
+
+    Scenario: Backend Service status update gets propagated to the binding secret
+        Given OLM Operator "backend" is running
+        * Backend CR "backend-demo" is applied
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo
+                annotations:
+                    servicebindingoperator.redhat.io/status.ready: 'binding:env:attribute'
+                    servicebindingoperator.redhat.io/spec.host: 'binding:env:attribute'
+            spec:
+                host: example.common
+            """
+        * Service Binding request is applied
+            """
+            apiVersion: apps.openshift.io/v1alpha1
+            kind: ServiceBindingRequest
+            metadata:
+                name: binding-request-backend
+            spec:
+                backingServiceSelector:
+                    group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    resourceRef: backend-demo
+                    id: SBR
+                customEnvVar:
+                  - name: CustomReady
+                    value: '{{ .SBR.status.ready }}'
+                  - name: CustomHost
+                    value: '{{ .SBR.spec.host }}'
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-backend" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-backend" should be changed to "False"
+        Then Secret "binding-request-backend" contains "CustomReady" key with value "<no value>"
+        When Backend status in "backend-demo" is updated
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo
+                annotations:
+                    servicebindingoperator.redhat.io/status.ready: 'binding:env:attribute'
+                    servicebindingoperator.redhat.io/spec.host: 'binding:env:attribute'
+            spec:
+                host: example.common
+            status:
+                ready: true
+            """
+        Then Secret "binding-request-backend" contains "CustomReady" key with value "true"
