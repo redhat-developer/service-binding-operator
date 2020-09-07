@@ -29,10 +29,11 @@ Feature: Bind an application to a service
                     kind: Database
                     resourceRef: db-demo-a-d-s
             """
-        Then application should be re-deployed
-        And application should be connected to the DB "db-demo-a-d-s"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-d-s" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-d-s" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-a-d-s" should be changed to "True"
+        And application should be re-deployed
+        And application should be connected to the DB "db-demo-a-d-s"
+
 
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, Service Binding Request and DB
         Given Imported Nodejs application "nodejs-rest-http-crud-a-s-d" is running
@@ -55,10 +56,11 @@ Feature: Bind an application to a service
                     resourceRef: db-demo-a-s-d
             """
         When DB "db-demo-a-s-d" is running
-        Then application should be re-deployed
-        And application should be connected to the DB "db-demo-a-s-d"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-s-d" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-s-d" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-a-s-d" should be changed to "True"
+        And application should be re-deployed
+        And application should be connected to the DB "db-demo-a-s-d"
+
 
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: DB, Application and Service Binding Request
         Given DB "db-demo-d-a-s" is running
@@ -81,10 +83,11 @@ Feature: Bind an application to a service
                     kind: Database
                     resourceRef: db-demo-d-a-s
             """
-        Then application should be re-deployed
-        And application should be connected to the DB "db-demo-d-a-s"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-d-a-s" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-d-a-s" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-d-a-s" should be changed to "True"
+        And application should be re-deployed
+        And application should be connected to the DB "db-demo-d-a-s"
+
 
     # Currently disabled as not supported by SBO
     @disabled
@@ -109,10 +112,11 @@ Feature: Bind an application to a service
                     resourceRef: db-demo-d-s-a
             """
         When Imported Nodejs application "nodejs-rest-http-crud-d-s-a" is running
-        Then application should be re-deployed
-        And application should be connected to the DB "db-demo-d-s-a"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-d-s-a" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-d-s-a" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-d-s-a" should be changed to "True"
+        And application should be re-deployed
+        And application should be connected to the DB "db-demo-d-s-a"
+
 
     # Currently disabled as not supported by SBO
     @disabled
@@ -137,10 +141,10 @@ Feature: Bind an application to a service
             """
         * Imported Nodejs application "nodejs-rest-http-crud-s-a-d" is running
         When DB "db-demo-s-a-d" is running
-        Then application should be re-deployed
-        And application should be connected to the DB "db-demo-s-a-d"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-s-a-d" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-s-a-d" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-s-a-d" should be changed to "True"
+        And application should be re-deployed
+        And application should be connected to the DB "db-demo-s-a-d"
 
     # Currently disabled as not supported by SBO
     @disabled
@@ -165,10 +169,11 @@ Feature: Bind an application to a service
             """
         * DB "db-demo-s-d-a" is running
         When Imported Nodejs application "nodejs-rest-http-crud-s-d-a" is running
-        Then application should be re-deployed
-        And application should be connected to the DB "db-demo-s-d-a"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-s-d-a" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-s-d-a" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-s-d-a" should be changed to "True"
+        And application should be re-deployed
+        And application should be connected to the DB "db-demo-s-d-a"
+
 
     @negative
     Scenario: Attempt to bind a non existing application to PostgreSQL database

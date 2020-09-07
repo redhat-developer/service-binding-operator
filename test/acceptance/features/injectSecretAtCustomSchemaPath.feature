@@ -72,9 +72,9 @@ Feature: Insert service binding to a custom location in application resource
                     id: zzz
                     envVarPrefix: qiye
             """
-        Then Secret "binding-request-csp" has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-csp" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-csp" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-csp" should be changed to "True"
+        And Secret "binding-request-csp" has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
 
     Scenario: Specify secret's path in service binding request
         Given DB "db-demo-ssp" is running
@@ -111,6 +111,6 @@ Feature: Insert service binding to a custom location in application resource
                     id: zzz
                     envVarPrefix: qiye
             """
-        Then Secret "binding-request-ssp" has been injected in to CR "demo-appconfig-ssp" of kind "AppConfig" at path "{.spec.spec.secret}"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-ssp" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-ssp" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-ssp" should be changed to "True"
+        And Secret "binding-request-ssp" has been injected in to CR "demo-appconfig-ssp" of kind "AppConfig" at path "{.spec.spec.secret}"

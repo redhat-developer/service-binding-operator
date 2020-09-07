@@ -48,8 +48,8 @@ Feature: Bind a single application to multiple services
                     kind: Database
                     resourceRef: db-demo-2
             """
-        Then "nodejs-app" deployment must contain SBR name "binding-request-1" and "binding-request-2"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-1" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-2" should be changed to "True"
+        And "nodejs-app" deployment must contain SBR name "binding-request-1" and "binding-request-2"

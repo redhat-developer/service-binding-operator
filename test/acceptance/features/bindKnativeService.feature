@@ -39,7 +39,7 @@ Feature: Bind knative service to a service
                 - name: DB_PASSWORD
                   value: "{{ .knav.status.dbCredentials.password }}"
       """
-    Then deployment must contain intermediate secret "binding-request-knative"
-    Then application should be connected to the DB "db-demo-knative"
-    And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-knative" should be changed to "True"
+    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-knative" should be changed to "True"
     And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-knative" should be changed to "True"
+    And deployment must contain intermediate secret "binding-request-knative"
+    And application should be connected to the DB "db-demo-knative"
