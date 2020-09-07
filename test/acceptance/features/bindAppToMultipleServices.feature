@@ -12,7 +12,7 @@ Feature: Bind a single application to multiple services
         Given Imported Nodejs application "nodejs-app" is running
         * DB "db-demo-1" is running
         * DB "db-demo-2" is running
-        * Service Binding is applied to connect the database and the application
+        * Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -30,7 +30,7 @@ Feature: Bind a single application to multiple services
                     kind: Database
                     name: db-demo-1
             """
-        When Service Binding is applied to connect the database and the application
+        When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding

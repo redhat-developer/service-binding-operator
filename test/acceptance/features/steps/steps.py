@@ -144,7 +144,7 @@ def db_instance_is_running(context, db_name):
 
 
 # STEP
-sbr_is_applied_step = u'Service Binding is applied to connect the database and the application'
+sbr_is_applied_step = u'Service Binding is applied'
 
 
 @given(sbr_is_applied_step)
@@ -294,24 +294,6 @@ def operator_manifest_installed(context, backend_service):
     _ = openshift.oc_apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/", backend_service + ".operator.manifest.yaml"))
 
 
-# STEP
-@given(u'Backend CR "{cr_name}" is applied')
-def create_backend_cr(context, cr_name):
-    create_cr(context, cr_name)
-
-
-# STEP
-@given(u'Service Binding request is applied')
-def create_sbr(context):
-    sbr_is_applied(context)
-
-
-# STEP
-@when(u'Backend status in "{backend_name}" is updated')
-def backend_status_updated(context, backend_name):
-    create_cr(context, backend_name)
-
-
 @parse.with_pattern(r'.*')
 def parse_nullable_string(text):
     return text
@@ -370,23 +352,19 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 
 
 # STEP
-@given(u'The CRD "{crd_name}" is present')
-def create_crd(context, crd_name):
+@given(u'Backend service CSV is installed')
+@given(u'The Custom Resource Definition is present')
+@given(u'The Custom Resource is present')
+@when(u'The Custom Resource is present')
+@given(u'The ConfigMap is present')
+@given(u'The Secret is present')
+def apply_yaml(context):
     openshift = Openshift()
     yaml = context.text
+    metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', yaml).group(0))
     output = openshift.oc_apply(yaml)
-    result = re.search(rf'.*customresourcedefinition.apiextensions.k8s.io/{crd_name}.*(created|unchanged)', output)
-    result | should_not.be_none.desc("CRD {crd_name} Created")
-
-
-# STEP
-@given(u'The application CR "{cr_name}" is present')
-def create_cr(context, cr_name):
-    openshift = Openshift()
-    yaml = context.text
-    output = openshift.oc_apply(yaml)
-    result = re.search(rf'.*{cr_name}.*(created|unchanged|configured)', output)
-    result | should_not.be_none.desc("CR {cr_name} Created/Updated")
+    result = re.search(rf'.*{metadata_name}.*(created|unchanged|configured)', output)
+    result | should_not.be_none.desc("CR {metadata_name} Created/Updated")
 
 
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
