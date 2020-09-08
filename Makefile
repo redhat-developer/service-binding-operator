@@ -222,6 +222,7 @@ e2e-setup: e2e-cleanup e2e-create-namespace e2e-deploy-3rd-party-crds
 
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
+	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/e2e-cleanup.sh
 	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
 OBSOLETE_E2E_MESSAGE=WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests, \
@@ -437,12 +438,7 @@ deploy-crds:
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
 deploy-clean:
-	$(Q)-kubectl delete -f deploy/crds/apps_v1alpha1_servicebindingrequest_cr.yaml
-	$(Q)-kubectl delete -f deploy/crds/apps.openshift.io_servicebindingrequests_crd.yaml
-	$(Q)-kubectl delete -f deploy/operator.yaml
-	$(Q)-kubectl delete -f deploy/role_binding.yaml
-	$(Q)-kubectl delete -f deploy/role.yaml
-	$(Q)-kubectl delete -f deploy/service_account.yaml
+	$(Q)-$(HACK_DIR)/deploy-clean.sh
 
 .PHONY: deploy
 ## Deploy:
