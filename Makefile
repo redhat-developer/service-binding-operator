@@ -162,6 +162,14 @@ TEST_ACCEPTANCE_START_SBO ?= local
 TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
 TEST_ACCEPTANCE_ARTIFACTS ?= /tmp/artifacts
 
+TEST_ACCEPTANCE_TAGS ?=
+
+ifdef TEST_ACCEPTANCE_TAGS
+TEST_ACCEPTANCE_TAGS_ARG := --tags="~@disabled" --tags="$(TEST_ACCEPTANCE_TAGS)"
+else
+TEST_ACCEPTANCE_TAGS_ARG := --tags="~@disabled"
+endif
+
 ## -- Static code analysis (lint) targets --
 
 .PHONY: lint
@@ -321,7 +329,7 @@ test-acceptance: test-acceptance-setup
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr --tags="~@disabled" test/acceptance/features
+		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) test/acceptance/features
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
 
 .PHONY: test-acceptance-artifacts
