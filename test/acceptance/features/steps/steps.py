@@ -4,6 +4,7 @@
 # ----------------------------------------------------------------------------
 import os
 import re
+import base64
 
 from behave import given, then, when
 from pyshould import should, should_not
@@ -284,6 +285,53 @@ def then_envFrom_contains_intermediate_secret_name(context, intermediate_secret_
         intermediate_secret_name, wait=True, timeout=120) is not None, f"There is no deployment with intermediate secret {intermediate_secret_name}"
 
 
+# STEP
+@given(u'OLM Operator "{backend_service}" is running')
+def operator_manifest_installed(context, backend_service):
+    openshift = Openshift()
+    _ = openshift.oc_apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/", backend_service + ".operator.manifest.yaml"))
+
+
+# STEP
+@given(u'Backend CR "{cr_name}" is applied')
+def create_backend_cr(context, cr_name):
+    create_cr(context, cr_name)
+
+
+# STEP
+@given(u'Service Binding request is applied')
+def create_sbr(context):
+    sbr_is_applied(context)
+
+
+# STEP
+@when(u'Backend status in "{backend_name}" is updated')
+def backend_status_updated(context, backend_name):
+    create_cr(context, backend_name)
+
+
+# STEP
+@then(u'Secret "{secret_name}" contains "{secret_key}" key with value "{secret_value}"')
+def check_secret_key_value(context, secret_name, secret_key, secret_value):
+    openshift = Openshift()
+    json_path = f'{{.data.{secret_key}}}'
+    output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
+    timeout = 180
+    interval = 5
+    attempts = timeout/interval
+    while True:
+        actual_secret_value = base64.b64decode(output).decode('ascii')
+        if (secret_value == actual_secret_value) or attempts <= 0:
+            break
+        else:
+            attempts -= 1
+            time.sleep(interval)
+            output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
+    result = base64.decodebytes(bytes(output, 'utf-8'))
+    result | should.be_equal_to(bytes(secret_value, 'utf-8'))
+
+
+# STEP
 @given(u'The CRD "{crd_name}" is present')
 def create_crd(context, crd_name):
     openshift = Openshift()
@@ -299,8 +347,8 @@ def create_cr(context, cr_name):
     openshift = Openshift()
     yaml = context.text
     output = openshift.oc_apply(yaml)
-    result = re.search(rf'.*{cr_name}.*(created|unchanged)', output)
-    result | should_not.be_none.desc("CRD {cr_name} Created")
+    result = re.search(rf'.*{cr_name}.*(created|unchanged|configured)', output)
+    result | should_not.be_none.desc("CR {cr_name} Created/Updated")
 
 
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')

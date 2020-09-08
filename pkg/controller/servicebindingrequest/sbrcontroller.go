@@ -113,18 +113,28 @@ func updateFunc(logger *log.Log) func(updateEvent event.UpdateEvent) bool {
 		isConfigMap := isOfKind(e.ObjectNew, "ConfigMap")
 
 		if isSecret || isConfigMap {
-			dataFieldsAreEqual, err := compareObjectFields(e.ObjectNew, e.ObjectOld, "data")
+			dataFieldsAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "data")
 			if err != nil {
 				logger.Error(err, "error comparing object fields: %s", err.Error())
 				return false
 			}
-
-			logger.Debug("Predicate evaluated", "dataFieldsAreEqual", dataFieldsAreEqual)
+			logger.Debug("Predicate evaluated for Secret/ConfigMap", "dataFieldsAreEqual", dataFieldsAreEqual)
 			return !dataFieldsAreEqual
 		}
+		specsAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "spec")
+		if err != nil {
+			logger.Error(err, "error comparing object's spec fields: %s", err.Error())
+			return false
+		}
+		statusAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "status")
+		if err != nil {
+			logger.Error(err, "error comparing object's status fields: %s", err.Error())
+			return false
+		}
+		shouldReconcile := !specsAreEqual || !statusAreEqual
+		logger.Debug("Resource update event received", "GVK", e.ObjectNew.GetObjectKind(), "spec changed", !specsAreEqual, "status changed", !statusAreEqual, "should reconcile", shouldReconcile)
 
-		// ignore updates to CR status in which case metadata.Generation does not change
-		return e.MetaOld.GetGeneration() != e.MetaNew.GetGeneration()
+		return shouldReconcile
 	}
 }
 
