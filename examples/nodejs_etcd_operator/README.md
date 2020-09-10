@@ -2,14 +2,20 @@
 
 1. Install Etcd operator using operator hub,
    follow https://operatorhub.io/operator/etcd
+   you can specify the following while installing etcd operator:
+   catalog source = "community-operators"
+   channel = "clusterwide-alpha"
 
 2. Create an Etcd cluster.
  ```yaml
  apiVersion: "etcd.database.coreos.com/v1beta2"
  kind: "EtcdCluster"
  metadata:
+  annotations:
+   etcd.database.coreos.com/scope: clusterwide
   name: "etcd-cluster-example"
  spec:
+  repository: quay.io/coreos/etcd
   size: 3
   version: "3.2.13"
  ```
