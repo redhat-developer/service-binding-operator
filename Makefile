@@ -231,7 +231,6 @@ e2e-setup: e2e-cleanup e2e-create-namespace e2e-deploy-3rd-party-crds
 .PHONY: e2e-cleanup
 e2e-cleanup: get-test-namespace
 	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/e2e-cleanup.sh
-	$(Q)-kubectl delete namespace $(TEST_NAMESPACE) --timeout=45s --wait
 
 OBSOLETE_E2E_MESSAGE=WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests, \
 so they are disabled by default. If you need to run it anyway, set ENABLE_OBSOLETE_E2E=true in the environment.
