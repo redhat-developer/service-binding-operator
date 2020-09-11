@@ -274,3 +274,34 @@ Feature: Bind an application to a service
                 ready: true
             """
         Then Secret "binding-request-backend" contains "CustomReady" key with value "true"
+
+    Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
+        Given Imported Nodejs application "nodejs-rest-http-crud-a-d-c" is running
+        * DB "db-demo-a-d-c" is running
+        When Service Binding Request is applied to connect the database and the application
+            """
+            apiVersion: apps.openshift.io/v1alpha1
+            kind: ServiceBindingRequest
+            metadata:
+                name: binding-request-a-d-c
+            spec:
+                envVarPrefix: REDHAT
+                applicationSelector:
+                    resourceRef: nodejs-rest-http-crud-a-d-c
+                    group: apps
+                    version: v1
+                    resource: deployments
+                backingServiceSelector:
+                    group: postgresql.baiju.dev
+                    version: v1alpha1
+                    kind: Database
+                    resourceRef: db-demo-a-d-c
+                    id: postgresDB
+                    envVarPrefix: DEVTOOLS
+                customEnvVar:
+                    - name: SOME_KEY
+                      value: 'SOME_VALUE:{{ .postgresDB.status.dbConnectionPort }}:{{ .postgresDB.status.dbName }}'
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-a-d-c" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-a-d-c" should be changed to "True"
+        And Secret "binding-request-a-d-c" contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"

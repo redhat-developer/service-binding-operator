@@ -63,7 +63,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 				{Name: "SAME_NAMESPACE", Value: toIndexTemplate(cr, "metadata.name")},
 			},
 			expected: map[string][]byte{
-				"SERVICE_BINDING_SAME_NAMESPACE": []byte(cr.GetName()),
+				"SAME_NAMESPACE": []byte(cr.GetName()),
 			},
 		},
 		{
@@ -79,7 +79,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 				},
 			},
 			expected: map[string][]byte{
-				"SERVICE_BINDING_DIRECT_ACCESS": []byte(cr.GetName()),
+				"DIRECT_ACCESS": []byte(cr.GetName()),
 			},
 		},
 		{
@@ -98,7 +98,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 				},
 			},
 			expected: map[string][]byte{
-				"SERVICE_BINDING_ID_ACCESS": []byte(cr.GetName()),
+				"ID_ACCESS": []byte(cr.GetName()),
 			},
 		},
 		{
@@ -116,7 +116,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 				},
 			},
 			expected: map[string][]byte{
-				"SERVICE_BINDING_ID_ACCESS": []byte("<no value>"),
+				"ID_ACCESS": []byte("<no value>"),
 			},
 		},
 	}

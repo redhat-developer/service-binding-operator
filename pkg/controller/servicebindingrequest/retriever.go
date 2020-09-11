@@ -140,12 +140,6 @@ func (r *retriever) ProcessServiceContexts(
 	}
 
 	for k, v := range customEnvVars {
-		prefix := []string{}
-		if len(globalEnvVarPrefix) > 0 {
-			prefix = append(prefix, globalEnvVarPrefix)
-		}
-		prefix = append(prefix, k)
-		k = strings.Join(prefix, "_")
 		envVars[k] = []byte(v.(string))
 	}
 
