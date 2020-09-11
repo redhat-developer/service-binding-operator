@@ -311,6 +311,10 @@ ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup:
 	$(Q)echo "Starting local SBO instance"
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" ./hack/deploy-sbo-local.sh))
+else ifeq ($(TEST_ACCEPTANCE_START_SBO), remote)
+test-acceptance-setup:
+	$(Q)echo "Using remote SBO instance running in '$(TEST_NAMESPACE)' namespace"
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(TEST_NAMESPACE))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
@@ -329,7 +333,9 @@ test-acceptance: test-acceptance-setup
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
 		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) test/acceptance/features
+ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
+endif
 
 .PHONY: test-acceptance-artifacts
 ## Collect artifacts from acceptance tests to be archived in CI
