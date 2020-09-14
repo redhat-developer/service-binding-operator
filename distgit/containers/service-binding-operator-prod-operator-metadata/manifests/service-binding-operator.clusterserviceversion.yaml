@@ -197,5 +197,5 @@ spec:
     name: Openshift Application Services
   maturity: alpha
   provider:
-    name: Red Hat, Inc.
+    name: Red Hat
   version: 0.3.0

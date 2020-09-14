@@ -1,8 +1,8 @@
 git:
 - branch: master
-  commit: 87d83e6e904ebf1cbc29f985b956887f026de0c5
+  commit: 38d4500263f1a9e072b96fde32ed08681b89c780
   dest_formats:
     branch:
       gen_source_repos: true
     files: {}
-  url: https://github.com/bamachrn/service-binding-operator
+  url: https://github.com/redhat-developer/service-binding-operator
