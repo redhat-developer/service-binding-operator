@@ -9,5 +9,5 @@ function prepare_venv() {
     for req in $(find . -name 'requirements.txt'); do
         python3 "$(which pip3)" install -q -r $req;
     done
-    python3 "$(which pip3)" install -q pydocstyle pyflakes vulture radon
+    python3 "$(which pip3)" install -q -r $(dirname $0)/requirements.txt
 }

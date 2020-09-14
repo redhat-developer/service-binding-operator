@@ -1,3 +1,3 @@
-behave
-pyshould
-requests
+behave==1.2.6
+pyshould==0.7.1
+requests==2.24.0
