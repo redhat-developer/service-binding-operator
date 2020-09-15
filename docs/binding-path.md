@@ -31,7 +31,7 @@ metadata:
 spec:
     envVarPrefix: qiye111
     applicationSelector:
-        resourceRef: example-appconfig
+        name: example-appconfig
         group: stable.example.com
         version: v1
         resource: appconfigs
@@ -41,7 +41,7 @@ spec:
       - group: postgresql.baiju.dev
         version: v1alpha1
         kind: Database
-        resourceRef: example-db
+        name: example-db
         id: zzz
         envVarPrefix: qiye
 ```
@@ -97,7 +97,7 @@ metadata:
 spec:
     envVarPrefix: qiye111
     applicationSelector:
-        resourceRef: example-appconfig
+        name: example-appconfig
         group: stable.example.com
         version: v1
         resource: appconfigs
@@ -107,7 +107,7 @@ spec:
       - group: postgresql.baiju.dev
         version: v1alpha1
         kind: Database
-        resourceRef: example-db
+        name: example-db
         id: zzz
         envVarPrefix: qiye
 ```

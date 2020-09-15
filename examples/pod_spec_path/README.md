@@ -1,6 +1,6 @@
 # Testing PodSpec path
 
-Based on the note by @qibobo 
+Based on the note by @qibobo
 
 Create the application CRD:
 
@@ -81,17 +81,17 @@ metadata:
 spec:
   envVarPrefix: qiye111
   applicationSelector:
-    resourceRef: demo-appconfig
+    name: demo-appconfig
     group: stable.example.com
     version: v1
-    resource: appconfigs 
+    resource: appconfigs
     bindingPath:
       containersPath: spec.spec.containers
   backingServiceSelectors:
     group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
-    resourceRef: db-demo
+    name: db-demo
     id: zzz
     envVarPrefix: qiye
 ```

@@ -41,7 +41,7 @@ Alternatively, you can perform the same task manually using the following comman
 make install-service-binding-operator-community
 ```
 
-This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
 ##### :bulb: Latest `master` version of the operator
 
@@ -177,46 +177,46 @@ make create-backing-db-instance
 
 Now, the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
 
-Create the following `ServiceBindingRequest`:
+Create the following `ServiceBinding`:
 
 ``` shell
 cat <<EOS |kubectl apply -f -
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: binding-request
   namespace: service-binding-demo
 spec:
-  applicationSelector:
-    resourceRef: nodejs-rest-http-crud
+  application:
+    name: nodejs-rest-http-crud
     group: apps
     version: v1
     resource: deployments
-  backingServiceSelector:
-    group: postgresql.baiju.dev
+  services:
+  - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
-    resourceRef: db-demo
+    name: db-demo
 EOS
 ```
 
 Alternatively, you can perform the same task with this make command:
 
 ``` shell
-make create-service-binding-request
+make create-service-binding
 ```
 
 There are 2 parts in the request:
 
-* `applicationSelector` - used to search for the application based on the resourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment`.
-* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
+* `application` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment`.
+* `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
 
 Once the new version is up, go to the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
+When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
 
 ``` yaml
 spec:
@@ -228,9 +228,9 @@ spec:
               name: binding-request
 ```
 
-#### ServiceBindingRequestStatus
+#### ServiceBindingStatus
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info [here](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status).
+`ServiceBindingStatus` depicts the status of the Service Binding operator. More info [here](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status).
 
 | Field | Description |
 |-------|-------------|

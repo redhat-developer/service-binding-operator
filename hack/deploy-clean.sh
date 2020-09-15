@@ -7,7 +7,7 @@ $HACK_DIR/remove-sbr-finalizers.sh
 
 # Delete deployed resources
 RES_FILES=(
-        crds/apps.openshift.io_servicebindingrequests_crd.yaml
+        crds/operators.coreos.com_servicebindings_crd.yaml
         operator.yaml
         role_binding.yaml
         role.yaml

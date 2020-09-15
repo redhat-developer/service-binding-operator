@@ -148,6 +148,7 @@ spec:
 
     def oc_apply(self, yaml):
         (output, exit_code) = self.cmd.run("oc apply -f -", yaml)
+        print(output)
         return output
 
     def create_catalog_source(self, name, catalog_image):

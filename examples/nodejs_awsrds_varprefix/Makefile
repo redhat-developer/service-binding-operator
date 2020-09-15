@@ -38,12 +38,12 @@ deploy-mydb:
 set-labels-on-nodejs-app:
 	${Q}oc patch dc nodejs-app -p '{"metadata": {"labels": {"connects-to": "postgres", "environment": "nodejs"}}}'
 
-.PHONY: create-service-binding-request-shell-app
-## Create the Service Binding Request for the shell app
-create-service-binding-request-shell-app:
-	${Q}oc apply -f service-binding-request.shell-app.yaml
+.PHONY: create-service-binding-shell-app
+## Create the Service Binding for the shell app
+create-service-binding-shell-app:
+	${Q}oc apply -f service-binding.shell-app.yaml
 
-.PHONY: create-service-binding-request-nodejs-app
-## Create the Service Binding Request for the NodeJS app
-create-service-binding-request-nodejs-app:
-	${Q}oc apply -f service-binding-request.nodejs-app.yaml
+.PHONY: create-service-binding-nodejs-app
+## Create the Service Binding for the NodeJS app
+create-service-binding-nodejs-app:
+	${Q}oc apply -f service-binding.nodejs-app.yaml

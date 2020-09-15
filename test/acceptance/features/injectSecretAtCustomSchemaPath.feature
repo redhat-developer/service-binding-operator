@@ -49,31 +49,31 @@ Feature: Insert service binding to a custom location in application resource
                       ports:
                       - containerPort: 8090
             """
-        When Service Binding Request is applied to connect the database and the application
+        When Service Binding is applied to connect the database and the application
             """
-            apiVersion: apps.openshift.io/v1alpha1
-            kind: ServiceBindingRequest
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
             metadata:
                 name: binding-request-csp
             spec:
                 envVarPrefix: qiye111
-                applicationSelector:
-                    resourceRef: demo-appconfig-csp
+                application:
+                    name: demo-appconfig-csp
                     group: stable.example.com
                     version: v1
                     resource: appconfigs
                     bindingPath:
                         containersPath: spec.spec.containers
-                backingServiceSelectors:
+                services:
                   - group: postgresql.baiju.dev
                     version: v1alpha1
                     kind: Database
-                    resourceRef: db-demo-csp
+                    name: db-demo-csp
                     id: zzz
                     envVarPrefix: qiye
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-csp" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-csp" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-csp" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-csp" should be changed to "True"
         And Secret "binding-request-csp" has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
 
     Scenario: Specify secret's path in service binding request
@@ -88,29 +88,29 @@ Feature: Insert service binding to a custom location in application resource
                 spec:
                     secret: some-value
             """
-        When Service Binding Request is applied to connect the database and the application
+        When Service Binding is applied to connect the database and the application
             """
-            apiVersion: apps.openshift.io/v1alpha1
-            kind: ServiceBindingRequest
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
             metadata:
                 name: binding-request-ssp
             spec:
                 envVarPrefix: qiye111
-                applicationSelector:
-                    resourceRef: demo-appconfig-ssp
+                application:
+                    name: demo-appconfig-ssp
                     group: stable.example.com
                     version: v1
                     resource: appconfigs
                     bindingPath:
                         secretPath: spec.spec.secret
-                backingServiceSelectors:
+                services:
                   - group: postgresql.baiju.dev
                     version: v1alpha1
                     kind: Database
-                    resourceRef: db-demo-ssp
+                    name: db-demo-ssp
                     id: zzz
                     envVarPrefix: qiye
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-ssp" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-ssp" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-ssp" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-ssp" should be changed to "True"
         And Secret "binding-request-ssp" has been injected in to CR "demo-appconfig-ssp" of kind "AppConfig" at path "{.spec.spec.secret}"

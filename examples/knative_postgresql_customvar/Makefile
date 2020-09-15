@@ -23,10 +23,10 @@ install-all: install-all-operators install-knative-serving install-quarkus-nativ
 set-labels-on-knative-app:
 	${Q}oc label services.serving.knative.dev knative-app connects-to=postgres environment=demo --overwrite
 
-.PHONY: create-service-binding-request
-## Create the Service Binding Request
-create-service-binding-request:
-	${Q}oc apply -f service-binding-request.yaml
+.PHONY: create-service-binding
+## Create the Service Binding
+create-service-binding:
+	${Q}oc apply -f service-binding.yaml
 
 .PHONY: install-serverless-ui
 ## Create the knative namespace, install knative serving

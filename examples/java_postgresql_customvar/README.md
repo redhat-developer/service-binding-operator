@@ -41,7 +41,7 @@ Alternatively, you can perform the same task manually using the following comman
 make install-service-binding-operator-community
 ```
 
-This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
 ##### :bulb: Latest `master` version of the operator
 
@@ -109,13 +109,13 @@ This makes the `Database` custom resource available, that the application develo
 
 ### Update the Database CRD
 
-Annotations are created to describe the values that should be collected and made available by the Service Binding Request's intermediary secret.
- 
+Annotations are created to describe the values that should be collected and made available by the Service Binding's intermediary secret.
+
 
 ```
 oc get crd databases.postgresql.baiju.dev -o yaml
 ```
- 
+
 The database CRD contains the list of annotations:
 
 ```
@@ -135,7 +135,7 @@ metadata:
 
 ```
 
-We can add more annotations to collect values from different kinds of data structures.  
+We can add more annotations to collect values from different kinds of data structures.
 
 To edit the CRD run the command:
 
@@ -151,7 +151,7 @@ servicebindingoperator.redhat.io/spec.userLabels.archive: binding:env:attribute
 servicebindingoperator.redhat.io/spec.secretName: binding:env:attribute
 ```
 
-These annotations refer to data which can be either a number, string, boolean, or an object or a slice of arbitrary values. In the case of this example, 
+These annotations refer to data which can be either a number, string, boolean, or an object or a slice of arbitrary values. In the case of this example,
 - `spec.tags` represents a sequence
 - `spec.userLabels` represents a mapping
 - `spec.secretName` represents a sequence of mapping
@@ -219,7 +219,7 @@ spec:
           - "centos7-12.4"
   userLabels:
           archive: "false"
-          environment: "demo"   
+          environment: "demo"
   secretName:
           - primarySecretName: "example-primaryuser"
             secondarySecretName: "example-secondaryuser"
@@ -237,27 +237,27 @@ make create-backing-db-instance
 
 Now, the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to 'magically' do the connection for us.
 
-Create the following `ServiceBindingRequest`:
+Create the following `ServiceBinding`:
 
 ```shell
 cat <<EOS |kubectl apply -f -
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: binding-request
   namespace: service-binding-demo
 spec:
-  applicationSelector:
-    resourceRef: java-app
+  application:
+    name: java-app
     group: apps
     version: v1
     resource: deployments
-  backingServiceSelectors:
+  services:
   - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
-    resourceRef: db-demo
+    name: db-demo
     id: postgresDB
   customEnvVar:
   - name: JDBC_URL
@@ -278,28 +278,28 @@ EOS
 Alternatively, you can perform the same task with this make command:
 
 ```shell
-make create-service-binding-request
+make create-service-binding
 ```
 
 There are 2 parts in the request:
 
-* `applicationSelector` - used to search for the application based on theresourceRef that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
-* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
+* `application` - used to search for the application based on thename that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
+* `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
 Once the new version is up, go to the application's route to check the UI. Now, it works!
 
-### Check the status of Service Binding Request
+### Check the status of Service Binding
 
-`ServiceBindingRequestStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+`ServiceBindingStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
-To check the status of Service Binding Request, run the command:
+To check the status of Service Binding, run the command:
 
 ```
 oc get sbr binding-request -n service-binding-demo -o yaml
 ```
 
-Status of Service Binding Request on successful binding:
+Status of Service Binding on successful binding:
 
 ```yaml
 status:
@@ -317,11 +317,11 @@ status:
 
 where
 
-* Conditions represent the latest available observations of Service Binding Request's state
+* Conditions represent the latest available observations of Service Binding's state
 * Secret represents the name of the secret created by the Service Binding Operator
 
 
-Conditions have two types `CollectionReady` and `InjectionReady` 
+Conditions have two types `CollectionReady` and `InjectionReady`
 
 where
 
@@ -342,7 +342,7 @@ Conditions can have the following type, status and reason:
 
 ### Check secret injection into the application deployment
 
-When the `ServiceBindingRequest` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
+When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
 
 ```yaml
 spec:
@@ -359,7 +359,7 @@ spec:
 To list all the pods, run the command:
 
 ```
-➜  ~ oc get pods                               
+➜  ~ oc get pods
 NAME                                   READY   STATUS      RESTARTS   AGE
 db-demo-postgresql-78b8466897-ht8x9    1/1     Running     0          15m
 java-rest-http-crud-1-build            0/1     Completed   0          51m

@@ -29,58 +29,58 @@ type Fake struct {
 	objs []runtime.Object // all fake objects
 }
 
-// AddMockedServiceBindingRequest add mocked object from ServiceBindingRequestMock.
-func (f *Fake) AddMockedServiceBindingRequest(
+// AddMockedServiceBinding add mocked object from ServiceBindingMock.
+func (f *Fake) AddMockedServiceBinding(
 	name string,
 	backingServiceNamespace *string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha1.ServiceBindingRequest {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, backingServiceNamespace, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+) *v1alpha1.ServiceBinding {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	sbr := ServiceBindingMock(f.ns, name, backingServiceNamespace, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
 
-// AddMockedServiceBindingRequestWithUnannotated add mocked object from ServiceBindingRequestMock with DetectBindingResources.
-func (f *Fake) AddMockedServiceBindingRequestWithUnannotated(
+// AddMockedServiceBindingWithUnannotated add mocked object from ServiceBindingMock with DetectBindingResources.
+func (f *Fake) AddMockedServiceBindingWithUnannotated(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha1.ServiceBindingRequest {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr := ServiceBindingRequestMock(f.ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+) *v1alpha1.ServiceBinding {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	sbr := ServiceBindingMock(f.ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
 
-// AddMockedUnstructuredServiceBindingRequestWithoutApplication creates a mock ServiceBindingRequest object
-func (f *Fake) AddMockedUnstructuredServiceBindingRequestWithoutApplication(
+// AddMockedUnstructuredServiceBindingWithoutApplication creates a mock ServiceBinding object
+func (f *Fake) AddMockedUnstructuredServiceBindingWithoutApplication(
 	name string,
 	backingServiceResourceRef string,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
 	var emptyGVR = schema.GroupVersionResource{}
-	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, "", emptyGVR, nil)
+	sbr, err := UnstructuredServiceBindingMock(f.ns, name, backingServiceResourceRef, "", emptyGVR, nil)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
 }
 
-// AddMockedUnstructuredServiceBindingRequest creates a mock ServiceBindingRequest object
-func (f *Fake) AddMockedUnstructuredServiceBindingRequest(
+// AddMockedUnstructuredServiceBinding creates a mock ServiceBinding object
+func (f *Fake) AddMockedUnstructuredServiceBinding(
 	name string,
 	backingServiceResourceRef string,
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBindingRequest{})
-	sbr, err := UnstructuredServiceBindingRequestMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	sbr, err := UnstructuredServiceBindingMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -196,7 +196,7 @@ func (f *Fake) AddMockedUnstructuredSecretRV(name string) *unstructured.Unstruct
 }
 
 // AddNamespacedMockedSecret add mocked object from SecretMock in a namespace
-// which isn't necessarily same as that of the ServiceBindingRequest namespace.
+// which isn't necessarily same as that of the ServiceBinding namespace.
 func (f *Fake) AddNamespacedMockedSecret(name string, namespace string, data map[string][]byte) {
 	f.objs = append(f.objs, SecretMock(namespace, name, data))
 }

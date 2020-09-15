@@ -66,6 +66,21 @@ rules:
       - "list"
       - "watch"
       - "update"
+  - apiGroups:
+      - operators.coreos.com
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+      - "update"
   - verbs:
       - "*"
     apiGroups:

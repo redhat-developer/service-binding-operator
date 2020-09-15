@@ -1,0 +1,17 @@
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: example-servicebinding
+spec:
+  mountPathPrefix: "/var/credentials"
+  services:
+  - name: pg-instance
+    group: postgresql.example.dev
+    kind: Database
+    version: v1alpha1
+  application:
+    name: nodejs-rest-http-crud
+    group: apps
+    version: v1
+    resource: deployments
