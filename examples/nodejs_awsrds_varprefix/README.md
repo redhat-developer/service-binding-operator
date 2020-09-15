@@ -36,7 +36,7 @@ Alternatively, you can perform the same task manually using the following comman
 make install-service-binding-operator-community
 ```
 
-This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
 ##### :bulb: Latest `master` version of the operator
 
@@ -214,24 +214,24 @@ Now, when the DB is up and running, we need to tell the Shell application where 
 
 As mentioned above the Shell application lists all environment variables that start with the `MYDB_` prefix. So we need to make sure that the variables injected by the binding have this prefix. Conveniently, the Service Binding Operator can help us there, too.
 
-All we need to do is to create the following [`ServiceBindingRequest`](./service-binding-request.shell-app.yaml):
+All we need to do is to create the following [`ServiceBinding`](./service-binding.shell-app.yaml):
 
 ```yaml
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: mydb.to.shell-app
   namespace: service-binding-demo
 spec:
   envVarPrefix: "MYDB"
-  backingServiceSelector:
-    group: aws.pmacik.dev
+  services:
+  - group: aws.pmacik.dev
     version: v1alpha1
     kind: RDSDatabase
-    resourceRef: mydb
-  applicationSelector:
-    resourceRef: shell-app
+    name: mydb
+  application:
+    name: shell-app
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
@@ -240,13 +240,13 @@ spec:
 There are 3 interesting parts in the request:
 
 * `envVarPrefix` - specifies the prefix for all the environment variables injected to the bound application
-* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `mydb`
-* `applicationSelector` - used to search for the application based on the resourceRef and the `resourceKind` of the application to be a `DeploymentConfig`
+* `services` - used to find the backing service - our operator-backed DB instance called `mydb`
+* `application` - used to search for the application based on the name and the `resourceKind` of the application to be a `DeploymentConfig`
 
-We can use `create-service-binding-request-shell-app` make target to create the binding request for us:
+We can use `create-service-binding-shell-app` make target to create the binding request for us:
 
 ```shell
-make create-service-binding-request-shell-app
+make create-service-binding-shell-app
 ```
 
 That causes the Shell application to be re-deployed.
@@ -268,7 +268,7 @@ MYDB_RDSDATABASE_SECRET_DB_PASSWORD=passwordorsomething
 Taking a nap for 1 hour...
 ```
 
-We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the environment variables that the AWS RDS exposes all starting with our prefix `MYDB_` that we specified above in the `ServiceBindingRequest`.
+We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the environment variables that the AWS RDS exposes all starting with our prefix `MYDB_` that we specified above in the `ServiceBinding`.
 
 That's enough for the Shell application. Let's see if the connection to the DB really works. We do that in the next section with the Node.js application.
 
@@ -280,41 +280,41 @@ Let's check by navigating to the application's route to verify that it is up. No
 
 Now we ask the Service Binding Operator to bind the DB to the Node.js application in the following step:
 
-* [Create `ServiceBindingRequest`](#create-servicebindingrequest-for-the-nodejs-application)
+* [Create `ServiceBinding`](#create-servicebinding-for-the-nodejs-application)
 
-#### Create `ServiceBindingRequest` for the Node.js application
+#### Create `ServiceBinding` for the Node.js application
 
 Now the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to do the connection for us.
 
-Create the following [`ServiceBindingRequest`](./service-binding-request.nodejs-app.yaml):
+Create the following [`ServiceBinding`](./service-binding.nodejs-app.yaml):
 
 ```yaml
 ---
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: mydb.to.nodejs-app
   namespace: service-binding-demo
 spec:
   envVarPrefix: "MYDB"
-  backingServiceSelector:
-    group: aws.pmacik.dev
+  services:
+  - group: aws.pmacik.dev
     version: v1alpha1
     kind: RDSDatabase
-    resourceRef: mydb
-  applicationSelector:
-    resourceRef: nodejs-app
+    name: mydb
+  application:
+    name: nodejs-app
     group: apps
     version: v1
     resource: deployments
 ```
 
-The request is basically the same as the one we used for the Shell application. The only difference is the application name used in resourceRef used in the `applicationSelector`.
+The request is basically the same as the one we used for the Shell application. The only difference is the application name used in name used in the `application`.
 
-We can use the `create-service-binding-request-nodejs-app` make target to create the request for us:
+We can use the `create-service-binding-nodejs-app` make target to create the request for us:
 
 ```shell
-make create-service-binding-request-nodejs-app
+make create-service-binding-nodejs-app
 ```
 
 That causes the Node.js application to be re-deployed.

@@ -24,7 +24,7 @@
 Example application : https://github.com/akashshinde/node-todo.git
 ![](https://i.imgur.com/WGQZ1nj.png)
 
-Note: This example assumes the app is deployed using a K8s Deployment. If using an OCP DeploymentConfig change the group and resource in the applicationSelector to:
+Note: This example assumes the app is deployed using a K8s Deployment. If using an OCP DeploymentConfig change the group and resource in the application to:
 
 ```
     group: apps.openshift.io
@@ -40,21 +40,21 @@ oc label deployment node-todo-git 'connects-to=etcd' 'environment=demo'
 
 5. Create SBR.
 ```yaml
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: binding-request
 spec:
-  applicationSelector:
+  application:
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
-    resourceRef: node-todo-git
-  backingServiceSelector:
-    group: etcd.database.coreos.com
+    name: node-todo-git
+  services:
+  - group: etcd.database.coreos.com
     version: v1beta2
     kind: EtcdCluster
-    resourceRef: etcd-cluster-example
+    name: etcd-cluster-example
   detectBindingResources: true
 ```
 

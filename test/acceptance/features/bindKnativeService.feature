@@ -13,23 +13,23 @@ Feature: Bind knative service to a service
     * Knative serving is running
     * DB "db-demo-knative" is running
     * Quarkus application "knative-app" is imported as Knative service
-    When Service Binding Request is applied to connect the database and the application
+    When Service Binding is applied to connect the database and the application
       """
-            apiVersion: apps.openshift.io/v1alpha1
-            kind: ServiceBindingRequest
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
             metadata:
               name: binding-request-knative
             spec:
-              applicationSelector:
+              application:
                 group: serving.knative.dev
                 version: v1beta1
                 resource: services
-                resourceRef: knative-app
-              backingServiceSelector:
-                group: postgresql.baiju.dev
+                name: knative-app
+              services:
+              - group: postgresql.baiju.dev
                 version: v1alpha1
                 kind: Database
-                resourceRef: db-demo-knative
+                name: db-demo-knative
                 id: knav
               customEnvVar:
                 - name: JDBC_URL
@@ -39,7 +39,7 @@ Feature: Bind knative service to a service
                 - name: DB_PASSWORD
                   value: "{{ .knav.status.dbCredentials.password }}"
       """
-    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-knative" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-knative" should be changed to "True"
+    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-knative" should be changed to "True"
+    And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-knative" should be changed to "True"
     And deployment must contain intermediate secret "binding-request-knative"
     And application should be connected to the DB "db-demo-knative"

@@ -12,44 +12,45 @@ Feature: Bind a single application to multiple services
         Given Imported Nodejs application "nodejs-app" is running
         * DB "db-demo-1" is running
         * DB "db-demo-2" is running
-        * Service Binding Request is applied to connect the database and the application
+        * Service Binding is applied to connect the database and the application
             """
-            apiVersion: apps.openshift.io/v1alpha1
-            kind: ServiceBindingRequest
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
             metadata:
                 name: binding-request-1
             spec:
-                applicationSelector:
-                    resourceRef: nodejs-app
+                application:
+                    name: nodejs-app
                     group: apps
                     version: v1
                     resource: deployments
-                backingServiceSelector:
-                    group: postgresql.baiju.dev
+                services:
+                -   group: postgresql.baiju.dev
                     version: v1alpha1
                     kind: Database
-                    resourceRef: db-demo-1
+                    name: db-demo-1
             """
-        When Service Binding Request is applied to connect the database and the application
+        When Service Binding is applied to connect the database and the application
             """
-            apiVersion: apps.openshift.io/v1alpha1
-            kind: ServiceBindingRequest
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
             metadata:
                 name: binding-request-2
             spec:
-                applicationSelector:
-                    resourceRef: nodejs-app
+                application:
+                    name: nodejs-app
                     group: apps
                     version: v1
                     resource: deployments
-                backingServiceSelector:
-                    group: postgresql.baiju.dev
+                services:
+                -   group: postgresql.baiju.dev
                     version: v1alpha1
                     kind: Database
-                    resourceRef: db-demo-2
+                    name: db-demo-2
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-1" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-1" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding Request "binding-request-2" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding Request "binding-request-2" should be changed to "True"
+
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-1" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-1" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-2" should be changed to "True"
         And "nodejs-app" deployment must contain SBR name "binding-request-1" and "binding-request-2"

@@ -37,7 +37,7 @@ Alternatively, you can perform the same task manually using the following comman
 make install-service-binding-operator-community
 ```
 
-This makes the `ServiceBindingRequest` custom resource available, that the application developer will use later.
+This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
 ##### :bulb: Latest `master` version of the operator
 
@@ -124,11 +124,11 @@ oc apply -f language-translator-binding.yaml
 
 In alternative, you may also create the service from the OpenShift Web Console in the Developer perspective,
 navigating to `Add`->`From Catalog`, selecting `Service`, clicking `Create` and using the default sample
-template which provision the Language Translator Service (this might change in the future, so it is reccommended to check against the sample template provided [here](./language-translator.yaml)). 
-Repeat the same process for adding a binding by navigating to `Add`->`From Catalog`, selecting `Binding`, clicking `Create` and using the default sample template which creates a binding the Language Translator Service. 
+template which provision the Language Translator Service (this might change in the future, so it is reccommended to check against the sample template provided [here](./language-translator.yaml)).
+Repeat the same process for adding a binding by navigating to `Add`->`From Catalog`, selecting `Binding`, clicking `Create` and using the default sample template which creates a binding the Language Translator Service.
 
 Note that a binding needs to be created, as service instances and service credentials have different
-lifecycles for IBM Cloud services. The Service Binding Operator does not create credentials for 
+lifecycles for IBM Cloud services. The Service Binding Operator does not create credentials for
 a service but it rather gathers, organizes and inject credentials into apps.
 
 It takes usually few seconds to spin-up a new instance of the language translator service in IBM Cloud.
@@ -200,30 +200,30 @@ mytranslator-binding   Opaque   6      5m36s
 Once the backing service is up and running, we need to tell the Node.js application where to find it and how to connect to it. We let the Service Binding Operator to 'do the magic' for us.
 
 We did not modify the Language Translator sample application, we are using it 'as is', and therefore
-we need to do some mapping of the credential keys provided by the backing service with the 
+we need to do some mapping of the credential keys provided by the backing service with the
 environment variables required by the sample node.js app.
 
-More specifically, the node.js app requires two environment variables: `LANGUAGE_TRANSLATOR_URL` 
+More specifically, the node.js app requires two environment variables: `LANGUAGE_TRANSLATOR_URL`
 and `LANGUAGE_TRANSLATOR_IAM_APIKEY`. These keys are available in the backing service secret as
 `url` and `apikey` respectively, and they can be mapped to the variables required by the app using
 the `customEnvVar` feature of the service binding operator.
 
-All we need to do is to create the following [`ServiceBindingRequest`](./service-binding-request.nodejs-app.yaml):
+All we need to do is to create the following [`ServiceBinding`](./service-binding.nodejs-app.yaml):
 
 ```yaml
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
   name: mytranslator.to.nodejs-app
   namespace: service-binding-demo
 spec:
-  backingServiceSelector:
-    group: ibmcloud.ibm.com
+  services:
+  - group: ibmcloud.ibm.com
     version: v1alpha1
     kind: Binding
-    resourceRef: mytranslator-binding
-  applicationSelector:
-    resourceRef: language-translator-nodejs
+    name: mytranslator-binding
+  application:
+    name: language-translator-nodejs
     group: apps.openshift.io
     version: v1
     resource: deploymentconfigs
@@ -231,19 +231,19 @@ spec:
      - name: LANGUAGE_TRANSLATOR_URL
        value: '{{ index .status.secretName "url" }}'
      - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
-       value: '{{ index .status.secretName "apikey" }}'     
+       value: '{{ index .status.secretName "apikey" }}'
 ```
 
 There are 3 interesting parts in the request:
 
-* `backingServiceSelector` - used to find the backing service - the operator-backed language translator instance with name `mytranslator-binding`.
-* `applicationSelector` - used to search for the application based on the resourceRef and the `resourceKind` of the application to be a `DeploymentConfig`, matched by the label `app=language-translator-nodejs`.
+* `services` - used to find the backing service - the operator-backed language translator instance with name `mytranslator-binding`.
+* `application` - used to search for the application based on the name and the `resourceKind` of the application to be a `DeploymentConfig`, matched by the label `app=language-translator-nodejs`.
 * `customEnvVar` - specifies the mapping for the environment variables injected into the bound application.
 
 We can use run the following command to create the binding request:
 
 ```shell
-oc apply -f service-binding-request.nodejs-app.yaml
+oc apply -f service-binding.nodejs-app.yaml
 ```
 
 That causes the node.js deployment to restart the pod with the new mapping.
@@ -260,7 +260,7 @@ npm info lifecycle language-translator-demo@0.3.10~start: language-translator-de
 Server running on port: 8080
 ```
 
-We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the custom environment variables that  that we specified above in the `ServiceBindingRequest`.
+We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the custom environment variables that  that we specified above in the `ServiceBinding`.
 
 To create a route for the application, run the following command:
 

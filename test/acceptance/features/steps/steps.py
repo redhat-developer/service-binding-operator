@@ -15,11 +15,11 @@ from openshift import Openshift
 from postgres_db import PostgresDB
 from namespace import Namespace
 from nodejs_application import NodeJSApp
-from service_binding_request import ServiceBindingRequest
 from serverless_operator import ServerlessOperator
 from quarkus_application import QuarkusApplication
 from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
 from knative_serving import KnativeServing
+from service_binding import ServiceBinding
 import time
 
 
@@ -142,14 +142,14 @@ def db_instance_is_running(context, db_name):
 
 
 # STEP
-sbr_is_applied_step = u'Service Binding Request is applied to connect the database and the application'
+sbr_is_applied_step = u'Service Binding is applied to connect the database and the application'
 
 
 @given(sbr_is_applied_step)
 @when(sbr_is_applied_step)
 def sbr_is_applied(context):
     sbr_yaml = context.text
-    sbr = ServiceBindingRequest()
+    sbr = ServiceBinding()
     if context.__contains__("application") and context.__contains__("application_type"):
         application = context.application
         if context.application_type == "nodejs":
@@ -159,7 +159,7 @@ def sbr_is_applied(context):
             context.application_original_generation = context.application.get_generation()
         else:
             assert False, f"Invalid application type in context.application_type={context.application_type}, valid are 'nodejs', 'knative'"
-    assert sbr.create(sbr_yaml) is not None, "Service binding request not created"
+    assert sbr.create(sbr_yaml) is not None, "Service binding not created"
 
 
 # STEP
@@ -186,21 +186,21 @@ def then_app_is_connected_to_db(context, db_name):
 
 
 # STEP
-@then(u'jsonpath "{json_path}" of Service Binding Request "{sbr_name}" should be changed to "{json_value_regex}"')
+@then(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
 def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
     openshift = Openshift()
-    openshift.search_resource_in_namespace("servicebindingrequests", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
+    openshift.search_resource_in_namespace("servicebindings", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
     result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path, wait=True, timeout=600)
     result | should_not.be_none.desc("jsonpath result")
     re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jsonpath result \"{result}\" should match \"{json_value_regex}\"")
 
 
 # STEP
-@then(u'jq "{jq_expression}" of Service Binding Request "{sbr_name}" should be changed to "{json_value_regex}"')
+@then(u'jq "{jq_expression}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
 def then_sbo_jq_is(context, jq_expression, sbr_name, json_value_regex):
     openshift = Openshift()
-    openshift.search_resource_in_namespace("servicebindingrequests", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
-    result = openshift.get_resource_info_by_jq("sbr", sbr_name, context.namespace.name, jq_expression, wait=True, timeout=600)
+    openshift.search_resource_in_namespace("servicebindings", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
+    result = openshift.get_resource_info_by_jq("sbr", sbr_name, context.namespace.name, jq_expression, wait=True, timeout=800)
     result | should_not.be_none.desc("jq result")
     re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jq result \"{result}\" should match \"{json_value_regex}\"")
 

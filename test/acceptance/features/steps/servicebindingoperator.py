@@ -14,7 +14,7 @@ class Servicebindingoperator():
         self.name = name
 
     def check_resources(self):
-        self.openshift.is_resource_in("servicebindingrequest") | should.be_truthy.desc("CRD is in")
+        self.openshift.is_resource_in("servicebinding") | should.be_truthy.desc("CRD is in")
         self.openshift.search_resource_in_namespace("rolebindings", self.name, self.namespace) | should_not.be_none.desc("Role binding is in")
         self.openshift.search_resource_in_namespace("roles", self.name, self.namespace) | should_not.be_none.desc("Role is in")
         self.openshift.search_resource_in_namespace("serviceaccounts", self.name, self.namespace) | should_not.be_none.desc("Service Account")

@@ -31,7 +31,7 @@ are available in the [Backing Service Provider Best Practices Guide](docs/Backin
 To make an imported application (for example, a NodeJS application)
 connect to a backing service (for example, a database):
 
-* The app author (developer) creates a `ServiceBindingRequest` and specifies:
+* The app author (developer) creates a `ServiceBinding` and specifies:
   * The resource that needs the binding information. The resource can be
     specified by label selectors;
   * The backing service's resource reference that the imported application

@@ -14,7 +14,7 @@ function check_crds () {
     return 1
 }
 
-CRD_NAME="servicebindingrequests.apps.openshift.io"
+CRD_NAME="servicebindings.operators.coreos.com"
 
 echo "# Searching for '${CRD_NAME}'..."
 

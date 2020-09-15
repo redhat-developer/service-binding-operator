@@ -440,7 +440,7 @@ deploy-rbac:
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
 deploy-crds:
-	$(Q)kubectl apply -f deploy/crds/apps.openshift.io_servicebindingrequests_crd.yaml
+	$(Q)kubectl apply -f deploy/crds/operators.coreos.com_servicebindings_crd.yaml
 
 .PHONY: deploy-clean
 ## Deploy-Clean: Removing CRDs and CRs
