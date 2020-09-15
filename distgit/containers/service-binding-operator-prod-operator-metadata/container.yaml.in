@@ -4,6 +4,11 @@ platforms:
   only:
   - x86_64
 operator_manifests:
+  repo_replacements:
+    - registry: "registry-proxy.engineering.redhat.com"
+      package_mappings:
+        service-binding-operator-container: "ocp-tools-4-tech-preview/service-binding-rhel8-operator"
+
   # Relative path to your manifests dir from root of repo
   manifests_dir: manifests
   enable_digest_pinning: ${CI_DIGEST_PINNING}
