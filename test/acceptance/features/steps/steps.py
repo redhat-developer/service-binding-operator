@@ -5,9 +5,11 @@
 import os
 import re
 import base64
+import ipaddress
 
-from behave import given, then, when
+from behave import register_type, given, then, when
 from pyshould import should, should_not
+import parse
 
 from servicebindingoperator import Servicebindingoperator
 from dboperator import DbOperator
@@ -310,8 +312,16 @@ def backend_status_updated(context, backend_name):
     create_cr(context, backend_name)
 
 
+@parse.with_pattern(r'.*')
+def parse_nullable_string(text):
+    return text
+
+
+register_type(NullableString=parse_nullable_string)
+
+
 # STEP
-@then(u'Secret "{secret_name}" contains "{secret_key}" key with value "{secret_value}"')
+@then(u'Secret "{secret_name}" contains "{secret_key}" key with value "{secret_value:NullableString}"')
 def check_secret_key_value(context, secret_name, secret_key, secret_value):
     openshift = Openshift()
     json_path = f'{{.data.{secret_key}}}'
@@ -329,6 +339,34 @@ def check_secret_key_value(context, secret_name, secret_key, secret_value):
             output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
     result = base64.decodebytes(bytes(output, 'utf-8'))
     result | should.be_equal_to(bytes(secret_value, 'utf-8'))
+
+
+# STEP
+@then(u'Secret "{secret_name}" contains "{secret_key}" key with dynamic IP addess as the value')
+def check_secret_key_with_ip_value(context, secret_name, secret_key):
+    openshift = Openshift()
+    json_path = f'{{.data.{secret_key}}}'
+    output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
+    timeout = 180
+    interval = 5
+    attempts = timeout/interval
+    while True:
+        actual_secret_value = base64.b64decode(output).decode('ascii')
+        try:
+            ipaddress.ip_address(actual_secret_value)
+        except ValueError:
+            pass
+        else:
+            break
+        if attempts <= 0:
+            break
+        else:
+            attempts -= 1
+            time.sleep(interval)
+            output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
+    result = base64.decodebytes(bytes(output, 'utf-8'))
+    with should.not_raise:
+        ipaddress.ip_address(result.decode('ascii'))
 
 
 # STEP

@@ -34,7 +34,16 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-a-d-s" should be changed to "True"
         And application should be re-deployed
         And application should be connected to the DB "db-demo-a-d-s"
-
+        And Secret "binding-request-a-d-s" contains "DATABASE_DBNAME" key with value "db-demo-a-d-s"
+        And Secret "binding-request-a-d-s" contains "DATABASE_SECRET_USER" key with value "postgres"
+        And Secret "binding-request-a-d-s" contains "DATABASE_SECRET_PASSWORD" key with value "password"
+        And Secret "binding-request-a-d-s" contains "DATABASE_CONFIGMAP_DB_PASSWORD" key with value "password"
+        And Secret "binding-request-a-d-s" contains "DATABASE_CONFIGMAP_DB_NAME" key with value "db-demo-a-d-s"
+        And Secret "binding-request-a-d-s" contains "DATABASE_CONFIGMAP_DB_PORT" key with value "5432"
+        And Secret "binding-request-a-d-s" contains "DATABASE_CONFIGMAP_DB_USER" key with value "postgres"
+        And Secret "binding-request-a-d-s" contains "DATABASE_CONFIGMAP_DB_HOST" key with dynamic IP addess as the value
+        And Secret "binding-request-a-d-s" contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
+        And Secret "binding-request-a-d-s" contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
 
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, Service Binding and DB
         Given Imported Nodejs application "nodejs-rest-http-crud-a-s-d" is running
