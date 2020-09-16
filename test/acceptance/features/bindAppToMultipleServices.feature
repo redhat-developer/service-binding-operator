@@ -53,4 +53,5 @@ Feature: Bind a single application to multiple services
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-2" should be changed to "True"
-        And "nodejs-app" deployment must contain SBR name "binding-request-1" and "binding-request-2"
+        And "nodejs-app" deployment must contain SBR name "binding-request-1"
+        And "nodejs-app" deployment must contain SBR name "binding-request-2"
