@@ -1,13 +1,13 @@
 // NOTE: Boilerplate only.  Ignore this file.
 
-// Package v1alpha1 contains API Schema definitions for the apps v1alpha1 API group
+// Package v1alpha1 contains API Schema definitions for the operators v1alpha1 API group
 // +k8s:deepcopy-gen=package,register
 // +groupName=operators.coreos.com
 package v1alpha1
 
 import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (

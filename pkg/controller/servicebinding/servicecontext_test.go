@@ -6,7 +6,7 @@ import (
 
 	routev1 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
