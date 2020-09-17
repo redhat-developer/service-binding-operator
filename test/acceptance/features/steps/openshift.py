@@ -21,21 +21,6 @@ spec:
         registryPoll:
             interval: 30m
 '''
-        self.operator_subscription_yaml_template = '''
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: Subscription
-metadata:
-    name: '{name}'
-    namespace: openshift-operators
-spec:
-    channel: '{channel}' # the quotes are necessary to avoid conversions from strings like '1.0' to be converted to actual decimal numbers
-    installPlanApproval: Automatic
-    name: '{name}'
-    source: '{operator_source_name}'
-    sourceNamespace: openshift-marketplace
-    startingCSV: '{csv_version}'
-'''
         self.image_stream_template = '''
 ---
 apiVersion: image.openshift.io/v1
@@ -83,6 +68,21 @@ spec:
     spec:
       containers:
         - image: {image_repository}
+'''
+        self.operator_subscription_to_namespace_yaml_template = '''
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: '{name}'
+  namespace: {namespace}
+spec:
+  channel: '{channel}'
+  installPlanApproval: Automatic
+  name: '{name}'
+  source: '{operator_source_name}'
+  sourceNamespace: openshift-marketplace
+  startingCSV: '{csv_version}'
 '''
 
     def get_pod_lst(self, namespace):
@@ -161,20 +161,11 @@ spec:
             | select(.status.catalogSource=="{catalog}").status.channels[] \
             | select(.name=="{channel}").currentCSV\''
         current_csv, exit_code = self.cmd.run(cmd)
-
-        if current_csv is None:
-            return current_csv
-
+        if exit_code != 0:
+            print(f"\nNon-zero exit code ({exit_code}) returned while getting currentCSV: {current_csv}")
+            return None
         current_csv = current_csv.strip("\n")
-        if current_csv == "" or exit_code != 0:
-            current_csv = None
         return current_csv
-
-    def create_operator_subscription(self, package_name, operator_source_name, channel):
-        operator_subscription = self.operator_subscription_yaml_template.format(
-            name=package_name, operator_source_name=operator_source_name,
-            channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel))
-        return self.oc_apply(operator_subscription)
 
     def wait_for_package_manifest(self, package_name, operator_source_name, operator_channel, interval=5, timeout=120):
         current_csv = self.get_current_csv(package_name, operator_source_name, operator_channel)
@@ -304,6 +295,15 @@ spec:
         last_revision_status = output.split(" ")[-1]
         return last_revision_status
 
+    def create_operator_subscription_to_namespace(self, package_name, namespace, operator_source_name, channel):
+        operator_subscription = self.operator_subscription_to_namespace_yaml_template.format(
+            name=package_name, namespace=namespace, operator_source_name=operator_source_name,
+            channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel))
+        return self.oc_apply(operator_subscription)
+
+    def create_operator_subscription(self, package_name, operator_source_name, channel):
+        return self.create_operator_subscription_to_namespace(package_name, "openshift-operators", operator_source_name, channel)
+
     def get_resource_list_in_namespace(self, resource_plural, name_pattern, namespace):
         print(f"Searching for {resource_plural} that matches {name_pattern} in {namespace} namespace")
         lst = self.get_resource_lst(resource_plural, namespace)
@@ -340,3 +340,45 @@ spec:
         (output, exit_code) = self.cmd.run("oc apply -f " + yaml)
         assert exit_code == 0, "Applying yaml file failed as the exit code is not 0"
         return output
+
+    def get_deployment_names_of_given_pattern(self, deployment_name_pattern, namespace):
+        return self.search_resource_lst_in_namespace("deployment", deployment_name_pattern, namespace)
+
+    def get_deployment_with_intermediate_secret_of_given_pattern(self, intermediate_secret_name, deployment_name_pattern,
+                                                                 namespace, wait=False, interval=5, timeout=300):
+        # Expected result from 'oc' (openshift client) v4.5
+        expected_secretRef_oc_45 = f'secretRef:map[name:{intermediate_secret_name}]'
+        # Expected result from 'oc' (openshift client) v4.6+
+        expected_secretRef_oc_46 = f'{{"secretRef":{{"name":"{intermediate_secret_name}"}}}}'
+        if wait:
+            start = 0
+            while ((start + interval) <= timeout):
+                deployment_list = self.get_deployment_names_of_given_pattern(deployment_name_pattern, namespace)
+                if deployment_list is not None:
+                    for deployment in deployment_list:
+                        result = self.get_deployment_envFrom_info(deployment, namespace)
+                        if re.search(re.escape(expected_secretRef_oc_46), result) is not None or \
+                                re.search(re.escape(expected_secretRef_oc_45), result) is not None:
+                            return deployment
+                        else:
+                            print(
+                                f"\nUnexpected deployment's envFrom info: \nExpected: {expected_secretRef_oc_46} or \
+                                {expected_secretRef_oc_45} \nbut was: {result}\n")
+                else:
+                    print(f"No deployment that matches {deployment_name_pattern} found.\n")
+                time.sleep(interval)
+                start += interval
+        else:
+            deployment_list = self.get_deployment_names_of_given_pattern(deployment_name_pattern)
+            if deployment_list is not None:
+                for deployment in deployment_list:
+                    result = self.get_deployment_envFrom_info(deployment, namespace)
+                    if result == expected_secretRef_oc_46 or result == expected_secretRef_oc_45:
+                        return deployment
+                    else:
+                        print(
+                            f"\nUnexpected deployment's envFrom info: \nExpected: {expected_secretRef_oc_46} or \
+                            {expected_secretRef_oc_45} \nbut was: {result}\n")
+            else:
+                print(f"No deployment that matches {deployment_name_pattern} found.\n")
+        return None

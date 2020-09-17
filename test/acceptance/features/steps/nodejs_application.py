@@ -7,18 +7,16 @@ import time
 
 class NodeJSApp(object):
 
-    nodesj_app_image = "quay.io/pmacik/nodejs-rest-http-crud"
-    api_end_point = 'http://{route_url}/api/status/dbNameCM'
     openshift = Openshift()
-
     pod_name_pattern = "{name}.*$(?<!-build)"
     name = ""
     namespace = ""
 
-    def __init__(self, name, namespace):
+    def __init__(self, name, namespace, nodejs_app_image="quay.io/pmacik/nodejs-rest-http-crud"):
         self.cmd = Command()
         self.name = name
         self.namespace = namespace
+        self.nodejs_app_image = nodejs_app_image
 
     def is_running(self, wait=False):
         deployment_flag = False
@@ -45,7 +43,7 @@ class NodeJSApp(object):
             return False
 
     def install(self):
-        create_new_app_output, exit_code = self.cmd.run(f"oc new-app --docker-image={self.nodesj_app_image} --name={self.name} -n {self.namespace}")
+        create_new_app_output, exit_code = self.cmd.run(f"oc new-app --docker-image={self.nodejs_app_image} --name={self.name} -n {self.namespace}")
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app: {create_new_app_output}"
         assert re.search(f'imagestream.image.openshift.io.*{self.name}.*created',
                          create_new_app_output) is not None, f"Unable to create imagestream: {create_new_app_output}"
@@ -56,13 +54,13 @@ class NodeJSApp(object):
         assert self.openshift.expose_service_route(self.name, self.namespace) is not None, "Unable to expose service route"
         return self.is_running(wait=True)
 
-    def get_db_name_from_api(self, wait=False, interval=10, timeout=300):
+    def get_response_from_api(self, endpoint, wait=False, interval=10, timeout=300):
         route_url = self.openshift.get_route_host(self.name, self.namespace)
         if route_url is None:
             return None
         start = 0
         while ((start + interval) <= timeout):
-            db_name = requests.get(url=self.api_end_point.format(route_url=route_url))
+            db_name = requests.get(url=f"http://{route_url}{endpoint}")
             if wait:
                 if db_name.status_code == 200 and db_name.text != 'N/A':
                     return db_name.text
@@ -119,5 +117,6 @@ class NodeJSApp(object):
     def get_generation(self):
         return self.openshift.get_resource_info_by_jsonpath("deployment", self.name, self.namespace, "{.metadata.generation}")
 
-    def format_pattern(self, pattern):
-        return pattern.format(name=self.name)
+    def get_deployment_with_intermediate_secret(self, intermediate_secret_name):
+        return self.openshift.get_deployment_with_intermediate_secret_of_given_pattern(
+            intermediate_secret_name, self.name, self.namespace, wait=True, timeout=120)

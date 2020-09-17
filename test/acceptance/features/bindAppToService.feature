@@ -318,7 +318,6 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-a-d-c" should be changed to "True"
         And Secret "binding-request-a-d-c" contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"
 
-
     Scenario: Creating binding secret from the definitions managed in OLM operator descriptors
         Given Backend service CSV is installed
             """
@@ -494,3 +493,30 @@ Feature: Bind an application to a service
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sbr-csv-attribute" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "sbr-csv-attribute" should be changed to "False"
         And Secret "sbr-csv-secret-cm-descriptors" contains "BACKSERV_ENV_SVCNAME" key with value "demo-backserv-cr-1"
+
+    Scenario: Bind an imported Node.js application to Etcd database
+        Given Etcd operator running
+        * Etcd cluster "etcd-cluster-example" is running
+        * Nodejs application "node-todo-git" imported from "quay.io/pmacik/node-todo" image is running
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+              name: binding-request-etcd
+            spec:
+              application:
+                group: apps
+                version: v1
+                resource: deployments
+                name: node-todo-git
+              services:
+                - group: etcd.database.coreos.com
+                  version: v1beta2
+                  kind: EtcdCluster
+                  name: etcd-cluster-example
+              detectBindingResources: true
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
+        And Application endpoint "/api/todos" is available
