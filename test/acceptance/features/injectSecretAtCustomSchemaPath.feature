@@ -8,7 +8,7 @@ Feature: Insert service binding to a custom location in application resource
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
         * PostgreSQL DB operator is installed
-        * The CRD "appconfigs.stable.example.com" is present
+        * The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
             kind: CustomResourceDefinition
@@ -29,9 +29,9 @@ Feature: Insert service binding to a custom location in application resource
                     - ac
             """
 
-    Scenario: Specify container's path in service binding request
+    Scenario: Specify container's path in Service Binding
         Given DB "db-demo-csp" is running
-        * The application CR "demo-appconfig-csp" is present
+        * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: AppConfig
@@ -49,7 +49,7 @@ Feature: Insert service binding to a custom location in application resource
                       ports:
                       - containerPort: 8090
             """
-        When Service Binding is applied to connect the database and the application
+        When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -76,9 +76,9 @@ Feature: Insert service binding to a custom location in application resource
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-csp" should be changed to "True"
         And Secret "binding-request-csp" has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
 
-    Scenario: Specify secret's path in service binding request
+    Scenario: Specify secret's path in Service Binding
         Given DB "db-demo-ssp" is running
-        * The application CR "demo-appconfig-ssp" is present
+        * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: AppConfig
@@ -88,7 +88,7 @@ Feature: Insert service binding to a custom location in application resource
                 spec:
                     secret: some-value
             """
-        When Service Binding is applied to connect the database and the application
+        When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding

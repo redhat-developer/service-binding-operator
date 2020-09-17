@@ -13,7 +13,7 @@ Feature: Bind knative service to a service
     * Knative serving is running
     * DB "db-demo-knative" is running
     * Quarkus application "knative-app" is imported as Knative service
-    When Service Binding is applied to connect the database and the application
+    When Service Binding is applied
       """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
