@@ -53,6 +53,28 @@ and services together. This mechanism is different from how the Service Binding 
 Kubernetes lays out binding between entities. Generally, most features defined in the specification
 are a subset of features defined in the Service Binding Operator.
 
+There are major differences between the specification and the current mechanism the Service Binding
+Operator employs such as how the application is defined in the CRD, how a binding secret is
+projected in an application container and etc. The [Service Binding feature comparison document](./service-binding-feature-comparison.pdf) lists the differences between the two.
+
+One of the major gaps between the CRDs defined by the two approaches is that the Service Binding
+Operator supports defining multiple services within a CR. Whereas the specification allows defining
+one service per CR. Here are two main reasons why the specification is in favor of defining one
+service per CR:
+
+- It is easier for tools created around the service binding to add and remove services by simply
+  adding or removing independent CRs instead of having to deal with editing an array of services
+  within a CR. In addition, editing the service array in a CR might cause CR to be corrupted unless
+  concurrent updates are well synchronized across a tool or tools. However, by defining a single
+  service per CR, adding or removing services simply becomes `kubectl apply ...` and
+  `kubectl delete ...`.
+
+- Defining one service per CR allows cleaner association of attributes with the service. For example,\
+  when we identify a set of extra mappings or environment variables in a `ServiceBinding`, which
+  service does that get associated with if we have multiple services? Or if we want to change the
+  service name or type that gets mounted, we again run into the issue that they all require a way
+  to identify the service you want to apply those attributes against.
+
 Therefore, allowing users of the Service Binding Operator to choose between the specification and the
 current mechanism is likely to increase the user base of the operator, having a more vibrant community
 of service providers.
@@ -69,10 +91,6 @@ specification and the current mechanism for binding applications to services.
 - Implementation details about how the specification should be implemented.
 
 ## Proposal
-
-There are major differences between the specification and the current mechanism the Service Binding
-Operator employes such as how the application is defined in the CRD, how a binding secret is 
-projected in an application container and etc. The [Service Binding feature comparison document](./service-binding-feature-comparison.pdf) lists the differences between the two.
 
 To avoid tangling the implementation between the current codebase and the codebase to support the
 specification, this proposal suggests creating two different channels for the Service Binding
