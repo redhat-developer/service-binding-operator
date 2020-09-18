@@ -1,6 +1,6 @@
 go_import_path: github.com/redhat-developer/service-binding-operator
 sudo: required
-dist: xenial
+dist: focal
 language: go
 
 go:
@@ -23,11 +23,7 @@ env:
 before_install:
   # Install deps
   - sudo apt-get update -y
-  - sudo apt-get install software-properties-common -y
-  - sudo add-apt-repository ppa:deadsnakes/ppa -y
-  - sudo apt-get update -y
-  - sudo apt-get install python3.7 -y
-  - sudo apt-get install python3.7-venv -y
+  - sudo apt-get install python3 python3-venv -y
 
   # Download Operator SDK
   - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu && chmod +x operator-sdk && mv operator-sdk $GOPATH/bin/
