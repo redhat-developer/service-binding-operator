@@ -517,7 +517,7 @@ push-to-manifest-repo:
 .PHONY: prepare-bundle-to-quay
 ## Prepare manifest bundle to quay application
 prepare-bundle-to-quay:
-	$(Q)python3.7 -m venv $(PYTHON_VENV_DIR)
+	$(Q)python3 -m venv $(PYTHON_VENV_DIR)
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade setuptools
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install operator-courier==2.1.2

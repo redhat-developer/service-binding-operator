@@ -3,7 +3,7 @@ package servicebinding
 import (
 	"testing"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/stretchr/testify/require"

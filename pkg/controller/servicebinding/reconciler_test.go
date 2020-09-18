@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"

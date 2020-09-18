@@ -18,7 +18,7 @@ import (
 	ocav1 "github.com/openshift/api/apps/v1"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/apps/v1alpha1"
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 )
 
 // Fake defines all the elements to fake a kubernetes api client.
