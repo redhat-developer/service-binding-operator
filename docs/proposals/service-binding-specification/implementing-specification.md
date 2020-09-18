@@ -69,7 +69,7 @@ service per CR:
   service per CR, adding or removing services simply becomes `kubectl apply ...` and
   `kubectl delete ...`.
 
-- Defining one service per CR allows cleaner association of attributes with the service. For example,\
+- Defining one service per CR allows a cleaner association of attributes with the service. For example,\
   when we identify a set of extra mappings or environment variables in a `ServiceBinding`, which
   service does that get associated with if we have multiple services? Or if we want to change the
   service name or type that gets mounted, we again run into the issue that they all require a way
