@@ -190,13 +190,13 @@ spec:
         assert exit_code == 0, f"Getting route host failed as the exit code is not 0 with output - {output}"
         return output
 
-    def get_deployment_status(self, deployment_name, namespace, wait_for_status=None):
+    def get_deployment_status(self, deployment_name, namespace, wait_for_status=None, interval=5, timeout=400):
         deployment_status_cmd = f'oc get deployment {deployment_name} -n {namespace} -o json' \
             + ' | jq -rc \'.status.conditions[] | select(.type=="Available").status\''
         output = None
         exit_code = -1
         if wait_for_status is not None:
-            status_found, output, exit_code = self.cmd.run_wait_for_status(deployment_status_cmd, wait_for_status, 5, 400)
+            status_found, output, exit_code = self.cmd.run_wait_for_status(deployment_status_cmd, wait_for_status, interval, timeout)
             if exit_code == 0:
                 assert status_found is True, f"Deployment {deployment_name} result after waiting for status is {status_found}"
         else:

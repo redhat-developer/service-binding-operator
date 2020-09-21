@@ -23,7 +23,7 @@ metadata:
 '''
 
     def is_present(self):
-        cmd = f'oc get ks {self.name} -n {self.namespace}'
+        cmd = f'oc get knativeserving.operator.knative.dev {self.name} -n {self.namespace}'
         output, exit_code = self.cmd.run(cmd)
         if exit_code != 0:
             print(f"cmd-{cmd} result for getting available knative serving is {output} with the exit code {exit_code}")
