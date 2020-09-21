@@ -13,6 +13,7 @@ spec:
     - sbrs
     singular: servicebinding
   scope: Namespaced
+  preserveUnknownFields: false
   subresources:
     status: {}
   validation:
@@ -259,6 +260,8 @@ spec:
                 type: object
               type: array
           type: object
+          required:
+              - "services"
         status:
           description: ServiceBindingStatus defines the observed state of ServiceBinding
           properties:
