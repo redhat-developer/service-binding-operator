@@ -277,8 +277,8 @@ func TestApplicationNotFound(t *testing.T) {
 
 	// Reconcile without deployment
 	res, err := r.Reconcile(reconcileRequest())
-	require.EqualError(t, err, errApplicationNotFound.Error())
-	require.True(t, res.Requeue)
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 	sbrOutput, err := r.getServiceBinding(namespacedName)

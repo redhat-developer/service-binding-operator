@@ -287,12 +287,6 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 		return requeueError(err)
 	}
 
-	// appending finalizer, should be later removed upon resource deletion
-	addFinalizer(b.sbr)
-	if _, err = b.updateServiceBinding(sbr); err != nil {
-		return requeueError(err)
-	}
-
 	b.logger.Info(applicationError.Error())
 
 	if errors.Is(applicationError, errApplicationNotFound) {
@@ -300,8 +294,6 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 		if _, err = b.updateServiceBinding(sbr); err != nil {
 			return requeueError(err)
 		}
-		return requeue(applicationError, requeueAfter)
-
 	}
 
 	return done()
@@ -393,7 +385,7 @@ func ensureDefaults(applicationSelector *v1alpha1.Application) {
 				ContainersPath: defaultPathToContainers,
 			}
 		}
-	}else {
+	} else {
 		applicationSelector = &v1alpha1.Application{}
 		applicationSelector.LabelSelector = &metav1.LabelSelector{}
 		applicationSelector.BindingPath = &v1alpha1.BindingPath{
