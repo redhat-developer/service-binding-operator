@@ -36,11 +36,11 @@ test:
 For lint and unit test, the schematic diagram is as follows:
 
 ```
-+--------+     +--------+     +----------------+
-|        |     |        |     |                |
-|  root  +---->+  src   +---->+ lint/unit test |
-|        |     |        |     |                |
-+--------+     +--------+     +----------------+
++--------+     +--------+     +---------------------------+
+|        |     |        |     |                           |
+|  root  +---->+  src   +---->+ lint/unit/acceptance test |
+|        |     |        |     |                           |
++--------+     +--------+     +---------------------------+
 ```
 
 
@@ -88,9 +88,10 @@ be created.
 
 ### lint
 
-The lint runs the [GolangCI Lint][golangci], [YAML Lint][yaml-lint], and
-[Operator Courier][operator-courier].  GolangCI is a Go program, whereas the
-other two are Python based.  So, Python 3 is a prerequisite to run lint.
+The lint runs the [GolangCI Lint][golangci], [YAML Lint][yaml-lint],
+[Operator Courier][operator-courier] and couple of Python code-checking tools.
+GolangCI is a Go program, whereas the other two are Python based.
+So, Python 3 is a prerequisite to run lint.
 
 The GolangCI Lint program runs multiple Go lint tools against the repository.
 GolangCI Lint runs lint concurrently and completes execution in a few seconds.
@@ -101,20 +102,22 @@ excludes the `vendor` directory while running.  There is a
 configuration file at the top-level directory of the source code:
 `.yamllint`.
 
+The Python lint tools validate all python files.
+
 ### unit
 
 The `unit` target runs the unit tests.  Some of the tests make use of mock
 objects. The unit tests don't require a dedicated OpenShift cluster, unlike
 end-to-end tests. It runs `test-unit` Makefile target.
 
-### e2e
+### acceptance
 
-The `e2e` run an end-to-end test against an operator running inside the CI
-cluster pod but connected to a freshly created temporary Openshift 4 cluster.
+The `acceptance` run acceptance tests against an operator running localy 
+in the test container and connected to a freshly created temporary Openshift 4 cluster.
 It makes use of the `--up-local` option provided by the Operator SDK testing
-tool.  It runs `test-e2e` Makefile target.
+tool.  It runs `test-acceptance` Makefile target.
 
-## Debugging e2e test
+## Debugging acceptance tests
 
 1. Login to https://api.ci.openshift.org
 2. Copy login command from top-right corner
@@ -122,7 +125,7 @@ tool.  It runs `test-e2e` Makefile target.
    job details from your pull request, you can see the name of the work
    namespace in the dashboard UI.  The name starts with `ci-op-`.
 4. Now you can check each container log or rsh into shell.
-5. In the container named `setup` in `e2e` pod, you will get kubeconfig for the
+5. In the container named `setup` in `acceptance` pod, you will get kubeconfig for the
    temporary cluster.  You can use it to access the temporary cluster and
    perform further debugging.
 

@@ -9,7 +9,7 @@
 
 ### Testing
 
-<< How to test those changes, reference implementation of unit/e2e tests. >>
+<< How to test those changes, reference implementation of unit/acceptance tests. >>
 
 
 For further more details refer the CONTRIBUTING.md
