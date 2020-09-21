@@ -23,7 +23,7 @@ class Servicebindingoperator():
     def is_running(self):
         start_sbo = os.getenv("TEST_ACCEPTANCE_START_SBO")
         start_sbo | should_not.be_none.desc("TEST_ACCEPTANCE_START_SBO is set")
-        start_sbo | should.be_in({"local", "operator-hub"})
+        start_sbo | should.be_in({"local", "remote", "operator-hub"})
 
         if start_sbo == "local":
             os.getenv("TEST_ACCEPTANCE_SBO_STARTED") | should_not.start_with("FAILED").desc("TEST_ACCEPTANCE_SBO_STARTED is not FAILED")
