@@ -232,6 +232,17 @@ Feature: Bind an application to a service
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-empty-app" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-empty-app" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-empty-app" should be changed to "EmptyApplication"
+        And Secret "binding-request-empty-app" contains "DATABASE_DBNAME" key with value "db-demo-empty-app"
+        And Secret "binding-request-empty-app" contains "DATABASE_SECRET_USER" key with value "postgres"
+        And Secret "binding-request-empty-app" contains "DATABASE_SECRET_PASSWORD" key with value "password"
+        And Secret "binding-request-empty-app" contains "DATABASE_CONFIGMAP_DB_PASSWORD" key with value "password"
+        And Secret "binding-request-empty-app" contains "DATABASE_CONFIGMAP_DB_NAME" key with value "db-demo-empty-app"
+        And Secret "binding-request-empty-app" contains "DATABASE_CONFIGMAP_DB_PORT" key with value "5432"
+        And Secret "binding-request-empty-app" contains "DATABASE_CONFIGMAP_DB_USER" key with value "postgres"
+        And Secret "binding-request-empty-app" contains "DATABASE_CONFIGMAP_DB_HOST" key with dynamic IP addess as the value
+        And Secret "binding-request-empty-app" contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
+        And Secret "binding-request-empty-app" contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
+
 
 
     Scenario: Backend Service status update gets propagated to the binding secret
