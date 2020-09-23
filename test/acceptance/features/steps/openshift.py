@@ -231,16 +231,8 @@ spec:
         return output
 
     def get_resource_info_by_jq(self, resource_type, name, namespace, jq_expression, wait=False, interval=5, timeout=120):
-        output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq -rc \'{jq_expression}\'')
-        if exit_code != 0:
-            if wait:
-                attempts = timeout/interval
-                while exit_code != 0 and attempts > 0:
-                    output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq -rc \'{jq_expression}\'')
-                    attempts -= 1
-                    time.sleep(interval)
-        exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
-        return output.rstrip("\n")
+        output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq  \'{jq_expression}\'')
+        return output
 
     def create_image_stream(self, name, registry_namespace):
         image_stream = self.image_stream_template.format(name=name, namespace=registry_namespace)
