@@ -531,3 +531,57 @@ Feature: Bind an application to a service
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
         And Application endpoint "/api/todos" is available
+
+    Scenario: Provide binding info through backing service CRD annotation
+        Given The Custom Resource Definition is present
+                """
+                apiVersion: apiextensions.k8s.io/v1beta1
+                kind: CustomResourceDefinition
+                metadata:
+                  name: backends.stable.example.com
+                  annotations:
+                      servicebindingoperator.redhat.io/status.ready: 'binding:env:attribute'
+                      servicebindingoperator.redhat.io/spec.host: 'binding:env:attribute'
+                spec:
+                  group: stable.example.com
+                  versions:
+                    - name: v1
+                      served: true
+                      storage: true
+                  scope: Namespaced
+                  names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                      - bk
+                """
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo
+            spec:
+                host: example.common
+            status:
+                ready: true
+            """
+        * Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-backend-a
+            spec:
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo
+                    id: SBR
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "False"
+        And Secret "binding-request-backend-a" contains "BACKEND_READY" key with value "true"
+        And Secret "binding-request-backend-a" contains "BACKEND_HOST" key with value "example.common"
