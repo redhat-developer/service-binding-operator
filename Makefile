@@ -174,7 +174,7 @@ endif
 
 .PHONY: lint
 ## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
-lint: setup-venv lint-go-code lint-yaml lint-python-code
+lint: setup-venv lint-go-code lint-yaml lint-python-code lint-feature-files
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
 .PHONY: lint-yaml
@@ -197,6 +197,11 @@ $(GOLANGCI_LINT_BIN):
 .PHONY: lint-python-code
 lint-python-code: setup-venv
 	$(Q)PYTHON_VENV_DIR=$(PYTHON_VENV_DIR) ./hack/check-python/lint-python-code.sh
+
+## -- Check the acceptance tests feature files
+.PHONY: lint-feature-files
+lint-feature-files:
+	$(Q)./hack/check-feature-files.sh
 
 .PHONY: setup-venv
 ## Setup virtual environment
