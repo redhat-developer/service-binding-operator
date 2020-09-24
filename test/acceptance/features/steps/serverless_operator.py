@@ -1,4 +1,5 @@
 import re
+import polling2
 
 from command import Command
 from openshift import Openshift
@@ -20,17 +21,32 @@ class ServerlessOperator():
         self.name = name
         self.namespace = namespace
 
-    def is_running(self, wait=False, name="knative-serving-operator"):
+    def is_running(self, wait=False):
+        currentCSV = self.openshift.get_current_csv(self.name, self.operator_catalog_source_name, self.operator_catalog_channel)
         if wait:
-            pod_name = self.openshift.wait_for_pod(self.pod_name_pattern.format(name=name), self.namespace)
+            polling2.poll(lambda: self.openshift.search_resource_in_namespace("csvs", currentCSV,
+                                                                              self.namespace), check_success=lambda v: v is not None, step=1, timeout=100)
         else:
-            pod_name = self.openshift.search_pod_in_namespace(self.pod_name_pattern.format(name=name), self.namespace)
-        if pod_name is not None:
-            operator_pod_status = self.openshift.check_pod_status(pod_name, self.namespace)
-            print("The pod {} is running: {}".format(name, operator_pod_status))
-            return operator_pod_status
+            if self.openshift.search_resource_in_namespace("csvs", currentCSV, self.namespace) is None:
+                return False
+
+        expectedDeployments = self.openshift.get_resource_info_by_jsonpath(
+            "csv", currentCSV, self.namespace, "{.spec.install.spec.deployments[*].name}").split()
+        found_pod_names = []
+        for deployment in expectedDeployments:
+            if wait:
+                found_pod_name = self.openshift.wait_for_pod(self.pod_name_pattern.format(name=deployment), self.namespace)
+            else:
+                found_pod_name = self.openshift.search_pod_in_namespace(self.pod_name_pattern.format(name=deployment), self.namespace)
+            if found_pod_name is not None:
+                operator_pod_status = self.openshift.check_pod_status(found_pod_name, self.namespace)
+                print("The pod {} is running: {}".format(found_pod_name, operator_pod_status))
+                found_pod_names.append(found_pod_name)
+        if len(found_pod_names) == len(expectedDeployments):
+            return True
         else:
-            return False
+            print(f"Not all pods from expected deployments [{expectedDeployments}] are running. Only following pods are: [{found_pod_names}]")
+        return False
 
     def install_operator_subscription(self):
         install_sub_output = self.openshift.create_operator_subscription(self.name, self.operator_catalog_source_name, self.operator_catalog_channel)

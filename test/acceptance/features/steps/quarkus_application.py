@@ -33,16 +33,17 @@ class QuarkusApplication(object):
             pod_name = self.openshift.search_pod_in_namespace(self.format_pattern(pod_name_pattern), self.namespace)
         return pod_name
 
-    def is_imported(self, wait=False):
+    def is_imported(self, wait=False, interval=5, timeout=600):
         deployment_name = self.openshift.get_deployment_name_in_namespace(
-            self.format_pattern(self.deployment_name_pattern), self.namespace, wait=wait, timeout=400)
+            self.format_pattern(self.deployment_name_pattern), self.namespace, wait=wait, timeout=timeout)
         if deployment_name is None:
             return False
         else:
-            deployment_status = self.openshift.get_deployment_status(deployment_name, self.namespace, wait_for_status="True")
-            print(f"The deployment {deployment_name} status is {deployment_status}")
-            output_match = re.search(r'True', deployment_status)
-            assert output_match is not None, "Matched deployment status is not True"
+            deployment_replicas = self.openshift.get_resource_info_by_jsonpath("deployment", deployment_name, self.namespace, "{.status.replicas}")
+            assert deployment_replicas.isnumeric(
+            ), f"Number of replicas of deployment '{deployment_name}' should be a numerical value, but is actually: '{deployment_replicas}"
+            assert int(deployment_replicas) > 0, "Number of replicas of deployment '{deployment_name}' " + \
+                "should be greater than 0, but is actually: '{deployment_replicas}'."
             return True
 
     def get_response_from_api(self, endpoint, wait=False, interval=5, timeout=300):
