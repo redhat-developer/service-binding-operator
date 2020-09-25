@@ -4,7 +4,7 @@ FROM scratch
 COPY manifests /manifests/
 COPY metadata /metadata/
 
-LABEL com.redhat.component="service-binding-operator-metadata-container" \
+LABEL com.redhat.component="service-binding-operator-bundle-container" \
 	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator-metadata"
 
 
