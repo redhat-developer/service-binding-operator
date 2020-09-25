@@ -215,82 +215,28 @@ out/test-namespace:
 get-test-namespace: out/test-namespace
 	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
 
-# E2E test
-.PHONY: e2e-deploy-3rd-party-crds
-e2e-deploy-3rd-party-crds: get-test-namespace
+# Testing setup
+.PHONY: deploy-test-3rd-party-crds
+deploy-test-3rd-party-crds: get-test-namespace
 	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/
 
-.PHONY: e2e-create-namespace
-e2e-create-namespace:
+.PHONY: create-test-namespace
+create-test-namespace:
 	$(Q)kubectl create namespace $(TEST_NAMESPACE)
 
-.PHONY: e2e-setup
-e2e-setup: e2e-cleanup e2e-create-namespace e2e-deploy-3rd-party-crds
-	$(Q)mkdir -p ${LOGS_DIR}/e2e
+.PHONY: test-setup
+test-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds
 
-.PHONY: e2e-cleanup
-e2e-cleanup: get-test-namespace
-	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/e2e-cleanup.sh
-
-OBSOLETE_E2E_MESSAGE=WARNING: e2e tests are obsolete and will be removed soon in favour of acceptance tests, \
-so they are disabled by default. If you need to run it anyway, set ENABLE_OBSOLETE_E2E=true in the environment.
-
-.PHONY: test-e2e
-## Runs the e2e tests locally from test/e2e dir
-ifeq ($(ENABLE_OBSOLETE_E2E), true)
-test-e2e: e2e-setup deploy-crds
-	$(info Running E2E test: $@)
-	$(Q)set -o pipefail; GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
-		operator-sdk --verbose test local ./test/e2e \
-			--namespace $(TEST_NAMESPACE) \
-			--up-local \
-			--skip-cleanup-error=$(SKIP_CLEANUP_ERROR) \
-			--go-test-flags "-timeout=110m" \
-			--local-operator-flags "$(ZAP_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS) \
-			| tee $(LOGS_DIR)/e2e/test-e2e.log
-else
-test-e2e:
-	$(info $(OBSOLETE_E2E_MESSAGE))
-endif
-
-.PHONY: parse-test-e2e-operator-log
-## Extract the local operator log from the logs of the last e2e tests run
-ifeq ($(ENABLE_OBSOLETE_E2E), true)
-parse-test-e2e-operator-log:
-	${HACK_DIR}/e2e-log-parser.sh ${LOGS_DIR}/e2e/test-e2e.log > ${LOGS_DIR}/e2e/local-operator.log
-else
-parse-test-e2e-operator-log:
-	$(info $(OBSOLETE_E2E_MESSAGE))
-endif
+.PHONY: test-cleanup
+test-cleanup: get-test-namespace
+	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/test-cleanup.sh
 
 .PHONY: test-unit
 ## Runs the unit tests without code coverage
 test-unit:
 	$(info Running unit test: $@)
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) -v -mod vendor $(TEST_EXTRA_ARGS)
-
-.PHONY: test-e2e-image
-## Run e2e tests on operator image
-ifeq ($(ENABLE_OBSOLETE_E2E), true)
-test-e2e-image: push-image
-	$(info Running e2e test on operator image: $@)
-	$(eval NAMESPACE := test-image-$(shell </dev/urandom tr -dc 'a-z0-9' | head -c 7  ; echo))
-	echo "$(NAMESPACE)"
-	$(Q)kubectl create namespace $(NAMESPACE)
-	$(Q)kubectl --namespace $(NAMESPACE) apply -f ./test/third-party-crds/postgresql_v1alpha1_database_crd.yaml
-	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) SERVICE_BINDING_OPERATOR_DISABLE_ELECTION=true \
-		operator-sdk --verbose test local ./test/e2e \
-			--namespace "$(NAMESPACE)" \
-			--image "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" \
-			--go-test-flags "-timeout=15m" \
-			--local-operator-flags "$(ZAP_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS)
-else
-test-e2e-image:
-	$(info $(OBSOLETE_E2E_MESSAGE))
-endif
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...) -v -mod vendor $(TEST_EXTRA_ARGS)
 
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
@@ -301,12 +247,12 @@ test-unit-with-coverage:
 	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)rm -vf '$(GOCOV_DIR)/*.txt'
 	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...|grep -v e2e) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
+		go test $(shell GOCACHE="$(GOCACHE)" go list ./...) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
 	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test-acceptance-setup
 ## Setup the environment for the acceptance tests
-test-acceptance-setup: setup-venv e2e-setup set-test-namespace deploy-rbac deploy-crds
+test-acceptance-setup: setup-venv test-setup set-test-namespace deploy-rbac deploy-crds
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup:
 	$(Q)echo "Starting local SBO instance"
@@ -345,26 +291,8 @@ test-acceptance-artifacts:
 	    && cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
 
 .PHONY: test
-## Test: Runs unit and integration (e2e) tests
-test: test-unit test-e2e
-
-.PHONY: test-e2e-olm-ci
-## OLM-E2E: Adds the operator as a subscription, and run e2e tests without any setup.
-ifeq ($(ENABLE_OBSOLETE_E2E), true)
-test-e2e-olm-ci:
-	$(Q)sed -e "s,REPLACE_IMAGE,registry.svc.ci.openshift.org/${OPENSHIFT_BUILD_NAMESPACE}/stable:service-binding-operator-registry," ./test/operator-hub/catalog_source.yaml | kubectl apply -f -
-	$(Q)kubectl apply -f ./test/operator-hub/subscription.yaml
-	$(eval DEPLOYED_NAMESPACE := openshift-operators)
-	$(Q)$(HACK_DIR)/check-crds.sh
-	$(Q)operator-sdk --verbose test local ./test/e2e \
-			--no-setup \
-			--go-test-flags "-timeout=15m" \
-			--local-operator-flags "$(ZAP_FLAGS)" \
-			$(OPERATOR_SDK_EXTRA_ARGS)
-else
-test-e2e-olm-ci:
-	$(info $(OBSOLETE_E2E_MESSAGE))
-endif
+## Test: Runs unit and acceptance tests
+test: test-unit test-acceptance
 
 ## -- Build Go binary and OCI image targets --
 

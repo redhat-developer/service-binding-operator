@@ -137,7 +137,7 @@ Consider including folks that also work outside your immediate sub-project.
 
 Consider the following in developing a test plan for this enhancement:
 
-- Will there be e2e and integration tests, in addition to unit tests?
+- Will there be acceptance tests, in addition to unit tests?
 - How will it be tested in isolation vs with other components?
 
 No need to outline all of the test cases, just the general strategy. Anything that would count as

@@ -49,7 +49,7 @@ Include an informative title and full details on the code changed/added in
 the git commit message and pull request description.
 
 Before submitting the pull request, verify that all existing tests run
-cleanly by executing unit and e2e tests with this make target:
+cleanly by executing unit and acceptance tests with this make target:
 
 ```bash
 make test
