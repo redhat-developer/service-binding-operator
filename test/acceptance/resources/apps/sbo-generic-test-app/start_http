@@ -1,0 +1,14 @@
+#!/bin/bash
+
+(
+echo "{"
+content=""
+for var in $(compgen -e); do
+    [ ! -z "$content" ] && content+=",\n"
+    content+="\"${var}\": \"${!var}\""
+done
+echo -e "$content"
+echo "}"
+) > /tmp/env.json
+
+exec /usr/sbin/lighttpd -D -f /etc/lighthttpd/lighthttpd.conf
