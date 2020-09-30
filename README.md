@@ -45,6 +45,30 @@ connect to a backing service (for example, a database):
   * Injects environment variables into the applications' `Deployment`, `DeploymentConfig`,
     `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
 
+### Example
+#### Binding a Java Application with a Database
+
+``` yaml
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: binding-request
+  namespace: service-binding-demo
+spec:
+  application:
+    name: java-app
+    group: apps
+    version: v1
+    resource: deployments
+  services:
+  - group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    name: db-demo
+    id: postgresDB
+```
+
+
 
 ## Dependencies
 
@@ -84,28 +108,6 @@ EOS
 * Binding of non-PodSpec-based Kubernetes resources.
 * Custom binding variables composed from one or more backing services.
 * Auto-detect binding resources in the absence of binding decorators.
-
-
-
-``` yaml
-apiVersion: operators.coreos.com/v1alpha1
-kind: ServiceBinding
-metadata:
-  name: binding-request
-  namespace: service-binding-demo
-spec:
-  application:
-    name: java-app
-    group: apps
-    version: v1
-    resource: deployments
-  services:
-  - group: postgresql.baiju.dev
-    version: v1alpha1
-    kind: Database
-    name: db-demo
-    id: postgresDB
-```
 
 
 ## Getting Started
