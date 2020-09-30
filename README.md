@@ -44,6 +44,14 @@ connect to a backing service (for example, a database):
   * Injects environment variables into the applications' `Deployment`, `DeploymentConfig`,
     `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
 
+
+## Dependencies
+
+| Dependency                                | Supported versions           |
+| ----------------------------------------- | ---------------------------- |
+| [Kubernetes](https://kubernetes.io/)      |  v1.17.\* or higher.        |
+
+
 ## Quick Start
 
 Clone the repository and run `make local` in an existing `kube:admin` OpenShift
@@ -63,6 +71,41 @@ spec:
   registryNamespace: redhat-developer
 EOS
 ```
+
+
+## Key Features
+
+* Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
+* Binding secret generation based on OLM descriptors and CRD/CR annotations.
+* Binding with multiple-backing services.
+* Binding as volume mounts and environment variables.
+* Binding of PodSpec-based workloads.
+* Binding of non-PodSpec-based Kubernetes resources.
+* Custom binding variables composed from one or more backing services.
+* Auto-detect binding resources in the absence of binding decorators.
+
+
+
+``` yaml
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: binding-request
+  namespace: service-binding-demo
+spec:
+  application:
+    name: java-app
+    group: apps
+    version: v1
+    resource: deployments
+  services:
+  - group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    name: db-demo
+    id: postgresDB
+```
+
 
 ## Getting Started
 
