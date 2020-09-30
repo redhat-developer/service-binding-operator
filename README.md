@@ -1,4 +1,5 @@
-# Connecting Applications with Services
+# The Service Binding Operator for Kubernetes
+## Connecting Applications with Services
 
 <p align="center">
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/redhat-developer/service-binding-operator">
