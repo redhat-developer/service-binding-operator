@@ -218,6 +218,13 @@ def then_app_is_connected_to_db(context, db_name):
     assert app_db_name == db_name, f"Unexpected response from API ('{db_endpoint}'): '{app_db_name}'. Expected is '{db_name}'"
 
 
+@when(u'Service binding "{sb_name}" is deleted')
+def service_binding_is_deleted(context, sb_name):
+    openshift = Openshift()
+    result = openshift.delete_service_binding(sb_name)
+    assert result is not None, f"Unable to delete service binding '{sb_name}'"
+
+
 # STEP
 @given(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
 @then(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')

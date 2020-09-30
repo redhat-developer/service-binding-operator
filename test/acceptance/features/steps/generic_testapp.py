@@ -33,3 +33,9 @@ def is_running(context, application_name):
 def check_env_var_value(context, name, value):
     found = polling2.poll(lambda: context.application.get_env_var_value(name) == value, step=5, timeout=400)
     assert found, f'Env var "{name}" should contain value "{value}"'
+
+
+@step(u'The env var "{name}" is not available to the application')
+def check_env_var_existence(context, name):
+    output = polling2.poll(lambda: context.application.get_env_var_value(name) is None, step=5, timeout=400)
+    assert output, f'Env var "{name}" should not exist'
