@@ -1,4 +1,5 @@
-# Connecting Applications with Services
+# The Service Binding Operator
+## Connecting Applications with Services in Kubernetes
 
 <p align="center">
     <a alt="GoReport" href="https://goreportcard.com/report/github.com/redhat-developer/service-binding-operator">
@@ -15,35 +16,56 @@
 ## Introduction
 
 The goal of the Service Binding Operator is to enable application authors to
-import an application and run it on OpenShift with operator-backed services
+import an application and run it on Kubernetes with services 
 such as databases, without having to perform manual configuration of secrets,
 configmaps, etc.
 
-In order to make a service bindable, the operator provider needs to express
+In order to make a service bindable, the backing service provider needs to express
 the information needed by applications to bind with the services provided by
-the operator. In other words, the operator provider must express the
+the operator. In other words, the backing service provider must express the
 information that is “interesting” to applications.
 
-There are multiple methods for making operator managed backing services
-bindable, including the backing operator providing metadata in CRD
+There are multiple methods for making backing service 
+bindable, including the backing service author 'decorating' the associated CRD with 
 annotations. Details on the methods for making backing services bindable
-are available in the [Operator Best Practices Guide](docs/OperatorBestPractices.md)
+are available in the [Backing Service Best Practices Guide](docs/BackingServiceBestPractices.md)
 
 In order to make an imported application (for example, a NodeJS application)
 connect to a backing service (for example, a database):
 
-* The app author (developer) creates a `ServiceBindingRequest` and specifies:
+* The app author (developer) creates a `ServiceBinding` and specifies:
   * The resource that needs the binding information. The resource can be
     specified by label selectors;
   * The backing service's resource reference that the imported application
     needs to be bound to;
 
 * The Service Binding Controller then:
-  * Reads backing service operator CRD annotations to discover the
+  * Reads backing service resource/CR/CRD annotations to discover the
     binding attributes
-  * Creates a binding secret for the backing service, example, an operator-managed database;
+  * Creates a binding secret for the backing service, example, a database;
   * Injects environment variables into the applications's `Deployment`, `DeploymentConfig`,
     `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
+    
+```
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: binding-request
+  namespace: service-binding-demo
+spec:
+  application:
+    name: java-app
+    group: apps
+    version: v1
+    resource: deployments
+  services:
+  - group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    name: db-demo
+    id: postgresDB
+```
+ 
 
 ## Quick Start
 
@@ -64,6 +86,24 @@ spec:
   registryNamespace: redhat-developer
 EOS
 ```
+
+## Features
+
+* Binding with backing services represented by Kubernetes resources including secrets, configmaps and CRD-backed resources.
+* Binding secret generation based on OLM descriptors, CRD/CR/resource annotations.
+* Binding with multiple-backing services.
+* Binding of PodSpec-based workloads.
+* Binding of non-PodSpec-based Kubernetes resources.
+* Custom binding variables composed from one or more backing services.
+* Auto-detect binding resources in the absence of binding decorators.
+
+
+## Dependencies
+
+| Dependency                                | Supported versions           |
+| ----------------------------------------- | ---------------------------- |
+| [Kubernetes](https://kubernetes.io/)      |  v1.17.\* or higher.        |
+
 
 ## Getting Started
 
@@ -105,34 +145,4 @@ The Service Binding community meets weekly on Thursdays at 11:15 AM UTC via [Goo
 Meeting Agenda is maintained [here](https://github.com/redhat-developer/service-binding-operator/issues?q=is%3Aissue+is%3Aopen+label%3Ameeting)
 
 Please file bug reports on [Github](https://github.com/redhat-developer/service-binding-operator/issues/new). For any other questions, reach out on `service-binding-support@redhat.com`.
-
-
-## Roadmap
-
-
-**Key**
-
-⚪️ Concept validated
-
-:white_check_mark: Works, has tests and at least one documented scenario
-
-
-
-### Maturity matrix
-
-| Feature                                        | Alpha                | Beta | GA |
-| -----------------------------------------------| -------------------- | ---- | -- |
-| Binding with Kubernetes resources              |  :white_check_mark:  |      |    |
-| Binding with CRD-backed services               |  :white_check_mark:  |      |    |
-| Binding with OLM CRD-backed services           |  :white_check_mark:  |      |    |
-| Binding with secrets/configmaps                |  :white_check_mark:  |      |    |
-| Binding of PodSpec-based workloads             |  :white_check_mark:  |      |    |
-| Binding of non-PodSpec-based workloads         |  ⚪️    |      |    |
-| Binding with multiple-backing services         |  :white_check_mark:  |      |    |
-| Custom binding variables                       |  :white_check_mark:  |      |    |
-| Auto-detect binding resources                  |  :white_check_mark:  |      |    |
-| Security: Validating admission webhook         |   ⚪️             |      |    |
-| Support on Kubernetes                         |   :white_check_mark: |      |    |
-| Support on OpenShift                          |   :white_check_mark: |      |    |
-| Adoption by third-party backing services  |    ⚪️   |      |    |
 
