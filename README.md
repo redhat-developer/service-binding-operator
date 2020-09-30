@@ -100,10 +100,12 @@ EOS
 
 ## Key Features
 
-* Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
-* Binding secret generation based on OLM descriptors and CRD/CR annotations.
-* Binding with multiple-backing services.
-* Binding as volume mounts and environment variables.
+* Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
+* Support binding with multiple-backing services.
+* Extract binding information based on annotations present in CRDs/CRs/resources. 
+* Extract binding values based on annotations present in OLM descriptors.
+* Project binding values as volume mounts.
+* Project binding values as environment variables.
 * Binding of PodSpec-based workloads.
 * Binding of non-PodSpec-based Kubernetes resources.
 * Custom binding variables composed from one or more backing services.
