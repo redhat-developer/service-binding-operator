@@ -2,11 +2,11 @@
 
 ## Aim of the project
 
-The Service Binding Operator project aims to:
-
-* Enable application developers connect their workloads to backing services **with little or no code changes**.
+* Enable application developers to connect their workloads to backing services **with little or no code changes**.
 
 * Enable backing service authors to expose binding information by adding metadata to the the representative Kubernetes objects **with little or no code changes**.
+
+* Provide a managed binding experience.
 
 The Service Binding Operator is being designed to be adopted by application developers and backing service providers with a **low barrier for entry**.
 
