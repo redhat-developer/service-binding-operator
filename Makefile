@@ -257,15 +257,14 @@ test-unit-with-coverage:
 
 .PHONY: test-acceptance-setup
 ## Setup the environment for the acceptance tests
-test-acceptance-setup: setup-venv test-setup set-test-namespace deploy-rbac deploy-crds
+test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
-test-acceptance-setup:
+test-acceptance-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds set-test-namespace deploy-rbac deploy-crds
 	$(Q)echo "Starting local SBO instance"
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" ./hack/deploy-sbo-local.sh))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), remote)
-test-acceptance-setup:
-	$(Q)echo "Using remote SBO instance running in '$(TEST_NAMESPACE)' namespace"
-	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(TEST_NAMESPACE))
+test-acceptance-setup: test-cleanup create-test-namespace set-test-namespace
+	$(Q)echo "Using remote SBO instance running in '$(SBO_NAMESPACE)' namespace"
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
@@ -283,6 +282,7 @@ test-acceptance: test-acceptance-setup
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
+		SBO_NAMESPACE=$(SBO_NAMESPACE) \
 		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) test/acceptance/features
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)

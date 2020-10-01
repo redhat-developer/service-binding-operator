@@ -9,15 +9,17 @@ class Servicebindingoperator():
     name = ""
     namespace = ""
 
+    name_pattern = f"{name}.*"
+
     def __init__(self,  name="service-binding-operator", namespace="openshift-operators"):
         self.namespace = namespace
         self.name = name
 
     def check_resources(self):
         self.openshift.is_resource_in("servicebinding") | should.be_truthy.desc("CRD is in")
-        self.openshift.search_resource_in_namespace("rolebindings", self.name, self.namespace) | should_not.be_none.desc("Role binding is in")
-        self.openshift.search_resource_in_namespace("roles", self.name, self.namespace) | should_not.be_none.desc("Role is in")
-        self.openshift.search_resource_in_namespace("serviceaccounts", self.name, self.namespace) | should_not.be_none.desc("Service Account")
+        self.openshift.search_resource_in_namespace("rolebindings", self.get_name_pattern(), self.namespace) | should_not.be_none.desc("Role binding is in")
+        self.openshift.search_resource_in_namespace("roles", self.get_name_pattern(), self.namespace) | should_not.be_none.desc("Role is in")
+        self.openshift.search_resource_in_namespace("serviceaccounts", self.get_name_pattern(), self.namespace) | should_not.be_none.desc("Service Account")
         return True
 
     def is_running(self):
@@ -31,3 +33,6 @@ class Servicebindingoperator():
             return False
 
         return self.check_resources()
+
+    def get_name_pattern(self):
+        return self.name_pattern.format(name=self.name)
