@@ -1,7 +1,6 @@
 import os
 
 from openshift import Openshift
-from pyshould import should, should_not
 
 
 class Servicebindingoperator():
@@ -16,19 +15,29 @@ class Servicebindingoperator():
         self.name = name
 
     def check_resources(self):
-        self.openshift.is_resource_in("servicebinding") | should.be_truthy.desc("CRD is in")
-        self.openshift.search_resource_in_namespace("rolebindings", self.get_name_pattern(), self.namespace) | should_not.be_none.desc("Role binding is in")
-        self.openshift.search_resource_in_namespace("roles", self.get_name_pattern(), self.namespace) | should_not.be_none.desc("Role is in")
-        self.openshift.search_resource_in_namespace("serviceaccounts", self.get_name_pattern(), self.namespace) | should_not.be_none.desc("Service Account")
+        crd_name = "servicebinding"
+        assert self.openshift.is_resource_in(crd_name), f"CRD '{crd_name}' does not exist"
+
+        name_pattern = self.get_name_pattern()
+
+        output = self.openshift.search_resource_in_namespace("rolebindings", name_pattern, self.namespace)
+        assert output is not None, f"Unable to find role binding with name that maches '{name_pattern}' in namespace '{self.namespace}': {output}"
+
+        output = self.openshift.search_resource_in_namespace("roles", name_pattern, self.namespace)
+        assert output is not None, f"Unable to find role with name that maches '{name_pattern}' in namespace '{self.namespace}': {output}"
+
+        output = self.openshift.search_resource_in_namespace("serviceaccounts", name_pattern, self.namespace)
+        assert output is not None,  f"Unable to find service account with name that maches '{name_pattern}' in namespace '{self.namespace}': {output}"
+
         return True
 
     def is_running(self):
         start_sbo = os.getenv("TEST_ACCEPTANCE_START_SBO")
-        start_sbo | should_not.be_none.desc("TEST_ACCEPTANCE_START_SBO is set")
-        start_sbo | should.be_in({"local", "remote", "operator-hub"})
+        assert start_sbo is not None, "TEST_ACCEPTANCE_START_SBO is not set. It should be one of local, remote or operator-hub"
+        assert start_sbo in {"local", "remote", "operator-hub"}, "TEST_ACCEPTANCE_START_SBO should be one of local, remote or operator-hub"
 
         if start_sbo == "local":
-            os.getenv("TEST_ACCEPTANCE_SBO_STARTED") | should_not.start_with("FAILED").desc("TEST_ACCEPTANCE_SBO_STARTED is not FAILED")
+            assert not os.getenv("TEST_ACCEPTANCE_SBO_STARTED").startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
         elif start_sbo == "operator-hub":
             return False
 

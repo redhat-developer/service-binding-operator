@@ -20,7 +20,6 @@ from namespace import Namespace
 from nodejs_application import NodeJSApp
 from openshift import Openshift
 from postgres_db import PostgresDB
-from pyshould import should, should_not
 from quarkus_application import QuarkusApplication
 from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
 from serverless_operator import ServerlessOperator
@@ -34,7 +33,7 @@ def given_namespace_is_used(context, namespace_name):
     namespace = Namespace(namespace_name)
     if not namespace.is_present():
         print("Namespace is not present, creating namespace: {}...".format(namespace_name))
-        namespace.create() | should.be_truthy.desc("Namespace {} is created".format(namespace_name))
+        assert namespace.create(), f"Unable to create namespace '{namespace_name}'"
     print("Namespace {} is created!!!".format(namespace_name))
     context.namespace = namespace
 
@@ -59,7 +58,7 @@ def sbo_is_running_in_namespace(context, operator_namespace):
     Checks if the SBO is up and running in the given namespace
     """
     sb_operator = Servicebindingoperator(namespace=operator_namespace)
-    sb_operator.is_running() | should.be_truthy.desc("Service Binding Operator is running")
+    assert sb_operator.is_running(), "Service Binding Operator is not running"
     print("Service binding operator is running!!!")
 
 
@@ -86,7 +85,7 @@ def sbo_is_running(context):
     if "sbo_namespace" in context:
         sbo_is_running_in_namespace(context, context.sbo_namespace)
     else:
-        context.namespace | should_not.be_none.desc("Namespace set in context")
+        assert context.namespace is not None, "Namespace is not set in context"
         sbo_is_running_in_namespace(context, context.namespace.name)
 
 
@@ -96,9 +95,9 @@ def given_db_operator_is_installed(context):
     db_operator = DbOperator()
     if not db_operator.is_running():
         print("DB operator is not installed, installing...")
-        db_operator.install_catalog_source() | should.be_truthy.desc("DB catalog source installed")
-        db_operator.install_operator_subscription() | should.be_truthy.desc("DB operator subscription installed")
-        db_operator.is_running(wait=True) | should.be_truthy.desc("DB operator installed")
+        assert db_operator.install_catalog_source(), "Unable to install DB catalog source"
+        assert db_operator.install_operator_subscription(), "Unable to install DB operator subscription"
+        assert db_operator.is_running(wait=True), "Unable to launch DB operator"
     print("PostgresSQL DB operator is running!!!")
 
 
@@ -113,8 +112,8 @@ def nodejs_app_imported_from_image_is_running(context, application_name, applica
     application = NodeJSApp(application_name, namespace.name, application_image)
     if not application.is_running():
         print("application is not running, trying to import it")
-        application.install() | should.be_truthy.desc("Application is installed")
-        application.is_running(wait=True) | should.be_truthy.desc("Application is running")
+        assert application.install(), f"Unable to install application '{application_name}' from image '{application_image}'"
+        assert application.is_running(wait=True), f"Unable to start application '{application_name}' from image '{application_image}'"
     print("Nodejs application is running!!!")
     context.application = application
     context.application_type = "nodejs"
@@ -166,8 +165,8 @@ def db_instance_is_running(context, db_name):
 
     db = PostgresDB(db_name, namespace.name)
     if not db.is_running():
-        db.create() | should.be_truthy.desc("Postgres DB created")
-        db.is_running(wait=True) | should.be_truthy.desc("Postgres DB is running")
+        assert db.create(), f"Unable to create DB '{db_name}'"
+        assert db.is_running(wait=True), f"Unable to launch DB '{db_name}'"
     print(f"DB {db_name} is running!!!")
 
 
@@ -214,18 +213,20 @@ def then_application_redeployed(context):
 @then(u'application should be connected to the DB "{db_name}"')
 def then_app_is_connected_to_db(context, db_name):
     application = context.application
-    app_db_name = application.get_response_from_api(wait=True, endpoint="/api/status/dbNameCM")
-    app_db_name | should.be_equal_to(db_name)
+    db_endpoint = "/api/status/dbNameCM"
+    app_db_name = application.get_response_from_api(wait=True, endpoint=db_endpoint)
+    assert app_db_name == db_name, f"Unexpected response from API ('{db_endpoint}'): '{app_db_name}'. Expected is '{db_name}'"
 
 
 # STEP
 @then(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
 def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
     openshift = Openshift()
-    openshift.search_resource_in_namespace("servicebindings", sbr_name, context.namespace.name) | should_not.be_none.desc("SBR {sbr_name} exists")
+    assert openshift.search_resource_in_namespace(
+        "servicebindings", sbr_name, context.namespace.name) is not None, f"Service Binding '{sbr_name}' does not exist in namespace '{context.namespace.name}'"
     result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path, wait=True, timeout=600)
-    result | should_not.be_none.desc("jsonpath result")
-    re.fullmatch(json_value_regex, result) | should_not.be_none.desc("SBO jsonpath result \"{result}\" should match \"{json_value_regex}\"")
+    assert result is not None, f"Invalid result for SBO jsonpath: {result}."
+    assert re.fullmatch(json_value_regex, result) is not None, f"SBO jsonpath result \"{result}\" does not match \"{json_value_regex}\""
 
 
 # STEP
@@ -366,7 +367,7 @@ def apply_yaml(context):
     metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', yaml).group(0))
     output = openshift.oc_apply(yaml)
     result = re.search(rf'.*{metadata_name}.*(created|unchanged|configured)', output)
-    result | should_not.be_none.desc("CR {metadata_name} Created/Updated")
+    assert result is not None, f"Unable to apply YAML for CR '{metadata_name}': {output}"
 
 
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
@@ -416,14 +417,14 @@ def invalid_sbr_is_applied(context):
 @then(u'Error message "{err_msg}" is thrown')
 def validate_error(context, err_msg):
     search = re.search(rf'.*{err_msg}.*', context.expected_error)
-    assert search is not None, "Actual error: {context.expected_error}, Expected error: {err_msg}"
+    assert search is not None, f"Actual error: '{context.expected_error}', Expected error: '{err_msg}'"
 
 
 @then(u'Service Binding "{sb_name}" is not persistent in the cluster')
 def validate_absent_sb(context, sb_name):
     openshift = Openshift()
     output = openshift.search_resource_in_namespace("servicebindings", sb_name, context.namespace.name)
-    assert output is None, "Service Binding {sb_name} is present in namespace {context.namespace.name}"
+    assert output is None, f"Service Binding {sb_name} is present in namespace '{context.namespace.name}'"
 
 
 @then(u'Service Binding "{sb_name}" is not updated')
