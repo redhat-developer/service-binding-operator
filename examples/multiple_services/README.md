@@ -71,7 +71,7 @@ spec:
 ```
 
 Create the ETCD cluster `etcd-demo` by pushing the "+" button on the top right
-corner and pasting the following:
+corner and paste the following:
 
 ```yaml
 ---

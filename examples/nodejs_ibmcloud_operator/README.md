@@ -124,7 +124,7 @@ oc apply -f language-translator-binding.yaml
 
 In alternative, you may also create the service from the OpenShift Web Console in the Developer perspective,
 navigating to `Add`->`From Catalog`, selecting `Service`, clicking `Create` and using the default sample
-template which provision the Language Translator Service (this might change in the future, so it is reccommended to check against the sample template provided [here](./language-translator.yaml)).
+template which provision the Language Translator Service (this might change in the future, so it is recommended to check against the sample template provided [here](./language-translator.yaml)).
 Repeat the same process for adding a binding by navigating to `Add`->`From Catalog`, selecting `Binding`, clicking `Create` and using the default sample template which creates a binding the Language Translator Service.
 
 Note that a binding needs to be created, as service instances and service credentials have different
@@ -260,7 +260,7 @@ npm info lifecycle language-translator-demo@0.3.10~start: language-translator-de
 Server running on port: 8080
 ```
 
-We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the custom environment variables that  that we specified above in the `ServiceBinding`.
+We can see that the binding indeed worked and the Service Binding Operator successfully injected all the custom environment variables that we specified above in the `ServiceBinding`.
 
 To create a route for the application, run the following command:
 

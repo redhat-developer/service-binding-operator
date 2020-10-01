@@ -194,7 +194,7 @@ In the OpenShift Console switch to the Developer perspective. (Make sure you hav
 
 and click on the `[Create]` button.
 
-Notice, that during the import no DB config was mentioned or requestd.
+Notice, that during the import no DB config was mentioned or requested.
 
 When the application is running navigate to its route to verify that it is up. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
 
@@ -283,7 +283,7 @@ make create-service-binding
 
 There are 2 parts in the request:
 
-* `application` - used to search for the application based on thename that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
+* `application` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
 * `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
@@ -326,7 +326,7 @@ Conditions have two types `CollectionReady` and `InjectionReady`
 where
 
 * `CollectionReady` type represents collection of secret from the service
-* `InjectionReady` type represents injection of secret into the application
+* `InjectionReady` type represents an injection of the secret into the application
 
 Conditions can have the following type, status and reason:
 
