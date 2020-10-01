@@ -437,15 +437,15 @@ func MultiNamespaceServiceBindingMock(
 			CustomEnvVar:    []corev1.EnvVar{},
 			Application: &v1alpha1.Application{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
-				LocalObjectReference:                 corev1.LocalObjectReference{Name: applicationResourceRef},
+				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: &falseBoolPtr,
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-					LocalObjectReference:             corev1.LocalObjectReference{Name: backingServiceResourceRef},
-					Namespace:        &backingServiceNamespace,
+					GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+					LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
+					Namespace:            &backingServiceNamespace,
 				},
 			},
 		},
@@ -477,15 +477,15 @@ func ServiceBindingMock(
 			CustomEnvVar:    []corev1.EnvVar{},
 			Application: &v1alpha1.Application{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
-				LocalObjectReference:                 corev1.LocalObjectReference{Name: applicationResourceRef},
+				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: &falseBoolPtr,
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-					LocalObjectReference:             corev1.LocalObjectReference{Name: backingServiceResourceRef},
-					Namespace:        backingServiceNamespace,
+					GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+					LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
+					Namespace:            backingServiceNamespace,
 				},
 			},
 		},

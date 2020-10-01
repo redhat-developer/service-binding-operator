@@ -220,7 +220,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -255,7 +255,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -301,7 +301,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -336,7 +336,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			Application: &v1alpha1.Application{
 				LabelSelector: &metav1.LabelSelector{},
 			},
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   db1.GetObjectKind().GroupVersionKind().Group,
@@ -371,7 +371,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				},
 				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
-			Services: &[]v1alpha1.Service{},
+			Services: []v1alpha1.Service{},
 		},
 		Status: v1alpha1.ServiceBindingStatus{},
 	}

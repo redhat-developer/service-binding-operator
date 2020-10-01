@@ -23,7 +23,8 @@ type ServiceBindingSpec struct {
 	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
 
 	// Services is used to identify multiple backing services.
-	Services *[]Service `json:"services,omitempty"`
+	// +kubebuilder:validation:MinItems:=1
+	Services []Service `json:"services"`
 
 	// Application is used to identify the application connecting to the
 	// backing service operator.

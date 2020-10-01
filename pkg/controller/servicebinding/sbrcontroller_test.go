@@ -35,7 +35,7 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 	t.Run("update", func(t *testing.T) {
 		sbrA := &v1alpha1.ServiceBinding{
 			Spec: v1alpha1.ServiceBindingSpec{
-				Services: &[]v1alpha1.Service{
+				Services: []v1alpha1.Service{
 					{
 						GroupVersionKind:     metav1.GroupVersionKind{Group: "test", Version: "v1alpha1", Kind: "TestHost"},
 						LocalObjectReference: corev1.LocalObjectReference{Name: ""},
@@ -45,7 +45,7 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 		}
 		sbrB := &v1alpha1.ServiceBinding{
 			Spec: v1alpha1.ServiceBindingSpec{
-				Services: &[]v1alpha1.Service{
+				Services: []v1alpha1.Service{
 					{
 						GroupVersionKind:     metav1.GroupVersionKind{Group: "test", Version: "v1", Kind: "TestHost"},
 						LocalObjectReference: corev1.LocalObjectReference{Name: ""},

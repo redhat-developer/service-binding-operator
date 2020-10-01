@@ -78,14 +78,6 @@ func (r *reconciler) getServiceBinding(
 	return sbr, nil
 }
 
-func servicesOrEmptyList(maybeServices *[]v1alpha1.Service) []v1alpha1.Service {
-	services := []v1alpha1.Service{}
-	if maybeServices != nil {
-		services = *maybeServices
-	}
-	return services
-}
-
 // Reconcile a ServiceBinding by the following steps:
 // 1. Inspecting SBR in order to identify backend service. The service is composed by a CRD name and
 //    kind, and by inspecting "connects-to" label identify the name of service instance;
@@ -128,9 +120,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	ctx := context.Background()
 
-	selectors := servicesOrEmptyList(sbr.Spec.Services)
-
-	if len(selectors) == 0 {
+	if len(sbr.Spec.Services) == 0 {
 		_, updateErr := updateServiceBindingStatus(
 			r.dynClient,
 			sbr,
@@ -162,7 +152,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		logger.WithName("buildServiceContexts"),
 		r.dynClient,
 		sbr.GetNamespace(),
-		selectors,
+		sbr.Spec.Services,
 		sbr.Spec.DetectBindingResources,
 		r.restMapper,
 	)
