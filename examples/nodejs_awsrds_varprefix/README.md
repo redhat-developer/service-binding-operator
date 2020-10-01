@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This scenario illustrates binding an imported application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and a use of the `envVarPrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
+This scenario illustrates binding an imported application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and use of the `envVarPrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -268,7 +268,7 @@ MYDB_RDSDATABASE_SECRET_DB_PASSWORD=passwordorsomething
 Taking a nap for 1 hour...
 ```
 
-We can see that the binding indeed worked and the Service Binding Operator sucessfully injected all the environment variables that the AWS RDS exposes all starting with our prefix `MYDB_` that we specified above in the `ServiceBinding`.
+We can see that the binding indeed worked and the Service Binding Operator successfully injected all the environment variables that the AWS RDS exposes all starting with our prefix `MYDB_` that we specified above in the `ServiceBinding`.
 
 That's enough for the Shell application. Let's see if the connection to the DB really works. We do that in the next section with the Node.js application.
 
@@ -309,7 +309,7 @@ spec:
     resource: deployments
 ```
 
-The request is basically the same as the one we used for the Shell application. The only difference is the application name used in name used in the `application`.
+The request is basically the same as the one we used for the Shell application. The only difference is the application name used in the `application`.
 
 We can use the `create-service-binding-nodejs-app` make target to create the request for us:
 

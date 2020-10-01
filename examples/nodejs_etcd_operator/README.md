@@ -58,5 +58,5 @@ spec:
   detectBindingResources: true
 ```
 
-6. Application should be binded to the Etcd database automatically.
+6. Application should be bound to the Etcd database automatically.
 ![](https://i.imgur.com/JjORDrJ.png)

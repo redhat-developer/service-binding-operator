@@ -18,7 +18,7 @@ The cluster admin needs to install operators, knative serving and a builder imag
 * Service Binding Operator
 * Backing Service Operator
 * Serverless plugin
-  * Service Mesh Opearator
+  * Service Mesh Operator
   * Serverless Operator
   * Serverless UI
 * Quarkus Native S2i Builder Image
@@ -106,7 +106,7 @@ make install-serverless-ui
 This enables `Serverless` view in the UI. Note that installing the Serverless features will require around seven minutes for the command to run. You can check the status of this install with this command:
 
 ```shell
-oc get knativeserving knative-serving -n knative-serving -oyaml
+oc get knativeserving knative-serving -n knative-serving -o yaml
 ```
 
 #### Install the `ubi-quarkus-native-s2i` builder image
@@ -172,7 +172,7 @@ In the OpenShift Console switch to the Developer perspective. (We need to make s
 
 and click on the `[Create]` button.
 
-Notice, that during the import no DB config was mentioned or requestd.
+Notice, that during the import no DB config was mentioned or requested.
 
 It take several minutes to build the application using the Quarkus native s2i builder image, we can check the running build progress in the Administrator's perspective under `Builds`->`Builds` view until the build status is `Complete`.
 
