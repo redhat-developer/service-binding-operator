@@ -16,7 +16,7 @@ class DbOperator():
     namespace = ""
     operator_catalog_source_name = "sample-db-operators"
     operator_catalog_image = "quay.io/redhat-developer/sample-db-operators-olm:v1"
-    operator_catalog_channel = "stable"
+    operator_catalog_channel = "beta"
     package_name = "db-operators"
 
     def __init__(self, name="postgresql-operator", namespace="openshift-operators"):

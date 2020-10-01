@@ -121,17 +121,16 @@ The database CRD contains the list of annotations:
 ```
 metadata:
   annotations:
-    servicebindingoperator.redhat.io/spec.dbName: binding:env:attribute
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.host: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.name: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.password: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.port: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.user: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConnectionIP: binding:env:attribute
-    servicebindingoperator.redhat.io/status.dbConnectionPort: binding:env:attribute
-    servicebindingoperator.redhat.io/status.dbCredentials-password: binding:env:object:secret
-    servicebindingoperator.redhat.io/status.dbCredentials-user: binding:env:object:secret
-    servicebindingoperator.redhat.io/status.dbName: binding:env:attribute
+    service.binding/dbName: 'path={.spec.dbName}'
+    service.binding/db.host: 'path={.status.dbConfigMap},objectType=ConfigMap'
+    service.binding/db.name: 'path={.status.dbConfigMap},objectType=ConfigMap'
+    service.binding/db.password: 'path={.status.dbConfigMap},objectType=ConfigMap'
+    service.binding/db.port: 'path={.status.dbConfigMap},objectType=ConfigMap'
+    service.binding/db.user: 'path={.status.dbConfigMap},objectType=ConfigMap'
+    service.binding/dbConnectionIP: 'path={.status.dbConnectionIP}'
+    service.binding/dbConnectionPort: 'path={.status.dbConnectionPort}'
+    service.binding/user: 'path={.status.dbCredentials},objectType=Secret'
+    service.binding/password: 'path={.status.dbCredentials},objectType=Secret'
 
 ```
 

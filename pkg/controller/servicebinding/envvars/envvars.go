@@ -2,6 +2,7 @@ package envvars
 
 import (
 	"errors"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -84,6 +85,7 @@ func buildEnvVarName(path []string) string {
 		}
 	}
 	envVar := strings.Join(newPath, "_")
+	envVar = strings.ReplaceAll(envVar, ".", "_")
 	envVar = strings.ToUpper(envVar)
 	return envVar
 }
@@ -100,8 +102,14 @@ func buildString(val string, path []string) map[string]string {
 // present in the given `obj` map.
 func buildMap(obj map[string]interface{}, path []string) (map[string]string, error) {
 	envVars := make(map[string]string)
-	for k, v := range obj {
-		if err := buildInner(path, k, v, envVars); err != nil {
+
+	keys := make([]string, 0)
+	for k := range obj {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		if err := buildInner(path, k, obj[k], envVars); err != nil {
 			return nil, err
 		}
 	}

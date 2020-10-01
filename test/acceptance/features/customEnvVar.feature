@@ -63,7 +63,7 @@ Feature: Inject custom env variable into application
                     archive: "false"
                     environment: "demo"
             """
-    * Generic test application "foo" is running
+    * Generic test application "foo2" is running
     When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -72,7 +72,7 @@ Feature: Inject custom env variable into application
                 name: custom-env-var-from-map
             spec:
                 application:
-                    name: foo
+                    name: foo2
                     group: apps
                     version: v1
                     resource: deployments
@@ -105,7 +105,7 @@ Feature: Inject custom env variable into application
                     archive: "false"
                     environment: "demo"
             """
-    * Generic test application "foo" is running
+    * Generic test application "foo3" is running
     When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -114,7 +114,7 @@ Feature: Inject custom env variable into application
                 name: custom-env-var-from-scalar
             spec:
                 application:
-                    name: foo
+                    name: foo3
                     group: apps
                     version: v1
                     resource: deployments

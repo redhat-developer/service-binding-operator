@@ -66,7 +66,7 @@ Feature: Bind a single application to multiple services
         metadata:
             name: internal-db-1sbr
             annotations:
-                servicebindingoperator.redhat.io/spec.host_internal_db: 'binding:env:attribute'
+                service.binding/host_internal_db: path={.spec.host_internal_db}
         spec:
             host_internal_db: internal.db.stable.example.com
         """
@@ -77,7 +77,7 @@ Feature: Bind a single application to multiple services
         metadata:
             name: external-db-1sbr
             annotations:
-                servicebindingoperator.redhat.io/spec.host_external_db: 'binding:env:attribute'
+                service.binding/host_external_db: path={.spec.host_external_db}
         spec:
             host_external_db: external.db.stable.example.com
         """
