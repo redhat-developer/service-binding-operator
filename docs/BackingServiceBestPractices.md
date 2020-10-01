@@ -140,13 +140,13 @@ statusDescriptors:
 ### Operator Not Providing Metadata
 
 This feature enables operators that manage backing services but which don't
-have any metadata in their CSV to use the Service Binding Operator to bind
+have any metadata in their CSV or CRD to use the Service Binding Operator to bind
 together the service and applications. The Service Binding Operator binds all
-sub-resources defined in the backing service CR by populating the binding
+information 'dependent' to the backing service CR by populating the binding
 secret with information from Routes, Services, ConfigMaps, and Secrets owned
 by the backing service CR.
 
-[This is how resource and sub-resource relationships are set in
+[This is how owner and dependent relationships are set in
 Kubernetes.](https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#owners-and-dependents)
 
 The binding is initiated by the introduction of this API option in the backing service CR:
