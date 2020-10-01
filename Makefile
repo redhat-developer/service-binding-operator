@@ -288,6 +288,11 @@ ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
 endif
 
+.PHONY: test-acceptance-smoke
+## Runs a sub-set of acceptance tests tagged with @smoke tag
+test-acceptance-smoke:
+	$(Q)TEST_ACCEPTANCE_TAGS=@smoke $(MAKE) test-acceptance
+
 .PHONY: test-acceptance-artifacts
 ## Collect artifacts from acceptance tests to be archived in CI
 test-acceptance-artifacts:
