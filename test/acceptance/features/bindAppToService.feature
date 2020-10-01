@@ -8,6 +8,7 @@ Feature: Bind an application to a service
         * Service Binding Operator is running
         * PostgreSQL DB operator is installed
 
+    @smoke
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, DB and Service Binding
         Given Imported Nodejs application "nodejs-rest-http-crud-a-d-s" is running
         * DB "db-demo-a-d-s" is running
