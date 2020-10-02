@@ -37,7 +37,7 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 			Spec: v1alpha1.ServiceBindingSpec{
 				Services: &[]v1alpha1.Service{
 					{
-						GroupVersionKind: metav1.GroupVersionKind{Group: "test", Version: "v1alpha1", Kind: "TestHost"},
+						GroupVersionKind:     metav1.GroupVersionKind{Group: "test", Version: "v1alpha1", Kind: "TestHost"},
 						LocalObjectReference: corev1.LocalObjectReference{Name: ""},
 					},
 				},
@@ -47,7 +47,7 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 			Spec: v1alpha1.ServiceBindingSpec{
 				Services: &[]v1alpha1.Service{
 					{
-						GroupVersionKind: metav1.GroupVersionKind{Group: "test", Version: "v1", Kind: "TestHost"},
+						GroupVersionKind:     metav1.GroupVersionKind{Group: "test", Version: "v1", Kind: "TestHost"},
 						LocalObjectReference: corev1.LocalObjectReference{Name: ""},
 					},
 				},
@@ -99,6 +99,10 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 	// update verifies whether only the accepted manifests trigger the reconciliation process
 	t.Run("update", func(t *testing.T) {
 		deploymentA := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
@@ -111,6 +115,10 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 			},
 		}
 		deploymentB := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
@@ -123,6 +131,10 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 			},
 		}
 		deploymentC := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
 			Spec: appsv1.DeploymentSpec{
 				Selector: &metav1.LabelSelector{
 					MatchLabels: map[string]string{
@@ -177,53 +189,71 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 			wanted bool
 			a      runtime.Object
 			b      runtime.Object
+			aMeta  metav1.ObjectMeta
+			bMeta  metav1.ObjectMeta
 		}{
 			{
 				name:   "Predicate evaluation false: non supported update as deployment spec is same",
 				wanted: false,
 				a:      deploymentA,
 				b:      deploymentA,
+				aMeta:  deploymentA.ObjectMeta,
+				bMeta:  deploymentA.ObjectMeta,
 			},
 			{
 				name:   "Predicate evaluation false: non supported update as there is no change in the ConfigMap",
 				wanted: false,
 				a:      configMapA,
 				b:      configMapA,
+				aMeta:  configMapA.ObjectMeta,
+				bMeta:  configMapA.ObjectMeta,
 			},
 			{
 				name:   "Predicate evaluation false: non supported update there is no change in the Secret",
 				wanted: false,
 				a:      secretA,
 				b:      secretA,
+				aMeta:  secretA.ObjectMeta,
+				bMeta:  secretA.ObjectMeta,
 			},
 			{
 				name:   "Predicate evaluation true: supported update as there is an update in the ConfigMap",
 				wanted: true,
 				a:      configMapA,
 				b:      configMapB,
+				aMeta:  configMapA.ObjectMeta,
+				bMeta:  configMapB.ObjectMeta,
 			},
 			{
 				name:   "Predicate evaluation true: supported update as there is an update in the Secret",
 				wanted: true,
 				a:      secretA,
 				b:      secretB,
+				aMeta:  secretA.ObjectMeta,
+				bMeta:  secretB.ObjectMeta,
 			},
 			{
 				name:   "Predicate evaluation true: supported update as the deployment status changed",
 				wanted: true,
 				a:      deploymentA,
 				b:      deploymentB,
+				aMeta:  deploymentA.ObjectMeta,
+				bMeta:  deploymentB.ObjectMeta,
 			},
 			{
 				name:   "Predicate evaluation true: supported update as the deployment spec changed",
 				wanted: true,
 				a:      deploymentB,
 				b:      deploymentC,
+				aMeta:  deploymentB.ObjectMeta,
+				bMeta:  deploymentC.ObjectMeta,
 			},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				e := event.UpdateEvent{
+					MetaOld:   &tt.aMeta,
+					MetaNew:   &tt.bMeta,
 					ObjectOld: tt.a,
 					ObjectNew: tt.b,
 				}

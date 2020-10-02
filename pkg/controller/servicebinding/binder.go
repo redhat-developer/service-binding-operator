@@ -11,7 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
-	"gotest.tools/assert/cmp"
+	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -466,8 +466,13 @@ func (b *binder) removeVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.
 	return cleanVolumeMounts
 }
 
+type comparisonResult struct {
+	Diff    string
+	Success bool
+}
+
 // nestedUnstructuredComparison compares a nested field from two objects.
-func nestedUnstructuredComparison(a, b *unstructured.Unstructured, fields ...string) (bool, error) {
+func nestedUnstructuredComparison(a, b *unstructured.Unstructured, fields ...string) (*comparisonResult, error) {
 	var (
 		aMap map[string]interface{}
 		bMap map[string]interface{}
@@ -477,25 +482,26 @@ func nestedUnstructuredComparison(a, b *unstructured.Unstructured, fields ...str
 	)
 
 	if aMap, aOk, err = unstructured.NestedMap(a.Object, fields...); err != nil {
-		return false, err
+		return nil, err
 	}
 
 	if bMap, bOk, err = unstructured.NestedMap(b.Object, fields...); err != nil {
-		return false, err
+		return nil, err
 	}
 
 	if aOk != bOk {
-		return false, nil
+		return nil, fmt.Errorf("path should exist in both objects: %v", fields)
 	}
 
-	result := nestedMapComparison(aMap, bMap)
-	return result, nil
+	return nestedMapComparison(aMap, bMap), nil
 }
 
-func nestedMapComparison(a, b map[string]interface{}) bool {
-	val := cmp.DeepEqual(a, b)()
-	return val.Success()
-
+func nestedMapComparison(a, b map[string]interface{}) *comparisonResult {
+	diff := cmp.Diff(a, b)
+	if len(diff) != 0 {
+		return &comparisonResult{Success: false, Diff: diff}
+	}
+	return &comparisonResult{Success: true}
 }
 
 // update the list of objects informed as unstructured, looking for "containers" entry. This method
@@ -535,9 +541,10 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		}
 
 		if specsAreEqual, err := nestedUnstructuredComparison(&obj, updatedObj); err != nil {
-			log.Error(err, "")
+			log.Error(err, "Error comparing previous and updated object")
 			continue
-		} else if specsAreEqual {
+		} else if specsAreEqual.Success {
+			log.Debug("Previous and updated object have same spec, skipping")
 			continue
 		}
 		if b.modifier != nil {
@@ -570,11 +577,11 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Debug("Inspecting object...")
-		err := b.removeSpecContainers(&obj)
+		updatedObj := obj.DeepCopy()
+		err := b.removeSpecContainers(updatedObj)
 		if err != nil {
 			return err
 		}
-		updatedObj := removeSBRAnnotations(&obj)
 
 		if len(b.volumeKeys) > 0 {
 			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {
