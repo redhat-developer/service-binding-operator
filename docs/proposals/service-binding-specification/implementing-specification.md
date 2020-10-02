@@ -100,12 +100,59 @@ the operator install time.
 
 ### User Stories
 
-#### Story 1
+#### As a user, I would like decide is the Operator should support the Service Binding Specification for Kubernetes
 
 When installing the Service Binding Operator, a user can choose which of the two channels
 to install the Service Binding Operator from. Depending on the channel, the operator installs different
 sets of Custom Resource Definitions (CRDs) and would watch for different sets of resources in the
 cluster.
+
+#### As a user, I would like to use the Service Binding Specification for Kubernetes to bind to a service
+
+Once the Service Binding Operator is installed to support the Service Binding Specification for
+Kubernetes, a user can bind to a service that supports the specification. To achieve this a user
+must create a `ServiceBinding` resource with `apiVersion: service.binding/v1alpha2`. Here is an
+example of how a `ServiceBinding` would look like:
+
+```yaml
+apiVersion: service.binding/v1alpha2
+kind: ServiceBinding
+metadata:
+  name: account-service
+spec:
+  application:
+    apiVersion: apps/v1
+    kind:       Deployment
+    name:       online-banking
+
+  service:
+    apiVersion: com.example/v1alpha1
+    kind:       AccountService
+    name:       prod-account-service
+
+  mappings:
+  - name:  accountServiceUri
+    value: https://{{ urlquery .username }}:{{ urlquery .password }}@{{ .host }}:{{ .port }}/{{ .path }}
+
+  env:
+  - name: ACCOUNT_SERVICE_HOST
+    key:  host
+  - name: ACCOUNT_SERVICE_USERNAME
+    key:  username
+  - name: ACCOUNT_SERVICE_PASSWORD
+    key:  password
+  - name: ACCOUNT_SERVICE_URI
+    key:  accountServiceUri
+
+status:
+  binding:
+    name: prod-account-service-projection
+  conditions:
+  - type:   Ready
+    status: 'True'
+```
+
+The [Provisioned Service](https://github.com/k8s-service-bindings/spec#provisioned-service) section and [Binding `Secret` Generation Strategies](https://github.com/k8s-service-bindings/spec#binding-secret-generation-strategies) section of the specification defines how a service can be changed to be "bindable".
 
 ### Implementation Details/Notes/Constraints
 
