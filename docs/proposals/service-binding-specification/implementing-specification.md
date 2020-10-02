@@ -1,5 +1,5 @@
 ---
-title: Implementing Service Binding Specification for Kubernetes
+title: Support Service Binding Specification for Kubernetes
 authors:
   - "@arturdzm"
   - "@navidsh"
@@ -18,7 +18,7 @@ superseded-by:
   - N/A
 ---
 
-# Implementing Service Binding Specification for Kubernetes
+# Support Service Binding Specification for Kubernetes
 
 ## Release Signoff Checklist
 
@@ -37,7 +37,7 @@ design. For instance:
 
 ## Summary
 
-This document proposes a mechanism for the Service Binding Operator to implement the
+This document proposes a mechanism for the Service Binding Operator to support the
 [Service Binding Specification for Kubernetes](https://github.com/k8s-service-bindings/spec).
 
 ## Motivation
