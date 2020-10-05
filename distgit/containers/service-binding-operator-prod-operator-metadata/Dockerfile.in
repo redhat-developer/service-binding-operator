@@ -10,7 +10,7 @@ LABEL com.redhat.component="service-binding-operator-bundle-container" \
 
 LABEL com.redhat.delivery.operator.bundle=true \
       com.redhat.openshift.versions="v4.5" \
-      com.redhat.delivery.backport=false
+      com.redhat.delivery.backport=true
 
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
