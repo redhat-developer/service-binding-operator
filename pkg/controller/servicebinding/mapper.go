@@ -42,7 +42,7 @@ func isSecret(obj runtime.Object) bool {
 
 // isSBRService checks whether the given obj is a service in given sbr.
 func isSBRService(sbr *v1alpha1.ServiceBinding, obj runtime.Object) bool {
-	services := *sbr.Spec.Services
+	services := servicesOrEmptyList(sbr.Spec.Services)
 	for _, svc := range services {
 		svcGVK := schema.GroupVersionKind{Group: svc.Group, Version: svc.Version, Kind: svc.Kind}
 		if obj.GetObjectKind().GroupVersionKind() == svcGVK {
@@ -55,23 +55,28 @@ func isSBRService(sbr *v1alpha1.ServiceBinding, obj runtime.Object) bool {
 // isSBRApplication checks whether the given obj is an application in given sbr.
 func isSBRApplication(
 	restMapper meta.RESTMapper,
-	sbr *v1alpha1.ServiceBinding,
-	obj runtime.Object,
+	app *v1alpha1.Application,
+	gvk schema.GroupVersionKind,
+	name string,
 ) (bool, error) {
-	if sbr.Spec.Application == nil {
+	if app == nil {
 		return false, nil
 	}
 	appGVR := schema.GroupVersionResource{
-		Group:    sbr.Spec.Application.Group,
-		Version:  sbr.Spec.Application.Version,
-		Resource: sbr.Spec.Application.Resource,
+		Group:    app.Group,
+		Version:  app.Version,
+		Resource: app.Resource,
 	}
 	appGVK, err := restMapper.KindFor(appGVR)
 	if err != nil {
 		return false, err
 	}
 
-	isEqual := obj.GetObjectKind().GroupVersionKind() == appGVK
+	isEqual := gvk == appGVK
+
+	if len(app.Name) > 0 {
+		isEqual = app.Name == name
+	}
 
 	return isEqual, nil
 }
@@ -161,31 +166,36 @@ ITEMS:
 			log.Debug("resource identified as a secret owned by the SBR")
 			namespacedNamesToReconcile.add(namespacedName)
 		} else {
-			log.Debug("resource is not a secret owned by the SBR")
+			log.Trace("resource is not a secret owned by the SBR")
 		}
 
 		if isSBRService(sbr, obj.Object) {
-			log.Debug("resource identified as service in SBR")
+			log.Debug("resource identified as service in SBR", "NamespacedName", namespacedName)
 			namespacedNamesToReconcile.add(namespacedName)
 		} else {
-			log.Debug("resource is not a service declared by the SBR")
+			log.Trace("resource is not a service declared by the SBR")
 		}
 
-		if ok, err := isSBRApplication(m.restMapper, sbr, obj.Object); err != nil {
+		if ok, err := isSBRApplication(
+			m.restMapper,
+			sbr.Spec.Application,
+			obj.Object.GetObjectKind().GroupVersionKind(),
+			obj.Meta.GetName(),
+		); err != nil {
 			log.Error(err, "identifying resource as SBR application")
 			continue ITEMS
 		} else if !ok {
-			log.Debug("resource is not an application declared by the SBR")
+			log.Trace("resource is not an application declared by the SBR")
 			continue ITEMS
 		} else {
-			log.Debug("resource identified as an application in SBR")
+			log.Debug("resource identified as an application in SBR", "NamespacedName", namespacedName)
 			namespacedNamesToReconcile.add(namespacedName)
 		}
 	}
 
 	requests := convertToRequests(namespacedNamesToReconcile)
 	if count := len(requests); count > 0 {
-		log.Debug("found SBRs for resource", "Count", count)
+		log.Debug("found SBRs for resource", "Count", count, "Requests", requests)
 	} else {
 		log.Debug("no SBRs found for resource")
 	}

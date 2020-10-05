@@ -8,6 +8,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 
@@ -101,9 +102,6 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 	u, err := deploymentResource.Get(ns, metav1.GetOptions{})
 	require.NoError(t, err)
 
-	objs := []*unstructured.Unstructured{}
-	objs = append(objs, u)
-
 	t.Run("SetSBRAnnotations", func(t *testing.T) {
 		originCopy := u.DeepCopy()
 		newObj := setSBRAnnotations(namespacedName, u)
@@ -111,11 +109,10 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		// we are not modifying the origin object
 		equal, err := nestedUnstructuredComparison(u, originCopy)
 		require.NoError(t, err)
-		require.True(t, equal)
+		require.True(t, equal.Success)
 
-		equal, err = nestedUnstructuredComparison(u, newObj, []string{"metadata", "annotations"}...)
-		require.NoError(t, err)
-		require.False(t, equal)
+		_, err = nestedUnstructuredComparison(u, newObj, []string{"metadata", "annotations"}...)
+		require.Error(t, err)
 
 		objNamespacedName, err := getSBRNamespacedNameFromObject(newObj)
 		require.NoError(t, err)
@@ -125,7 +122,7 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		newObj.SetAnnotations(nil)
 		equal, err = nestedUnstructuredComparison(u, newObj)
 		require.NoError(t, err)
-		require.True(t, equal)
+		require.True(t, equal.Success)
 	})
 
 	t.Run("RemoveSBRAnnotations", func(t *testing.T) {
@@ -135,11 +132,10 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		// we are not modifying the origin object
 		equal, err := nestedUnstructuredComparison(u, originCopy)
 		require.NoError(t, err)
-		require.True(t, equal)
+		require.True(t, equal.Success)
 
-		equal, err = nestedUnstructuredComparison(u, newObj, []string{"metadata", "annotations"}...)
-		require.NoError(t, err)
-		require.False(t, equal)
+		_, err = nestedUnstructuredComparison(u, newObj, []string{"metadata", "annotations"}...)
+		require.Error(t, err)
 
 		objNamespacedName, err := getSBRNamespacedNameFromObject(newObj)
 		require.NoError(t, err)
@@ -149,32 +145,64 @@ func TestAnnotationsSetAndRemoveSBRAnnotations(t *testing.T) {
 		newObj.SetAnnotations(u.GetAnnotations())
 		equal, err = nestedUnstructuredComparison(u, newObj)
 		require.NoError(t, err)
-		require.True(t, equal)
+		require.True(t, equal.Success)
 	})
+}
 
-	t.Run("SetAndUpdateSBRAnnotations", func(t *testing.T) {
-		err := setAndUpdateSBRAnnotations(client, namespacedName, objs)
-		require.NoError(t, err)
+// extractSBRNamespacedName returns a types.NamespacedName if the required service binding request keys
+// are present in the given data
+func extractSBRNamespacedName(data map[string]string) types.NamespacedName {
+	namespacedName := types.NamespacedName{}
+	ns, exists := data[sbrNamespaceAnnotation]
+	if !exists || len(ns) == 0 {
+		return namespacedName
+	}
+	name, exists := data[sbrNameAnnotation]
+	if !exists || len(name) == 0 {
+		return namespacedName
+	}
+	namespacedName.Namespace = ns
+	namespacedName.Name = name
+	return namespacedName
+}
 
-		u, err := deploymentResource.Get(ns, metav1.GetOptions{})
-		require.NoError(t, err)
+// getSBRNamespacedNameFromObject returns a types.NamespacedName if the required service binding
+// request annotations are present in the given runtime.Object, empty otherwise. When annotations are
+// not present, it checks if the object is an actual SBR, returning the details when positive. An
+// error can be returned in the case the object can't be decoded.
+func getSBRNamespacedNameFromObject(obj runtime.Object) (types.NamespacedName, error) {
+	sbrNamespacedName := types.NamespacedName{}
+	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return sbrNamespacedName, err
+	}
 
-		objNamespacedName, err := getSBRNamespacedNameFromObject(u)
-		require.NoError(t, err)
-		require.Equal(t, namespacedName, objNamespacedName)
-	})
+	u := &unstructured.Unstructured{Object: data}
 
-	t.Run("RemoveAndUpdateSBRAnnotations", func(t *testing.T) {
-		err := removeAndUpdateSBRAnnotations(client, objs)
-		require.NoError(t, err)
+	sbrNamespacedName = extractSBRNamespacedName(u.GetAnnotations())
+	log := annotationsLog.WithValues(
+		"Resource.GVK", u.GroupVersionKind(),
+		"Resource.Namespace", u.GetNamespace(),
+		"Resource.Name", u.GetName(),
+		"SBR.NamespacedName", sbrNamespacedName.String(),
+	)
 
-		u, err := deploymentResource.Get(ns, metav1.GetOptions{})
-		require.NoError(t, err)
+	if isNamespacedNameEmpty(sbrNamespacedName) {
+		log.Debug("SBR information not present in annotations, continue inspecting object")
+	} else {
+		log.Trace("SBR information found in annotations, returning it")
+		return sbrNamespacedName, nil
+	}
 
-		objNamespacedName, err := getSBRNamespacedNameFromObject(u)
-		require.NoError(t, err)
-		require.Equal(t, types.NamespacedName{}, objNamespacedName)
-	})
+	if u.GroupVersionKind() == v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind) {
+		log.Debug("Object is a SBR, returning its namespaced name")
+		sbrNamespacedName.Namespace = u.GetNamespace()
+		sbrNamespacedName.Name = u.GetName()
+		return sbrNamespacedName, nil
+	}
+
+	log.Trace("Object is not a SBR, returning an empty namespaced name")
+	return types.NamespacedName{}, nil
 }
 
 // Test_extractSBRNamespacedName verifies whether extractSBRNamespacedName returns an empty

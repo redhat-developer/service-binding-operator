@@ -9,14 +9,12 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/annotations"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -108,7 +106,7 @@ func (o *olm) loopCRDDescriptions(
 			log.Error(err, "on converting from unstructured to CRD")
 			return err
 		}
-		log.Debug("Inspecting CRDDescription...", "CRDDescription", crdDescription)
+		log.Trace("Inspecting CRDDescription...", "CRDDescription", crdDescription)
 		if crdDescription.Name == "" {
 			log.Debug("Skipping empty CRDDescription!")
 			continue
@@ -174,34 +172,6 @@ func (o *olm) selectCRDByGVK(gvk schema.GroupVersionKind, crd *unstructured.Unst
 	return crdDescriptions[0], nil
 }
 
-// buildCRDDescriptionFromCR builds a CRDDescription from annotations present in the CR.
-func buildCRDDescriptionFromCR(cr *unstructured.Unstructured, crdDescription *olmv1alpha1.CRDDescription) error {
-	var (
-		err error
-	)
-
-	gvk := schema.GroupVersionKind{
-		Kind:    cr.GetKind(),
-		Version: cr.GroupVersionKind().Version,
-		Group:   cr.GroupVersionKind().Group,
-	}
-	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
-
-	crdDescription.Name = gvr.Resource + "." + gvr.Group
-	crdDescription.Kind = cr.GetKind()
-	crdDescription.Version = cr.GroupVersionKind().Version
-
-	specDescriptors, statusDescriptors, err := buildDescriptorsFromAnnotations(cr.GetAnnotations())
-	if err != nil {
-		return err
-	}
-
-	crdDescription.SpecDescriptors = append(crdDescription.SpecDescriptors, specDescriptors...)
-	crdDescription.StatusDescriptors = append(crdDescription.StatusDescriptors, statusDescriptors...)
-
-	return nil
-}
-
 // buildCRDDescriptionFromCRD builds a CRDDescription from annotations present in the CRD.
 func buildCRDDescriptionFromCRD(crd *unstructured.Unstructured) (*olmv1alpha1.CRDDescription, error) {
 	var (
@@ -240,30 +210,11 @@ func buildDescriptorsFromAnnotations(in map[string]string) (
 	[]olmv1alpha1.StatusDescriptor,
 	error,
 ) {
+	// TODO: check if this function is no-op (it looks like that)
 	var specDescriptors []olmv1alpha1.SpecDescriptor
 	var statusDescriptors []olmv1alpha1.StatusDescriptor
 
 	acc := make(map[string][]string)
-
-	for n, v := range in {
-		// Iterate all annotations and compose related Spec and Status descriptors, where those
-		// descriptors should be grouped by field path.	So, for example, the "status.dbCredentials"
-		// field path should accumulate all related annotations, so the StatusDescriptor referring
-		// "status.dbCredentials" have both "user" and "password" XDescriptors.
-
-		bindingInfo, err := annotations.NewBindingInfo(n, v)
-		if err != nil {
-			// continue to the next annotation if an error is returned
-			continue
-		}
-
-		descriptors, exists := acc[bindingInfo.ResourceReferencePath]
-		if !exists {
-			descriptors = make([]string, 0)
-		}
-		descriptors = append(descriptors, bindingInfo.Descriptor)
-		acc[bindingInfo.ResourceReferencePath] = descriptors
-	}
 
 	// create the status and/or spec descriptors based on the
 	for fieldPath, descriptors := range acc {

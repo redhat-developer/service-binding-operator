@@ -2,31 +2,30 @@
 # ----------------------------------------------------------------------------
 # STEPS:
 # ----------------------------------------------------------------------------
-import os
-import re
-import base64
 import ipaddress
 import json
-
-from behave import register_type, given, then, when
-from pyshould import should, should_not
-import parse
-
-from servicebindingoperator import Servicebindingoperator
-from dboperator import DbOperator
-from openshift import Openshift
-from postgres_db import PostgresDB
-from namespace import Namespace
-from nodejs_application import NodeJSApp
-from serverless_operator import ServerlessOperator
-from quarkus_application import QuarkusApplication
-from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
-from knative_serving import KnativeServing
-from etcdoperator import EtcdOperator
-from etcdcluster import EtcdCluster
-from service_binding import ServiceBinding
+import os
+import re
 import time
 import polling2
+import parse
+import binascii
+
+from behave import given, register_type, then, when, step
+from dboperator import DbOperator
+from etcdcluster import EtcdCluster
+from etcdoperator import EtcdOperator
+from knative_serving import KnativeServing
+from namespace import Namespace
+from nodejs_application import NodeJSApp
+from openshift import Openshift
+from postgres_db import PostgresDB
+from pyshould import should, should_not
+from quarkus_application import QuarkusApplication
+from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
+from serverless_operator import ServerlessOperator
+from service_binding import ServiceBinding
+from servicebindingoperator import Servicebindingoperator
 
 
 # STEP
@@ -224,7 +223,7 @@ def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
 
 
 # STEP
-@then(u'jq "{jq_expression}" of Service Binding "{sbr_name}" should be changed to "{json_value}"')
+@step(u'jq "{jq_expression}" of Service Binding "{sbr_name}" should be changed to "{json_value}"')
 def sbo_jq_is(context, jq_expression, sbr_name, json_value):
     openshift = Openshift()
     polling2.poll(lambda: json.loads(
@@ -329,24 +328,13 @@ register_type(NullableString=parse_nullable_string)
 
 
 # STEP
-@then(u'Secret "{secret_name}" contains "{secret_key}" key with value "{secret_value:NullableString}"')
+@step(u'Secret "{secret_name}" contains "{secret_key}" key with value "{secret_value:NullableString}"')
 def check_secret_key_value(context, secret_name, secret_key, secret_value):
     openshift = Openshift()
     json_path = f'{{.data.{secret_key}}}'
-    output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
-    timeout = 180
-    interval = 5
-    attempts = timeout/interval
-    while True:
-        actual_secret_value = base64.b64decode(output).decode('ascii')
-        if (secret_value == actual_secret_value) or attempts <= 0:
-            break
-        else:
-            attempts -= 1
-            time.sleep(interval)
-            output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
-    result = base64.decodebytes(bytes(output, 'utf-8'))
-    result | should.be_equal_to(bytes(secret_value, 'utf-8'))
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name,
+                                                                  json_path) == secret_value,
+                  step=5, timeout=120, ignore_exceptions=(binascii.Error,))
 
 
 # STEP
@@ -354,27 +342,9 @@ def check_secret_key_value(context, secret_name, secret_key, secret_value):
 def check_secret_key_with_ip_value(context, secret_name, secret_key):
     openshift = Openshift()
     json_path = f'{{.data.{secret_key}}}'
-    output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
-    timeout = 180
-    interval = 5
-    attempts = timeout/interval
-    while True:
-        actual_secret_value = base64.b64decode(output).decode('ascii')
-        try:
-            ipaddress.ip_address(actual_secret_value)
-        except ValueError:
-            pass
-        else:
-            break
-        if attempts <= 0:
-            break
-        else:
-            attempts -= 1
-            time.sleep(interval)
-            output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
-    result = base64.decodebytes(bytes(output, 'utf-8'))
-    with should.not_raise:
-        ipaddress.ip_address(result.decode('ascii'))
+    polling2.poll(lambda: ipaddress.ip_address(
+        openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)),
+                  step=5, timeout=120, ignore_exceptions=(ValueError,))
 
 
 # STEP
@@ -395,10 +365,9 @@ def apply_yaml(context):
 
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
 def verify_injected_secretRef(context, secret_ref, cr_name, crd_name, json_path):
-    time.sleep(60)
     openshift = Openshift()
-    result = openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path, wait=True, timeout=180)
-    result | should.be_equal_to(secret_ref).desc(f'Failed to inject secretRef "{secret_ref}" in "{cr_name}" at path "{json_path}"')
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path) == secret_ref,
+                  step=5, timeout=400)
 
 
 @given(u'Etcd operator running')

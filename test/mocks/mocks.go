@@ -98,8 +98,8 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 	CRDPlural := "databases"
 	FullCRDName := CRDPlural + "." + CRDName
 	annotations := map[string]string{
-		"servicebindingoperator.redhat.io/status.dbCredentials-password": "binding:env:object:secret",
-		"servicebindingoperator.redhat.io/status.dbCredentials-username": "binding:env:object:secret",
+		"service.binding/username": "path={.status.dbCredentials},objectType=Secret,valueKey=username",
+		"service.binding/password": "path={.status.dbCredentials},objectType=Secret,valueKey=password",
 	}
 
 	crd := apiextensionv1beta1.CustomResourceDefinition{

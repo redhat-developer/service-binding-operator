@@ -1,6 +1,6 @@
 import re
 import time
-from pyshould import should
+import base64
 from command import Command
 
 
@@ -217,18 +217,17 @@ spec:
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned while getting deployment's envFrom: {env_from}"
         return env_from
 
-    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path, wait=False, interval=5, timeout=120):
+    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path):
         oc_cmd = f'oc get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"'
         output, exit_code = self.cmd.run(oc_cmd)
-        if exit_code != 0 or output == "" or output == "<nil>":
-            if wait:
-                attempts = timeout/interval
-                while (exit_code != 0 or output == "" or output == "<nil>") and attempts > 0:
-                    output, exit_code = self.cmd.run(oc_cmd)
-                    attempts -= 1
-                    time.sleep(interval)
-        exit_code | should.be_equal_to(0).desc(f'Exit code should be 0:\n OUTPUT:\n{output}')
-        return output
+        if exit_code == 0:
+            if resource_type == "secrets":
+                return base64.decodebytes(bytes(output, 'utf-8')).decode('utf-8')
+            else:
+                return output
+        else:
+            print(f'Error getting value for {resource_type}/{name} in {namespace} path={json_path}: {output}')
+            return None
 
     def get_resource_info_by_jq(self, resource_type, name, namespace, jq_expression, wait=False, interval=5, timeout=120):
         output, exit_code = self.cmd.run(f'oc get {resource_type} {name} -n {namespace} -o json | jq  \'{jq_expression}\'')

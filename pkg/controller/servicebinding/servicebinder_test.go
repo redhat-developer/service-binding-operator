@@ -385,7 +385,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: false,
 			sbr:                    sbrSingleService,
-			binding: &binding{
+			binding: &internalBinding{
 				envVars:    map[string][]byte{},
 				volumeKeys: []string{},
 			},
@@ -426,7 +426,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: false,
 			sbr:                    sbrSingleServiceWithCustomEnvVar,
-			binding: &binding{
+			binding: &internalBinding{
 				envVars: map[string][]byte{
 					"MY_DB_NAME": []byte("db1"),
 				},
@@ -472,7 +472,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: true,
 			sbr:                    sbrSingleService,
-			binding: &binding{
+			binding: &internalBinding{
 				envVars:    map[string][]byte{},
 				volumeKeys: []string{},
 			},
@@ -496,7 +496,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: true,
 			sbr:                    sbrEmptyAppSelector,
-			binding: &binding{
+			binding: &internalBinding{
 				envVars:    map[string][]byte{},
 				volumeKeys: []string{},
 			},
@@ -534,7 +534,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: false,
 			sbr:                    sbrMultipleServices,
-			binding: &binding{
+			binding: &internalBinding{
 				envVars:    map[string][]byte{},
 				volumeKeys: []string{},
 			},

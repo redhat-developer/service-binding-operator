@@ -1,0 +1,78 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: backends.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+  names:
+    plural: backends
+    singular: backend
+    kind: Backend
+    shortNames:
+      - bk
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    capabilities: Basic Install
+  name: backend-operator.v0.1.0
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: Backend is the Schema for the backend API
+      kind: Backend
+      name: backends.stable.example.com
+      version: v1
+      specDescriptors:
+        - description: Host address
+          displayName: Host address
+          path: host
+          x-descriptors:
+            - service.binding:host
+        - description: Exposed ports
+          displayName: Exposed ports
+          path: ports
+          x-descriptors:
+            - service.binding:ports:elementType=sliceOfMaps,sourceKey=protocol,sourceValue=port
+  displayName: Backend Operator
+  install:
+    spec:
+      deployments:
+      - name: backend-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: backend-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: backend-operator
+            spec:
+              containers:
+              - command:
+                - backend-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: backend-operator
+                image: REPLACE_IMAGE
+                imagePullPolicy: Always
+                name: backend-operator
+                resources: {}
+    strategy: deployment

@@ -44,14 +44,14 @@ var _ ResourceWatcher = (*sbrController)(nil)
 const controllerName = "servicebinding-controller"
 
 // compareObjectFields compares a nested field of two given objects.
-func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (bool, error) {
+func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (*comparisonResult, error) {
 	mapNew, err := runtime.DefaultUnstructuredConverter.ToUnstructured(objNew)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	mapOld, err := runtime.DefaultUnstructuredConverter.ToUnstructured(objOld)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	return nestedUnstructuredComparison(
@@ -115,25 +115,42 @@ func updateFunc(logger *log.Log) func(updateEvent event.UpdateEvent) bool {
 		if isSecret || isConfigMap {
 			dataFieldsAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "data")
 			if err != nil {
-				logger.Error(err, "error comparing object fields: %s", err.Error())
-				return false
+				logger.Error(err, "error comparing object fields")
+				// an error is returned in the case one of the compared objects doesn't have the data
+				// field; this can happen when there's no data to be stored so update should be
+				// processed
+				return true
 			}
-			logger.Debug("Predicate evaluated for Secret/ConfigMap", "dataFieldsAreEqual", dataFieldsAreEqual)
-			return !dataFieldsAreEqual
+			logger.Debug("Predicate evaluated for Secret/ConfigMap", "dataFieldsAreEqual", dataFieldsAreEqual.Success)
+			return !dataFieldsAreEqual.Success
 		}
-		specsAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "spec")
-		if err != nil {
+
+		var specsAreEqual bool
+		var statusAreEqual bool
+
+		if specComparison, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "spec"); err != nil {
 			logger.Error(err, "error comparing object's spec fields: %s", err.Error())
 			return false
+		} else {
+			specsAreEqual = specComparison.Success
 		}
-		statusAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "status")
-		if err != nil {
-			logger.Error(err, "error comparing object's status fields: %s", err.Error())
-			return false
-		}
-		shouldReconcile := !specsAreEqual || !statusAreEqual
-		logger.Debug("Resource update event received", "GVK", e.ObjectNew.GetObjectKind(), "spec changed", !specsAreEqual, "status changed", !statusAreEqual, "should reconcile", shouldReconcile)
 
+		if statusComparison, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "status"); err != nil {
+			logger.Error(err, "error comparing object's status fields", err.Error())
+			statusAreEqual = false
+		} else {
+			statusAreEqual = statusComparison.Success
+		}
+
+		shouldReconcile := !specsAreEqual || !statusAreEqual
+
+		logger.Debug("Resource update event received",
+			"GVK", e.ObjectNew.GetObjectKind().GroupVersionKind(),
+			"Name", e.MetaNew.GetName(),
+			"SpecsAreEqual", specsAreEqual,
+			"StatusAreEqual", statusAreEqual,
+			"ShouldReconcile", shouldReconcile,
+		)
 		return shouldReconcile
 	}
 }
@@ -153,9 +170,9 @@ func buildGVKPredicate(logger *log.Log) predicate.Funcs {
 // AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
 func (s *sbrController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 	logger := s.logger.WithValues("GVK", gvk)
-	logger.Debug("Adding watch for GVK...")
+	logger.Trace("Adding watch for GVK...")
 	if _, exists := s.watchingGVKs[gvk]; exists {
-		logger.Debug("Skipping watch on GVK twice, it's already under watch!")
+		logger.Trace("Skipping watch on GVK twice, it's already under watch!")
 		return nil
 	}
 
@@ -208,8 +225,6 @@ func buildSBRPredicate(logger *log.Log) predicate.Funcs {
 			return true
 		},
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			logger = logger.WithValues("Object.New", e.ObjectNew, "Object.Old", e.ObjectOld)
-
 			// should reconcile when resource is marked for deletion
 			if e.MetaNew != nil && e.MetaNew.GetDeletionTimestamp() != nil {
 				logger.Debug("Executing reconcile, object is marked for deletion.")
@@ -222,8 +237,11 @@ func buildSBRPredicate(logger *log.Log) predicate.Funcs {
 			if err != nil {
 				logger.Error(err, "")
 			}
-			logger.Debug("Predicate evaluated", "specsAreEqual", specsAreEqual)
-			return !specsAreEqual
+			logger.Debug("Predicate evaluated", "specsAreEqual", specsAreEqual.Success)
+			if !specsAreEqual.Success {
+				logger.Trace("Specs are not equal", "ObjectOld", e.ObjectOld, "ObjectNew", e.ObjectNew)
+			}
+			return !specsAreEqual.Success
 		},
 		DeleteFunc: func(e event.DeleteEvent) bool {
 			// evaluates to false, if the object is confirmed deleted

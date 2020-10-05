@@ -215,6 +215,8 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 }
 
 func TestReconcilerReconcileUsingVolumes(t *testing.T) {
+	t.Skip("there is not an equivalent yet for volume mounting")
+
 	backingServiceResourceRef := "test-using-volumes"
 	matchLabels := map[string]string{
 		"connects-to": "database",
@@ -277,8 +279,8 @@ func TestApplicationNotFound(t *testing.T) {
 
 	// Reconcile without deployment
 	res, err := r.Reconcile(reconcileRequest())
-	require.EqualError(t, err, errApplicationNotFound.Error())
-	require.True(t, res.Requeue)
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
 
 	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 	sbrOutput, err := r.getServiceBinding(namespacedName)

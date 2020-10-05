@@ -87,22 +87,7 @@ spec:
 ## Quick Start
 
 Clone the repository and run `make local` in an existing `kube:admin` OpenShift
-CLI session. Alternatively, install the operator using:
-
-``` bash
-cat <<EOS |kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
-```
+CLI session. 
 
 
 ## Key Features

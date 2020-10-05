@@ -1,8 +1,9 @@
 package servicebinding
 
 import (
+	"sort"
+
 	"github.com/imdario/mergo"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/annotations"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -11,6 +12,7 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -70,7 +72,7 @@ SELECTORS:
 			// best effort approach; should not break in common cases such as a unknown annotation
 			// prefix (other annotations might exist in the resource) or, in the case of a valid
 			// annotation, the handler expected for the annotation can't be found.
-			if err == annotations.ErrInvalidAnnotationPrefix || annotations.IsErrHandlerNotFound(err) {
+			if binding.IsErrEmptyAnnotationName(err) || binding.IsErrHandlerNotFound(err) {
 				logger.Trace("Continuing to next selector", "Error", err)
 				continue SELECTORS
 			}
@@ -160,7 +162,7 @@ func runHandler(
 	volumeKeys *[]string,
 	restMapper meta.RESTMapper,
 ) error {
-	h, err := annotations.BuildHandler(client, obj, key, value, restMapper)
+	h, err := binding.NewSpecHandler(client, key, value, *obj, restMapper)
 	if err != nil {
 		return err
 	}
@@ -180,7 +182,7 @@ func runHandler(
 		return err
 	}
 
-	if r.Type == annotations.BindingTypeVolumeMount {
+	if r.Type == binding.TypeVolumeMount {
 		*volumeKeys = []string(append(*volumeKeys, r.Path))
 	}
 
@@ -243,7 +245,15 @@ func buildServiceContext(
 	// outputObj will be used to keep the changes processed by the handler.
 	outputObj := obj.DeepCopy()
 
-	for k, v := range anns {
+	keys := make([]string, 0)
+	for k := range anns {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		v := anns[k]
 		// runHandler modifies 'outputObj', 'envVars' and 'volumeKeys' in place.
 		err := runHandler(client, obj, outputObj, k, v, envVars, &volumeKeys, restMapper)
 		if err != nil {

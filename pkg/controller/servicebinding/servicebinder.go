@@ -50,7 +50,7 @@ type serviceBinderOptions struct {
 	detectBindingResources bool
 	sbr                    *v1alpha1.ServiceBinding
 	objects                []*unstructured.Unstructured
-	binding                *binding
+	binding                *internalBinding
 	restMapper             meta.RESTMapper
 }
 
@@ -161,6 +161,7 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 	logger.Debug("Removing resource finalizers...")
 	removeFinalizer(b.sbr)
 	if _, err := b.updateServiceBinding(b.sbr); err != nil {
+		b.logger.Error(err, "Updating ServiceBinding")
 		return noRequeue(err)
 	}
 
@@ -287,21 +288,14 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 		return requeueError(err)
 	}
 
-	// appending finalizer, should be later removed upon resource deletion
-	addFinalizer(b.sbr)
-	if _, err = b.updateServiceBinding(sbr); err != nil {
-		return requeueError(err)
-	}
-
 	b.logger.Info(applicationError.Error())
 
 	if errors.Is(applicationError, errApplicationNotFound) {
 		removeFinalizer(b.sbr)
 		if _, err = b.updateServiceBinding(sbr); err != nil {
+			b.logger.Error(err, "Updating ServiceBinding")
 			return requeueError(err)
 		}
-		return requeue(applicationError, requeueAfter)
-
 	}
 
 	return done()
@@ -311,7 +305,7 @@ func (b *serviceBinder) handleApplicationError(reason string, applicationError e
 func (b *serviceBinder) bind() (reconcile.Result, error) {
 	sbrStatus := b.sbr.Status.DeepCopy()
 
-	b.logger.Info("Saving data on intermediary secret...")
+	b.logger.Debug("Saving data on intermediary secret...")
 
 	secretObj, err := b.secret.createOrUpdate(b.envVars, b.sbr.AsOwnerReference())
 	if err != nil {
@@ -353,6 +347,7 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	addFinalizer(sbr)
 
 	if _, err = b.updateServiceBinding(sbr); err != nil {
+		b.logger.Error(err, "Updating ServiceBinding")
 		return requeueError(err)
 	}
 
@@ -393,7 +388,7 @@ func ensureDefaults(applicationSelector *v1alpha1.Application) {
 				ContainersPath: defaultPathToContainers,
 			}
 		}
-	}else {
+	} else {
 		applicationSelector = &v1alpha1.Application{}
 		applicationSelector.LabelSelector = &metav1.LabelSelector{}
 		applicationSelector.BindingPath = &v1alpha1.BindingPath{
@@ -445,7 +440,7 @@ func buildServiceBinder(
 	}, nil
 }
 
-type binding struct {
+type internalBinding struct {
 	envVars    map[string][]byte
 	volumeKeys []string
 }
@@ -455,14 +450,14 @@ func buildBinding(
 	customEnvVar []corev1.EnvVar,
 	svcCtxs serviceContextList,
 	globalEnvVarPrefix string,
-) (*binding, error) {
+) (*internalBinding, error) {
 	envVars, volumeKeys, err := NewRetriever(client).
 		ProcessServiceContexts(globalEnvVarPrefix, svcCtxs, customEnvVar)
 	if err != nil {
 		return nil, err
 	}
 
-	return &binding{
+	return &internalBinding{
 		envVars:    envVars,
 		volumeKeys: volumeKeys,
 	}, nil

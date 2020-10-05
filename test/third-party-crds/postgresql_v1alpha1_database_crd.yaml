@@ -4,16 +4,16 @@ kind: CustomResourceDefinition
 metadata:
   name: databases.postgresql.baiju.dev
   annotations:
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.host: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.name: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.password: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.port: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConfigMap-db.username: binding:env:object:configmap
-    servicebindingoperator.redhat.io/status.dbConnectionIP: binding:env:attribute
-    servicebindingoperator.redhat.io/status.dbConnectionPort: binding:env:attribute
-    servicebindingoperator.redhat.io/status.dbCredentials-password: binding:env:object:secret
-    servicebindingoperator.redhat.io/status.dbCredentials-username: binding:env:object:secret
-    servicebindingoperator.redhat.io/status.dbName: binding:env:attribute
+    service.binding/db.host: path={.status.dbConfigMap},objectType=ConfigMap,sourceValue=db.host
+    service.binding/db.name: path={.status.dbConfigMap},objectType=ConfigMap,sourceValue=db.name
+    service.binding/db.password: path={.status.dbConfigMap},objectType=ConfigMap,sourceValue=db.password
+    service.binding/db.port: path={.status.dbConfigMap},objectType=ConfigMap,sourceValue=db.port
+    service.binding/db.user: path={.status.dbConfigMap},objectType=ConfigMap,sourceValue=db.user
+    service.binding/dbConnectionIP: path={.status.dbConnectionIP}
+    service.binding/dbConnectionPort: path={.status.dbConnectionPort}
+    service.binding/dbName: path={.status.dbName}
+    service.binding/password: path={.status.dbCredentials},objectType=Secret,sourceValue=password
+    service.binding/user: path={.status.dbCredentials},objectType=Secret,sourceValue=user
 spec:
   group: postgresql.baiju.dev
   names:
