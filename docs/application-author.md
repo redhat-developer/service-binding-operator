@@ -60,17 +60,17 @@ spec:
 
 The application workload expects binding metadata to be present on the Kubernetes Resources representing the backing service.
 
-As shown above, you may also directly use a `Configmap` or a `Secret` itsef as a service resource that would be used as a source of binding information.
+As shown above, you may also directly use a `ConfigMap` or a `Secret` itself as a service resource that would be used as a source of binding information.
 
 # Backing Service providing binding metadata
 
 If the backing service author has provided binding metadata in the corresponding CRD,
-then Service Binding acknowleges it and automatically creates a binding secret with
+then Service Binding acknowledges it and automatically creates a binding secret with
 the information relevant for binding.
 
 The backing service may provide binding information as
 * Metadata in the CRD as annotations
-* Metadata in the OLM bunde manifest file as Descriptiors
+* Metadata in the OLM bunde manifest file as Descriptors
 * Secret or ConfigMap
 
 If the backing service provides binding metadata, you may use the resource as is
@@ -78,7 +78,7 @@ to express an intent to bind your workload with one or more service resources, b
 
 # Backing Service not providing binding metadata
 
-If the backing service hasn't provided any binding metadata, the application author may annotate the Kubernetes resource representating the backing service such that the managed binding secret generated has with the necessary binding information.
+If the backing service hasn't provided any binding metadata, the application author may annotate the Kubernetes resource representing the backing service such that the managed binding secret generated has the necessary binding information.
 
 As an application author, you have a couple of options to extract binding information 
 from the backing service: 
@@ -98,7 +98,7 @@ The application author may consider specific elements of the backing service res
 * A specific attribute in the `status` section of the Kubernetes resource.
 * A specific attribute in the `data` section of the Kubernetes resource.
 * A specific attribute in a `Secret` referenced in the Kubernetes resource.
-* A specific attribute in a `Configmap` referenced in the Kubernetes resource.
+* A specific attribute in a `ConfigMap` referenced in the Kubernetes resource.
 
 As an example, if the Cockroachdb authors do not provide any binding metadata in the CRD, you, as an application author may annotate the CR/kubernetes resource that manages the backing service ( cockroach DB ).
 
@@ -106,7 +106,7 @@ Please refer to the [documentation](docs/roadmap.md) to annotate objects for bin
 
 The backing service could be represented as any one of the following:
 * Custom Resources.
-* Kubernetes Resources, such as `Ingress`, `Configmap` and `Secret`.
+* Kubernetes Resources, such as `Ingress`, `ConfigMap` and `Secret`.
 * OpenShift Resources, such as `Routes`.
 
 ## Compose custom binding variables
