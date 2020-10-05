@@ -113,7 +113,8 @@ type ServiceBinding struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ServiceBindingSpec   `json:"spec,omitempty"`
+	// +required
+	Spec   ServiceBindingSpec   `json:"spec"`
 	Status ServiceBindingStatus `json:"status,omitempty"`
 }
 

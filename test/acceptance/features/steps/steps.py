@@ -180,7 +180,7 @@ def sbr_is_applied(context):
     metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', sbr_yaml).group(0))
     context.sbr_name = metadata_name
     sbr = ServiceBinding()
-    if context.__contains__("application") and context.__contains__("application_type"):
+    if "application" in context and "application_type" in context:
         application = context.application
         if context.application_type == "nodejs":
             context.application_original_generation = application.get_observed_generation()
@@ -403,13 +403,11 @@ def etc_cluster_is_running(context, etcd_name):
 def invalid_sbr_is_applied(context):
     sbr = ServiceBinding()
     # Get resource version of sbr if sbr is available
-    if context.__contains__("sbr_name"):
+    if "sbr_name" in context:
         json_path = "{.metadata.resourceVersion}"
         rv = sbr.get_servicebinding_info_by_jsonpath(context.sbr_name, context.namespace.name, json_path)
         context.resource_version = rv
-    yaml = context.text
-    output = sbr.attempt_to_create(yaml)
-    context.expected_error = output
+    context.expected_error = sbr.attempt_to_create(context.text)
 
 
 @then(u'Error message "{err_msg}" is thrown')
@@ -419,14 +417,14 @@ def validate_error(context, err_msg):
 
 
 @then(u'Service Binding "{sb_name}" is not persistent in the cluster')
-def get_sb(context, sb_name):
+def validate_absent_sb(context, sb_name):
     openshift = Openshift()
     output = openshift.search_resource_in_namespace("servicebindings", sb_name, context.namespace.name)
     assert output is None, "Service Binding {sb_name} is present in namespace {context.namespace.name}"
 
 
 @then(u'Service Binding "{sb_name}" is not updated')
-def get_persistent_sb(context, sb_name):
+def validate_persistent_sb(context, sb_name):
     openshift = Openshift()
     json_path = "{.metadata.resourceVersion}"
     output = openshift.get_resource_info_by_jsonpath("servicebindings", sb_name, context.namespace.name, json_path)

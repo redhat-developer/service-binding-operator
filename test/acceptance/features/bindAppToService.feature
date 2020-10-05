@@ -728,3 +728,79 @@ Feature: Bind an application to a service
             """
         Then Error message "invalid: spec.services: Required value" is thrown
         And Service Binding "binding-request-remove-service" is not updated
+
+        @negative
+        Scenario: Service Binding without spec is not allowed in the cluster
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-without-spec
+            """
+        Then Error message "spec: Required value" is thrown
+        And Service Binding "binding-request-without-spec" is not persistent in the cluster
+
+        @negative
+        Scenario: Service Binding with empty spec is not allowed in the cluster
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-empty-spec
+            spec:
+            """
+        Then Error message "invalid: spec: Invalid value: \"null\"" is thrown
+        And Service Binding "binding-request-empty-spec" is not persistent in the cluster
+
+        @negative
+        Scenario: Emptying spec of existing serivce binding is not allowed
+        Given Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-emptying-spec
+            spec:
+                services:
+                -   group: service.example.com
+                    version: v1
+                    kind: Backserv
+                    name: demo-backserv-cr-2
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-emptying-spec
+            spec:
+            """
+        Then Error message "spec: Required value" is thrown
+        And Service Binding "binding-request-emptying-spec" is not updated
+
+        @negative
+        Scenario: Removing spec of existing serivce binding is not allowed
+        Given Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-remove-spec
+            spec:
+                services:
+                -   group: service.example.com
+                    version: v1
+                    kind: Backserv
+                    name: demo-backserv-cr-2
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-remove-spec
+            """
+        Then Error message "spec: Required value" is thrown
+        And Service Binding "binding-request-remove-spec" is not updated
