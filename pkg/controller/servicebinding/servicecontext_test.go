@@ -1,8 +1,9 @@
 package servicebinding
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
 
 	routev1 "github.com/openshift/api/route/v1"
 	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
@@ -49,7 +50,7 @@ func TestBuildServiceContexts(t *testing.T) {
 		sbr := f.AddMockedServiceBinding(sbrName, nil, firstResourceRef, "", deploymentsGVR, matchLabels)
 
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), firstNamespace, *sbr.Spec.Services, &falseBool, restMapper)
+			logger, f.FakeDynClient(), firstNamespace, sbr.Spec.Services, &falseBool, restMapper)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Len(t, serviceCtxs, 1, "buildServiceContexts must return only one item")
@@ -97,7 +98,7 @@ func TestBuildServiceContexts(t *testing.T) {
 		sbrName := "services-in-different-ns"
 
 		sbr := f.AddMockedServiceBinding(sbrName, &sameNs, sameNsResourceRef, "", deploymentsGVR, matchLabels)
-		sbr.Spec.Services = &[]v1alpha1.Service{
+		sbr.Spec.Services = []v1alpha1.Service{
 			{
 				GroupVersionKind: metav1.GroupVersionKind{
 					Group:   mocks.CRDName,
@@ -106,7 +107,7 @@ func TestBuildServiceContexts(t *testing.T) {
 				},
 
 				LocalObjectReference: corev1.LocalObjectReference{Name: otherNsResourceRef},
-				Namespace: &otherNs,
+				Namespace:            &otherNs,
 			},
 			{
 				GroupVersionKind: metav1.GroupVersionKind{
@@ -115,12 +116,12 @@ func TestBuildServiceContexts(t *testing.T) {
 					Kind:    mocks.CRDKind,
 				},
 				LocalObjectReference: corev1.LocalObjectReference{Name: sameNsResourceRef},
-				Namespace: &sameNs,
+				Namespace:            &sameNs,
 			},
 		}
 
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), sameNs, *sbr.Spec.Services, &falseBool, restMapper)
+			logger, f.FakeDynClient(), sameNs, sbr.Spec.Services, &falseBool, restMapper)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Len(t, serviceCtxs, 2, "buildServiceContexts must return both service contexts")

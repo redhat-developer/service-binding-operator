@@ -1,4 +1,4 @@
-	package servicebinding
+package servicebinding
 
 import (
 	"testing"
@@ -35,7 +35,7 @@ func TestSBRRequestMapperMap(t *testing.T) {
 				},
 				LocalObjectReference: corev1.LocalObjectReference{Name: "mapper-unit-deployment"},
 			},
-			Services: &[]v1alpha1.Service{
+			Services: []v1alpha1.Service{
 				{
 					GroupVersionKind: metav1.GroupVersionKind{
 						Group:   "",

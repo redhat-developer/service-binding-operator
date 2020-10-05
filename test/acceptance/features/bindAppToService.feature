@@ -670,3 +670,61 @@ Feature: Bind an application to a service
         And The application env var "BACKEND_SPEC_DBNAME" has value "db-demo"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "rsa-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "rsa-2" should be changed to "True"
+
+        @negative
+        Scenario: Service Binding with empty services is not allowed in the cluster
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-empty-services
+            spec:
+                services:
+            """
+        Then Error message "invalid: spec.services: Invalid value: \"null\"" is thrown
+        And Service Binding "binding-request-empty-services" is not persistent in the cluster
+
+        @negative
+        Scenario: Service Binding without gvk of services is not allowed in the cluster
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-without-gvk
+            spec:
+                services:
+                -   name: backend-demo
+            """
+        Then Error message "spec.services.group: Required value" is thrown
+        And Error message "spec.services.kind: Required value" is thrown
+        And Error message "spec.services.version: Required value" is thrown
+        And Service Binding "binding-request-without-gvk" is not persistent in the cluster
+
+        @negative
+        Scenario: Removing service from services field from existing serivce binding is not allowed
+        Given Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-remove-service
+            spec:
+                services:
+                -   group: service.example.com
+                    version: v1
+                    kind: Backserv
+                    name: demo-backserv-cr-2
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-remove-service
+            spec:
+                services:
+            """
+        Then Error message "invalid: spec.services: Required value" is thrown
+        And Service Binding "binding-request-remove-service" is not updated

@@ -257,7 +257,10 @@ spec:
                 - kind
                 - version
                 type: object
+              minItems: 1
               type: array
+          required:
+          - services
           type: object
         status:
           description: ServiceBindingStatus defines the observed state of ServiceBinding

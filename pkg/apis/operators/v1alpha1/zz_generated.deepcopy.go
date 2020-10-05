@@ -195,13 +195,9 @@ func (in *ServiceBindingSpec) DeepCopyInto(out *ServiceBindingSpec) {
 	}
 	if in.Services != nil {
 		in, out := &in.Services, &out.Services
-		*out = new([]Service)
-		if **in != nil {
-			in, out := *in, *out
-			*out = make([]Service, len(*in))
-			for i := range *in {
-				(*in)[i].DeepCopyInto(&(*out)[i])
-			}
+		*out = make([]Service, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 	if in.Application != nil {
