@@ -5,32 +5,34 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "apps.openshift.io/v1alpha1",
-          "kind": "ServiceBindingRequest",
+          "apiVersion": "operators.coreos.com/v1alpha1",
+          "kind": "ServiceBinding",
           "metadata": {
-            "name": "example-servicebindingrequest"
+            "name": "example-servicebinding"
           },
           "spec": {
-            "applicationSelector": {
+            "application": {
               "group": "apps",
+              "name": "nodejs-rest-http-crud",
               "resource": "deployments",
-              "resourceRef": "nodejs-rest-http-crud",
               "version": "v1"
             },
-            "backingServiceSelector": {
-              "group": "postgresql.example.dev",
-              "kind": "Database",
-              "resourceRef": "pg-instance",
-              "version": "v1alpha1"
-            },
-            "mountPathPrefix": "/var/credentials"
+            "mountPathPrefix": "/var/credentials",
+            "services": [
+              {
+                "group": "postgresql.example.dev",
+                "kind": "Database",
+                "name": "pg-instance",
+                "version": "v1alpha1"
+              }
+            ]
           }
         }
       ]
     capabilities: Basic Install
     categories: Developer Tools, OpenShift Optional, Integration & Delivery
     containerImage: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.3.0
-    createdAt: 2020-09-07T13:48:46Z
+    createdAt: 2020-10-05T10:38:22Z
     description: An operator to support binding capabilities between imported apps
       and operator backed services
     repository: https://github.com/redhat-developer/service-binding-operator
@@ -41,11 +43,11 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: ServiceBindingRequest expresses intent to bind an operator-backed
-        service with an application workload.
-      displayName: Service Binding Request
-      kind: ServiceBindingRequest
-      name: servicebindingrequests.apps.openshift.io
+    - description: ServiceBinding expresses intent to bind an operator-backed service
+        with an application workload.
+      displayName: Service Binding
+      kind: ServiceBinding
+      name: servicebindings.operators.coreos.com
       version: v1alpha1
   description: " The Service Binding Operator enables application developers to more
     easily bind applications together with operator managed backing services such
@@ -149,12 +151,6 @@ spec:
           verbs:
           - update
         - apiGroups:
-          - apps.openshift.io
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
           - '*'
           resources:
           - '*'
@@ -163,6 +159,12 @@ spec:
           - list
           - watch
           - update
+        - apiGroups:
+          - operators.coreos.com
+          resources:
+          - '*'
+          verbs:
+          - '*'
         - apiGroups:
           - serving.knative.dev
           resources:

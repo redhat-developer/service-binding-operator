@@ -1,24 +1,24 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: servicebindingrequests.apps.openshift.io
+  name: servicebindings.operators.coreos.com
 spec:
-  group: apps.openshift.io
+  group: operators.coreos.com
   names:
-    kind: ServiceBindingRequest
-    listKind: ServiceBindingRequestList
-    plural: servicebindingrequests
+    kind: ServiceBinding
+    listKind: ServiceBindingList
+    plural: servicebindings
     shortNames:
     - sbr
     - sbrs
-    singular: servicebindingrequest
+    singular: servicebinding
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: ServiceBindingRequest expresses intent to bind an operator-backed
-        service with an application workload.
+      description: ServiceBinding expresses intent to bind an operator-backed service
+        with an application workload.
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -33,24 +33,31 @@ spec:
         metadata:
           type: object
         spec:
-          description: ServiceBindingRequestSpec defines the desired state of ServiceBindingRequest
+          description: ServiceBindingSpec defines the desired state of ServiceBinding
           properties:
-            applicationSelector:
-              description: ApplicationSelector is used to identify the application
-                connecting to the backing service operator.
+            application:
+              description: Application is used to identify the application connecting
+                to the backing service operator.
               properties:
                 bindingPath:
-                  description: BindingPath refers to the path in the application workload's
-                    schema where the binding workload would be referenced.
+                  description: 'BindingPath refers to the paths in the application
+                    workload''s schema where the binding workload would be referenced.
+                    If BindingPath is not specified the default path locations is
+                    going to be used.  The default location for ContainersPath is
+                    going to be: "spec.template.spec.containers" and if SecretPath
+                    is not specified, the name of the secret object is not going to
+                    be specified.'
                   properties:
                     containersPath:
                       description: 'ContainersPath defines the path to the corev1.Containers
-                        reference The default location is going to this: "spec.template.spec.containers"'
+                        reference If BindingPath is not specified, the default location
+                        is going to be: "spec.template.spec.containers"'
                       type: string
                     secretPath:
-                      description: SecretPath defines the path to a string field where
-                        the secret needs to be assigned. The default name is going
-                        to the value of the name of SBR CR (metadata.name)
+                      description: 'SecretPath defines the path to a string field
+                        where the name of the secret object is going to be assigned.
+                        Note: The name of the secret object is same as that of the
+                        name of SBR CR (metadata.name)'
                       type: string
                   type: object
                 group:
@@ -102,9 +109,11 @@ spec:
                         are ANDed.
                       type: object
                   type: object
-                resource:
+                name:
+                  description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                    TODO: Add other useful fields. apiVersion, kind, uid?'
                   type: string
-                resourceRef:
+                resource:
                   type: string
                 version:
                   type: string
@@ -113,60 +122,6 @@ spec:
               - resource
               - version
               type: object
-            backingServiceSelector:
-              description: 'BackingServiceSelector is used to identify the backing
-                service operator. Deprecation Notice: In the upcoming release, this
-                field would be depcreated. It would be mandatory to set "backingServiceSelectors".'
-              properties:
-                envVarPrefix:
-                  type: string
-                group:
-                  type: string
-                id:
-                  type: string
-                kind:
-                  type: string
-                namespace:
-                  type: string
-                resourceRef:
-                  type: string
-                version:
-                  type: string
-              required:
-              - group
-              - kind
-              - resourceRef
-              - version
-              type: object
-            backingServiceSelectors:
-              description: BackingServiceSelectors is used to identify multiple backing
-                services. This would be made a required field after 'BackingServiceSelector'
-                is removed.
-              items:
-                description: BackingServiceSelector defines the selector based on
-                  resource name, version, and resource kind
-                properties:
-                  envVarPrefix:
-                    type: string
-                  group:
-                    type: string
-                  id:
-                    type: string
-                  kind:
-                    type: string
-                  namespace:
-                    type: string
-                  resourceRef:
-                    type: string
-                  version:
-                    type: string
-                required:
-                - group
-                - kind
-                - resourceRef
-                - version
-                type: object
-              type: array
             customEnvVar:
               description: Custom env variables
               items:
@@ -275,9 +230,37 @@ spec:
             mountPathPrefix:
               description: MountPathPrefix is the prefix for volume mount
               type: string
+            services:
+              description: Services is used to identify multiple backing services.
+              items:
+                description: Service defines the selector based on resource name,
+                  version, and resource kind
+                properties:
+                  envVarPrefix:
+                    type: string
+                  group:
+                    type: string
+                  id:
+                    type: string
+                  kind:
+                    type: string
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                      TODO: Add other useful fields. apiVersion, kind, uid?'
+                    type: string
+                  namespace:
+                    type: string
+                  version:
+                    type: string
+                required:
+                - group
+                - kind
+                - version
+                type: object
+              type: array
           type: object
         status:
-          description: ServiceBindingRequestStatus defines the observed state of ServiceBindingRequest
+          description: ServiceBindingStatus defines the observed state of ServiceBinding
           properties:
             applications:
               description: Applications contain all the applications filtered by name
