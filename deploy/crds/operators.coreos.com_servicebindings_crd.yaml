@@ -323,6 +323,8 @@ spec:
           - conditions
           - secret
           type: object
+      required:
+      - spec
       type: object
   version: v1alpha1
   versions:
