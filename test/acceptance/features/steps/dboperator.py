@@ -1,5 +1,4 @@
 import re
-from pyshould import should, should_not
 
 from command import Command
 from openshift import Openshift
@@ -50,9 +49,9 @@ class DbOperator():
         return True
 
     def get_package_manifest(self):
-        cmd = 'oc get packagemanifest %s -o "jsonpath={.metadata.name}"' % self.pkgManifest
+        cmd = f'oc get packagemanifest {self.pkgManifest} -o "jsonpath={{.metadata.name}}"'
         manifest = self.cmd.run_check_for_status(
             cmd, status=self.pkgManifest)
-        manifest | should_not.be_equal_to(None)
-        manifest | should.equal(self.pkgManifest)
+        assert manifest is not None, f"Unable to find packagemanifest '{self.pkgManifest}': {manifest}"
+        assert manifest == self.pkgManifest, f"Unexpected packagemanifest found: '{manifest}'. Expected: '{self.pkgManifest}'"
         return manifest
