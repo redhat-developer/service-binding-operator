@@ -83,8 +83,11 @@ sbo_is_running_step = u'Service Binding Operator is running'
 @given(sbo_is_running_step)
 @when(sbo_is_running_step)
 def sbo_is_running(context):
-    context.namespace | should_not.be_none.desc("Namespace set in context")
-    sbo_is_running_in_namespace(context, context.namespace.name)
+    if "sbo_namespace" in context:
+        sbo_is_running_in_namespace(context, context.sbo_namespace)
+    else:
+        context.namespace | should_not.be_none.desc("Namespace set in context")
+        sbo_is_running_in_namespace(context, context.namespace.name)
 
 
 # STEP
@@ -347,7 +350,7 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
     json_path = f'{{.data.{secret_key}}}'
     polling2.poll(lambda: ipaddress.ip_address(
         openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)),
-                  step=5, timeout=120, ignore_exceptions=(ValueError,))
+        step=5, timeout=120, ignore_exceptions=(ValueError,))
 
 
 # STEP
