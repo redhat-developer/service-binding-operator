@@ -11,7 +11,7 @@
 5. Extract a specific field from the configmap/Secret from the Kubernetes resource and and bind it as a volume mount.
 6. Extract a specific field from the configmap/Secret from the Kubernetes resource and map it to different name in the binding Secret.
 7. Extract a “slice of maps” from the Kubernetes resource and generate multiple fields in the binding Secret.
-8. Extract a "slice of strings" from a Kubernetes resource and indicate the content in a specific index in the slice to be relevant for binding.
+8. Extract a "slice of strings" from a Kubernetes resource and indicate the content in a specific index in the slice relevant for binding.
 
 
 ### Data model : Building blocks for expressing binding information
