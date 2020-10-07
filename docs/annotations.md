@@ -8,7 +8,7 @@
 2. Extract a string from the Kubernetes resource and map it to a custom name in the binding Secret.
 3. Extract an entire configmap/Secret from the Kubernetes resource.
 4. Extract a specific field from the configmap/Secret from the Kubernetes resource, and bind it as an environment variable.
-5. Extract a specific field from the configmap/Secret from the Kubernetes resource and and bind it as a volume mount.
+5. Extract a specific field from the configmap/Secret from the Kubernetes resource and bind it as a volume mount.
 6. Extract a specific field from the configmap/Secret from the Kubernetes resource and map it to a different name in the binding Secret.
 7. Extract a “slice of maps” from the Kubernetes resource and generate multiple fields in the binding Secret.
 8. Extract a "slice of strings" from a Kubernetes resource and indicate the content in a specific index in the slice relevant for binding.
