@@ -20,7 +20,7 @@
 
 * `elementType`: Specifies if the value of the element referenced in `path` is of type `string` / `sliceOfStrings` / `sliceOfMaps`. Defaults to `string` if omitted.
 
-* `objectType`: Specifies if the value of the element indicated in `path` refers to a `ConfigMap`, `Secret` or a plain string in the current namespace!  Defaults to `Secret` if omitted and `elementType` is a non-`string`.
+* `objectType`: Specifies if the value of the element indicated in `path` refers to a `ConfigMap`, `Secret`, or a plain string in the current namespace!  Defaults to `Secret` if omitted and `elementType` is a non-`string`.
 
 * `bindAs`: Specifies if the element is to be bound as an environment variable or a volume mount using the keywords `envVar` and `volume`, respectively. Defaults to `envVar` if omitted.
 
