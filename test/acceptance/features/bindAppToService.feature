@@ -804,3 +804,105 @@ Feature: Bind an application to a service
             """
         Then Error message "spec: Required value" is thrown
         And Service Binding "binding-request-remove-spec" is not updated
+
+
+   Scenario: Backend Service metadata annotations update for service bindings gets propagated to the binding secret
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-2
+                annotations:
+                    service.binding/host: path={.spec.host}
+            spec:
+                host: example.com
+            status:
+                ready:true
+            """
+        * Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-backend-ann-sb
+            spec:
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo-2
+            """
+        And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
+        And Secret "binding-request-backend-ann-sb" does not contain "BACKEND_READY"
+        # Backend metadata.annotations for service binding is updated
+        When The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-2
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/ready: path={.status.ready}
+            spec:
+                host: example.com
+            status:
+                ready: true
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "False"
+        And Secret "binding-request-backend-ann-sb" contains "BACKEND_READY" key with value "true"
+        And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann-sb" should be changed to "EmptyApplication"
+
+
+   @negative
+   Scenario: Backend Service metadata annotations update not specific to service bindings does not get propagated to the binding secret
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-3
+                annotations:
+                    host : "demo.com"
+            spec:
+                host: example.com
+            status:
+                ready:true
+            """
+        * Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-backend-ann
+            spec:
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo-3
+            """
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "False"
+        And Secret "binding-request-backend-ann" is empty
+        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann" should be changed to "EmptyApplication"
+        # Backend metadata.annotations not pertaining to service binding is updated
+        When The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-3
+                annotations:
+                    host : "example.common"
+            spec:
+                host: example.com
+            status:
+                ready: true
+            """
+        Then Secret "binding-request-backend-ann" is empty
