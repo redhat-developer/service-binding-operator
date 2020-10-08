@@ -6,10 +6,10 @@
 
 1. Extract a string from the Kubernetes resource.
 2. Extract a string from the Kubernetes resource and map it to a custom name in the binding Secret.
-3. Extract an entire configmap/Secret from the Kubernetes resource.
-4. Extract a specific field from the configmap/Secret from the Kubernetes resource, and bind it as an environment variable.
-5. Extract a specific field from the configmap/Secret from the Kubernetes resource and bind it as a volume mount.
-6. Extract a specific field from the configmap/Secret from the Kubernetes resource and map it to a different name in the binding Secret.
+3. Extract an entire ConfigMap/Secret from the Kubernetes resource.
+4. Extract a specific field from the ConfigMap/Secret from the Kubernetes resource, and bind it as an environment variable.
+5. Extract a specific field from the ConfigMap/Secret from the Kubernetes resource and bind it as a volume mount.
+6. Extract a specific field from the ConfigMap/Secret from the Kubernetes resource and map it to a different name in the binding Secret.
 7. Extract a “slice of maps” from the Kubernetes resource and generate multiple fields in the binding Secret.
 8. Extract a "slice of strings" from a Kubernetes resource and indicate the content in a specific index in the slice relevant for binding.
 
@@ -24,7 +24,7 @@
 
 * `bindAs`: Specifies if the element is to be bound as an environment variable or a volume mount using the keywords `envVar` and `volume`, respectively. Defaults to `envVar` if omitted.
 
-* `sourceKey`: Specifies the key in the configmap/Secret that is be added to the binding Secret. When used in conjunction with `elementType`=`sliceOfMaps`, `sourceKey` specifies the key in the slice of maps whose value would be used as a key in the binding Secret. This optional field is the operator author intends to express that only when a specific field in the referenced `Secret`/`ConfigMap` is bindable.
+* `sourceKey`: Specifies the key in the ConfigMap/Secret that is be added to the binding Secret. When used in conjunction with `elementType`=`sliceOfMaps`, `sourceKey` specifies the key in the slice of maps whose value would be used as a key in the binding Secret. This optional field is the operator author intends to express that only when a specific field in the referenced `Secret`/`ConfigMap` is bindable.
 
 * `sourceValue`: Specifies the key in the slice of maps whose value would be used as the value, corresponding to the value of the `sourceKey` which is added as the key, in the binding Secret. Mandatory only if `elementType` is `sliceOfMaps`.
 
@@ -47,7 +47,7 @@
           url: myhost1.example.com:9092,myhost2.example.com:9092
           name: hostGroup2
       data:
-        dbConfiguration: database-config  # configmap
+        dbConfiguration: database-config  # ConfigMap
         dbCredentials: database-cred-Secret # Secret
         url: db.stage.ibm.com
 ```
@@ -59,7 +59,7 @@
 
 1. #### Use everything from the Secret  “status.data.dbCredentials”
 
-    Requirement : *Extract an entire configmap/Secret from the Kubernetes resource*
+    Requirement : *Extract an entire ConfigMap/Secret from the Kubernetes resource*
 
 
     Annotation:
@@ -82,7 +82,7 @@
 2. #### Use everything from the ConfigMap “status.data.dbConfiguration”
 
 
-    Requirement : *Extract an entire configmap/Secret from the Kubernetes resource*
+    Requirement : *Extract an entire ConfigMap/Secret from the Kubernetes resource*
 
     Annotation
 
@@ -102,7 +102,7 @@
 
 3. #### Use “certificate” from the ConfigMap “status.data.dbConfiguration” as an environment variable
 
-    Requirement : *Extract a specific field from the configmap/Secret from the Kubernetes resource and use it as an environment variable.*
+    Requirement : *Extract a specific field from the ConfigMap/Secret from the Kubernetes resource and use it as an environment variable.*
 
 
     Annotation
@@ -126,7 +126,7 @@
 
 4. #### Use “certificate” from the ConfigMap “status.data.dbConfiguration” as a volume mount
 
-    Requirement : *Extract a specific field from the configmap/Secret from the Kubernetes resource and use it as a volume mount.*
+    Requirement : *Extract a specific field from the ConfigMap/Secret from the Kubernetes resource and use it as a volume mount.*
 
 
     Annotation
@@ -149,7 +149,7 @@
 
 5. #### Use “db_timeout” from the ConfigMap “status.data.dbConfiguration” as “timeout” in the binding Secret.
 
-    Requirement: *Extract a specific field from the configmap/Secret from the Kubernetes resource and map it to different name in the binding Secret*
+    Requirement: *Extract a specific field from the ConfigMap/Secret from the Kubernetes resource and map it to different name in the binding Secret*
 
     Annotation
 
