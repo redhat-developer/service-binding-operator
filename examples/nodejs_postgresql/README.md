@@ -182,22 +182,23 @@ Create the following `ServiceBinding`:
 ``` shell
 cat <<EOS |kubectl apply -f -
 ---
-apiVersion: operators.coreos.com/v1alpha1
-kind: ServiceBinding
+apiVersion: apps.openshift.io/v1alpha1
+kind: ServiceBindingRequest
 metadata:
   name: binding-request
   namespace: service-binding-demo
 spec:
-  application:
-    name: nodejs-rest-http-crud
+  applicationSelector:
     group: apps
-    version: v1
     resource: deployments
-  services:
-  - group: postgresql.baiju.dev
-    version: v1alpha1
+    resourceRef: nodejs-rest-http-crud
+    version: v1
+  backingServiceSelector:
+    group: postgresql.baiju.dev
     kind: Database
-    name: db-demo
+    resourceRef: db-demo
+    version: v1alpha1
+  mountPathPrefix: /var/credentialsEOS
 EOS
 ```
 
@@ -209,8 +210,8 @@ make create-service-binding
 
 There are 2 parts in the request:
 
-* `application` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment`.
-* `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
+* `applicationSelector` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment`.
+* `backingServiceSelector` - used to find the backing service - our operator-backed DB instance called `db-demo`.
 
 That causes the application to be re-deployed.
 
