@@ -8,7 +8,7 @@ As *Cluster Administrator*, the reader will install both the "PostgreSQL
 Database" and the "ETCD" operators, as described below.
 
 Once the cluster setup is finished, the reader will create a Postgres
-database and a ETCD cluster, and bind services to a Node application as
+database and a ETCD cluster, and bind services to a Node.js application as
 a *Developer*.
 
 ## Cluster Configuration
@@ -43,6 +43,33 @@ Database" provided by Red Hat.
 Select "A specific namespace on the cluster" in "Installation Mode", select the
 "multiple-services-demo" namespace in "Installed Namespace" and push "Subscribe".
 
+#### Install the DB operator using a `CatalogSource`
+
+Apply the following `CatalogSource`:
+
+```shell
+kubectl apply -f - << EOD
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+    name: sample-db-operators
+    namespace: openshift-marketplace
+spec:
+    sourceType: grpc
+    image: quay.io/redhat-developer/sample-db-operators-olm:v1
+    displayName: Sample DB Operators
+EOD
+```
+
+Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
+
+![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
+
+and install a `beta` version.
+
+This makes the `Database` custom resource available, that the application developer will use later.
+
 ### Install the ETCD Operator
 
 Go to "Operators > OperatorHub", search for "etcd" and install "etcd" provided by
@@ -55,7 +82,7 @@ Select "A specific namespace on the cluster" in "Installation Mode", select the
 
 Switch to the *Developer* perspective.
 
-Create the Postgres database `db-demo` by pushing the "+" button on the top right
+Create the Postgres database `db-demo` by pushing the `(+)` button on the top right
 corner and pasting the following:
 
 ```yaml
@@ -64,13 +91,14 @@ apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
 metadata:
   name: db-demo
+  namespace: multiple-services-demo
 spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
 ```
 
-Create the ETCD cluster `etcd-demo` by pushing the "+" button on the top right
+Create the ETCD cluster `etcd-demo` by pushing the `(+)` button on the top right
 corner and paste the following:
 
 ```yaml
@@ -78,19 +106,20 @@ corner and paste the following:
 apiVersion: etcd.database.coreos.com/v1beta2
 kind: EtcdCluster
 metadata:
- name: etcd-demo
+  name: etcd-demo
+  namespace: multiple-services-demo
 spec:
- size: 3
- version: "3.2.13"
+  size: 3
+  version: "3.2.13"
 ```
 
-Import the application by pushing the "+Add" button on the left side of the
-screen, and then the "From Git" button. Fill the "Git Repo URL" with
+Import the application by pushing the `+Add` button on the left side of the
+screen, and then the `From Git` card. Fill the `Git Repo URL` with
 `https://github.com/akashshinde/node-todo.git`; the repository will be
-validated and the appropriate "Builder Image" and "Builder Image Version"
-will be selected. Push the "Create" button to create the application.
+validated and the appropriate `Builder Image` and `Builder Image Version`
+will be selected. Push the `Create` button to create the application.
 
-Create the ServiceBinding `node-todo-git` by pushing the "+" button
+Create the ServiceBinding `node-todo-git` by pushing the `(+)` button
 on the top right corner and pasting the following:
 
 ```yaml
@@ -118,40 +147,87 @@ spec:
 ```
 
 Once the binding is processed, the secret can be verified by executing
-`kubectl get secrets node-todo-git -o yaml`:
-
+```shell
+kubectl get secrets node-todo-git -o yaml
+```
 ```yaml
 apiVersion: v1
 data:
-  DATABASE_CLUSTERIP: MTcyLjMwLjcyLjg5
-  DATABASE_CONFIGMAP_DB_HOST: MTcyLjMwLjcyLjg5
-  DATABASE_CONFIGMAP_DB_NAME: ZGItZGVtbw==
-  DATABASE_CONFIGMAP_DB_PASSWORD: cGFzc3dvcmQ=
-  DATABASE_CONFIGMAP_DB_PORT: NTQzMg==
-  DATABASE_CONFIGMAP_DB_USERNAME: cG9zdGdyZXM=
-  DATABASE_CONFIGMAP_PASSWORD: cGFzc3dvcmQ=
-  DATABASE_CONFIGMAP_USER: cG9zdGdyZXM=
-  DATABASE_DB_HOST: MTcyLjMwLjcyLjg5
+  DATABASE_DB_HOST: MTcyLjMwLjU2LjM0
   DATABASE_DB_NAME: ZGItZGVtbw==
   DATABASE_DB_PASSWORD: cGFzc3dvcmQ=
   DATABASE_DB_PORT: NTQzMg==
-  DATABASE_DB_USERNAME: cG9zdGdyZXM=
-  DATABASE_DBCONNECTIONIP: MTcyLjMwLjcyLjg5
+  DATABASE_DB_USER: cG9zdGdyZXM=
+  DATABASE_DBCONNECTIONIP: MTcyLjMwLjU2LjM0
   DATABASE_DBCONNECTIONPORT: NTQzMg==
   DATABASE_DBNAME: ZGItZGVtbw==
-  DATABASE_SECRET_PASSWORD: cGFzc3dvcmQ=
-  DATABASE_SECRET_USER: cG9zdGdyZXM=
-  ETCDCLUSTER_CLUSTERIP: MTcyLjMwLjYyLjUy
+  DATABASE_IMAGE: ZG9ja2VyLmlvL3Bvc3RncmVz
+  DATABASE_IMAGENAME: cG9zdGdyZXM=
+  DATABASE_PASSWORD: cGFzc3dvcmQ=
+  DATABASE_USER: cG9zdGdyZXM=
+  ETCDCLUSTER_CLUSTERIP: MTcyLjMwLjIwOC4yMw==
+  ETCDCLUSTER_DB_HOST: MTcyLjMwLjU2LjM0
+  ETCDCLUSTER_DB_NAME: ZGItZGVtbw==
+  ETCDCLUSTER_DB_PASSWORD: cGFzc3dvcmQ=
+  ETCDCLUSTER_DB_PORT: NTQzMg==
+  ETCDCLUSTER_DB_USER: cG9zdGdyZXM=
+  ETCDCLUSTER_PASSWORD: Y0dGemMzZHZjbVE9
+  ETCDCLUSTER_USER: Y0c5emRHZHlaWE09
 kind: Secret
 metadata:
-  annotations:
-    service-binding-operator.operators.coreos.com/binding-name: node-todo-git
-    service-binding-operator.operators.coreos.com/binding-namespace: multiple-services-demo
-  creationTimestamp: "2020-02-14T11:58:29Z"
+  ...
   name: node-todo-git
   namespace: multiple-services-demo
-  resourceVersion: "257567"
-  selfLink: /api/v1/namespaces/multiple-services-demo/secrets/node-todo-git
-  uid: 15aafcae-d334-49d8-be4c-2331f9c7cffe
+  ...
 type: Opaque
 ```
+#### Check the status of Service Binding
+
+`ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+
+To check the status of Service Binding, run the command:
+
+```
+kubectl get servicebinding binding-request -o yaml
+```
+
+Status of Service Binding on successful binding:
+
+```yaml
+status:
+  conditions:
+  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
+    lastTransitionTime: "2020-10-15T13:23:23Z"
+    status: "True"
+    type: CollectionReady
+  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
+    lastTransitionTime: "2020-10-15T13:23:23Z"
+    status: "True"
+    type: InjectionReady
+  secret: binding-request
+```
+
+where
+
+* Conditions represent the latest available observations of Service Binding's state
+* Secret represents the name of the secret created by the Service Binding Operator
+
+
+Conditions have two types `CollectionReady` and `InjectionReady`
+
+where
+
+* `CollectionReady` type represents collection of secret from the service
+* `InjectionReady` type represents an injection of the secret into the application
+
+Conditions can have the following type, status and reason:
+
+| Type            | Status | Reason               | Type           | Status | Reason                   |
+| --------------- | ------ | -------------------- | -------------- | ------ | ------------------------ |
+| CollectionReady | False  | EmptyServiceSelector | InjectionReady | False  |                          |
+| CollectionReady | False  | ServiceNotFound      | InjectionReady | False  |                          |
+| CollectionReady | True   |                      | InjectionReady | False  | EmptyApplicationSelector |
+| CollectionReady | True   |                      | InjectionReady | False  | ApplicationNotFound      |
+| CollectionReady | True   |                      | InjectionReady | True   |                          |
+
+That's it, folks!

@@ -29,46 +29,9 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install the `alpha` version.
-
-Alternatively, you can perform the same task manually using the following command:
-
-``` shell
-make install-service-binding-operator-community
-```
+and install the `beta` version.
 
 This makes the `ServiceBinding` custom resource available, that the application developer will use later.
-
-##### :bulb: Latest `master` version of the operator
-
-It is also possible to install the latest `master` version of the operator instead of the one from `community-operators`. To enable that an `OperatorSource` has to be installed with the latest `master` version:
-
-``` shell
-cat <<EOS | kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
-```
-
-Alternatively, you can perform the same task manually using the following command before going to the Operator Hub:
-
-``` shell
-make install-service-binding-operator-source-master
-```
-
-or running the following command to install the operator completely:
-
-``` shell
-make install-service-binding-operator-master
-```
 
 #### Install the IBM Cloud operator
 
@@ -76,13 +39,13 @@ Navigate to `Operators`->`OperatorHub` in the OpenShift console; under the `Clou
 
 ![IBM Cloud Operator as shown in OperatorHub](../../assets/operator-hub-ibmcloudop-screenshot.png)
 
-and install an `alpha` version.
+and install an `stable` version.
 
 This makes the `Service` and `Binding` with API version `ibmcloud.ibm.com/v1alpha1` custom resources available for the application developer.
 
 ##### Setup IBM Cloud Credentials
 
-The IBM Cloud operator requires IBM Cloud credentials to operate. Follow the [instructions](https://operatorhub.io/operator/ibmcloud-operator) in the `Requirements` section to create the required secret and config map defaults.
+The IBM Cloud operator requires IBM Cloud credentials to operate. Follow the [instructions](https://operatorhub.io/operator/ibmcloud-operator) in the `Setting up the operator` section to create the required secret and config map defaults.
 
 ### Application Developer
 
@@ -99,7 +62,7 @@ Now, let's play the role of an application developer. In the following sections 
 The application and the service instance needs a namespace to live in so let's create one for them:
 
 ``` shell
-oc new-project service-binding-demo
+kubectl create namespace service-binding-demo
 ```
 
 #### Import NodeJS application
@@ -115,17 +78,32 @@ there the required backed service is not configured.
 
 #### Create an IBM Language Translator service instance
 
-Now we use the IBM Cloud Operator that the cluster admin has installed. To create a language translator instance just create a [`Service` custom resource for languagee translator](./language-translator.yaml) in the `service-binding-demo` namespace called `mytranslator` along with [a `Binding` custom resource](./language-translator-binding.yaml) by running:
+Now we use the IBM Cloud Operator that the cluster admin has installed. To create a language translator instance just create a `Service` custom resource for languagee translator in the `service-binding-demo` namespace called `mytranslator` along with a `Binding` custom resource by running:
 
 ``` shell
-oc apply -f language-translator.yaml
-oc apply -f language-translator-binding.yaml
+kubectl apply -f - << EOD
+---
+apiVersion: ibmcloud.ibm.com/v1alpha1
+kind: Service
+metadata:
+  name: mytranslator
+  namespace: service-binding-demo
+spec:
+  serviceClass: language-translator
+  plan: lite
+---
+apiVersion: ibmcloud.ibm.com/v1alpha1
+kind: Binding
+metadata:
+  name: mytranslator-binding
+  namespace: service-binding-demo
+  annotations:
+    service.binding/url: path={.status.secretName},objectType=Secret,sourceValue=url
+    service.binding/apikey: path={.status.secretName},objectType=Secret,sourceValue=apikey
+spec:
+  serviceName: mytranslator
+EOD
 ```
-
-In alternative, you may also create the service from the OpenShift Web Console in the Developer perspective,
-navigating to `Add`->`From Catalog`, selecting `Service`, clicking `Create` and using the default sample
-template which provision the Language Translator Service (this might change in the future, so it is recommended to check against the sample template provided [here](./language-translator.yaml)).
-Repeat the same process for adding a binding by navigating to `Add`->`From Catalog`, selecting `Binding`, clicking `Create` and using the default sample template which creates a binding the Language Translator Service.
 
 Note that a binding needs to be created, as service instances and service credentials have different
 lifecycles for IBM Cloud services. The Service Binding Operator does not create credentials for
@@ -137,7 +115,7 @@ To check the status of the service we can take a look at the `Service` custom re
 it will look something like the following:
 
 ```shell
-oc get service.ibmcloud mytranslator -n service-binding-demo -o yaml
+kubectl get service.ibmcloud mytranslator -n service-binding-demo -o yaml
 ```
 
 ```yaml
@@ -165,7 +143,7 @@ status:
 Similarly, you the status of the binding can be checked with:
 
 ```shell
-oc get binding.ibmcloud mytranslator-binding -n service-binding-demo -o yaml
+kubectl get binding.ibmcloud mytranslator-binding -n service-binding-demo -o yaml
 ```
 
 ```yaml
@@ -187,7 +165,7 @@ You may also verify that a secret with the Language Translator credentials gets 
 `service-binding-demo` namespace:
 
 ```shell
-oc get secret mytranslator-binding -n service-binding-demo
+kubectl get secret mytranslator-binding -n service-binding-demo
 ```
 
 ```shell
@@ -208,9 +186,11 @@ and `LANGUAGE_TRANSLATOR_IAM_APIKEY`. These keys are available in the backing se
 `url` and `apikey` respectively, and they can be mapped to the variables required by the app using
 the `customEnvVar` feature of the service binding operator.
 
-All we need to do is to create the following [`ServiceBinding`](./service-binding.nodejs-app.yaml):
+All we need to do is to create the following `ServiceBinding`:
 
-```yaml
+```shell
+kubectl apply -f - << EOD
+---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
@@ -222,16 +202,18 @@ spec:
     version: v1alpha1
     kind: Binding
     name: mytranslator-binding
+    id: tr
   application:
     name: language-translator-nodejs
-    group: apps.openshift.io
+    group: apps
     version: v1
-    resource: deploymentconfigs
+    resource: deployments
   customEnvVar:
      - name: LANGUAGE_TRANSLATOR_URL
-       value: '{{ index .status.secretName "url" }}'
+       value: '{{ .tr.status.secretName.url }}'
      - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
-       value: '{{ index .status.secretName "apikey" }}'
+       value: '{{ .tr.status.secretName.apikey }}'
+EOD
 ```
 
 There are 3 interesting parts in the request:
@@ -239,12 +221,6 @@ There are 3 interesting parts in the request:
 * `services` - used to find the backing service - the operator-backed language translator instance with name `mytranslator-binding`.
 * `application` - used to search for the application based on the name and the `resourceKind` of the application to be a `DeploymentConfig`, matched by the label `app=language-translator-nodejs`.
 * `customEnvVar` - specifies the mapping for the environment variables injected into the bound application.
-
-We can use run the following command to create the binding request:
-
-```shell
-oc apply -f service-binding.nodejs-app.yaml
-```
 
 That causes the node.js deployment to restart the pod with the new mapping.
 
@@ -271,7 +247,7 @@ oc expose svc/language-translator-nodejs
 Run the following command to access the route URL:
 
 ```shell
-oc get route language-translator-nodejs
+kubectl get route language-translator-nodejs
 ```
 
 Open a browser and go to the URL found under `HOST/PORT`. Verify that the application web page displays and then test it

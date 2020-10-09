@@ -1,15 +1,15 @@
-# Binding an Imported app to an Off-cluster Operator Managed AWS RDS Database
+# Binding an application to an Off-cluster Operator Managed AWS RDS Database
 
 ## Introduction
 
-This scenario illustrates binding an imported application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and use of the `envVarPrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
+This scenario illustrates binding an application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and use of the `envVarPrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
 
 ## Actions to Perform by Users in 2 Roles
 
 In this example there are 2 roles:
 
 * Cluster Admin - Installs the operators to the cluster
-* Application Developer - Imports Shell and Node.js applications, creates a DB instance, creates requests to bind (connect) the applications and the DB.
+* Application Developer - Imports a shell application, creates a DB instance, creates request to bind (connect) the application and the DB.
 
 ### Cluster Admin
 
@@ -28,66 +28,53 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install the `alpha` version.
-
-Alternatively, you can perform the same task manually using the following command:
-
-``` shell
-make install-service-binding-operator-community
-```
+and install the `beta` version.
 
 This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
-##### :bulb: Latest `master` version of the operator
-
-It is also possible to install the latest `master` version of the operator instead of the one from `community-operators`. To enable that an `OperatorSource` has to be installed with the latest `master` version:
-
-``` shell
-cat <<EOS | kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
-```
-
-Alternatively, you can perform the same task manually using the following command before going to the Operator Hub:
-
-``` shell
-make install-service-binding-operator-source-master
-```
-
-or running the following command to install the operator completely:
-
-``` shell
-make install-service-binding-operator-master
-```
-
-#### Install the DB operator using an `OperatorSource`
-
-##### Setup AWS Credentials
+#### Setup AWS Credentials for the operator
 
 The AWS RDS operator requires AWS credentials to be able to work with AWS. Follow the [instructions](https://github.com/operator-backing-service-samples/aws-rds#set-up-and-config) to install the proper secret.
 
 ``` shell
- make install-aws-rds-operator-secrets
+AWS_ACCESS_KEY_ID=$(echo -n "..." | base64)
+AWS_SECRET_ACCESS_KEY=$(echo -n "..." | base64)
+AWS_REGION=$(echo -n "us-east-2" | base64)
+kubectl apply -f - << EOD
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-rds-operator
+  namespace: openshift-operators
+type: Opaque
+data:
+  AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+  AWS_REGION: $AWS_REGION
+EOD
 ```
 
-##### Install the operator source
+#### Install the AWS RDS operator using an `CatalogSource`
 
-Apply the [AWS RDS Operator Source](./operator-source.aws-rds-operator.yaml):
+Apply the following `CatalogSource`:
 
-``` shell
-make install-aws-rds-operator-source
+```shell
+kubectl apply -f - << EOD
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+    name: sample-db-operators
+    namespace: openshift-marketplace
+spec:
+    sourceType: grpc
+    image: quay.io/redhat-developer/sample-db-operators-olm:v1
+    displayName: Sample DB Operators
+EOD
 ```
 
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Database` category select the `AWS RDS Database` operator
+Then navigate to the `Operators`->`OperatorHub` in the OpenShift console under the `openshift-marketplace` project and in the `Database` category select the `AWS RDS Database` operator.
 
 ![AWS RDS Operator as shown in OperatorHub](../../assets/operator-hub-awsrdso-screenshot.png)
 
@@ -112,13 +99,7 @@ Now, let's play the role of an application developer. In the following sections 
 The application and the DB needs a namespace to live in so let's create one for them:
 
 ``` shell
-oc new-project service-binding-demo
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-project
+kubectl create namespace service-binding-demo
 ```
 
 #### Deploy Shell application
@@ -128,19 +109,86 @@ To illustrate and verify that the binding works we will use a simple shell appli
 To deploy the application use the `deploy-shell-app` make target:
 
 ```shell
-make deploy-shell-app
+kubectl apply -f - << EOD
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: shell-app
+  namespace: service-binding-demo
+EOD
 ```
+
+```shell
+kubectl apply -f - << EOD
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: shell-app
+  namespace: service-binding-demo
+  labels:
+    name: shell-app
+spec:
+  triggers:
+    - type: ConfigChange
+  source:
+    dockerfile: |
+      FROM alpine
+      LABEL author="Pavel Macík <pavel.macik@gmail.com>"
+      RUN echo 'echo "Container started";\
+      echo "Listing all MYDB_* env variables:";\
+      echo "╭─[ MYDB_* ]";\
+      env | grep MYDB;\
+      echo "╰─]";\
+      echo "Taking a nap for 1 hour...";\
+      sleep 3600'>/run.sh && chmod +x /run.sh
+      ENV LANG=en_US.utf8
+      ENTRYPOINT [ "/bin/sh", "-c", "/run.sh" ]
+    type: Docker
+  strategy:
+    type: Docker
+  output:
+    to:
+      kind: ImageStreamTag
+      name: 'shell-app:latest'
+EOD
+```
+
+```shell
+kubectl apply -f - << EOD
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shell-app
+  namespace: service-binding-demo
+spec:
+  selector:
+    matchLabels:
+      app: shell-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: shell-app
+    spec:
+      containers:
+        - name: shell-app
+          image: image-registry.openshift-image-registry.svc:5000/service-binding-demo/shell-app
+          imagePullPolicy: Always
+EOD
+```
+
 
 This ultimately creates a pod where the shell application lives:
 
 ```shell
-$ oc get pods -n service-binding-demo -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
-NAME                 STATUS
-shell-app-1-build    Succeeded
-shell-app-1-cszbz    Running
-shell-app-1-deploy   Succeeded
+$ kubectl get pods -n service-binding-demo -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
+NAME                                  STATUS
+shell-app-1-build                     Succeeded
+shell-app-65f55dd677-fwfdz            Running
 
-$ oc logs shell-app-1-cszbz
+$ kubectl logs shell-app-65f55dd677-fwfdz -n service-binding-demo
 Container started
 Listing all MYDB_* env variables:
 ╭─[ MYDB_* ]
@@ -148,32 +196,49 @@ Listing all MYDB_* env variables:
 Taking a nap for 1 hour...
 ```
 
-#### Import NodeJS application
-
-In this example we will import an arbitrary [Node.js application](https://github.com/pmacik/nodejs-rest-http-crud).
-
-In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+ADD` page from the menu and then click on the `[Import from Git]` button. Fill in the form with the following:
-
-* `Git Repo URL` = `https://github.com/pmacik/nodejs-rest-http-crud`
-* `Show Advanced Git Options`->`Git Reference` = `awsrds-and-envprefix`
-* `Project` = `service-binding-demo`
-* `Application`->`Create New Application` = `nodejs-app`
-* `Name` = `nodejs-app`
-* `Builder Image` = `Node.js`
-* `Create a route to the application` = checked
-
-and click on the `[Create]` button.
-
-Notice, that during the import no DB config was mentioned or requested.
-
-When the application is running navigate to its route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That means that the application is not connected to a DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
-
 #### Create a DB instance for the application
 
-Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a [`RDSDatabase` custom resource](./rds.mydb.yaml) in the `service-binding-demo` namespace called `mydb` along with [a secret](./secret.mydb.yaml) with credentials for the DB by running the `deploy-mydb` make target:
+Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `RDSDatabase` custom resource in the `service-binding-demo` namespace called `mydb` along with a secret containing credentials for the DB by applying the following:
 
 ``` shell
-make deploy-mydb
+kubectl apply -f - << EOD
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mydb
+  namespace: service-binding-demo
+  labels:
+    app: mydb
+type: Opaque
+data:
+  DB_USERNAME: cG9zdGdyZXM=  # postgres
+  DB_PASSWORD: cGFzc3dvcmRvcnNvbWV0aGluZw==  # passwordorsomething
+EOD
+```
+
+```shell
+kubectl apply -f - << EOD
+---
+apiVersion: aws.pmacik.dev/v1alpha1
+kind: RDSDatabase
+metadata:
+  name: mydb
+  namespace: service-binding-demo
+  labels:
+    app: mydb
+spec:
+  class: db.t2.micro
+  engine: postgres
+  dbName: mydb
+  name: mydb
+  password:
+    key: DB_PASSWORD
+    name: mydb
+  username: postgres
+  deleteProtection: true
+  size: 10
+EOD
 ```
 
 It takes usually around 5 minutes to spin-up a new instance of the RDS database in AWS.
@@ -181,7 +246,7 @@ It takes usually around 5 minutes to spin-up a new instance of the RDS database 
 To check the status of that we can take a look at the `RDSDatabase` custom resource in the meantime:
 
 ```shell
-oc get rdsdb mydb -n service-binding-demo -o yaml
+kubectl get rdsdb mydb -n service-binding-demo -o yaml
 ```
 
 ```yaml
@@ -216,7 +281,8 @@ As mentioned above the Shell application lists all environment variables that st
 
 All we need to do is to create the following [`ServiceBinding`](./service-binding.shell-app.yaml):
 
-```yaml
+```shell
+kubectl apply -f - << EOD
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -232,9 +298,10 @@ spec:
     name: mydb
   application:
     name: shell-app
-    group: apps.openshift.io
+    group: apps
     version: v1
-    resource: deploymentconfigs
+    resource: deployments
+EOD
 ```
 
 There are 3 interesting parts in the request:
@@ -243,27 +310,28 @@ There are 3 interesting parts in the request:
 * `services` - used to find the backing service - our operator-backed DB instance called `mydb`
 * `application` - used to search for the application based on the name and the `resourceKind` of the application to be a `DeploymentConfig`
 
-We can use `create-service-binding-shell-app` make target to create the binding request for us:
+That causes the Shell application to be re-deployed.
 
 ```shell
-make create-service-binding-shell-app
+$ kubectl get pods -n service-binding-demo
+NAME                         READY   STATUS        RESTARTS   AGE
+shell-app-1-build            0/1     Completed     0          76m
+shell-app-65f55dd677-26dfz   0/1     Terminating   1          75m
+shell-app-755777c4cb-6qdbp   1/1     Running       0          30s
 ```
-
-That causes the Shell application to be re-deployed.
 
 Once the new version is up, we can check the logs to verify that the binding worked:
 
 ```shell
-$ oc logs shell-app-2-49pzw -n service-binding-demo
+$ oc logs shell-app-755777c4cb-6qdbp -n service-binding-demo
 Container started
 Listing all MYDB_* env variables:
 ╭─[ MYDB_* ]
-MYDB_RDSDATABASE_CONFIGMAP_DB_HOST=mydb-service-binding-demo.*********.us-east-2.rds.amazonaws.com
-MYDB_RDSDATABASE_SECRET_DB_USERNAME=postgres
-MYDB_RDSDATABASE_CONFIGMAP_DB_PORT=9432
-MYDB_RDSDATABASE_USERNAME=postgres
+MYDB_RDSDATABASE_DB_USERNAME=postgres
 MYDB_RDSDATABASE_DBNAME=mydb
-MYDB_RDSDATABASE_SECRET_DB_PASSWORD=passwordorsomething
+MYDB_RDSDATABASE_DB_PASSWORD=passwordorsomething
+MYDB_RDSDATABASE_DB_HOST=mydb-service-binding-demo.***********.us-east-2.rds.amazonaws.com
+MYDB_RDSDATABASE_DB_PORT=9432
 ╰─]
 Taking a nap for 1 hour...
 ```
@@ -272,53 +340,53 @@ We can see that the binding indeed worked and the Service Binding Operator succe
 
 That's enough for the Shell application. Let's see if the connection to the DB really works. We do that in the next section with the Node.js application.
 
-#### Bind the DB to the Node.js application
+#### Check the status of Service Binding
 
-The Node.js application should be already up and running after we [imported it before](#import-nodejs-application). We  can
+`ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
-Let's check by navigating to the application's route to verify that it is up. Notice that in the header it says `(DB: N/A)`. That means that the application is not connected to DB and so it should not work properly. Try the application's UI to add a fruit - it causes an error proving that the DB is not connected.
+To check the status of Service Binding, run the command:
 
-Now we ask the Service Binding Operator to bind the DB to the Node.js application in the following step:
+```
+kubectl get servicebinding mydb.to.shell-app -n service-binding-demo -o yaml
+```
 
-* [Create `ServiceBinding`](#create-servicebinding-for-the-nodejs-application)
-
-#### Create `ServiceBinding` for the Node.js application
-
-Now the only thing that remains is to connect the DB and the application. We let the Service Binding Operator to do the connection for us.
-
-Create the following [`ServiceBinding`](./service-binding.nodejs-app.yaml):
+Status of Service Binding on successful binding:
 
 ```yaml
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: ServiceBinding
-metadata:
-  name: mydb.to.nodejs-app
-  namespace: service-binding-demo
-spec:
-  envVarPrefix: "MYDB"
-  services:
-  - group: aws.pmacik.dev
-    version: v1alpha1
-    kind: RDSDatabase
-    name: mydb
-  application:
-    name: nodejs-app
-    group: apps
-    version: v1
-    resource: deployments
+status:
+  conditions:
+  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
+    lastTransitionTime: "2020-10-15T13:23:23Z"
+    status: "True"
+    type: CollectionReady
+  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
+    lastTransitionTime: "2020-10-15T13:23:23Z"
+    status: "True"
+    type: InjectionReady
+  secret: mydb.to.shell-app
 ```
 
-The request is basically the same as the one we used for the Shell application. The only difference is the application name used in the `application`.
+where
 
-We can use the `create-service-binding-nodejs-app` make target to create the request for us:
+* Conditions represent the latest available observations of Service Binding's state
+* Secret represents the name of the secret created by the Service Binding Operator
 
-```shell
-make create-service-binding-nodejs-app
-```
 
-That causes the Node.js application to be re-deployed.
+Conditions have two types `CollectionReady` and `InjectionReady`
 
-Once the new version is up, go the application's route to check the UI. In the header you can see `(DB: mydb)` which indicates that the application is connected to a DB and its name is `mydb`. Now you can try the UI again but now it works!
+where
+
+* `CollectionReady` type represents collection of secret from the service
+* `InjectionReady` type represents an injection of the secret into the application
+
+Conditions can have the following type, status and reason:
+
+| Type            | Status | Reason               | Type           | Status | Reason                   |
+| --------------- | ------ | -------------------- | -------------- | ------ | ------------------------ |
+| CollectionReady | False  | EmptyServiceSelector | InjectionReady | False  |                          |
+| CollectionReady | False  | ServiceNotFound      | InjectionReady | False  |                          |
+| CollectionReady | True   |                      | InjectionReady | False  | EmptyApplicationSelector |
+| CollectionReady | True   |                      | InjectionReady | False  | ApplicationNotFound      |
+| CollectionReady | True   |                      | InjectionReady | True   |                          |
 
 That's it, folks!
