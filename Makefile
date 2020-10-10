@@ -107,8 +107,8 @@ SBR_MANIFESTS ?= ${PROJECT_DIR}service-binding-operator-manifests
 CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
-OS ?= linux
-ARCH ?= amd64
+OS ?= $(shell go env GOOS)
+ARCH ?= $(shell go env GOARCH)
 
 # This variable is for artifacts to be archived by Prow jobs at OpenShift CI
 # The actual value will be set by the OpenShift CI accordingly
@@ -307,7 +307,7 @@ test: test-unit test-acceptance
 ## -- Build Go binary and OCI image targets --
 
 .PHONY: build
-## Build: compile the operator for Linux/AMD64.
+## Build: compile the operator binary
 build: out/operator
 
 out/operator:
