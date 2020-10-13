@@ -373,3 +373,8 @@ spec:
             else:
                 print(f"No deployment that matches {deployment_name_pattern} found.\n")
         return None
+
+    def delete_service_binding(self, sb_name):
+        (output, exit_code) = self.cmd.run("oc delete --wait=true --timeout=120s ServiceBinding " + sb_name)
+        assert exit_code == 0, f"Unexpected exit code ({exit_code}) while deleting service binding '{sb_name}': {output}"
+        return output
