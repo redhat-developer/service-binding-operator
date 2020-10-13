@@ -2,6 +2,7 @@ package servicebinding
 
 import (
 	"os"
+	"reflect"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
@@ -20,6 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -106,6 +108,16 @@ func isOfKind(obj runtime.Object, kind string) bool {
 	return strings.EqualFold(obj.GetObjectKind().GroupVersionKind().Kind, kind)
 }
 
+// check whether annotations specify bindings
+func isAnnotationValid(ann map[string]string) bool {
+	for k := range ann {
+		if strings.HasPrefix(k, binding.AnnotationPrefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // updateEvent returns a predicate handler function.
 func updateFunc(logger *log.Log) func(updateEvent event.UpdateEvent) bool {
 	return func(e event.UpdateEvent) bool {
@@ -141,8 +153,13 @@ func updateFunc(logger *log.Log) func(updateEvent event.UpdateEvent) bool {
 		} else {
 			statusAreEqual = statusComparison.Success
 		}
-
-		shouldReconcile := !specsAreEqual || !statusAreEqual
+		annotationsAreEqual := true
+		annOld := e.MetaOld.GetAnnotations()
+		annNew := e.MetaNew.GetAnnotations()
+		if isAnnotationValid(annOld) && isAnnotationValid(annNew) {
+			annotationsAreEqual = reflect.DeepEqual(annOld, annNew)
+		}
+		shouldReconcile := !specsAreEqual || !statusAreEqual || !annotationsAreEqual
 
 		logger.Debug("Resource update event received",
 			"GVK", e.ObjectNew.GetObjectKind().GroupVersionKind(),

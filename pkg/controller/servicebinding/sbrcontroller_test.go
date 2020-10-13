@@ -146,6 +146,63 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 				AvailableReplicas: 3,
 			},
 		}
+		deploymentD := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					"service": "binding",
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"new-app": "demo",
+					},
+				},
+			},
+			Status: appsv1.DeploymentStatus{
+				AvailableReplicas: 3,
+			},
+		}
+		deploymentE := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					"service.binding/db.host": "backend",
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"new-app": "demo",
+					},
+				},
+			},
+		}
+		deploymentF := &appsv1.Deployment{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Deployment",
+				APIVersion: "apps/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Annotations: map[string]string{
+					"service.binding/db.port": "8080",
+				},
+			},
+			Spec: appsv1.DeploymentSpec{
+				Selector: &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"new-app": "demo",
+					},
+				},
+			},
+		}
 		secretA := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Secret",
@@ -247,6 +304,22 @@ func TestSBRControllerBuildGVKPredicate(t *testing.T) {
 				b:      deploymentC,
 				aMeta:  deploymentB.ObjectMeta,
 				bMeta:  deploymentC.ObjectMeta,
+			},
+			{
+				name:   "Predicate evaluation true: supported update as the deployment metadata annotations required for service binding is changed",
+				wanted: true,
+				a:      deploymentE,
+				b:      deploymentF,
+				aMeta:  deploymentE.ObjectMeta,
+				bMeta:  deploymentF.ObjectMeta,
+			},
+			{
+				name:   "Predicate evaluation false: non supported update as the deployment metadata annotations not required for service binding is changed",
+				wanted: false,
+				a:      deploymentC,
+				b:      deploymentD,
+				aMeta:  deploymentC.ObjectMeta,
+				bMeta:  deploymentD.ObjectMeta,
 			},
 		}
 		for _, tt := range tests {

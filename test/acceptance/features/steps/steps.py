@@ -219,6 +219,7 @@ def then_app_is_connected_to_db(context, db_name):
 
 
 # STEP
+@given(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
 @then(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
 def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
     openshift = Openshift()
@@ -436,3 +437,24 @@ def validate_persistent_sb(context, sb_name):
         assert True
     else:
         assert False, "Service Binding got updated"
+
+
+@given(u'Secret "{secret_name}" does not contain "{key}"')
+def check_secret_key(context, secret_name, key):
+    openshift = Openshift()
+    json_path = f'{{.data.{key}}}'
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name,
+                                                                  json_path) == "",
+                  step=5, timeout=120, ignore_exceptions=(binascii.Error,))
+
+
+@step(u'Secret "{secret_name}" is empty')
+def validate_secret_empty(context, secret_name):
+    openshift = Openshift()
+    try:
+        polling2.poll(lambda: json.loads(
+            openshift.get_resource_info_by_jq("secrets", secret_name, context.namespace.name, ".data",
+                                              wait=False)) == "null", step=5, timeout=20,
+                      ignore_exceptions=(json.JSONDecodeError,))
+    except polling2.TimeoutException:
+        pass
