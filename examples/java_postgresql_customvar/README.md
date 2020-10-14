@@ -100,7 +100,7 @@ kubectl edit crd databases.postgresql.baiju.dev
 Add these annotations under `metadata.annotations` along with other annotations.
 
 ```yaml
-service.binding/tags: path={.spec.tags}
+service.binding/tags: path={.spec.tags},elementType=sliceOfStrings
 service.binding/userLabels: path={.spec.userLabels},elementType=map
 service.binding/secretName: path={.spec.secretName},elementType=sliceOfMaps,sourceKey=type,sourceValue=secret
 ```
@@ -324,7 +324,8 @@ DATABASE_PASSWORD=password
 DATABASE_SECRETNAME_PRIMARYSECRETNAME=example-primaryuser
 DATABASE_SECRETNAME_ROOTSECRETNAME=example-rootuser
 DATABASE_SECRETNAME_SECONDARYSECRETNAME=example-secondaryuser
-DATABASE_TAGS=[centos7-12.3 centos7-12.4]
+DATABASE_TAGS_0=centos7-12.3
+DATABASE_TAGS_1=centos7-12.4
 DATABASE_USER=postgres
 DATABASE_USERLABELS_ARCHIVE=false
 DATABASE_USERLABELS_ENVIRONMENT=demo

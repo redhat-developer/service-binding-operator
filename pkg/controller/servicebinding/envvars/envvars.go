@@ -2,6 +2,7 @@ package envvars
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,12 +67,14 @@ func Build(obj interface{}, path ...string) (map[string]string, error) {
 		return buildString(strconv.FormatInt(val, 10), path), nil
 	case float64:
 		return buildString(strconv.FormatFloat(val, 'f', -1, 64), path), nil
+	case []string:
+		return buildSliceOfStrings(val, path)
 	case []interface{}:
 		return buildSliceOfInterface(val, path)
 	case bool:
 		return buildString(strconv.FormatBool(val), path), nil
 	default:
-		return nil, errUnsupportedType
+		return nil, fmt.Errorf("%v: %v", errUnsupportedType, val)
 	}
 }
 
@@ -110,6 +113,19 @@ func buildMap(obj map[string]interface{}, path []string) (map[string]string, err
 	sort.Strings(keys)
 	for _, k := range keys {
 		if err := buildInner(path, k, obj[k], envVars); err != nil {
+			return nil, err
+		}
+	}
+	return envVars, nil
+}
+
+// buildSliceOfStrings returns a slice containing environment variables for
+// all the leaves present in the given 'obj' slice of strings.
+func buildSliceOfStrings(obj []string, acc []string) (map[string]string, error) {
+	envVars := make(map[string]string)
+	for i, v := range obj {
+		k := strconv.Itoa(i)
+		if err := buildInner(acc, k, v, envVars); err != nil {
 			return nil, err
 		}
 	}

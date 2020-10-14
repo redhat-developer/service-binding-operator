@@ -149,7 +149,7 @@ func TestSliceOfStringsFromPath(t *testing.T) {
 	})
 	require.NoError(t, err)
 	v := map[string]interface{}{
-		"bootstrap": []string{"www.example.com", "secure.example.com"},
+		"bootstrap": []interface{}{"www.example.com", "secure.example.com"},
 	}
 	require.Equal(t, v, val.Get())
 }

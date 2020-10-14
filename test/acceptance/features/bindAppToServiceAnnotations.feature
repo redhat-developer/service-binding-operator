@@ -135,6 +135,133 @@ Feature: Bind an application to a service using annotations
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "rsa-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "rsa-2" should be changed to "True"
 
+    Scenario: Each value in referred slice of strings from service resource gets injected into app as separate env variable
+        Given Generic test application "slos-app" is running
+        And The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: backends.stable.example.com
+                annotations:
+                    service.binding/tags: path={.spec.tags},elementType=sliceOfStrings
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                      - bk
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: slos-service
+            spec:
+                tags:
+                  - knowledge
+                  - is
+                  - power
+            status:
+                somestatus: good
+            """
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: slos-binding
+            spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: slos-service
+                application:
+                    name: slos-app
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "slos-binding" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "slos-binding" should be changed to "True"
+        And The application env var "BACKEND_TAGS_0" has value "knowledge"
+        And The application env var "BACKEND_TAGS_1" has value "is"
+        And The application env var "BACKEND_TAGS_2" has value "power"
+
+    Scenario: Values extracted from each map by a given key in referred slice of maps from service resource gets injected into app as separate env variable
+        Given Generic test application "slom-to-slos-app" is running
+        And The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: backends.stable.example.com
+                annotations:
+                    service.binding/url: path={.spec.connections},elementType=sliceOfStrings,sourceValue=url
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                      - bk
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: slom-to-slos-service
+            spec:
+                connections:
+                  - type: primary
+                    url: primary.example.com
+                  - type: secondary
+                    url: secondary.example.com
+                  - type: '404'
+                    url: black-hole.example.com
+            status:
+                somestatus: good
+            """
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: slom-to-slos-binding
+            spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: slom-to-slos-service
+                application:
+                    name: slom-to-slos-app
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "slom-to-slos-binding" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "slom-to-slos-binding" should be changed to "True"
+        And The application env var "BACKEND_URL_0" has value "primary.example.com"
+        And The application env var "BACKEND_URL_1" has value "secondary.example.com"
+        And The application env var "BACKEND_URL_2" has value "black-hole.example.com"
+
     Scenario: Each value in referred slice of maps from service resource gets injected into app as separate env variable
         Given Generic test application "slom-app" is running
         And The Custom Resource Definition is present
