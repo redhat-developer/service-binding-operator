@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"text/template"
 
+	"github.com/PaesslerAG/jsonpath"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -26,7 +28,7 @@ func newCustomEnvParser(envMap []corev1.EnvVar, cache map[string]interface{}) *c
 func (c *customEnvParser) Parse() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
-		tmpl, err := template.New("set").Funcs(template.FuncMap{"json": marshalToJSON}).Parse(v.Value)
+		tmpl, err := template.New("set").Funcs(template.FuncMap{"json": marshalToJSON, "jsonp": jsonPath}).Parse(v.Value)
 		if err != nil {
 			return data, err
 		}
@@ -43,6 +45,21 @@ func (c *customEnvParser) Parse() (map[string]interface{}, error) {
 	}
 	return data, nil
 }
+
+func jsonPath(m interface{}, q string) (string, error) {
+	v := interface{}(nil)
+	err := json.Unmarshal([]byte(m.(string)), &v)
+	if err != nil {
+		return "", err
+	}
+
+	out, err := jsonpath.Get(q, v)
+	if err != nil {
+		return "", err
+	}
+	return out.(string), nil
+}
+
 func marshalToJSON(m interface{}) (string, error) {
 	bytes, err := json.Marshal(m)
 	if err != nil {

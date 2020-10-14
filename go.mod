@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	cloud.google.com/go v0.45.1 // indirect
+	github.com/PaesslerAG/jsonpath v0.1.1
 	github.com/coreos/etcd-operator v0.9.4
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
