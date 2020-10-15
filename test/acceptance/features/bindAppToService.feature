@@ -906,3 +906,49 @@ Feature: Bind an application to a service
                 ready: true
             """
         Then Secret "binding-request-backend-ann" is empty
+
+    Scenario: Bind an application to a service present in a different namespace
+        Given Namespace is present
+            """
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+                name: backend-services
+            """
+        * OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: backend-cross-ns-service
+                namespace: backend-services
+                annotations:
+                    service.binding/host_cross_ns_service: path={.spec.host_cross_ns_service}
+            spec:
+                host_cross_ns_service: cross.ns.service.stable.example.com
+            """
+        * Generic test application "myapp-in-sbr-ns" is running
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-cross-ns-service
+            spec:
+                application:
+                    name: myapp-in-sbr-ns
+                    group: apps
+                    version: v1
+                    resource: deployments
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-cross-ns-service
+                    namespace: backend-services
+            """
+
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-cross-ns-service" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-cross-ns-service" should be changed to "True"
+        And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"
