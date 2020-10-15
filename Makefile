@@ -329,7 +329,7 @@ $(OUTPUT_DIR)/openapi-gen:
 ## Generate-OpenAPI: after modifying _types, generate OpenAPI scaffolding.
 generate-openapi: $(OUTPUT_DIR)/openapi-gen
 	# Build the latest openapi-gen from source
-	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/openapi-gen --logtostderr=true -o "" -i $(GO_PACKAGE_PATH)/pkg/apis/apps/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/apps/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
+	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/openapi-gen --logtostderr=true -o "" -i $(GO_PACKAGE_PATH)/pkg/apis/operators/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/operators/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
