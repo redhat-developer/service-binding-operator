@@ -29,7 +29,7 @@ type ServiceBindingSpec struct {
 	// Application is used to identify the application connecting to the
 	// backing service operator.
 	// +optional
-	Application *Application `json:"application"`
+	Application *Application `json:"application,omitempty"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
@@ -41,11 +41,13 @@ type ServiceBindingSpec struct {
 // +k8s:openapi-gen=true
 type ServiceBindingStatus struct {
 	// Conditions describes the state of the operator's reconciliation functionality.
+	// +listType=set
 	Conditions []conditionsv1.Condition `json:"conditions"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
 	// Applications contain all the applications filtered by name or label
 	// +optional
+	// +listType=set
 	Applications []BoundApplication `json:"applications,omitempty"`
 }
 
