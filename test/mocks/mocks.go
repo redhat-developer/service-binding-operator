@@ -433,8 +433,7 @@ func MultiNamespaceServiceBindingMock(
 			Name:      name,
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
-			MountPathPrefix: "/var/redhat",
-			CustomEnvVar:    []corev1.EnvVar{},
+			CustomEnvVar: []corev1.EnvVar{},
 			Application: &v1alpha1.Application{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
@@ -485,8 +484,7 @@ func ServiceBindingMock(
 			APIVersion: "operators.coreos.com/v1alpha1",
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
-			MountPathPrefix: "/var/redhat",
-			CustomEnvVar:    []corev1.EnvVar{},
+			CustomEnvVar: []corev1.EnvVar{},
 			Application: &v1alpha1.Application{
 				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
 				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},

@@ -438,7 +438,6 @@ func buildServiceBinder(
 		ctx,
 		options.dynClient,
 		options.sbr,
-		options.binding.volumeKeys,
 		options.restMapper,
 	)
 
@@ -456,8 +455,7 @@ func buildServiceBinder(
 }
 
 type internalBinding struct {
-	envVars    map[string][]byte
-	volumeKeys []string
+	envVars map[string][]byte
 }
 
 func buildBinding(
@@ -466,14 +464,13 @@ func buildBinding(
 	svcCtxs serviceContextList,
 	globalEnvVarPrefix string,
 ) (*internalBinding, error) {
-	envVars, volumeKeys, err := NewRetriever(client).
+	envVars, err := NewRetriever(client).
 		ProcessServiceContexts(globalEnvVarPrefix, svcCtxs, customEnvVar)
 	if err != nil {
 		return nil, err
 	}
 
 	return &internalBinding{
-		envVars:    envVars,
-		volumeKeys: volumeKeys,
+		envVars: envVars,
 	}, nil
 }

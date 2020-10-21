@@ -2,7 +2,9 @@ package servicebinding
 
 import (
 	"context"
+	err "errors"
 	"fmt"
+	"path"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -26,16 +28,18 @@ import (
 // changeTriggerEnv hijacking environment in order to trigger a change
 const changeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 
+const serviceBindingRootEnvVar = "SERVICE_BINDING_ROOT"
+
 // binder executes the "binding" act of updating different application kinds to use intermediary
 // secret. Those secrets should be offered as environment variables.
 type binder struct {
-	ctx        context.Context          // request context
-	dynClient  dynamic.Interface        // kubernetes dynamic api client
-	sbr        *v1alpha1.ServiceBinding // instantiated service binding request
-	volumeKeys []string                 // list of key names used in volume mounts
-	modifier   extraFieldsModifier      // extra modifier for CRDs before updating
-	restMapper meta.RESTMapper          // RESTMapper to convert GVR from GVK
-	logger     *log.Log                 // logger instance
+	ctx         context.Context          // request context
+	dynClient   dynamic.Interface        // kubernetes dynamic api client
+	sbr         *v1alpha1.ServiceBinding // instantiated service binding request
+	bindingRoot string
+	modifier    extraFieldsModifier // extra modifier for CRDs before updating
+	restMapper  meta.RESTMapper     // RESTMapper to convert GVR from GVK
+	logger      *log.Log            // logger instance
 }
 
 // extraFieldsModifier is useful for updating backend service which requires additional changes besides
@@ -160,28 +164,24 @@ func (b *binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
 	name := b.sbr.GetName()
 	log := b.logger
 
-	// FIXME(isuttonl): update should not bail out here since b.volumeKeys might change
 	log.Debug("Checking if binding volume is already defined...")
 	for _, v := range volumes {
-		volume := v.(corev1.Volume)
-		if name == volume.Name {
+		volume, ok := v.(map[string]interface{})
+		if !ok {
+			return nil, err.New("type asserting volume to map of string to interface{} error")
+		}
+		if name == volume["name"] {
 			log.Debug("Volume is already defined!")
 			return volumes, nil
 		}
 	}
 
-	items := []corev1.KeyToPath{}
-	for _, k := range b.volumeKeys {
-		items = append(items, corev1.KeyToPath{Key: k, Path: k})
-	}
-
-	log.Debug("Appending new volume with items.", "Items", items)
+	log.Debug("Appending new volume.", "Secret.Name", name)
 	bindVolume := &corev1.Volume{
 		Name: name,
 		VolumeSource: corev1.VolumeSource{
 			Secret: &corev1.SecretVolumeSource{
 				SecretName: name,
-				Items:      items,
 			},
 		},
 	}
@@ -393,8 +393,26 @@ func (b *binder) updateContainer(container interface{}) (map[string]interface{},
 		return nil, err
 	}
 
-	// effectively binding the application with intermediary secret
-	c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
+	if !b.sbr.Spec.BindAsFiles {
+		c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
+	}
+
+	// and adding volume mount entries
+	if b.sbr.Spec.BindAsFiles {
+
+		for _, e := range c.Env {
+			if e.Name == serviceBindingRootEnvVar {
+				b.bindingRoot = e.Value
+				break
+			}
+		}
+
+		p, bindingRoot, fixedMountPath := b.mountPath()
+		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts, p)
+		if !fixedMountPath {
+			c.Env = b.appendEnvVar(c.Env, serviceBindingRootEnvVar, bindingRoot)
+		}
+	}
 
 	secretRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	existingSecret, err := b.dynClient.Resource(secretRes).Namespace(b.sbr.GetNamespace()).Get(b.sbr.GetName(), metav1.GetOptions{})
@@ -406,11 +424,6 @@ func (b *binder) updateContainer(container interface{}) (map[string]interface{},
 	// restarted)
 	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, existingSecret.GetResourceVersion())
 
-	if len(b.volumeKeys) > 0 {
-		// and adding volume mount entries
-		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts)
-	}
-
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(c)
 }
 
@@ -421,10 +434,12 @@ func (b *binder) removeContainer(container interface{}) (map[string]interface{},
 		return nil, err
 	}
 
-	// removing intermediary secret, effectively unbinding the application
-	c.EnvFrom = b.removeEnvFrom(c.EnvFrom, b.sbr.GetName())
+	if !b.sbr.Spec.BindAsFiles {
+		// removing intermediary secret, effectively unbinding the application
+		c.EnvFrom = b.removeEnvFrom(c.EnvFrom, b.sbr.GetName())
+	}
 
-	if len(b.volumeKeys) > 0 {
+	if b.sbr.Spec.BindAsFiles {
 		// removing volume mount entries
 		c.VolumeMounts = b.removeVolumeMounts(c.VolumeMounts)
 	}
@@ -432,16 +447,33 @@ func (b *binder) removeContainer(container interface{}) (map[string]interface{},
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(c)
 }
 
-// appendVolumeMounts append the binding volume in the template level.
-func (b *binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount) []corev1.VolumeMount {
-	name := b.sbr.GetName()
-	mountPath := b.sbr.Spec.MountPathPrefix
-	if mountPath == "" {
-		mountPath = "/var/data"
-	}
+func (b *binder) mountPath() (string, string, bool) {
+	return mkMountPath(b.bindingRoot, b.sbr.Spec.MountPath, b.sbr.GetName())
+}
 
+func mkMountPath(bindingRoot, mountPath, name string) (string, string, bool) {
+	p := bindingRoot
+	fixedMountPath := false
+	if p == "" {
+		p = mountPath
+		if p == "" {
+			p = "/bindings"
+			bindingRoot = p
+		} else {
+			fixedMountPath = true
+		}
+	}
+	if !fixedMountPath {
+		p = path.Join(p, name)
+	}
+	return p, bindingRoot, fixedMountPath
+}
+
+// appendVolumeMounts append the binding volume in the template level.
+func (b *binder) appendVolumeMounts(volumeMounts []corev1.VolumeMount, mountPath string) []corev1.VolumeMount {
+	name := b.sbr.GetName()
 	for _, v := range volumeMounts {
-		if name == v.Name {
+		if name == v.Name && mountPath == v.MountPath {
 			return volumeMounts
 		}
 	}
@@ -531,7 +563,7 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 
-		if len(b.volumeKeys) > 0 {
+		if b.sbr.Spec.BindAsFiles {
 			if err = b.updateSpecVolumes(updatedObj); err != nil {
 				return nil, err
 			}
@@ -580,7 +612,7 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 			return err
 		}
 
-		if len(b.volumeKeys) > 0 {
+		if b.sbr.Spec.BindAsFiles {
 			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {
 				return err
 			}
@@ -629,7 +661,6 @@ func newBinder(
 	ctx context.Context,
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBinding,
-	volumeKeys []string,
 	restMapper meta.RESTMapper,
 ) *binder {
 
@@ -640,7 +671,6 @@ func newBinder(
 		ctx:        ctx,
 		dynClient:  dynClient,
 		sbr:        sbr,
-		volumeKeys: volumeKeys,
 		modifier:   modifier,
 		restMapper: restMapper,
 		logger:     logger,
