@@ -4,8 +4,7 @@
 
 This scenario illustrates binding an imported application in one namespace to an in-cluster operated managed PostgreSQL Database in another namespace.
 
-Note that this example app is configured to operate with OpenShift 4.3 or newer. To use this example
-app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
+Note that this example app is configured to operate with OpenShift 4.5 or newer.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -33,34 +32,34 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install a `alpha` version.
+and install the `beta` version.
 
 This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
-#### Install the DB operator using an `OperatorSource`
+#### Install the DB operator using a `CatalogSource`
 
-Apply the following `OperatorSource`:
+Apply the following `CatalogSource`:
 
-``` shell
-cat <<EOS |kubectl apply -f -
+```shell
+kubectl apply -f - << EOD
 ---
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
 metadata:
-  name: db-operators
-  namespace: openshift-marketplace
+    name: sample-db-operators
+    namespace: openshift-marketplace
 spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: pmacik
-EOS
+    sourceType: grpc
+    image: quay.io/redhat-developer/sample-db-operators-olm:v1
+    displayName: Sample DB Operators
+EOD
 ```
 
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
 ![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
 
-and install a `stable` version.
+and install a `beta` version.
 
 This makes the `Database` custom resource available, that the application developer will use later.
 
@@ -68,30 +67,28 @@ This makes the `Database` custom resource available, that the application develo
 
 #### Create one namespace called `service-binding-demo-1`
 
-The application would be in a namespace service-binding-demo-1:
+The application would be in a namespace `service-binding-demo-1`:
 
-``` shell
-cat <<EOS |kubectl apply -f -
----
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: service-binding-demo-1
-EOS
+
+```shell
+kubectl create namespace service-binding-demo-1
 ```
 
 #### Import an application
 
 In this example we will import an arbitrary [Node.js application](https://github.com/pmacik/nodejs-rest-http-crud).
 
-In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+ADD` page from the menu and then click on the `[Import from Git]` button. Fill in the form with the following:
+In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo-1` project). Navigate to the `+Add` page from the menu and then click on the `[From Git]` button. Fill in the form with the following:
 
+* `Project` = `service-binding-demo-1`
 * `Git Repo URL` = `https://github.com/pmacik/nodejs-rest-http-crud`
-* `Project` = `service-binding-demo`
-* `Application`->`Create New Application` = `NodeJSApp`
-* `Name` = `nodejs-rest-http-crud`
 * `Builder Image` = `Node.js`
+* `Application Name` = `nodejs-app`
+* `Name` = `nodejs-app`
+
+* `Select the resource type to generate` = Deployment
 * `Create a route to the application` = checked
+
 
 and click on the `[Create]` button.
 
@@ -103,20 +100,14 @@ When the application is running navigate to its route to verify that it is up. N
 
 Now create another namespace:
 
-``` shell
-cat <<EOS |kubectl apply -f -
----
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: service-binding-demo-2
-EOS
+```shell
+kubectl create namespace service-binding-demo-2
 ```
 
 Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `Database` custom resource in the `service-binding-demo-2` namespace called `db-demo`:
 
-``` shell
-cat <<EOS |kubectl apply -f -
+```shell
+kubectl apply -f - << EOD
 ---
 apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
@@ -127,7 +118,7 @@ spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
-EOS
+EOD
 ```
 
 #### Express an intent to bind the DB and the application
@@ -137,7 +128,7 @@ Now, the only thing that remains is to connect the DB and the application. We le
 Create the following `ServiceBinding`:
 
 ``` shell
-cat <<EOS |kubectl apply -f -
+kubectl apply -f - << EOD
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -146,7 +137,7 @@ metadata:
   namespace: service-binding-demo-1
 spec:
   application:
-    name: nodejs-rest-http-crud
+    name: nodejs-app
     group: apps
     version: v1
     resource: deployments
@@ -155,8 +146,8 @@ spec:
     version: v1alpha1
     kind: Database
     name: db-demo
-    namespace: service-binding-demo-2 #The namespace where the DB instance resides
-EOS
+    namespace: service-binding-demo-2
+EOD
 ```
 
 There are 2 parts in the request:
@@ -167,25 +158,5 @@ There are 2 parts in the request:
 That causes the application to be re-deployed.
 
 Once the new version is up, go to the application's route to check the UI. In the header you can see `(DB: db-demo)` which indicates that the application is connected to a DB and its name is `db-demo`. Now you can try the UI again but now it works!
-
-When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
-
-``` yaml
-spec:
-  template:
-    spec:
-      containers:
-        - envFrom:
-          - secretRef:
-              name: binding-request
-```
-
-#### ServiceBindingStatus
-
-`ServiceBindingStatus` depicts the status of the Service Binding operator. More info [here](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status).
-
-| Field | Description |
-|-------|-------------|
-| Secret | The name of the intermediate secret |
 
 That's it, folks!

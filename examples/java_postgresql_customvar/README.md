@@ -4,8 +4,7 @@
 
 This scenario illustrates binding an imported Java application to an in-cluster operated managed PostgreSQL Database.
 
-Note that this example app is configured to operate with OpenShift 4.3 or newer.
-To use this example app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
+Note that this example app is configured to operate with OpenShift 4.5 or newer.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -33,77 +32,34 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install the `alpha` version.
-
-Alternatively, you can perform the same task manually using the following command:
-
-``` shell
-make install-service-binding-operator-community
-```
+and install the `beta` version.
 
 This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
-##### :bulb: Latest `master` version of the operator
+#### Install the DB operator using a `CatalogSource`
 
-It is also possible to install the latest `master` version of the operator instead of the one from `community-operators`. To enable that an `OperatorSource` has to be installed with the latest `master` version:
-
-``` shell
-cat <<EOS | kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
-```
-
-Alternatively, you can perform the same task manually using the following command before going to the Operator Hub:
-
-``` shell
-make install-service-binding-operator-source-master
-```
-
-or running the following command to install the operator completely:
-
-``` shell
-make install-service-binding-operator-master
-```
-
-#### Install the DB operator using an `OperatorSource`
-
-Apply the following `OperatorSource`:
+Apply the following `CatalogSource`:
 
 ```shell
-cat <<EOS |kubectl apply -f -
+kubectl apply -f - << EOD
 ---
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
 metadata:
-  name: db-operators
-  namespace: openshift-marketplace
+    name: sample-db-operators
+    namespace: openshift-marketplace
 spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: pmacik
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-```shell
-make install-backing-db-operator-source
+    sourceType: grpc
+    image: quay.io/redhat-developer/sample-db-operators-olm:v1
+    displayName: Sample DB Operators
+EOD
 ```
 
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
 ![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
 
-and install a `stable` version.
+and install a `beta` version.
 
 This makes the `Database` custom resource available, that the application developer will use later.
 
@@ -112,48 +68,48 @@ This makes the `Database` custom resource available, that the application develo
 Annotations are created to describe the values that should be collected and made available by the Service Binding's intermediary secret.
 
 
-```
-oc get crd databases.postgresql.baiju.dev -o yaml
+```shell
+kubectl get crd databases.postgresql.baiju.dev -o yaml
 ```
 
 The database CRD contains the list of annotations:
 
-```
+```yaml
 metadata:
   annotations:
-    service.binding/dbName: 'path={.spec.dbName}'
-    service.binding/db.host: 'path={.status.dbConfigMap},objectType=ConfigMap'
-    service.binding/db.name: 'path={.status.dbConfigMap},objectType=ConfigMap'
-    service.binding/db.password: 'path={.status.dbConfigMap},objectType=ConfigMap'
-    service.binding/db.port: 'path={.status.dbConfigMap},objectType=ConfigMap'
-    service.binding/db.user: 'path={.status.dbConfigMap},objectType=ConfigMap'
-    service.binding/dbConnectionIP: 'path={.status.dbConnectionIP}'
-    service.binding/dbConnectionPort: 'path={.status.dbConnectionPort}'
-    service.binding/user: 'path={.status.dbCredentials},objectType=Secret'
-    service.binding/password: 'path={.status.dbCredentials},objectType=Secret'
-
+    service.binding/db.host: path={.status.dbConfigMap},objectType=ConfigMap
+    service.binding/db.name: path={.status.dbConfigMap},objectType=ConfigMap
+    service.binding/db.password: path={.status.dbConfigMap},objectType=ConfigMap
+    service.binding/db.port: path={.status.dbConfigMap},objectType=ConfigMap
+    service.binding/db.user: path={.status.dbConfigMap},objectType=ConfigMap
+    service.binding/dbConnectionIP: path={.status.dbConnectionIP}
+    service.binding/dbConnectionPort: path={.status.dbConnectionPort}
+    service.binding/dbName: path={.spec.dbName}
+    service.binding/password: path={.status.dbCredentials},objectType=Secret
+    service.binding/user: path={.status.dbCredentials},objectType=Secret
 ```
 
 We can add more annotations to collect values from different kinds of data structures.
 
 To edit the CRD run the command:
 
-```
-oc edit crd databases.postgresql.baiju.dev
+```shell
+kubectl edit crd databases.postgresql.baiju.dev
 ```
 
 Add these annotations under `metadata.annotations` along with other annotations.
 
-```
-servicebindingoperator.redhat.io/spec.tags: binding:env:attribute
-servicebindingoperator.redhat.io/spec.userLabels.archive: binding:env:attribute
-servicebindingoperator.redhat.io/spec.secretName: binding:env:attribute
+```yaml
+service.binding/tags: path={.spec.tags}
+service.binding/userLabels: path={.spec.userLabels},elementType=map
+service.binding/secretName: path={.spec.secretName},elementType=sliceOfMaps,sourceKey=type,sourceValue=secret
 ```
 
 These annotations refer to data which can be either a number, string, boolean, or an object or a slice of arbitrary values. In the case of this example,
-- `spec.tags` represents a sequence
-- `spec.userLabels` represents a mapping
-- `spec.secretName` represents a sequence of mapping
+- `service.binding/tags` represents a sequence
+- `service.binding/userLabels` represents a mapping
+- `service.binding/secretName` represents a sequence of mapping
+
 
 ### Application Developer
 
@@ -162,34 +118,23 @@ These annotations refer to data which can be either a number, string, boolean, o
 The application and the DB needs a namespace to live in so let's create one for them:
 
 ```shell
-cat <<EOS |kubectl apply -f -
----
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: service-binding-demo
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-```shell
-make create-project
+kubectl create namespace service-binding-demo
 ```
 
 #### Import an application
 
 In this example we will import an arbitrary [Java Spring Boot application](https://github.com/ldimaggi/java-rest-http-crud).
 
-In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+ADD` page from the menu and then click on the `[Import from Git]` button. Fill in the form with the following:
+In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+Add` page from the menu and then click on the `[From Git]` button. Fill in the form with the following:
 
-* `Git Repo URL` = `https://github.com/ldimaggi/java-rest-http-crud`
 * `Project` = `service-binding-demo`
-* `Application`->`Create New Application` = `java-app`
-* `Name` = `java-app`
+* `Git Repo URL` = `https://github.com/ldimaggi/java-rest-http-crud`
 * `Builder Image` = `Java`
-* `Create a route to the application` = checked
+* `Application Name` = `java-app`
+* `Name` = `java-app`
+
 * `Select the resource type to generate` = Deployment
+* `Create a route to the application` = checked
 
 and click on the `[Create]` button.
 
@@ -202,7 +147,7 @@ When the application is running navigate to its route to verify that it is up. T
 Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `Database` custom resource in the `service-binding-demo` namespace called `db-demo`:
 
 ```shell
-cat <<EOS |kubectl apply -f -
+kubectl apply -f - << EOD
 ---
 apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
@@ -214,22 +159,19 @@ spec:
   imageName: postgres
   dbName: db-demo
   tags:
-          - "centos7-12.3"
-          - "centos7-12.4"
+    - "centos7-12.3"
+    - "centos7-12.4"
   userLabels:
-          archive: "false"
-          environment: "demo"
+    archive: "false"
+    environment: "demo"
   secretName:
-          - primarySecretName: "example-primaryuser"
-            secondarySecretName: "example-secondaryuser"
-          - rootSecretName: "example-secretuser"
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-```shell
-make create-backing-db-instance
+    - type: "primarySecretName"
+      secret: "example-primaryuser"
+    - type: "secondarySecretName"
+      secret: "example-secondaryuser"
+    - type: "rootSecretName"
+      secret: "example-rootuser"
+EOD
 ```
 
 #### Express an intent to bind the DB and the application
@@ -239,7 +181,7 @@ Now, the only thing that remains is to connect the DB and the application. We le
 Create the following `ServiceBinding`:
 
 ```shell
-cat <<EOS |kubectl apply -f -
+kubectl apply -f - << EOD
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -265,37 +207,26 @@ spec:
     value: '{{ .postgresDB.status.dbCredentials.user }}'
   - name: DB_PASSWORD
     value: '{{ .postgresDB.status.dbCredentials.password }}'
-  - name: TAGS
-    value: '{{ .postgresDB.spec.tags 0 }}'
-  - name: ARCHIVE_USERLABEL
-    value: '{{ .postgresDB.spec.userLabels.archive }}'
-  - name: SECONDARY_SECRETNAME
-    value: '{{ .postgresDB.spec.secretName }}'
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-```shell
-make create-service-binding
+EOD
 ```
 
 There are 2 parts in the request:
 
 * `application` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
 * `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
+* `customEnvVar` - used to create custom environment variables constructed using a templating engine from out-of-the-box bound information.
 
 That causes the application to be re-deployed.
 Once the new version is up, go to the application's route to check the UI. Now, it works!
 
 ### Check the status of Service Binding
 
-`ServiceBindingStatus` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+`ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
 To check the status of Service Binding, run the command:
 
 ```
-oc get sbr binding-request -n service-binding-demo -o yaml
+kubectl get servicebinding binding-request -n service-binding-demo -o yaml
 ```
 
 Status of Service Binding on successful binding:
@@ -343,6 +274,10 @@ Conditions can have the following type, status and reason:
 
 When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
 
+```shell
+kubectl get deployment java-app -n service-binding-demo -o yaml
+```
+
 ```yaml
 spec:
   template:
@@ -358,38 +293,41 @@ spec:
 To list all the pods, run the command:
 
 ```
-➜  ~ oc get pods
+$ kubectl get pods -n service-binding-demo
 NAME                                   READY   STATUS      RESTARTS   AGE
-db-demo-postgresql-78b8466897-ht8x9    1/1     Running     0          15m
-java-rest-http-crud-1-build            0/1     Completed   0          51m
-java-rest-http-crud-666b8597cc-w7456   1/1     Running     0          15m
+db-demo-postgresql-6574fc44bd-5qjct   1/1     Running     0          7m9s
+java-app-1-build                      0/1     Completed   0          21m
+java-app-67bdf56459-vfxqt             1/1     Running     0          6m46s
 ```
 
-To ssh into the application pod `java-rest-http-crud-666b8597cc-w7456`, run command:
+To ssh into the application pod `java-app-67bdf56459-vfxqt`, run command:
 
 ```
-oc exec -it java-rest-http-crud-666b8597cc-w7456 /bin/bash
+oc exec -it java-app-67bdf56459-vfxqt -- /bin/bash
 ```
 
 Print all the environment variables that were injected into the application pod by Service Binding Operator:
 
 ```
-[jboss@java-rest-http-crud-666b8597cc-w7456 ~]$ printenv | grep DATABASE_
-DATABASE_SECRET_USER=postgres
-DATABASE_TAGS_0=centos7-12.3
-DATABASE_TAGS_1=123
-DATABASE_SECRET_PASSWORD=password
-DATABASE_CONFIGMAP_DB_NAME=db-demo
-DATABASE_DBNAME=db-demo
-DATABASE_CONFIGMAP_DB_HOST=172.25.88.63
+[jboss@java-app-67bdf56459-vfxqt ~]$ printenv | grep DATABASE_ | sort
+DATABASE_DBCONNECTIONIP=172.30.197.39
 DATABASE_DBCONNECTIONPORT=5432
+DATABASE_DBNAME=db-demo
+DATABASE_DB_HOST=172.30.197.39
+DATABASE_DB_NAME=db-demo
+DATABASE_DB_PASSWORD=password
+DATABASE_DB_PORT=5432
+DATABASE_DB_USER=postgres
+DATABASE_IMAGE=docker.io/postgres
+DATABASE_IMAGENAME=postgres
+DATABASE_PASSWORD=password
+DATABASE_SECRETNAME_PRIMARYSECRETNAME=example-primaryuser
+DATABASE_SECRETNAME_ROOTSECRETNAME=example-rootuser
+DATABASE_SECRETNAME_SECONDARYSECRETNAME=example-secondaryuser
+DATABASE_TAGS=[centos7-12.3 centos7-12.4]
+DATABASE_USER=postgres
 DATABASE_USERLABELS_ARCHIVE=false
-DATABASE_SECRETNAME_0_PRIMARYSECRETNAME=example-primaryuser
-DATABASE_SECRETNAME_0_SECONDARYSECRETNAME=example-secondaryuser
-DATABASE_SECRETNAME_1_ROOTSECRETNAME=example-secretuser
-DATABASE_CONFIGMAP_DB_PORT=5432
-DATABASE_DBCONNECTIONIP=172.25.88.63
-DATABASE_CONFIGMAP_DB_PASSWORD=password
+DATABASE_USERLABELS_ENVIRONMENT=demo
 ```
 
-Notice, distinct environment variables are produced for sibling properties with index number 0 and 1 in the variable name.
+Notice, distinct environment variables are produced for sibling properties of the `tags`, `secretName` and `userLabels` in the variable name.

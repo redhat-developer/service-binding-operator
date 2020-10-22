@@ -2,9 +2,13 @@
 
 Based on the note by @qibobo
 
+Assuming Service Binding Operator is installed from OperatorHub via `beta` channel.
+
 Create the application CRD:
 
-```
+```shell
+kubectl apply -f - << EOD
+---
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
@@ -22,11 +26,14 @@ spec:
     kind: AppConfig
     shortNames:
     - ac
+EOD
 ```
 
 Create the application CR using the CRD:
 
-```
+```shell
+kubectl apply -f - << EOD
+---
 apiVersion: "stable.example.com/v1"
 kind: AppConfig
 metadata:
@@ -42,25 +49,31 @@ spec:
       image: yusufkaratoprak/kubernetes-gosample:latest
       ports:
       - containerPort: 8090
+EOD
 ```
 
-Create the operator source:
+Create the DB operator's catalog source:
 
-```
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
+```shell
+kubectl apply -f - << EOD
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
 metadata:
-  name: db-operators
-  namespace: openshift-marketplace
+    name: sample-db-operators
+    namespace: openshift-marketplace
 spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: pmacik
+    sourceType: grpc
+    image: quay.io/redhat-developer/sample-db-operators-olm:v1
+    displayName: Sample DB Operators
+EOD
 ```
 
-Install the Postgres Operator and then create Database CR:
+Install the Postgres Operator in OperatorHub via the `beta` channel and then create Database CR:
 
-```
+```shell
+kubectl apply -f - << EOD
+---
 apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
 metadata:
@@ -69,86 +82,82 @@ spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
+EOD
 ```
 
-Create the SBR with a custom bind path:
+Create the Service Binding with a custom bind path:
 
-```
-apiVersion: apps.openshift.io/v1alpha1
-kind: ServiceBindingRequest
+```shell
+kubectl apply -f - << EOD
+---
+apiVersion: operators.coreos.com/v1alpha1
+kind: ServiceBinding
 metadata:
-  name: binding-request-sample
+    name: binding-request-sample
 spec:
-  envVarPrefix: qiye111
-  applicationSelector:
-    name: demo-appconfig
-    group: stable.example.com
-    version: v1
-    resource: appconfigs
-    bindingPath:
-      containersPath: spec.spec.containers
-  backingServiceSelectors:
-    group: postgresql.baiju.dev
-    version: v1alpha1
-    kind: Database
-    name: db-demo
-    id: zzz
-    envVarPrefix: qiye
+    envVarPrefix: qiye111
+    application:
+        name: demo-appconfig
+        group: stable.example.com
+        version: v1
+        resource: appconfigs
+        bindingPath:
+            containersPath: spec.spec.containers
+    services:
+      - group: postgresql.baiju.dev
+        version: v1alpha1
+        kind: Database
+        name: db-demo
+        id: zzz
+        envVarPrefix: qiye
+EOD
 ```
 
 Check the secret `binding-request-sample` has been injected:
 
+```shell 
+kubectl get appconfigs.stable.example.com demo-appconfig -o yaml
 ```
-kubectl get appconfigs.stable.example.com -o yaml
-apiVersion: v1
-items:
-- apiVersion: stable.example.com/v1
-  kind: AppConfig
-  metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"stable.example.com/v1","kind":"AppConfig","metadata":{"annotations":{},"name":"demo-appconfig","namespace":"default"},"spec":{"Command":"some command","image":"my-image","spec":{"containers":[{"image":"yusufkaratoprak/kubernetes-gosample:latest","name":"hello-world","ports":[{"containerPort":8090}]}]},"uri":"some uri"}}
-    creationTimestamp: "2020-04-30T01:07:21Z"
-    generation: 12
-    name: demo-appconfig
-    namespace: default
-    resourceVersion: "4909355"
-    selfLink: /apis/stable.example.com/v1/namespaces/default/appconfigs/demo-appconfig
-    uid: e0175a4c-a442-4b7c-a2c7-de132eb4dd7a
-  spec:
-    Command: some command
-    image: my-image
-    spec:
-      containers:
-      - env:
-        - name: ServiceBindingOperatorChangeTriggerEnvVar
-          value: "2020-05-22T08:08:51Z"
-        envFrom:
-        - secretRef:
-            name: binding-request-sample
-        image: yusufkaratoprak/kubernetes-gosample:latest
-        name: hello-world
-        ports:
-        - containerPort: 8090
-        resources: {}
-    uri: some uri
-kind: List
+```yaml
+apiVersion: stable.example.com/v1
+kind: AppConfig
 metadata:
-  resourceVersion: ""
-  selfLink: ""
-```
-
-Delete the SBR and secret has been removed.
-
-```
+  ...
+  name: demo-appconfig
+  namespace: default
+  ...
 spec:
-      containers:
-      - env:
-        - name: ServiceBindingOperatorChangeTriggerEnvVar
-          value: "2020-05-22T08:08:51Z"
-        image: yusufkaratoprak/kubernetes-gosample:latest
-        name: hello-world
-        ports:
-        - containerPort: 8090
-        resources: {}
+  Command: some command
+  image: my-image
+  spec:
+    containers:
+    - env:
+      - name: ServiceBindingOperatorChangeTriggerEnvVar
+        value: "106757"
+      envFrom:
+      - secretRef:
+          name: binding-request-sample
+      image: yusufkaratoprak/kubernetes-gosample:latest
+      name: hello-world
+      ports:
+      - containerPort: 8090
+      resources: {}
+  uri: some uri
+```
+
+Delete the Service Binding and check that the secret has been removed.
+
+```yaml
+...
+spec:
+  spec:
+    containers:
+    - env:
+      - name: ServiceBindingOperatorChangeTriggerEnvVar
+        value: "106757"
+      image: yusufkaratoprak/kubernetes-gosample:latest
+      name: hello-world
+      ports:
+      - containerPort: 8090
+      resources: {}
 ```

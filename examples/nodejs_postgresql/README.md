@@ -4,8 +4,7 @@
 
 This scenario illustrates binding an imported application to an in-cluster operated managed PostgreSQL Database.
 
-Note that this example app is configured to operate with OpenShift 4.3 or newer. To use this example
-app with OpenShift 4.2, replace references to resource:`Deployment`s with `DeploymentConfig`s and group:`apps` with `apps.openshift.io`.
+Note that this example app is configured to operate with OpenShift 4.5 or newer.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -33,77 +32,34 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 
 ![Service Binding Operator as shown in OperatorHub](../../assets/operator-hub-sbo-screenshot.png)
 
-and install the `alpha` version.
-
-Alternatively, you can perform the same task manually using the following command:
-
-``` shell
-make install-service-binding-operator-community
-```
+and install the `beta` version.
 
 This makes the `ServiceBinding` custom resource available, that the application developer will use later.
 
-##### :bulb: Latest `master` version of the operator
+#### Install the DB operator using a `CatalogSource`
 
-It is also possible to install the latest `master` version of the operator instead of the one from `community-operators`. To enable that an `OperatorSource` has to be installed with the latest `master` version:
+Apply the following `CatalogSource`:
 
-``` shell
-cat <<EOS | kubectl apply -f -
+```shell
+kubectl apply -f - << EOD
 ---
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
 metadata:
-  name: redhat-developer-operators
-  namespace: openshift-marketplace
+    name: sample-db-operators
+    namespace: openshift-marketplace
 spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: redhat-developer
-EOS
-```
-
-Alternatively, you can perform the same task manually using the following command before going to the Operator Hub:
-
-``` shell
-make install-service-binding-operator-source-master
-```
-
-or running the following command to install the operator completely:
-
-``` shell
-make install-service-binding-operator-master
-```
-
-#### Install the DB operator using an `OperatorSource`
-
-Apply the following `OperatorSource`:
-
-``` shell
-cat <<EOS |kubectl apply -f -
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: db-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: pmacik
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make install-backing-db-operator-source
+    sourceType: grpc
+    image: quay.io/redhat-developer/sample-db-operators-olm:v1
+    displayName: Sample DB Operators
+EOD
 ```
 
 Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
 
 ![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
 
-and install a `stable` version.
+and install a `beta` version.
 
 This makes the `Database` custom resource available, that the application developer will use later.
 
@@ -113,33 +69,23 @@ This makes the `Database` custom resource available, that the application develo
 
 The application and the DB needs a namespace to live in so let's create one for them:
 
-``` shell
-cat <<EOS |kubectl apply -f -
----
-kind: Namespace
-apiVersion: v1
-metadata:
-  name: service-binding-demo
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-project
+```shell
+kubectl create namespace service-binding-demo
 ```
 
 #### Import an application
 
 In this example we will import an arbitrary [Node.js application](https://github.com/pmacik/nodejs-rest-http-crud).
 
-In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+ADD` page from the menu and then click on the `[Import from Git]` button. Fill in the form with the following:
+In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+Add` page from the menu and then click on the `[From Git]` button. Fill in the form with the following:
 
-* `Git Repo URL` = `https://github.com/pmacik/nodejs-rest-http-crud`
 * `Project` = `service-binding-demo`
-* `Application`->`Create New Application` = `NodeJSApp`
-* `Name` = `nodejs-rest-http-crud`
+* `Git Repo URL` = `https://github.com/pmacik/nodejs-rest-http-crud`
 * `Builder Image` = `Node.js`
+* `Application Name` = `nodejs-app`
+* `Name` = `nodejs-app`
+
+* `Select the resource type to generate` = Deployment
 * `Create a route to the application` = checked
 
 and click on the `[Create]` button.
@@ -152,8 +98,8 @@ When the application is running navigate to its route to verify that it is up. N
 
 Now we utilize the DB operator that the cluster admin has installed. To create a DB instance just create a `Database` custom resource in the `service-binding-demo` namespace called `db-demo`:
 
-``` shell
-cat <<EOS |kubectl apply -f -
+```shell
+kubectl apply -f - << EOD
 ---
 apiVersion: postgresql.baiju.dev/v1alpha1
 kind: Database
@@ -164,13 +110,7 @@ spec:
   image: docker.io/postgres
   imageName: postgres
   dbName: db-demo
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-backing-db-instance
+EOD
 ```
 
 #### Express an intent to bind the DB and the application
@@ -179,8 +119,8 @@ Now, the only thing that remains is to connect the DB and the application. We le
 
 Create the following `ServiceBinding`:
 
-``` shell
-cat <<EOS |kubectl apply -f -
+```shell
+kubectl apply -f - << EOD
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -189,7 +129,7 @@ metadata:
   namespace: service-binding-demo
 spec:
   application:
-    name: nodejs-rest-http-crud
+    name: nodejs-app
     group: apps
     version: v1
     resource: deployments
@@ -198,13 +138,7 @@ spec:
     version: v1alpha1
     kind: Database
     name: db-demo
-EOS
-```
-
-Alternatively, you can perform the same task with this make command:
-
-``` shell
-make create-service-binding
+EOD
 ```
 
 There are 2 parts in the request:
@@ -228,12 +162,53 @@ spec:
               name: binding-request
 ```
 
-#### ServiceBindingStatus
+#### Check the status of Service Binding
 
-`ServiceBindingStatus` depicts the status of the Service Binding operator. More info [here](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status).
+`ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
 
-| Field | Description |
-|-------|-------------|
-| Secret | The name of the intermediate secret |
+To check the status of Service Binding, run the command:
+
+```
+kubectl get servicebinding binding-request -n service-binding-demo -o yaml
+```
+
+Status of Service Binding on successful binding:
+
+```yaml
+status:
+  conditions:
+  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
+    lastTransitionTime: "2020-10-15T13:23:23Z"
+    status: "True"
+    type: CollectionReady
+  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
+    lastTransitionTime: "2020-10-15T13:23:23Z"
+    status: "True"
+    type: InjectionReady
+  secret: binding-request
+```
+
+where
+
+* Conditions represent the latest available observations of Service Binding's state
+* Secret represents the name of the secret created by the Service Binding Operator
+
+
+Conditions have two types `CollectionReady` and `InjectionReady`
+
+where
+
+* `CollectionReady` type represents collection of secret from the service
+* `InjectionReady` type represents an injection of the secret into the application
+
+Conditions can have the following type, status and reason:
+
+| Type            | Status | Reason               | Type           | Status | Reason                   |
+| --------------- | ------ | -------------------- | -------------- | ------ | ------------------------ |
+| CollectionReady | False  | EmptyServiceSelector | InjectionReady | False  |                          |
+| CollectionReady | False  | ServiceNotFound      | InjectionReady | False  |                          |
+| CollectionReady | True   |                      | InjectionReady | False  | EmptyApplicationSelector |
+| CollectionReady | True   |                      | InjectionReady | False  | ApplicationNotFound      |
+| CollectionReady | True   |                      | InjectionReady | True   |                          |
 
 That's it, folks!
