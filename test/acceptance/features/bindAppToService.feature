@@ -544,135 +544,8 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
         And Application endpoint "/api/todos" is available
 
-    Scenario: Provide binding info through backing service CRD annotation
-        Given The Custom Resource Definition is present
-                """
-                apiVersion: apiextensions.k8s.io/v1beta1
-                kind: CustomResourceDefinition
-                metadata:
-                  name: backends.stable.example.com
-                  annotations:
-                      service.binding/host: path={.spec.host}
-                      service.binding/ready: path={.status.ready}
-                spec:
-                  group: stable.example.com
-                  versions:
-                    - name: v1
-                      served: true
-                      storage: true
-                  scope: Namespaced
-                  names:
-                    plural: backends
-                    singular: backend
-                    kind: Backend
-                    shortNames:
-                      - bk
-                """
-        * The Custom Resource is present
-            """
-            apiVersion: "stable.example.com/v1"
-            kind: Backend
-            metadata:
-                name: backend-demo
-            spec:
-                host: example.common
-            status:
-                ready: true
-            """
-        * Service Binding is applied
-            """
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: binding-request-backend-a
-            spec:
-                services:
-                -   group: stable.example.com
-                    version: v1
-                    kind: Backend
-                    name: backend-demo
-                    id: SBR
-            """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "False"
-        And Secret "binding-request-backend-a" contains "BACKEND_READY" key with value "true"
-        And Secret "binding-request-backend-a" contains "BACKEND_HOST" key with value "example.common"
-
-    Scenario: Each value in referred map from service resource gets injected into app as separate env variable
-        Given OLM Operator "backend" is running
-        And Generic test application "rsa-2-service" is running
-        And The Custom Resource Definition is present
-        """
-        apiVersion: apiextensions.k8s.io/v1beta1
-        kind: CustomResourceDefinition
-        metadata:
-            name: backends.stable.example.com
-            annotations:
-                service.binding/spec: path={.spec},elementType=map
-        spec:
-            group: stable.example.com
-            versions:
-              - name: v1
-                served: true
-                storage: true
-            scope: Namespaced
-            names:
-                plural: backends
-                singular: backend
-                kind: Backend
-                shortNames:
-                  - bk
-        """
-        And The Custom Resource is present
-            """
-            apiVersion: stable.example.com/v1
-            kind: Backend
-            metadata:
-                name: rsa-2-service
-            spec:
-                image: docker.io/postgres
-                imageName: postgres
-                dbName: db-demo
-            status:
-                bootstrap:
-                    - type: plain
-                      url: myhost2.example.com
-                      name: hostGroup1service.binding/
-                    - type: tls
-                      url: myhost1.example.com:9092,myhost2.example.com:9092
-                      name: hostGroup2
-                data:
-                    dbConfiguration: database-config     # ConfigMap
-                    dbCredentials: database-cred-Secret  # Secret
-                    url: db.stage.ibm.com
-            """
-        When Service Binding is applied
-            """
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: rsa-2
-            spec:
-                services:
-                  - group: stable.example.com
-                    version: v1
-                    kind: Backend
-                    name: rsa-2-service
-                application:
-                    name: rsa-2-service
-                    group: apps
-                    version: v1
-                    resource: deployments
-
-            """
-        Then The application env var "BACKEND_SPEC_IMAGE" has value "docker.io/postgres"
-        And The application env var "BACKEND_SPEC_IMAGENAME" has value "postgres"
-        And The application env var "BACKEND_SPEC_DBNAME" has value "db-demo"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "rsa-2" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "rsa-2" should be changed to "True"
-
-        @negative
-        Scenario: Service Binding with empty services is not allowed in the cluster
+    @negative
+    Scenario: Service Binding with empty services is not allowed in the cluster
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -685,8 +558,8 @@ Feature: Bind an application to a service
         Then Error message "invalid: spec.services: Invalid value: \"null\"" is thrown
         And Service Binding "binding-request-empty-services" is not persistent in the cluster
 
-        @negative
-        Scenario: Service Binding without gvk of services is not allowed in the cluster
+    @negative
+    Scenario: Service Binding without gvk of services is not allowed in the cluster
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -702,8 +575,8 @@ Feature: Bind an application to a service
         And Error message "spec.services.version: Required value" is thrown
         And Service Binding "binding-request-without-gvk" is not persistent in the cluster
 
-        @negative
-        Scenario: Removing service from services field from existing serivce binding is not allowed
+    @negative
+    Scenario: Removing service from services field from existing serivce binding is not allowed
         Given Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -729,8 +602,8 @@ Feature: Bind an application to a service
         Then Error message "invalid: spec.services: Required value" is thrown
         And Service Binding "binding-request-remove-service" is not updated
 
-        @negative
-        Scenario: Service Binding without spec is not allowed in the cluster
+    @negative
+    Scenario: Service Binding without spec is not allowed in the cluster
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -741,8 +614,8 @@ Feature: Bind an application to a service
         Then Error message "spec: Required value" is thrown
         And Service Binding "binding-request-without-spec" is not persistent in the cluster
 
-        @negative
-        Scenario: Service Binding with empty spec is not allowed in the cluster
+    @negative
+    Scenario: Service Binding with empty spec is not allowed in the cluster
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -754,8 +627,8 @@ Feature: Bind an application to a service
         Then Error message "invalid: spec: Invalid value: \"null\"" is thrown
         And Service Binding "binding-request-empty-spec" is not persistent in the cluster
 
-        @negative
-        Scenario: Emptying spec of existing serivce binding is not allowed
+    @negative
+    Scenario: Emptying spec of existing service binding is not allowed
         Given Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -780,8 +653,8 @@ Feature: Bind an application to a service
         Then Error message "spec: Required value" is thrown
         And Service Binding "binding-request-emptying-spec" is not updated
 
-        @negative
-        Scenario: Removing spec of existing serivce binding is not allowed
+    @negative
+    Scenario: Removing spec of existing serivce binding is not allowed
         Given Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -804,108 +677,6 @@ Feature: Bind an application to a service
             """
         Then Error message "spec: Required value" is thrown
         And Service Binding "binding-request-remove-spec" is not updated
-
-
-   Scenario: Backend Service metadata annotations update for service bindings gets propagated to the binding secret
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
-            """
-            apiVersion: "stable.example.com/v1"
-            kind: Backend
-            metadata:
-                name: backend-demo-2
-                annotations:
-                    service.binding/host: path={.spec.host}
-            spec:
-                host: example.com
-            status:
-                ready:true
-            """
-        * Service Binding is applied
-            """
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: binding-request-backend-ann-sb
-            spec:
-                services:
-                -   group: stable.example.com
-                    version: v1
-                    kind: Backend
-                    name: backend-demo-2
-            """
-        And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
-        And Secret "binding-request-backend-ann-sb" does not contain "BACKEND_READY"
-        # Backend metadata.annotations for service binding is updated
-        When The Custom Resource is present
-            """
-            apiVersion: "stable.example.com/v1"
-            kind: Backend
-            metadata:
-                name: backend-demo-2
-                annotations:
-                    service.binding/host: path={.spec.host}
-                    service.binding/ready: path={.status.ready}
-            spec:
-                host: example.com
-            status:
-                ready: true
-            """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "False"
-        And Secret "binding-request-backend-ann-sb" contains "BACKEND_READY" key with value "true"
-        And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann-sb" should be changed to "EmptyApplication"
-
-
-   @negative
-   Scenario: Backend Service metadata annotations update not specific to service bindings does not get propagated to the binding secret
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
-            """
-            apiVersion: "stable.example.com/v1"
-            kind: Backend
-            metadata:
-                name: backend-demo-3
-                annotations:
-                    host : "demo.com"
-            spec:
-                host: example.com
-            status:
-                ready:true
-            """
-        * Service Binding is applied
-            """
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: binding-request-backend-ann
-            spec:
-                services:
-                -   group: stable.example.com
-                    version: v1
-                    kind: Backend
-                    name: backend-demo-3
-            """
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "False"
-        And Secret "binding-request-backend-ann" is empty
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann" should be changed to "EmptyApplication"
-        # Backend metadata.annotations not pertaining to service binding is updated
-        When The Custom Resource is present
-            """
-            apiVersion: "stable.example.com/v1"
-            kind: Backend
-            metadata:
-                name: backend-demo-3
-                annotations:
-                    host : "example.common"
-            spec:
-                host: example.com
-            status:
-                ready: true
-            """
-        Then Secret "binding-request-backend-ann" is empty
 
     Scenario: Bind an application to a service present in a different namespace
         Given Namespace is present
