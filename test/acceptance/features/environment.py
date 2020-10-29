@@ -12,11 +12,20 @@ before_all(context), after_all(context)
     These run before and after the whole shooting match.
 """
 
-import subprocess
+from steps.command import Command
+
 import os
+
+cmd = Command()
 
 
 def before_all(_context):
+    output, code = cmd.run("oc version | grep Client")
+    assert code == 0, f"Checking oc version failed: {output}"
+
+    oc_ver = output.split()[2]
+    assert oc_ver >= "4.5", f"oc version is required 4.5+, but is {oc_ver}."
+
     start_sbo = os.getenv("TEST_ACCEPTANCE_START_SBO")
     assert start_sbo is not None, "TEST_ACCEPTANCE_START_SBO is not set. It should be one of local, remote or operator-hub"
     assert start_sbo in {"local", "remote", "operator-hub"}, "TEST_ACCEPTANCE_START_SBO should be one of local, remote or operator-hub"
@@ -32,5 +41,5 @@ def before_all(_context):
 
 
 def before_scenario(_context, _scenario):
-    code, output = subprocess.getstatusoutput('kubectl get project default -o jsonpath="{.metadata.name}"')
+    output, code = cmd.run('kubectl get project default -o jsonpath="{.metadata.name}"')
     assert code == 0, f"Checking connection to OS cluster by getting the 'default' project failed: {output}"
