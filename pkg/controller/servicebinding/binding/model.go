@@ -13,7 +13,7 @@ type model struct {
 	objectType  objectType
 	sourceKey   string
 	sourceValue string
-	bindAs		BindingType
+	bindAs      BindingType
 }
 
 func (m *model) isStringElementType() bool {

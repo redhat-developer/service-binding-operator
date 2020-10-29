@@ -286,12 +286,19 @@ func (d *sliceOfStringsFromPathDefinition) Apply(u *unstructured.Unstructured) (
 		return nil, errors.New("not found")
 	}
 
-	v := make([]string, 0, len(val))
+	v := make([]interface{}, 0, len(val))
 	for _, e := range val {
-		if mm, ok := e.(map[string]interface{}); ok {
-			sourceValue := mm[d.sourceValue].(string)
-			v = append(v, sourceValue)
+		if d.sourceValue != "" {
+			if mm, ok := e.(map[string]interface{}); ok {
+				sourceValue := mm[d.sourceValue].(string)
+				v = append(v, sourceValue)
+			}
+		} else {
+			if x, ok := e.(string); ok {
+				v = append(v, x)
+			}
 		}
+
 	}
 
 	return &value{v: map[string]interface{}{d.outputName: v}}, nil

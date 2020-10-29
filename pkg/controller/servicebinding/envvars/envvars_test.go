@@ -136,6 +136,21 @@ func TestBuild(t *testing.T) {
 			},
 			src: "",
 		},
+		{
+			name: "should create envvars for each string in slice",
+			expected: map[string]string{
+				"TAGS_0": "knowledge",
+				"TAGS_1": "is",
+				"TAGS_2": "power",
+			},
+			src: map[string]interface{}{
+				"tags": []string{
+					"knowledge",
+					"is",
+					"power",
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {

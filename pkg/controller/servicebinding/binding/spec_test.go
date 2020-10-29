@@ -353,11 +353,11 @@ func TestSpecHandler(t *testing.T) {
 			},
 		},
 		expectedData: map[string]interface{}{
-			"bootstrap": []string{"secure.example.com", "www.example.com"},
+			"bootstrap": []interface{}{"secure.example.com", "www.example.com"},
 		},
 		expectedRawData: map[string]interface{}{
 			"status": map[string]interface{}{
-				"bootstrap": []string{"secure.example.com", "www.example.com"},
+				"bootstrap": []interface{}{"secure.example.com", "www.example.com"},
 			},
 		},
 	}))
@@ -377,11 +377,11 @@ func TestSpecHandler(t *testing.T) {
 			},
 		},
 		expectedData: map[string]interface{}{
-			"urls": []string{"secure.example.com", "www.example.com"},
+			"urls": []interface{}{"secure.example.com", "www.example.com"},
 		},
 		expectedRawData: map[string]interface{}{
 			"status": map[string]interface{}{
-				"urls": []string{"secure.example.com", "www.example.com"},
+				"urls": []interface{}{"secure.example.com", "www.example.com"},
 			},
 		},
 	}))

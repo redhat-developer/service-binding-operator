@@ -68,7 +68,7 @@ func convertToSlice(src interface{}) ([]interface{}, error) {
 			obj[i] = e
 		}
 	default:
-		return nil, unsupportedTypeErr
+		return nil, fmt.Errorf("%v: %v", unsupportedTypeErr, t)
 	}
 	return obj, nil
 }
