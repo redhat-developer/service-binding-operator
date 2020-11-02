@@ -34,7 +34,7 @@ def before_all(_context):
         assert not os.getenv("TEST_ACCEPTANCE_SBO_STARTED").startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
     elif start_sbo == "remote":
         sbo_namespace = os.getenv("SBO_NAMESPACE")
-        assert sbo_namespace is not None, "SBO_NAMESPACE is required but not set."
+        assert (sbo_namespace is not None) and (sbo_namespace != ""), f"SBO_NAMESPACE is required but it is not set or it is empty: {sbo_namespace}"
         _context.sbo_namespace = sbo_namespace
     else:
         assert False, f"TEST_ACCEPTANCE_START_SBO={start_sbo} is currently unsupported."
