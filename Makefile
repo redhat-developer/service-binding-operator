@@ -487,3 +487,16 @@ dev-release:
 validate-release: setup-venv
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install yq==2.10.0
 	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="beta" ./hack/validate-release.sh
+
+# Operator-sdk release version
+RELEASE_VERSION ?= v0.16.0
+
+.PHONY: install-operator-sdk
+install-operator-sdk:
+ifeq ($(shell uname -s), Darwin)
+	curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin
+	chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-apple-darwin
+else
+	curl -LO https://github.com/operator-framework/operator-sdk/releases/download/${RELEASE_VERSION}/operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+	chmod +x operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu && sudo mkdir -p /usr/local/bin/ && sudo cp operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu /usr/local/bin/operator-sdk && rm operator-sdk-${RELEASE_VERSION}-x86_64-linux-gnu
+endif
