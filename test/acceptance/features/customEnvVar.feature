@@ -48,6 +48,7 @@ Feature: Inject custom env variable into application
     Then The application env var "TAGS" has value "[centos7-12.3 123]"
     And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "custom-env-var-from-sequence" should be changed to "True"
     And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "custom-env-var-from-sequence" should be changed to "True"
+    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "custom-env-var-from-sequence" should be changed to "True"
 
   Scenario: Map from service resource is injected into application using custom env variables without specifying annotations
     Given OLM Operator "backend" is running
@@ -89,6 +90,7 @@ Feature: Inject custom env variable into application
     Then The application env var "USER_LABELS" has value "map[archive:false environment:demo]"
     And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "custom-env-var-from-map" should be changed to "True"
     And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "custom-env-var-from-map" should be changed to "True"
+    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "custom-env-var-from-map" should be changed to "True"
 
 
   Scenario: Scalar from service resource is injected into application using custom env variables without specifying annotations
@@ -131,3 +133,4 @@ Feature: Inject custom env variable into application
     Then The application env var "USER_LABELS_ARCHIVE" has value "false"
     And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "custom-env-var-from-scalar" should be changed to "True"
     And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "custom-env-var-from-scalar" should be changed to "True"
+    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "custom-env-var-from-scalar" should be changed to "True"

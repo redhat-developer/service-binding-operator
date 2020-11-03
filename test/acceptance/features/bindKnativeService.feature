@@ -41,5 +41,6 @@ Feature: Bind knative service to a service
       """
     Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-knative" should be changed to "True"
     And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-knative" should be changed to "True"
+    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-knative" should be changed to "True"
     And deployment must contain intermediate secret "binding-request-knative"
     And application should be connected to the DB "db-demo-knative"

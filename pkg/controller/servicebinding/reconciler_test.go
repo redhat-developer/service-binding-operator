@@ -133,6 +133,7 @@ func TestApplicationByName(t *testing.T) {
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
@@ -196,6 +197,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
@@ -259,6 +261,59 @@ func TestReconcilerReconcileUsingVolumes(t *testing.T) {
 	})
 }
 
+func TestServiceNotFound(t *testing.T) {
+	backingServiceResourceRef := "backingServiceRef"
+	applicationResourceRef := "applicationRef"
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBinding(reconcilerName, backingServiceResourceRef, applicationResourceRef, deploymentsGVR, nil)
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDeployment(applicationResourceRef, nil)
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	// Reconcile without service
+	res, _ := r.Reconcile(reconcileRequest())
+	require.True(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := r.getServiceBinding(namespacedName)
+	require.NoError(t, err)
+
+	requireConditionPresentAndFalse(t, CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, BindingReady, sbrOutput.Status.Conditions)
+	require.Len(t, sbrOutput.Status.Applications, 0)
+
+	// Reconcile with service
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredSecret("db-credentials")
+	fakeDynClient = f.FakeDynClient()
+	r = &reconciler{dynClient: fakeDynClient, restMapper: testutils.BuildTestRESTMapper(), scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+	res, err = r.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	u, err := fakeDynClient.Resource(deploymentsGVR).Get(applicationResourceRef, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	d := appsv1.Deployment{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &d)
+	require.NoError(t, err)
+	sbrOutput2, err := r.getServiceBinding(namespacedName)
+	require.NoError(t, err)
+
+	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, BindingReady, sbrOutput2.Status.Conditions)
+
+	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
+	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
+}
+
 func TestApplicationNotFound(t *testing.T) {
 	backingServiceResourceRef := "backingService1"
 	matchLabels := map[string]string{
@@ -288,6 +343,7 @@ func TestApplicationNotFound(t *testing.T) {
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, BindingReady, sbrOutput.Status.Conditions)
 	require.Len(t, sbrOutput.Status.Applications, 0)
 
 	// Reconcile with deployment
@@ -310,6 +366,7 @@ func TestApplicationNotFound(t *testing.T) {
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput2.Status.Conditions)
 	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, BindingReady, sbrOutput2.Status.Conditions)
 
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
@@ -361,6 +418,7 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput3.Status.Conditions)
 	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput3.Status.Conditions)
+	requireConditionPresentAndTrue(t, BindingReady, sbrOutput3.Status.Conditions)
 
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
@@ -420,6 +478,7 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
@@ -449,6 +508,32 @@ func TestEmptyApplication(t *testing.T) {
 
 	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+}
+
+// TestEmptyServiceSelector tests that CollectionReady,InjectionReady and BindingReady are all successfully updated to True when ServiceSelector is empty
+func TestEmptyServiceSelectorAndAllConditionAreSetToFalse(t *testing.T) {
+	applicationResourceRef := "applicationRef"
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBindingWithoutService(reconcilerName, applicationResourceRef, deploymentsGVR)
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	res, err := r.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbrOutput, err := r.getServiceBinding(namespacedName)
+	require.NoError(t, err)
+
+	requireConditionPresentAndFalse(t, CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, BindingReady, sbrOutput.Status.Conditions)
+
 }
 
 func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
@@ -505,6 +590,7 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName1, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -542,6 +628,7 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 
 		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName2, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
