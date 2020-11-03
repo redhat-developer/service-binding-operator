@@ -77,6 +77,7 @@ Feature: Bind values from a config map referred in backing service resource
         Then The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "ssa-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "ssa-1" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "ssa-1" should be changed to "True"
 
     Scenario: Inject into app all keys from a secret referred within service resource
             Binding definition is declared on service CRD.
@@ -151,6 +152,7 @@ Feature: Bind values from a config map referred in backing service resource
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "ssa-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "ssa-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "ssa-2" should be changed to "True"
 
 
     Scenario: Inject into app a key from a secret referred within service resource
@@ -285,6 +287,7 @@ Feature: Bind values from a config map referred in backing service resource
         Then The application env var "BACKEND_HOST" has value "example.com"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "ssd-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "ssd-1" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "ssd-1" should be changed to "True"
 
     Scenario: Inject into app all keys from a secret referred within service resource
                 Binding definition is declared via OLM descriptor.
@@ -420,3 +423,4 @@ Feature: Bind values from a config map referred in backing service resource
         Then The application env var "BACKEND_PASSWORD" has value "hunter2"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "ssd-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "ssd-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "ssd-2" should be changed to "True"

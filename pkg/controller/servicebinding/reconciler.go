@@ -6,6 +6,7 @@ import (
 
 	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,10 +16,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
 const (
+	// BindingReady indicates that the overall sbr succeeded
+	BindingReady conditionsv1.ConditionType = "Ready"
 	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
 	CollectionReady conditionsv1.ConditionType = "CollectionReady"
 	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
@@ -32,6 +36,8 @@ const (
 	EmptyApplicationReason = "EmptyApplication"
 	// ApplicationNotFoundReason is used when the application is not found.
 	ApplicationNotFoundReason = "ApplicationNotFound"
+	// ServiceNotFoundReason is used when the service is not found.
+	ServiceNotFoundReason = "ServiceNotFound"
 )
 
 // Reconciler reconciles a ServiceBinding object
@@ -131,10 +137,12 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 				Message: errEmptyServices.Error(),
 			},
 			conditionsv1.Condition{
-				Type:    InjectionReady,
-				Status:  corev1.ConditionFalse,
-				Reason:  EmptyServiceSelectorsReason,
-				Message: errEmptyServices.Error(),
+				Type:   InjectionReady,
+				Status: corev1.ConditionFalse,
+			},
+			conditionsv1.Condition{
+				Type:   BindingReady,
+				Status: corev1.ConditionFalse,
 			},
 		)
 		if updateErr == nil {
@@ -157,9 +165,30 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.restMapper,
 	)
 	if err != nil {
+		//handle service not found error
+		if k8serrors.IsNotFound(err) {
+			err = updateSBRConditions(r.dynClient, sbr,
+				conditionsv1.Condition{
+					Type:    CollectionReady,
+					Status:  corev1.ConditionFalse,
+					Reason:  ServiceNotFoundReason,
+					Message: err.Error(),
+				},
+				conditionsv1.Condition{
+					Type:   InjectionReady,
+					Status: corev1.ConditionFalse,
+				},
+				conditionsv1.Condition{
+					Type:   BindingReady,
+					Status: corev1.ConditionFalse,
+				},
+			)
+			if err != nil {
+				logger.Error(err, "Failed to update SBR conditions", "sbr", sbr)
+			}
+		}
 		return requeueError(err)
 	}
-
 	binding, err := buildBinding(
 		r.dynClient,
 		sbr.Spec.CustomEnvVar,
@@ -219,4 +248,22 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	logger.Info("Binding applications with intermediary secret...")
 	return sb.bind()
+}
+
+func updateSBRConditions(dynClient dynamic.Interface, sbr *v1alpha1.ServiceBinding, conditions ...conditionsv1.Condition) error {
+	for _, v := range conditions {
+		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, v)
+	}
+	u, err := converter.ToUnstructured(sbr)
+	if err != nil {
+		return err
+	}
+
+	nsClient := dynClient.
+		Resource(groupVersion).
+		Namespace(sbr.GetNamespace())
+
+	_, err = nsClient.UpdateStatus(u, metav1.UpdateOptions{})
+
+	return err
 }

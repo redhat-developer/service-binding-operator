@@ -463,6 +463,18 @@ func ServiceBindingMock(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBinding {
+	var services []v1alpha1.Service
+	if backingServiceResourceRef == "" {
+		services = []v1alpha1.Service{}
+	} else {
+		services = []v1alpha1.Service{
+			{
+				GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
+				LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
+				Namespace:            backingServiceNamespace,
+			},
+		}
+	}
 	sbr := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
@@ -481,13 +493,7 @@ func ServiceBindingMock(
 				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: &falseBoolPtr,
-			Services: []v1alpha1.Service{
-				{
-					GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-					LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
-					Namespace:            backingServiceNamespace,
-				},
-			},
+			Services:               services,
 		},
 	}
 	return sbr

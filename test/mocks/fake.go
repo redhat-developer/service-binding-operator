@@ -71,6 +71,19 @@ func (f *Fake) AddMockedUnstructuredServiceBindingWithoutApplication(
 	return sbr
 }
 
+// AddMockedUnstructuredServiceBindingWithoutApplication creates a mock ServiceBinding object
+func (f *Fake) AddMockedUnstructuredServiceBindingWithoutService(
+	name string,
+	applicationResourceRef string,
+	applicationGVR schema.GroupVersionResource,
+) *unstructured.Unstructured {
+	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	sbr, err := UnstructuredServiceBindingMock(f.ns, name, "", applicationResourceRef, applicationGVR, nil)
+	require.NoError(f.t, err)
+	f.objs = append(f.objs, sbr)
+	return sbr
+}
+
 // AddMockedUnstructuredServiceBinding creates a mock ServiceBinding object
 func (f *Fake) AddMockedUnstructuredServiceBinding(
 	name string,

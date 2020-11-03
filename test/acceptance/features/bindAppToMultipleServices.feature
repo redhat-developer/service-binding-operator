@@ -51,8 +51,10 @@ Feature: Bind a single application to multiple services
 
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-1" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-2" should be changed to "True"
         And "nodejs-app" deployment must contain SBR name "binding-request-1"
         And "nodejs-app" deployment must contain SBR name "binding-request-2"
 
@@ -106,5 +108,6 @@ Feature: Bind a single application to multiple services
 
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-1sbr" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-1sbr" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-1sbr" should be changed to "True"
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
         And The application env var "BACKEND_HOST_EXTERNAL_DB" has value "external.db.stable.example.com"

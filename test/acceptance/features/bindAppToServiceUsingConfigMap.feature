@@ -79,6 +79,7 @@ Feature: Bind values from a config map referred in backing service resource
         Then The application env var "BACKEND_CERTIFICATE" has value "certificate value"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "cmsa-1" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "cmsa-1" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "cmsa-1" should be changed to "True"
 
     Scenario: Inject into app all keys from a config map referred within service resource
                 Binding definition is declared on service CRD.
@@ -154,4 +155,5 @@ Feature: Bind values from a config map referred in backing service resource
         And The application env var "BACKEND_CERTIFICATE" has value "certificate value"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "cmsa-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "cmsa-2" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "cmsa-2" should be changed to "True"
 

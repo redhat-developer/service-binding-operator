@@ -238,6 +238,10 @@ func (b *serviceBinder) onError(
 		Reason:  bindingFail,
 		Message: b.message(err),
 	})
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type:   BindingReady,
+		Status: corev1.ConditionFalse,
+	})
 	newSbr, errStatus := b.updateStatusServiceBinding(sbr, sbrStatus)
 	if errStatus != nil {
 		return requeueError(errStatus)
@@ -274,14 +278,7 @@ func removeFinalizer(sbr *v1alpha1.ServiceBinding) {
 // handleApplicationError handles scenarios when:
 // 1. application not declared in the Service Binding
 // 2. application not found
-func (b *serviceBinder) handleApplicationError(reason string, applicationError error, sbrStatus *v1alpha1.ServiceBindingStatus) (reconcile.Result, error) {
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:    InjectionReady,
-		Status:  corev1.ConditionFalse,
-		Reason:  reason,
-		Message: applicationError.Error(),
-	})
-
+func (b *serviceBinder) handleApplicationError(applicationError error, sbrStatus *v1alpha1.ServiceBindingStatus) (reconcile.Result, error) {
 	// updating status of request instance
 	sbr, err := b.updateStatusServiceBinding(b.sbr, sbrStatus)
 	if err != nil {
@@ -320,13 +317,33 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	})
 
 	if isApplicationEmpty(b.sbr.Spec.Application) {
-		return b.handleApplicationError(EmptyApplicationReason, errEmptyApplication, sbrStatus)
+		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			Type:    InjectionReady,
+			Status:  corev1.ConditionFalse,
+			Reason:  EmptyApplicationReason,
+			Message: errEmptyApplication.Error(),
+		})
+		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			Type:   BindingReady,
+			Status: corev1.ConditionTrue,
+		})
+		return b.handleApplicationError(errEmptyApplication, sbrStatus)
 	}
 	updatedObjects, err := b.binder.bind()
 	if err != nil {
 		b.logger.Error(err, "On binding application.")
 		if errors.Is(err, errApplicationNotFound) {
-			return b.handleApplicationError(ApplicationNotFoundReason, errApplicationNotFound, sbrStatus)
+			conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+				Type:    InjectionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  ApplicationNotFoundReason,
+				Message: errApplicationNotFound.Error(),
+			})
+			conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+				Type:   BindingReady,
+				Status: corev1.ConditionFalse,
+			})
+			return b.handleApplicationError(errApplicationNotFound, sbrStatus)
 		}
 		return b.onError(err, b.sbr, sbrStatus, nil)
 	}
@@ -334,6 +351,10 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
 		Type:   InjectionReady,
+		Status: corev1.ConditionTrue,
+	})
+	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		Type:   BindingReady,
 		Status: corev1.ConditionTrue,
 	})
 

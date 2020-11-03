@@ -74,6 +74,7 @@ Feature: Insert service binding to a custom location in application resource
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-csp" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-csp" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-csp" should be changed to "True"
         And Secret "binding-request-csp" has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
 
     Scenario: Specify secret's path in Service Binding
@@ -113,4 +114,5 @@ Feature: Insert service binding to a custom location in application resource
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-ssp" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-ssp" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-ssp" should be changed to "True"
         And Secret "binding-request-ssp" has been injected in to CR "demo-appconfig-ssp" of kind "AppConfig" at path "{.spec.spec.secret}"

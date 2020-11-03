@@ -324,6 +324,41 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockResource(sbrMultipleServices)
 
+	sbrSingleServiceWithNonExistedApp := &v1alpha1.ServiceBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "operators.coreos.com/v1alpha1",
+			Kind:       "ServiceBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "single-sbr-with-non-existed-app",
+		},
+		Spec: v1alpha1.ServiceBindingSpec{
+			Application: &v1alpha1.Application{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				GroupVersionResource: metav1.GroupVersionResource{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+				},
+				LocalObjectReference: corev1.LocalObjectReference{Name: "app-not-existed"},
+			},
+			Services: []v1alpha1.Service{
+				{
+					GroupVersionKind: metav1.GroupVersionKind{
+						Group:   db1.GetObjectKind().GroupVersionKind().Group,
+						Version: db1.GetObjectKind().GroupVersionKind().Version,
+						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					},
+					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingStatus{},
+	}
+	f.AddMockResource(sbrSingleServiceWithNonExistedApp)
+
 	sbrEmptyAppSelector := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operators.coreos.com/v1alpha1",
@@ -400,6 +435,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 				Type:   InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
+			{
+				Type:   BindingReady,
+				Status: corev1.ConditionTrue,
+			},
 		},
 		wantActions: []wantedAction{
 			{
@@ -441,6 +480,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 			{
 				Type:   InjectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:   BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -487,6 +530,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 				Type:   InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
+			{
+				Type:   BindingReady,
+				Status: corev1.ConditionTrue,
+			},
 		},
 	}))
 
@@ -512,6 +559,40 @@ func TestServiceBinder_Bind(t *testing.T) {
 				Status:  corev1.ConditionFalse,
 				Reason:  EmptyApplicationReason,
 				Message: errEmptyApplication.Error(),
+			},
+			{
+				Type:   BindingReady,
+				Status: corev1.ConditionTrue,
+			},
+		},
+	}))
+
+	t.Run("application not found", assertBind(args{
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: true,
+			sbr:                    sbrSingleServiceWithNonExistedApp,
+			binding: &internalBinding{
+				envVars:    map[string][]byte{},
+				volumeKeys: []string{},
+			},
+			restMapper: testutils.BuildTestRESTMapper(),
+		},
+		wantConditions: []wantedCondition{
+			{
+				Type:   CollectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:    InjectionReady,
+				Status:  corev1.ConditionFalse,
+				Reason:  ApplicationNotFoundReason,
+				Message: errApplicationNotFound.Error(),
+			},
+			{
+				Type:   BindingReady,
+				Status: corev1.ConditionFalse,
 			},
 		},
 	}))
@@ -547,6 +628,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 			{
 				Type:   InjectionReady,
+				Status: corev1.ConditionTrue,
+			},
+			{
+				Type:   BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
