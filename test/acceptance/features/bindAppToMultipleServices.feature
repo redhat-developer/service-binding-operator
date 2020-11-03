@@ -1,3 +1,4 @@
+@olm
 Feature: Bind a single application to multiple services
 
     As a user of Service Binding operator

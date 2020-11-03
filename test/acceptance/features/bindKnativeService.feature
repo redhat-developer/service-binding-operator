@@ -1,3 +1,5 @@
+@knative
+@olm
 Feature: Bind knative service to a service
 
     As a user of Service Binding Operator

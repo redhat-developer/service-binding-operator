@@ -10,6 +10,7 @@ import time
 import polling2
 import parse
 import binascii
+import yaml
 
 from behave import given, register_type, then, when, step
 from dboperator import DbOperator
@@ -21,7 +22,6 @@ from nodejs_application import NodeJSApp
 from openshift import Openshift
 from postgres_db import PostgresDB
 from quarkus_application import QuarkusApplication
-from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
 from serverless_operator import ServerlessOperator
 from service_binding import ServiceBinding
 from servicebindingoperator import Servicebindingoperator
@@ -192,7 +192,11 @@ def sbr_is_applied(context):
             context.application_original_generation = context.application.get_generation()
         else:
             assert False, f"Invalid application type in context.application_type={context.application_type}, valid are 'nodejs', 'knative'"
-    assert sbr.create(sbr_yaml) is not None, "Service binding not created"
+    if "namespace" in context:
+        ns = context.namespace.name
+    else:
+        ns = None
+    assert sbr.create(sbr_yaml, ns) is not None, "Service binding not created"
 
 
 # STEP
@@ -213,17 +217,14 @@ def then_application_redeployed(context):
 # STEP
 @then(u'application should be connected to the DB "{db_name}"')
 def then_app_is_connected_to_db(context, db_name):
-    application = context.application
     db_endpoint = "/api/status/dbNameCM"
-    app_db_name = application.get_response_from_api(wait=True, endpoint=db_endpoint)
-    assert app_db_name == db_name, f"Unexpected response from API ('{db_endpoint}'): '{app_db_name}'. Expected is '{db_name}'"
+    polling2.poll(lambda: context.application.get_response_from_api(endpoint=db_endpoint) == db_name, step=5, timeout=600)
 
 
 @when(u'Service binding "{sb_name}" is deleted')
 def service_binding_is_deleted(context, sb_name):
     openshift = Openshift()
-    result = openshift.delete_service_binding(sb_name)
-    assert result is not None, f"Unable to delete service binding '{sb_name}'"
+    openshift.delete_service_binding(sb_name, context.namespace.name)
 
 
 # STEP
@@ -233,7 +234,7 @@ def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
     openshift = Openshift()
     assert openshift.search_resource_in_namespace(
         "servicebindings", sbr_name, context.namespace.name) is not None, f"Service Binding '{sbr_name}' does not exist in namespace '{context.namespace.name}'"
-    result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path, wait=True, timeout=600)
+    result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path)
     assert result is not None, f"Invalid result for SBO jsonpath: {result}."
     assert re.fullmatch(json_value_regex, result) is not None, f"SBO jsonpath result \"{result}\" does not match \"{json_value_regex}\""
 
@@ -268,18 +269,6 @@ def given_serverless_operator_is_running(context):
     context.serverless_operator = serverless_operator
 
 
-@given(u'Quarkus s2i builder image is present')
-def given_quarkus_builder_image_is_present(context):
-    """
-    Checks if quarkus s2i builder image is present
-    """
-    builder_image = QuarkusS2IBuilderImage()
-    if not builder_image.is_present():
-        print("Builder image is not present, importing and patching...")
-        assert builder_image.import_and_patch() is True, "Quarkus image import from image registry and patch failed"
-        assert builder_image.is_present() is True, "Quarkus image is not present"
-
-
 @given(u'Knative serving is running')
 def given_knative_serving_is_running(context):
     """
@@ -287,7 +276,6 @@ def given_knative_serving_is_running(context):
     """
     knative_namespace = Namespace("knative-serving")
     assert knative_namespace.create() is True, "Knative serving namespace not created"
-    assert Namespace(context.namespace.name).switch_to() is True, "Unable to switch to the context namespace"
     knative_serving = KnativeServing(namespace=knative_namespace.name)
     if not knative_serving.is_present():
         print("knative serving is not present, create knative serving")
@@ -339,7 +327,11 @@ def envFrom_contains_intermediate_secret_name(context, intermediate_secret_name)
 @given(u'OLM Operator "{backend_service}" is running')
 def operator_manifest_installed(context, backend_service):
     openshift = Openshift()
-    _ = openshift.oc_apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/", backend_service + ".operator.manifest.yaml"))
+    if "namespace" in context:
+        ns = context.namespace.name
+    else:
+        ns = None
+    _ = openshift.apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/", backend_service + ".operator.manifest.yaml"), namespace=ns)
 
 
 @parse.with_pattern(r'.*')
@@ -381,9 +373,16 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 @given(u'The Secret is present')
 def apply_yaml(context):
     openshift = Openshift()
-    yaml = context.text
-    metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', yaml).group(0))
-    output = openshift.oc_apply(yaml)
+    metadata = yaml.full_load(context.text)["metadata"]
+    metadata_name = metadata["name"]
+    if "namespace" in metadata:
+        ns = metadata["namespace"]
+    else:
+        if "namespace" in context:
+            ns = context.namespace.name
+        else:
+            ns = None
+    output = openshift.apply(context.text, ns)
     result = re.search(rf'.*{metadata_name}.*(created|unchanged|configured)', output)
     assert result is not None, f"Unable to apply YAML for CR '{metadata_name}': {output}"
 
@@ -429,13 +428,17 @@ def invalid_sbr_is_applied(context):
         json_path = "{.metadata.resourceVersion}"
         rv = sbr.get_servicebinding_info_by_jsonpath(context.sbr_name, context.namespace.name, json_path)
         context.resource_version = rv
-    context.expected_error = sbr.attempt_to_create(context.text)
+    context.expected_error = sbr.attempt_to_create_invalid(context.text, context.namespace.name)
 
 
+@then(u'Error message is thrown')
 @then(u'Error message "{err_msg}" is thrown')
-def validate_error(context, err_msg):
-    search = re.search(rf'.*{err_msg}.*', context.expected_error)
-    assert search is not None, f"Actual error: '{context.expected_error}', Expected error: '{err_msg}'"
+def validate_error(context, err_msg=None):
+    if err_msg is None:
+        assert context.expected_error is not None, "An error message should happen"
+    else:
+        search = re.search(rf'.*{err_msg}.*', context.expected_error)
+        assert search is not None, f"Actual error: '{context.expected_error}', Expected error: '{err_msg}'"
 
 
 @then(u'Service Binding "{sb_name}" is not persistent in the cluster')

@@ -1,3 +1,4 @@
+@olm
 Feature: Insert service binding to a custom location in application resource
 
     As a user of Service Binding Operator

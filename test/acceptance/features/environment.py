@@ -13,6 +13,7 @@ before_all(context), after_all(context)
 """
 
 from steps.command import Command
+from steps.environment import ctx
 
 import os
 
@@ -20,11 +21,16 @@ cmd = Command()
 
 
 def before_all(_context):
-    output, code = cmd.run("oc version | grep Client")
-    assert code == 0, f"Checking oc version failed: {output}"
+    if ctx.cli == "oc":
+        output, code = cmd.run("oc version | grep Client")
+        assert code == 0, f"Checking oc version failed: {output}"
 
-    oc_ver = output.split()[2]
-    assert oc_ver >= "4.5", f"oc version is required 4.5+, but is {oc_ver}."
+        oc_ver = output.split()[2]
+        assert oc_ver >= "4.5", f"oc version is required 4.5+, but is {oc_ver}."
+
+        namespace = os.getenv("TEST_NAMESPACE")
+        output, code = cmd.run(f"oc project {namespace}")
+        assert code == 0, f"Cannot set default namespace to {namespace}, reason: {output}"
 
     start_sbo = os.getenv("TEST_ACCEPTANCE_START_SBO")
     assert start_sbo is not None, "TEST_ACCEPTANCE_START_SBO is not set. It should be one of local, remote or operator-hub"
@@ -41,5 +47,5 @@ def before_all(_context):
 
 
 def before_scenario(_context, _scenario):
-    output, code = cmd.run('kubectl get project default -o jsonpath="{.metadata.name}"')
+    output, code = cmd.run(f'{ctx.cli} get ns default -o jsonpath="{{.metadata.name}}"')
     assert code == 0, f"Checking connection to OS cluster by getting the 'default' project failed: {output}"
