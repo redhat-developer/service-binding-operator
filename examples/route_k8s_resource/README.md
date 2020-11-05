@@ -19,22 +19,11 @@ Provide cumulative annotations : (1) and (2 & 3).
 In this example there are 2 roles:
 
 * Cluster Admin - Installs the operators to the cluster
-* Application Developer - Imports a Node.js application, creates a DB instance, creates a request to bind the application and DB (to connect the DB and the application).
+* Application Developer - Imports the application, creates an OpenShift Route and creates a request to bind the application and the route.
 
 ### Cluster Admin
 
-The cluster admin needs to install 2 operators into the cluster:
-
-* Service Binding Operator
-* Backing Service Operator
-
-A Backing Service Operator that is "bind-able," in other
-words a Backing Service Operator that exposes binding information in secrets, config maps, status, and/or spec
-attributes. The Backing Service Operator may represent a database or other services required by
-applications. We'll use [postgresql-operator](https://github.com/operator-backing-service-samples/postgresql-operator) to
-demonstrate a sample use case.
-
-#### Install the Service Binding Operator
+The cluster admin needs to install Service Binding Operator into the cluster.
 
 Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Developer Tools` category select the `Service Binding Operator` operator
 
@@ -43,33 +32,6 @@ Navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `
 and install the `beta` version.
 
 This makes the `ServiceBinding` custom resource available, that the application developer will use later.
-
-#### Install the DB operator using a `CatalogSource`
-
-Apply the following `CatalogSource`:
-
-```shell
-kubectl apply -f - << EOD
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-    name: sample-db-operators
-    namespace: openshift-marketplace
-spec:
-    sourceType: grpc
-    image: quay.io/redhat-developer/sample-db-operators-olm:v1
-    displayName: Sample DB Operators
-EOD
-```
-
-Then navigate to the `Operators`->`OperatorHub` in the OpenShift console and in the `Database` category select the `PostgreSQL Database` operator
-
-![PostgreSQL Database Operator as shown in OperatorHub](../../assets/operator-hub-pgo-screenshot.png)
-
-and install a `beta` version.
-
-This makes the `Database` custom resource available, that the application developer will use later.
 
 ### Application Developer
 
@@ -83,21 +45,22 @@ kubectl create namespace service-binding-demo
 
 #### Import an application
 
-In this example we will import an arbitrary [Node.js application](https://github.com/pmacik/nodejs-rest-http-crud).
+In this example we will import an arbitrary [hello-openshift application](https://hub.docker.com/r/openshift/hello-openshift).
 
-In the OpenShift Console switch to the Developer perspective. (Make sure you have selected the `service-binding-demo` project). Navigate to the `+Add` page from the menu and then click on the `[From Git]` button. Fill in the form with the following:
+For that we just need to create a `Deployment` called `hello-app` from the `openshift/hello-openshift` container image.
 
-* `Project` = `service-binding-demo`
-* `Git Repo URL` = `https://github.com/pmacik/nodejs-rest-http-crud`
-* `Builder Image` = `Node.js`
-* `Application Name` = `nodejs-app`
-* `Name` = `nodejs-app`
+``` shell
+$ kubectl create deployment -n service-binding-demo --image=openshift/hello-openshift hello-app
+deployment.apps/hello-app created
+```
 
-* `Select the resource type to generate` = Deployment
-* `Create a route to the application` = checked
+We can verify that the app is running by checking the Deployment is available:
 
-and click on the `[Create]` button.
-
+``` shell
+$ kubectl get deployment hello-app -n service-binding-demo -o wide                             
+NAME        READY   UP-TO-DATE   AVAILABLE   AGE    CONTAINERS        IMAGES                      SELECTOR
+hello-app   1/1     1            1           3m2s   hello-openshift   openshift/hello-openshift   app=hello-app
+```
 #### Create a Route and annotate it:
 
 Now let's create a kubernetes resource - `Route` (for our case) and annotate it with the value that we would like to be injected for binding. For this case it is the `spec.host`
@@ -142,7 +105,7 @@ spec:
   application:
     group: apps
     resource: deployments
-    name: nodejs-app
+    name: hello-app
     version: v1
 
   services:
@@ -157,7 +120,7 @@ EOD
 When the `ServiceBinding` was created the Service Binding Operator's controller injected the Route information that was annotated to be injected into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`.
 
 ```shell
-kubectl get sbr binding-request -o yaml
+kubectl get sbr binding-request -n service-binding-demo -o yaml
 ```
 ```yaml
 apiVersion: operators.coreos.com/v1alpha1
@@ -184,7 +147,7 @@ status:
 Check the contents of `Secret` - `binding-request` by executing:
 
 ```shell
-kubectl get secrets binding-request -o yaml 
+kubectl get secrets binding-request -n service-binding-demo -o yaml
 ```
 
 for the following result:
@@ -205,7 +168,7 @@ metadata:
 The secret value is actually encoded with base64 so to get the actual value we need to decode it properly:
 
 ```shell
-kubectl get secret binding-request -o jsonpath='{.data.ROUTE_HOST}' | base64 --decode
+kubectl get secret binding-request -n service-binding-demo -o jsonpath='{.data.ROUTE_HOST}' | base64 --decode
 ```
 for the following result:
 ```
