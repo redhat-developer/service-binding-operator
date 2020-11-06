@@ -19,6 +19,7 @@ RUN yum install epel-release -y \
     bc \
     jq \
     python36-virtualenv \
+    podman \
     && yum clean all
 
 ENV PATH=:$GOPATH/bin:/tmp/goroot/go/bin:$PATH
