@@ -135,7 +135,7 @@ Feature: Bind an application to a service using annotations
         And The application env var "BACKEND_SPEC_DBNAME" has value "db-demo"
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "rsa-2" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "rsa-2" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "rsa-2" should be changed to "True"
 
     Scenario: Each value in referred slice of strings from service resource gets injected into app as separate env variable
         Given Generic test application "slos-app" is running
@@ -325,7 +325,7 @@ Feature: Bind an application to a service using annotations
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "slom-binding" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "slom-binding" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "slom-binding" should be changed to "True"
         And The application env var "BACKEND_WEBARROWS_PRIMARY" has value "primary.example.com"
         And The application env var "BACKEND_WEBARROWS_SECONDARY" has value "secondary.example.com"
         And The application env var "BACKEND_WEBARROWS_404" has value "black-hole.example.com"
@@ -378,7 +378,7 @@ Feature: Bind an application to a service using annotations
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann-sb" should be changed to "EmptyApplication"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
         And Secret "binding-request-backend-ann-sb" contains "BACKEND_READY" key with value "true"
         And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
 
@@ -415,7 +415,7 @@ Feature: Bind an application to a service using annotations
         And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann" should be changed to "EmptyApplication"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-a" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-ann" should be changed to "True"
         And Secret "binding-request-backend-ann" is empty
         # Backend metadata.annotations not pertaining to service binding is updated
         When The Custom Resource is present
