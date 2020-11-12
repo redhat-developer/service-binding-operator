@@ -107,6 +107,7 @@ SBR_MANIFESTS ?= ${PROJECT_DIR}service-binding-operator-manifests
 CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
+GOFLAGS ?= -mod=vendor
 OS ?= $(shell go env GOOS)
 ARCH ?= $(shell go env GOARCH)
 
@@ -188,7 +189,7 @@ lint-yaml: ${YAML_FILES}
 lint-go-code: $(GOLANGCI_LINT_BIN)
 	# This is required for OpenShift CI enviroment
 	# Ref: https://github.com/openshift/release/pull/3438#issuecomment-482053250
-	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/golangci-lint ${V_FLAG} run --deadline=30m
+	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" $(OUTPUT_DIR)/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
 	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
@@ -240,8 +241,8 @@ test-cleanup: get-test-namespace
 ## Runs the unit tests without code coverage
 test-unit:
 	$(info Running unit test: $@)
-	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...) -v -mod vendor $(TEST_EXTRA_ARGS)
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE="$(GOCACHE)" \
+		go test $(shell GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" go list ./...) -v $(GOFLAGS) $(TEST_EXTRA_ARGS)
 
 .PHONY: test-unit-with-coverage
 ## Runs the unit tests with code coverage
@@ -251,17 +252,17 @@ test-unit-with-coverage:
 	$(eval GOCOV_FLAGS := $(shell echo $(GOCOV) | sed -e 's,REPLACE_FILE,$(GOCOV_FILE),'))
 	$(Q)mkdir -p $(GOCOV_DIR)
 	$(Q)rm -vf '$(GOCOV_DIR)/*.txt'
-	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE=$(GOCACHE) \
-		go test $(shell GOCACHE="$(GOCACHE)" go list ./...) $(GOCOV_FLAGS) -v -mod vendor $(TEST_EXTRA_ARGS)
-	$(Q)GOCACHE=$(GOCACHE) go tool cover -func=$(GOCOV_FILE)
+	$(Q)GO111MODULE=$(GO111MODULE) GOCACHE="$(GOCACHE)" \
+		go test $(shell GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" go list ./...) $(GOCOV_FLAGS) -v $(GOFLAGS) $(TEST_EXTRA_ARGS)
+	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" go tool cover -func=$(GOCOV_FILE)
 
 .PHONY: test-acceptance-setup
 ## Setup the environment for the acceptance tests
 test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
-test-acceptance-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds set-test-namespace deploy-rbac deploy-crds
+test-acceptance-setup: stop-local build test-cleanup create-test-namespace deploy-test-3rd-party-crds set-test-namespace deploy-rbac deploy-crds
 	$(Q)echo "Starting local SBO instance"
-	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" ./hack/deploy-sbo-local.sh))
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" RUN_IN_BACKGROUND=true ./hack/deploy-sbo-local.sh))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), remote)
 test-acceptance-setup: test-cleanup create-test-namespace set-test-namespace
 	$(Q)echo "Using remote SBO instance running in '$(SBO_NAMESPACE)' namespace"
@@ -311,29 +312,29 @@ test: test-unit test-acceptance
 build: out/operator
 
 out/operator:
-	$(Q)GOARCH=$(ARCH) GOOS=$(OS) go build ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
+	$(Q)GOCACHE="$(GOCACHE)" GOARCH=$(ARCH) GOOS=$(OS) go build $(GOFLAGS) ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
 
 ## Build-Image: using operator-sdk to build a new image
 build-image:
-	$(Q)operator-sdk build \
+	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" operator-sdk build \
 		--image-builder=$(OPERATOR_IMAGE_BUILDER) \
 		"$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
-	$(Q)GOCACHE=$(GOCACHE) operator-sdk generate k8s
+	$(Q)GOFLAGS="$(GOFLAGS)" operator-sdk generate k8s
 
 $(OUTPUT_DIR)/openapi-gen:
-	$(Q)GOCACHE=$(GOCACHE) go build -o $(OUTPUT_DIR)/openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
+	$(Q)GOCACHE="$(GOCACHE)" go build $(GOFLAGS) -o $(OUTPUT_DIR)/openapi-gen k8s.io/kube-openapi/cmd/openapi-gen
 
 ## Generate-OpenAPI: after modifying _types, generate OpenAPI scaffolding.
 generate-openapi: $(OUTPUT_DIR)/openapi-gen
 	# Build the latest openapi-gen from source
-	$(Q)GOCACHE=$(GOCACHE) $(OUTPUT_DIR)/openapi-gen --logtostderr=true -o "" -i $(GO_PACKAGE_PATH)/pkg/apis/operators/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/operators/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
+	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" $(OUTPUT_DIR)/openapi-gen --logtostderr=true -o "" -i $(GO_PACKAGE_PATH)/pkg/apis/operators/v1alpha1 -O zz_generated.openapi -p ./pkg/apis/operators/v1alpha1 -h ./hack/boilerplate.go.txt -r "-"
 
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
-	$(Q)GOCACHE=$(GOCACHE) go mod vendor ${V_FLAG}
+	$(Q)GOCACHE="$(GOCACHE)" go mod vendor ${V_FLAG}
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
@@ -371,8 +372,13 @@ push-image: build-image
 
 .PHONY: local
 ## Local: Run operator locally
-local: deploy-clean deploy-rbac deploy-crds
-	$(Q)operator-sdk --verbose run --local --operator-flags "$(ZAP_FLAGS)"
+local: stop-local build get-test-namespace deploy-clean deploy-rbac deploy-crds
+	$(Q)OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" ./hack/deploy-sbo-local.sh
+
+.PHONY: stop-local
+## Stop Local: Stop locally running operator
+stop-local:
+	$(Q)-./hack/stop-sbo-local.sh
 
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
