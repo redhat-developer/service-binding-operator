@@ -149,6 +149,8 @@ LOGS_DIR ?= $(OUTPUT_DIR)/logs
 GOLANGCI_LINT_BIN=$(OUTPUT_DIR)/golangci-lint
 PYTHON_VENV_DIR=$(OUTPUT_DIR)/venv3
 
+CONTAINER_RUNTIME ?= docker
+
 # -- Variables for uploading code coverage reports to Codecov.io --
 # This default path is set by the OpenShift CI
 CODECOV_TOKEN_PATH ?= "/usr/local/redhat-developer-service-binding-operator-codecov-token/token"
@@ -161,6 +163,7 @@ PULL_NUMBER := $(shell echo $$CLONEREFS_OPTIONS | jq '.refs[0].pulls[0].number')
 # -- Variables for acceptance tests
 TEST_ACCEPTANCE_START_SBO ?= local
 TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
+TEST_ACCEPTANCE_REPORT_DIR ?= $(OUTPUT_DIR)/acceptance-tests-report
 TEST_ACCEPTANCE_ARTIFACTS ?= /tmp/artifacts
 
 TEST_ACCEPTANCE_TAGS ?=
@@ -294,6 +297,16 @@ endif
 test-acceptance-smoke:
 	$(Q)TEST_ACCEPTANCE_TAGS=@smoke $(MAKE) test-acceptance
 
+.PHONY: test-acceptance-generate-report
+## Generate acceptance tests report
+test-acceptance-generate-report:
+	$(Q)CONTAINER_RUNTIME=$(CONTAINER_RUNTIME) $(HACK_DIR)/allure-report.sh generate
+
+.PHONY: test-acceptance-serve-report
+## Serves acceptance tests report at http://localhost:8088
+test-acceptance-serve-report:
+	$(Q)CONTAINER_RUNTIME=$(CONTAINER_RUNTIME) $(HACK_DIR)/allure-report.sh serve
+
 .PHONY: test-acceptance-artifacts
 ## Collect artifacts from acceptance tests to be archived in CI
 test-acceptance-artifacts:
@@ -364,9 +377,9 @@ push-operator: prepare-csv
 
 ## Push-Image: push container image to upstream, including latest tag.
 push-image: build-image
-	podman tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	-podman push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	-podman push "$(OPERATOR_IMAGE):latest"
+	$(CONTAINER_RUNTIME) tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
+	-$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
+	-$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
@@ -441,10 +454,10 @@ endif
 .PHONY: merge-to-master-release
 ## Make a dev release on every merge to master
 merge-to-master-release:
-	echo "${QUAY_TOKEN}" | docker login -u "redhat-developer+travis" --password-stdin quay.io
+	echo "${QUAY_TOKEN}" | $(CONTAINER_RUNTIME) login -u "redhat-developer+travis" --password-stdin quay.io
 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
-	$(Q)docker build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
-	docker push "$(OPERATOR_IMAGE_REF)"
+	$(Q)$(CONTAINER_RUNTIME) build -f $(CONTAINER_RUNTIME)file.rhel -t $(OPERATOR_IMAGE_REF) .
+	$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE_REF)"
 
 
 .PHONY: push-to-manifest-repo
