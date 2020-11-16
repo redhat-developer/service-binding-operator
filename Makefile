@@ -456,7 +456,7 @@ endif
 merge-to-master-release:
 	echo "${QUAY_TOKEN}" | $(CONTAINER_RUNTIME) login -u "redhat-developer+travis" --password-stdin quay.io
 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
-	$(Q)$(CONTAINER_RUNTIME) build -f $(CONTAINER_RUNTIME)file.rhel -t $(OPERATOR_IMAGE_REF) .
+	$(Q)$(CONTAINER_RUNTIME) build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
 	$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE_REF)"
 
 
