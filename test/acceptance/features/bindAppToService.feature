@@ -30,10 +30,7 @@ Feature: Bind an application to a service
                     kind: Database
                     name: db-demo-a-d-s
             """
-
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-a-d-s" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-a-d-s" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-a-d-s" should be changed to "True"
+        Then Service Binding "binding-request-a-d-s" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-demo-a-d-s"
         And Secret "binding-request-a-d-s" contains "DATABASE_DBNAME" key with value "db-demo-a-d-s"
@@ -68,9 +65,7 @@ Feature: Bind an application to a service
                     name: db-demo-a-s-d
             """
         When DB "db-demo-a-s-d" is running
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-a-s-d" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-a-s-d" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-a-s-d" should be changed to "True"
+        Then Service Binding "binding-request-a-s-d" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-demo-a-s-d"
 
@@ -97,9 +92,7 @@ Feature: Bind an application to a service
                     name: db-demo-d-s-a
             """
         When Imported Nodejs application "nodejs-rest-http-crud-d-s-a" is running
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-d-s-a" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-d-s-a" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-d-s-a" should be changed to "True"
+        Then Service Binding "binding-request-d-s-a" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-demo-d-s-a"
 
@@ -127,9 +120,7 @@ Feature: Bind an application to a service
             """
         * Imported Nodejs application "nodejs-rest-http-crud-s-a-d" is running
         When DB "db-demo-s-a-d" is running
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-s-a-d" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-s-a-d" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-s-a-d" should be changed to "True"
+        Then Service Binding "binding-request-s-a-d" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-demo-s-a-d"
 
@@ -156,9 +147,7 @@ Feature: Bind an application to a service
             """
         * DB "db-demo-s-d-a" is running
         When Imported Nodejs application "nodejs-rest-http-crud-s-d-a" is running
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-s-d-a" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-s-d-a" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-s-d-a" should be changed to "True"
+        Then Service Binding "binding-request-s-d-a" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-demo-s-d-a"
 
@@ -346,9 +335,7 @@ Feature: Bind an application to a service
                     - name: SOME_KEY
                       value: 'SOME_VALUE:{{ .postgresDB.status.dbConnectionPort }}:{{ .postgresDB.status.dbName }}'
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-a-d-c" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-a-d-c" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-a-d-c" should be changed to "True"
+        Then Service Binding "binding-request-a-d-c" is ready
         And Secret "binding-request-a-d-c" contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"
 
     Scenario: Creating binding secret from the definitions managed in OLM operator descriptors
@@ -552,9 +539,7 @@ Feature: Bind an application to a service
                   name: etcd-cluster-example
               detectBindingResources: true
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-etcd" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-etcd" should be changed to "True"
+        Then Service Binding "binding-request-etcd" is ready
         And Application endpoint "/api/todos" is available
 
     @negative
@@ -732,8 +717,5 @@ Feature: Bind an application to a service
                     name: backend-cross-ns-service
                     namespace: backend-services
             """
-
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-cross-ns-service" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-cross-ns-service" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-cross-ns-service" should be changed to "True"
+        Then Service Binding "binding-request-cross-ns-service" is ready
         And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"

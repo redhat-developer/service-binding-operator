@@ -130,12 +130,11 @@ Feature: Bind an application to a service using annotations
                     version: v1
                     resource: deployments
             """
-        Then The application env var "BACKEND_SPEC_IMAGE" has value "docker.io/postgres"
+        Then Service Binding "rsa-2" is ready
+        And The application env var "BACKEND_SPEC_IMAGE" has value "docker.io/postgres"
         And The application env var "BACKEND_SPEC_IMAGENAME" has value "postgres"
         And The application env var "BACKEND_SPEC_DBNAME" has value "db-demo"
-        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "rsa-2" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "rsa-2" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "rsa-2" should be changed to "True"
+
 
     Scenario: Each value in referred slice of strings from service resource gets injected into app as separate env variable
         Given Generic test application "slos-app" is running
@@ -193,8 +192,7 @@ Feature: Bind an application to a service using annotations
                     version: v1
                     resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "slos-binding" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "slos-binding" should be changed to "True"
+        Then Service Binding "slos-binding" is ready
         And The application env var "BACKEND_TAGS_0" has value "knowledge"
         And The application env var "BACKEND_TAGS_1" has value "is"
         And The application env var "BACKEND_TAGS_2" has value "power"
@@ -258,8 +256,7 @@ Feature: Bind an application to a service using annotations
                     version: v1
                     resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "slom-to-slos-binding" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "slom-to-slos-binding" should be changed to "True"
+        Then Service Binding "slom-to-slos-binding" is ready
         And The application env var "BACKEND_URL_0" has value "primary.example.com"
         And The application env var "BACKEND_URL_1" has value "secondary.example.com"
         And The application env var "BACKEND_URL_2" has value "black-hole.example.com"
@@ -323,9 +320,7 @@ Feature: Bind an application to a service using annotations
                     version: v1
                     resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "slom-binding" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "slom-binding" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "slom-binding" should be changed to "True"
+        Then Service Binding "slom-binding" is ready
         And The application env var "BACKEND_WEBARROWS_PRIMARY" has value "primary.example.com"
         And The application env var "BACKEND_WEBARROWS_SECONDARY" has value "secondary.example.com"
         And The application env var "BACKEND_WEBARROWS_404" has value "black-hole.example.com"

@@ -1,20 +1,20 @@
 Feature: Bind knative service to a service
 
-  As a user of Service Binding Operator
-  I want to bind knative service to services it depends on
+    As a user of Service Binding Operator
+    I want to bind knative service to services it depends on
 
-  Background:
-    Given Namespace [TEST_NAMESPACE] is used
-    * Service Binding Operator is running
-    * PostgreSQL DB operator is installed
+    Background:
+        Given Namespace [TEST_NAMESPACE] is used
+        * Service Binding Operator is running
+        * PostgreSQL DB operator is installed
 
-  Scenario: Bind an imported quarkus app which is deployed as knative service to PostgreSQL database
-    Given Openshift Serverless Operator is running
-    * Knative serving is running
-    * DB "db-demo-knative" is running
-    * Quarkus application "knative-app" is imported as Knative service
-    When Service Binding is applied
-      """
+    Scenario: Bind an imported quarkus app which is deployed as knative service to PostgreSQL database
+        Given Openshift Serverless Operator is running
+        * Knative serving is running
+        * DB "db-demo-knative" is running
+        * Quarkus application "knative-app" is imported as Knative service
+        When Service Binding is applied
+            """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
@@ -38,9 +38,7 @@ Feature: Bind knative service to a service
                   value: "{{ .knav.status.dbCredentials.user }}"
                 - name: DB_PASSWORD
                   value: "{{ .knav.status.dbCredentials.password }}"
-      """
-    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-knative" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-knative" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-knative" should be changed to "True"
-    And deployment must contain intermediate secret "binding-request-knative"
-    And application should be connected to the DB "db-demo-knative"
+            """
+        Then Service Binding "binding-request-knative" is ready
+        And deployment must contain intermediate secret "binding-request-knative"
+        And application should be connected to the DB "db-demo-knative"
