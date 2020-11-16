@@ -9,7 +9,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/google/go-cmp/cmp"
 	corev1 "k8s.io/api/core/v1"
@@ -517,8 +516,6 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		log := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		log.Debug("Inspecting object...")
 
-		sbrNamespacedName := types.NamespacedName{Namespace: b.sbr.GetNamespace(), Name: b.sbr.GetName()}
-		updatedObj = setSBRAnnotations(sbrNamespacedName, updatedObj)
 		var err error
 		if b.sbr.Spec.Application.BindingPath.SecretPath != "" {
 			err = b.updateSecretField(updatedObj)

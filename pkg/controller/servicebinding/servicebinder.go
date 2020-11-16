@@ -147,12 +147,6 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 		return done()
 	}
 
-	logger.Info("Cleaning related objects from operator's annotations...")
-	if err := removeAndUpdateSBRAnnotations(b.dynClient, b.objects); err != nil {
-		logger.Error(err, "On removing annotations from related objects.")
-		return requeueError(err)
-	}
-
 	if err := b.binder.unbind(); err != nil {
 		logger.Error(err, "On unbinding related objects")
 		return requeueError(err)
