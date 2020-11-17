@@ -1,16 +1,16 @@
 Feature: Inject custom env variable into application
 
-  As a user of Service Binding Operator
-  I want to inject into application context an env variable
-  whose value might be generated from values available in service resources
+    As a user of Service Binding Operator
+    I want to inject into application context an env variable
+    whose value might be generated from values available in service resources
 
-  Background:
-    Given Namespace [TEST_NAMESPACE] is used
-    * Service Binding Operator is running
+    Background:
+        Given Namespace [TEST_NAMESPACE] is used
+        * Service Binding Operator is running
 
-  Scenario: Sequence from service resource is injected into application using custom env variables without specifying annotations
-    Given OLM Operator "backend" is running
-    * The Custom Resource is present
+    Scenario: Sequence from service resource is injected into application using custom env variables without specifying annotations
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -22,8 +22,8 @@ Feature: Inject custom env variable into application
                     - "centos7-12.3"
                     - 123
             """
-    * Generic test application "foo" is running
-    When Service Binding is applied
+        * Generic test application "foo" is running
+        When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -45,14 +45,12 @@ Feature: Inject custom env variable into application
                    - name: TAGS
                      value: '{{ .backend.spec.tags }}'
             """
-    Then The application env var "TAGS" has value "[centos7-12.3 123]"
-    And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "custom-env-var-from-sequence" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "custom-env-var-from-sequence" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "custom-env-var-from-sequence" should be changed to "True"
+        Then Service Binding "custom-env-var-from-sequence" is ready
+        And The application env var "TAGS" has value "[centos7-12.3 123]"
 
-  Scenario: Map from service resource is injected into application using custom env variables without specifying annotations
-    Given OLM Operator "backend" is running
-    * The Custom Resource is present
+    Scenario: Map from service resource is injected into application using custom env variables without specifying annotations
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -64,8 +62,8 @@ Feature: Inject custom env variable into application
                     archive: "false"
                     environment: "demo"
             """
-    * Generic test application "foo2" is running
-    When Service Binding is applied
+        * Generic test application "foo2" is running
+        When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -87,15 +85,12 @@ Feature: Inject custom env variable into application
                    - name: USER_LABELS
                      value: '{{ .backend.spec.userLabels }}'
             """
-    Then The application env var "USER_LABELS" has value "map[archive:false environment:demo]"
-    And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "custom-env-var-from-map" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "custom-env-var-from-map" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "custom-env-var-from-map" should be changed to "True"
+        Then Service Binding "custom-env-var-from-map" is ready
+        And The application env var "USER_LABELS" has value "map[archive:false environment:demo]"
 
-
-  Scenario: Scalar from service resource is injected into application using custom env variables without specifying annotations
-    Given OLM Operator "backend" is running
-    * The Custom Resource is present
+    Scenario: Scalar from service resource is injected into application using custom env variables without specifying annotations
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -107,8 +102,8 @@ Feature: Inject custom env variable into application
                     archive: "false"
                     environment: "demo"
             """
-    * Generic test application "foo3" is running
-    When Service Binding is applied
+        * Generic test application "foo3" is running
+        When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -130,7 +125,6 @@ Feature: Inject custom env variable into application
                    - name: USER_LABELS_ARCHIVE
                      value: '{{ .backend.spec.userLabels.archive }}'
             """
-    Then The application env var "USER_LABELS_ARCHIVE" has value "false"
-    And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "custom-env-var-from-scalar" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "custom-env-var-from-scalar" should be changed to "True"
-    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "custom-env-var-from-scalar" should be changed to "True"
+        Then Service Binding "custom-env-var-from-scalar" is ready
+        And The application env var "USER_LABELS_ARCHIVE" has value "false"
+

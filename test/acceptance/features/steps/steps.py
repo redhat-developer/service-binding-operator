@@ -247,6 +247,13 @@ def sbo_jq_is(context, jq_expression, sbr_name, json_value):
                   ignore_exceptions=(json.JSONDecodeError,))
 
 
+@step(u'Service Binding "{sbr_name}" is ready')
+def sbo_is_ready(context, sbr_name):
+    sbo_jq_is(context, '.status.conditions[] | select(.type=="CollectionReady").status', sbr_name, 'True')
+    sbo_jq_is(context, '.status.conditions[] | select(.type=="InjectionReady").status', sbr_name, 'True')
+    sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
+
+
 @given(u'Openshift Serverless Operator is running')
 def given_serverless_operator_is_running(context):
     """
