@@ -62,7 +62,7 @@ jobs:
         - MINIKUBE_WANTUPDATENOTIFICATION=false
         - MINIKUBE_WANTREPORTERRORPROMPT=false
         # exclude knative and example annotated tests
-        - EXTRA_BEHAVE_ARGS="--tags=~@knative --tags=~@examples"
+        - EXTRA_BEHAVE_ARGS="--tags=~@knative --tags=~@openshift"
         - TEST_ACCEPTANCE_CLI="kubectl"
         - TEST_ACCEPTANCE_START_SBO="remote"
         - SBO_NAMESPACE=operators
