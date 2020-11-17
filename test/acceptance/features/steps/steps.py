@@ -25,6 +25,7 @@ from quarkus_s2i_builder_image import QuarkusS2IBuilderImage
 from serverless_operator import ServerlessOperator
 from service_binding import ServiceBinding
 from servicebindingoperator import Servicebindingoperator
+from app import App
 
 
 # STEP
@@ -370,6 +371,7 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 
 
 # STEP
+@given(u'The openshift route is present')
 @given(u'Namespace is present')
 @given(u'Backend service CSV is installed')
 @given(u'The Custom Resource Definition is present')
@@ -473,3 +475,10 @@ def validate_secret_empty(context, secret_name):
                       ignore_exceptions=(json.JSONDecodeError,))
     except polling2.TimeoutException:
         pass
+
+
+@given(u'"{app_name}" is deployed from image "{image_ref}"')
+def create_deployment(context, app_name, image_ref):
+    app = App(app_name, context.namespace.name, image_ref)
+    if not app.is_running():
+        assert app.install() is True, "Failed to create deployment."
