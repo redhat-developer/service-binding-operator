@@ -41,7 +41,7 @@ The Service Binding Operator is being designed to be adopted by application deve
 Supporting annotations as a way to decorate kubernetes resources enables the following:
 
 * Application developers can use any kubernetes resource a potential backing service
-* Backing service providers can annotate their CRDs to indicate what needs to be extracted for binding.
+* Backing service resources automatically contribute binding information extracted according to specific annotations in their respective CRDs; such annotations could be provided by default by the backing service authors, or by users to any CRD present in the system.
 
 The project aims to support an annotation format such that there's a way to indicate whether a specific unit of binding information is to be bound as a volume mount or an environment variable.
 
