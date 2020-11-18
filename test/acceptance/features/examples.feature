@@ -7,6 +7,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
+        * PostgreSQL DB operator is installed
 
     # https://github.com/redhat-developer/service-binding-operator/blob/master/examples/route_k8s_resource/README.md
     Scenario: Bind an application to an openshift route
@@ -53,3 +54,37 @@ Feature: Verify examples provided in Service Binding Operator github repository
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "sbr-to-bind-hello-app-to-route" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "sbr-to-bind-hello-app-to-route" should be changed to "True"
         And Secret "sbr-to-bind-hello-app-to-route" contains "ROUTE_HOST" key with value "example-sbo.apps.ci-ln-smyggvb-d5d6b.origin-ci-int-aws.dev.rhcloud.com"
+
+    # https://github.com/redhat-developer/service-binding-operator/tree/master/examples/nodejs_postgresql_namespaces
+    Scenario: Bind an application to a database running in another namespace
+        Given Imported Nodejs application "nodejs-app-cross-ns-service" is running
+        * Namespace is present
+            """
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+                name: database-services
+            """
+        * DB "db-cross-ns-service" is running in "database-services" namespace
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: service-binding-cross-ns-service
+            spec:
+                application:
+                    name: nodejs-app-cross-ns-service
+                    group: apps
+                    version: v1
+                    resource: deployments
+                services:
+                -   group: postgresql.baiju.dev
+                    version: v1alpha1
+                    kind: Database
+                    name: db-cross-ns-service
+                    namespace: database-services
+            """
+        Then Service Binding "service-binding-cross-ns-service" is ready
+        And application should be re-deployed
+        And application should be connected to the DB "db-cross-ns-service"

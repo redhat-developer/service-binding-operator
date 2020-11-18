@@ -161,10 +161,12 @@ db_instance_is_running_step = u'DB "{db_name}" is running'
 
 @given(db_instance_is_running_step)
 @when(db_instance_is_running_step)
-def db_instance_is_running(context, db_name):
-    namespace = context.namespace
+@given(u'DB "{db_name}" is running in "{namespace}" namespace')
+def db_instance_is_running(context, db_name, namespace=None):
+    if namespace is None:
+        namespace = context.namespace.name
 
-    db = PostgresDB(db_name, namespace.name)
+    db = PostgresDB(db_name, namespace)
     if not db.is_running():
         assert db.create(), f"Unable to create DB '{db_name}'"
         assert db.is_running(wait=True), f"Unable to launch DB '{db_name}'"
