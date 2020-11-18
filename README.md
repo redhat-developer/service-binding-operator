@@ -86,8 +86,17 @@ spec:
 
 ## Quick Start
 
-Clone the repository and run `make local` in an existing `kube:admin` OpenShift
-CLI session. 
+### Running operator locally
+
+Clone the repository and run `make local` in an existing `kube:admin` OpenShift CLI session.
+
+### Installing the operator in a cluster
+
+Start a kubernetes cluster. For this case we have used minikube. Any other Kubernetes cluster can be used as well.
+`minikube start`
+
+Run `chmod +x install.sh` to set execution permission for the install script.
+Now run the install script `install.sh`
 
 
 ## Key Features
