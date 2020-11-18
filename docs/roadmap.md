@@ -4,7 +4,7 @@
 
 * Enable application developers to connect their workloads to backing services **with little or no code changes**.
 
-* Enable backing service authors to expose binding information by adding metadata to the the representative Kubernetes objects **with little or no code changes**.
+* Enable backing service authors to expose binding information by adding metadata to the representative Kubernetes objects **with little or no code changes**.
 
 * Provide a managed binding experience.
 
