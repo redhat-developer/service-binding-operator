@@ -20,7 +20,7 @@ The Service Binding Operator is being designed to be adopted by application deve
 * Service Composition.
 * Detection of binding resources.
 
-### Project of binding informattion
+### Projection of binding information
 * Custom binding variable generation.
 * Projection of binding information in workloads.
 * Projection in podSpec and non-PodSpec based workloads.
