@@ -575,7 +575,15 @@ Feature: Bind an application to a service
 
     @negative
     Scenario: Removing service from services field from existing serivce binding is not allowed
-        Given Service Binding is applied
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: demo-backserv-cr-2
+            """
+        * Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -583,11 +591,15 @@ Feature: Bind an application to a service
                 name: binding-request-remove-service
             spec:
                 services:
-                -   group: service.example.com
+                -   group: stable.example.com
                     version: v1
-                    kind: Backserv
+                    kind: Backend
                     name: demo-backserv-cr-2
             """
+        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-remove-service" should be changed to "True"
+        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-remove-service" should be changed to "False"
+        * jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-remove-service" should be changed to "EmptyApplication"
+        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-remove-service" should be changed to "True"
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -627,7 +639,15 @@ Feature: Bind an application to a service
 
     @negative
     Scenario: Emptying spec of existing service binding is not allowed
-        Given Service Binding is applied
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: demo-backserv-cr-2
+            """
+        * Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -635,11 +655,15 @@ Feature: Bind an application to a service
                 name: binding-request-emptying-spec
             spec:
                 services:
-                -   group: service.example.com
+                -   group: stable.example.com
                     version: v1
-                    kind: Backserv
+                    kind: Backend
                     name: demo-backserv-cr-2
             """
+        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-emptying-spec" should be changed to "True"
+        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-emptying-spec" should be changed to "False"
+        * jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-emptying-spec" should be changed to "EmptyApplication"
+        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-emptying-spec" should be changed to "True"
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -653,7 +677,15 @@ Feature: Bind an application to a service
 
     @negative
     Scenario: Removing spec of existing serivce binding is not allowed
-        Given Service Binding is applied
+        Given OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: demo-backserv-cr-2
+            """
+        * Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -661,11 +693,15 @@ Feature: Bind an application to a service
                 name: binding-request-remove-spec
             spec:
                 services:
-                -   group: service.example.com
+                -   group: stable.example.com
                     version: v1
-                    kind: Backserv
+                    kind: Backend
                     name: demo-backserv-cr-2
             """
+        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-remove-spec" should be changed to "True"
+        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-remove-spec" should be changed to "False"
+        * jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-remove-spec" should be changed to "EmptyApplication"
+        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-remove-spec" should be changed to "True"
         When Invalid Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
