@@ -22,8 +22,7 @@ The Service Binding Operator is being designed to be adopted by application deve
 
 ### Projection of binding information
 * Custom binding variable generation.
-* Projection of binding information in workloads.
-* Projection in podSpec and non-PodSpec based workloads.
+* Projection of binding information in both PodSpec and non-PodSpec based workloads.
 
 ### Security
 * Avoiding escalation of privilege.
