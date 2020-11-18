@@ -117,7 +117,7 @@ binding secret from on or more service resources.
 Enable support for specifying intent to bind information from specific service resources as volume mounts of environment variables.
 
 
-# Project of binding informattion
+# Project of binding information
 
 ## Custom binding information generation
 
