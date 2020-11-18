@@ -25,7 +25,7 @@ The Service Binding Operator is being designed to be adopted by application deve
 * Projection of binding information in both PodSpec and non-PodSpec based workloads.
 
 ### Security
-* Avoiding escalation of privilege.
+* Avoiding escalation of privileges.
 * Narrow down the service account privileges.
 
 ### Release & Packaging
