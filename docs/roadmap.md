@@ -61,11 +61,10 @@ Validate advanced volume mounting support for projecting sensitive information a
 ## Duck type in backing service resources
 
 
-Identify the information that a duck typed resource needs to contain and 
+Identify the information that a duck-typed resource needs to contain and 
 support binding secret generation based on the same.
 
-( needs more information )
-
+Example, if a backing resource contains `.status.binding`, our binding secret generation strategies may recongnize the contents of the secret as binding information.
 
 ## Detection of binding resources
 
