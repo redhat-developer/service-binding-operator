@@ -8,7 +8,7 @@
 
 * Provide a managed binding experience.
 
-The Service Binding Operator is being designed to be adopted by application developers and backing service providers with a **low barrier for entry**.
+The Service Binding Operator is being designed to be adopted by application developers and backing service providers with a **low barrier to entry**.
 
 
 # Key feature areas
