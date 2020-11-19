@@ -22,6 +22,7 @@ S_FLAG = -s
 X_FLAG =
 ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 ZAP_LEVEL_FLAG =
+VERBOSE_FLAG =
 ifeq ($(VERBOSE),1)
 	Q =
 endif
@@ -31,6 +32,7 @@ ifeq ($(VERBOSE),2)
 	QUIET_FLAG =
 	S_FLAG =
 	V_FLAG = -v
+	VERBOSE_FLAG = --verbose
 	X_FLAG = -x
 	ZAP_LEVEL_FLAG = --zap-level 1
 endif
@@ -39,6 +41,7 @@ ifeq ($(VERBOSE),3)
 	QUIET_FLAG =
 	S_FLAG =
 	V_FLAG = -v
+	VERBOSE_FLAG = --verbose
 	X_FLAG = -x
 	ZAP_LEVEL_FLAG = --zap-level 2
 endif
@@ -122,25 +125,28 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.3.0
-OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
-OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
-OPERATOR_IMAGE_REL ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
+OPERATOR_REGISTRY ?= quay.io
+OPERATOR_REPO_REF ?= $(OPERATOR_REGISTRY)/redhat-developer/servicebinding-operator
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
 OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
-COMMIT_COUNT := $(shell git rev-list --count HEAD)
 BASE_BUNDLE_VERSION ?= $(OPERATOR_VERSION)
-BUNDLE_VERSION ?= $(BASE_BUNDLE_VERSION)-$(COMMIT_COUNT)
-OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
+BUNDLE_VERSION ?= $(BASE_BUNDLE_VERSION)-$(GIT_COMMIT_ID)
+OPERATOR_BUNDLE_IMAGE_REF ?= $(OPERATOR_REPO_REF):bundle-$(BUNDLE_VERSION)
+OPERATOR_INDEX_IMAGE_REF ?= $(OPERATOR_REPO_REF):index
+OPERATOR_IMAGE_REF ?= $(OPERATOR_REPO_REF):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
+QUAY_USERNAME ?= redhat-developer+travis
+REGISTRY_USERNAME ?= $(QUAY_USERNAME)
 QUAY_TOKEN ?= ""
-QUAY_BUNDLE_TOKEN ?= ""
+REGISTRY_PASSWORD ?= $(QUAY_TOKEN)
 
-MANIFESTS_DIR ?= $(shell echo ${PWD})/manifests
-MANIFESTS_TMP ?= $(shell echo ${PWD})/tmp/manifests
+
+MANIFESTS_DIR ?= $(shell echo ${PWD})/tmp/manifests/$(BASE_BUNDLE_VERSION)
+MANIFESTS_BUNDLE_DIR ?= $(MANIFESTS_DIR)/$(GIT_COMMIT_ID)
 HACK_DIR ?= $(shell echo ${PWD})/hack
 OUTPUT_DIR ?= $(shell echo ${PWD})/out
 OLM_CATALOG_DIR ?= $(shell echo ${PWD})/deploy/olm-catalog
@@ -308,7 +314,7 @@ test-acceptance-serve-report:
 test-acceptance-artifacts:
 	$(Q)echo "Gathering acceptance tests artifacts"
 	$(Q)mkdir -p $(TEST_ACCEPTANCE_ARTIFACTS) \
-	    && cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
+		&& cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
 
 .PHONY: test
 ## Test: Runs unit and acceptance tests
@@ -322,12 +328,6 @@ build: out/operator
 
 out/operator:
 	$(Q)GOCACHE="$(GOCACHE)" GOARCH=$(ARCH) GOOS=$(OS) go build $(GOFLAGS) ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
-
-## Build-Image: using operator-sdk to build a new image
-build-image:
-	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" operator-sdk build \
-		--image-builder=$(OPERATOR_IMAGE_BUILDER) \
-		"$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
 
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
@@ -344,38 +344,6 @@ generate-openapi: $(OUTPUT_DIR)/openapi-gen
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
 	$(Q)GOCACHE="$(GOCACHE)" go mod vendor ${V_FLAG}
-
-## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
-generate-csv:
-	operator-sdk generate csv --csv-version=$(OPERATOR_VERSION) --verbose
-
-generate-olm:
-	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
-	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
-
-## -- Publish image and manifests targets --
-
-## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
-prepare-csv: build-image
-	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
-	@rm -rf $(MANIFESTS_TMP) || true
-	@mkdir -p ${MANIFESTS_TMP}
-	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
-	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
-	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
-	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
-	operator-courier --verbose verify $(MANIFESTS_TMP)
-
-.PHONY: push-operator
-## Push-Operator: Uplaod operator to Quay.io application repository
-push-operator: prepare-csv
-	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
-
-## Push-Image: push container image to upstream, including latest tag.
-push-image: build-image
-	$(CONTAINER_RUNTIME) tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	-$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	-$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
@@ -447,50 +415,70 @@ endif
 
 ## -- Bundle validation, push and release targets
 
-.PHONY: merge-to-master-release
+.PHONY: registry-login
+registry-login:
+	@$(CONTAINER_RUNTIME) login -u "$(REGISTRY_USERNAME)" --password-stdin $(OPERATOR_REGISTRY) <<<"$(REGISTRY_PASSWORD)"
+
+.PHONY: build-operator-image
 ## Make a dev release on every merge to master
-merge-to-master-release:
-	echo "${QUAY_TOKEN}" | $(CONTAINER_RUNTIME) login -u "redhat-developer+travis" --password-stdin quay.io
-	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
+build-operator-image:
 	$(Q)$(CONTAINER_RUNTIME) build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
+
+.PHONY: push-operator-image
+## push operator image to quay
+push-operator-image: build-operator-image registry-login
 	$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE_REF)"
 
+.PHONY: prepare-operator-manifests
+## Prepare operator manifests
+prepare-operator-manifests: push-operator-image
+	@rm -rf $(MANIFESTS_DIR) || true
+	@mkdir -p $(MANIFESTS_BUNDLE_DIR)
+	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) $(VERBOSE_FLAG) --from-version=0.0.23
+	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_BUNDLE_DIR)
+	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_DIR)
+	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_BUNDLE_DIR)
+	$(eval OPERATOR_IMAGE_SHA := $(shell $(CONTAINER_RUNTIME) inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMAGE_REF)))
+	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_SHA),g' $(MANIFESTS_BUNDLE_DIR)/*.clusterserviceversion.yaml
+	sed -i -e 's,CSV_CREATION_TIMESTAMP,$(CSV_CREATION_TIMESTAMP),g' $(MANIFESTS_BUNDLE_DIR)/*.clusterserviceversion.yaml
+	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_BUNDLE_DIR)/*.clusterserviceversion.yaml
+	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_DIR)/*.yaml
+	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_DIR)/*.yaml
+	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_BUNDLE_DIR)/*.clusterserviceversion.yaml
+	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_BUNDLE_DIR)/*.clusterserviceversion.yaml
 
-.PHONY: push-to-manifest-repo
-## Push manifest bundle to service-binding-operator-manifest repo
-push-to-manifest-repo:
-	@rm -rf $(MANIFESTS_TMP) || true
-	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
-	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=0.0.23
-	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
-	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
-	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
-	sed -i -e 's,REPLACE_IMAGE,$(OPERATOR_IMAGE_REF),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-	sed -i -e 's,CSV_CREATION_TIMESTAMP,$(CSV_CREATION_TIMESTAMP),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-	awk -i inplace '!/^[[:space:]]+replaces:[[:space:]]+[[:graph:]]+/ { print $0 }' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-	sed -i -e 's,BUNDLE_VERSION,$(BUNDLE_VERSION),g' $(MANIFESTS_TMP)/*.yaml
-	sed -i -e 's,PACKAGE_NAME,$(CSV_PACKAGE_NAME),g' $(MANIFESTS_TMP)/*.yaml
-	sed -i -e 's,ICON_BASE64_DATA,$(shell base64 --wrap=0 ./assets/icon/red-hat-logo.svg),g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-	sed -i -e 's,ICON_MEDIA_TYPE,image/svg+xml,g' $(MANIFESTS_TMP)/${BUNDLE_VERSION}/*.clusterserviceversion.yaml
-
-.PHONY: prepare-bundle-to-quay
-## Prepare manifest bundle to quay application
-prepare-bundle-to-quay:
+.PHONY: verify-operator-manifests
+## verify operator manifests
+verify-operator-manifests: prepare-operator-manifests
 	$(Q)python3 -m venv $(PYTHON_VENV_DIR)
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade setuptools
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install operator-courier==2.1.2
 	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier --version
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(MANIFESTS_TMP)
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) verify $(MANIFESTS_DIR)
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
+.PHONY: build-bundle-image
+build-bundle-image: verify-operator-manifests
+	$(Q)operator-sdk bundle create --directory $(MANIFESTS_BUNDLE_DIR) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) $(OPERATOR_BUNDLE_IMAGE_REF)
 
-.PHONY: push-bundle-to-quay
-## Push manifest bundle to quay application
-push-bundle-to-quay:
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(SBR_MANIFESTS)
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
+.PHONY: push-index-image
+push-bundle-image: build-bundle-image registry-login
+	$(Q)$(CONTAINER_RUNTIME) push $(OPERATOR_BUNDLE_IMAGE_REF)
+	$(Q)operator-sdk bundle validate -b $(CONTAINER_RUNTIME) $(OPERATOR_BUNDLE_IMAGE_REF)
 
+.PHONY: push-bundle-image
+build-index-image: push-bundle-image
+	$(Q)opm index add -u $(CONTAINER_RUNTIME) -p $(CONTAINER_RUNTIME) --bundles $(OPERATOR_BUNDLE_IMAGE_REF) --tag $(OPERATOR_INDEX_IMAGE_REF)
+
+.PHONY: push-index-image
+## push index image
+push-index-image: build-index-image registry-login
+	$(Q)$(CONTAINER_RUNTIME) push $(OPERATOR_INDEX_IMAGE_REF)
+
+.PHONY: release-operator
+## Build and release operator, bundle and index images
+release-operator: push-operator-image push-bundle-image push-index-image
 
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
