@@ -13,10 +13,10 @@ env:
     - GO111MODULE=on
     - USER="redhat-developer"
     - EMAIL="openshift-dev-services@redhat.com"
-    - REPO="service-binding-operator"
-    - FILES="./tmp/manifests/*"
-    - GH_REPO="github.com/${USER}/${REPO}.git"
     - GH_REMOTE_REPO="github.com/${USER}/service-binding-operator-manifests"
+    - MINIKUBE_VERSION="1.15.1"
+    - K8S_VERSION="1.19.2"
+    - OLM_VERSION="0.17.0"
 
 services:
   - docker
@@ -46,7 +46,7 @@ jobs:
       after_success:
         - MESSAGE=($TRAVIS_COMMIT)
         - git clone git://${GH_REMOTE_REPO}
-        - cp -r ${FILES} ./service-binding-operator-manifests
+        - cp -r ./tmp/manifests/* ./service-binding-operator-manifests
         - cd service-binding-operator-manifests
         - git config user.email ${EMAIL}
         - git config user.name ${USER}
@@ -55,4 +55,30 @@ jobs:
         - git push "https://${GITHUB_TOKEN}@${GH_REMOTE_REPO}" master > /dev/null 2>&1
         - cd ..
         - make push-bundle-to-quay
+    - stage: Acceptance tests
+      if: type = pull_request
+      env:
+        - KUBECONFIG=$HOME/miniconfig
+        - MINIKUBE_WANTUPDATENOTIFICATION=false
+        - MINIKUBE_WANTREPORTERRORPROMPT=false
+        # exclude knative and example annotated tests
+        - EXTRA_BEHAVE_ARGS="--tags=~@knative --tags=~@examples"
+        - TEST_ACCEPTANCE_CLI="kubectl"
+      install:
+        # install kubectl
+        - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${K8S_VERSION}/bin/linux/amd64/kubectl
+        - chmod +x kubectl
+        - sudo mv kubectl /usr/local/bin/
+        # install minikube
+        - curl -Lo minikube https://storage.googleapis.com/minikube/releases/v${MINIKUBE_VERSION}/minikube-linux-amd64
+        - chmod +x minikube
+        - sudo mv minikube /usr/local/bin/
+        # start minikube
+        - touch $KUBECONFIG
+        - minikube start --kubernetes-version=v${K8S_VERSION} --cpus $(nproc) --memory $(free -tm | grep "Total:" | awk '{print $2}')m
+        - kubectl get nodes -o yaml
+        - kubectl cluster-info
+        # install OLM
+        - curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v${OLM_VERSION}/install.sh | bash -s v${OLM_VERSION}
+      script: make test-acceptance
 
