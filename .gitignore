@@ -2,6 +2,7 @@
 build/_output
 build/_test
 build/bin
+bundle_tmp*
 
 # operator-courier
 tmp/

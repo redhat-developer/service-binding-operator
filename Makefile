@@ -22,6 +22,7 @@ S_FLAG = -s
 X_FLAG =
 ZAP_ENCODER_FLAG = --zap-level=debug --zap-encoder=console
 ZAP_LEVEL_FLAG =
+VERBOSE_FLAG =
 ifeq ($(VERBOSE),1)
 	Q =
 endif
@@ -31,6 +32,7 @@ ifeq ($(VERBOSE),2)
 	QUIET_FLAG =
 	S_FLAG =
 	V_FLAG = -v
+	VERBOSE_FLAG = --verbose
 	X_FLAG = -x
 	ZAP_LEVEL_FLAG = --zap-level 1
 endif
@@ -39,6 +41,7 @@ ifeq ($(VERBOSE),3)
 	QUIET_FLAG =
 	S_FLAG =
 	V_FLAG = -v
+	VERBOSE_FLAG = --verbose
 	X_FLAG = -x
 	ZAP_LEVEL_FLAG = --zap-level 2
 endif
@@ -136,6 +139,7 @@ OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
+QUAY_USERNAME ?= redhat-developer+travis
 QUAY_TOKEN ?= ""
 QUAY_BUNDLE_TOKEN ?= ""
 
@@ -308,7 +312,7 @@ test-acceptance-serve-report:
 test-acceptance-artifacts:
 	$(Q)echo "Gathering acceptance tests artifacts"
 	$(Q)mkdir -p $(TEST_ACCEPTANCE_ARTIFACTS) \
-	    && cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
+		&& cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
 
 .PHONY: test
 ## Test: Runs unit and acceptance tests
@@ -347,10 +351,10 @@ vendor: go.mod go.sum
 
 ## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
 generate-csv:
-	operator-sdk generate csv --csv-version=$(OPERATOR_VERSION) --verbose
+	operator-sdk generate csv --csv-version=$(OPERATOR_VERSION) $(VERBOSE_FLAG)
 
 generate-olm:
-	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	operator-courier $(VERBOSE_FLAG) nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 
 ## -- Publish image and manifests targets --
@@ -360,11 +364,11 @@ prepare-csv: build-image
 	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}
-	operator-courier --verbose nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
+	operator-courier $(VERBOSE_FLAG) nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
 	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
 	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
 	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
-	operator-courier --verbose verify $(MANIFESTS_TMP)
+	operator-courier $(VERBOSE_FLAG) verify $(MANIFESTS_TMP)
 
 .PHONY: push-operator
 ## Push-Operator: Uplaod operator to Quay.io application repository
@@ -417,6 +421,7 @@ deploy: deploy-rbac deploy-crds
 ## Removes temp directories
 clean:
 	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
+	$(Q)-rm -rf ${V_FLAG} bundle_tmp*
 
 
 ## -- Targets for uploading code coverage reports to Codecov.io --
@@ -450,7 +455,7 @@ endif
 .PHONY: merge-to-master-release
 ## Make a dev release on every merge to master
 merge-to-master-release:
-	echo "${QUAY_TOKEN}" | $(CONTAINER_RUNTIME) login -u "redhat-developer+travis" --password-stdin quay.io
+	@echo "${QUAY_TOKEN}" | $(CONTAINER_RUNTIME) login -u "$(QUAY_USERNAME)" --password-stdin quay.io
 	$(eval COMMIT_COUNT := $(shell git rev-list --count HEAD))
 	$(Q)$(CONTAINER_RUNTIME) build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
 	$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE_REF)"
@@ -461,7 +466,7 @@ merge-to-master-release:
 push-to-manifest-repo:
 	@rm -rf $(MANIFESTS_TMP) || true
 	@mkdir -p ${MANIFESTS_TMP}/${BUNDLE_VERSION}
-	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) --from-version=0.0.23
+	operator-sdk generate csv --csv-version $(BUNDLE_VERSION) $(VERBOSE_FLAG) --from-version=0.0.23
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)/* $(MANIFESTS_TMP)/$(BUNDLE_VERSION)/
 	cp -vrf $(OLM_CATALOG_DIR)/$(GO_PACKAGE_REPO_NAME)/*package.yaml $(MANIFESTS_TMP)/
 	cp -vrf $(CRDS_DIR)/*_crd.yaml $(MANIFESTS_TMP)/${BUNDLE_VERSION}/
@@ -481,16 +486,39 @@ prepare-bundle-to-quay:
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install operator-courier==2.1.2
 	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier --version
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(MANIFESTS_TMP)
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) verify $(MANIFESTS_TMP)
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
 
 .PHONY: push-bundle-to-quay
 ## Push manifest bundle to quay application
 push-bundle-to-quay:
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier verify $(SBR_MANIFESTS)
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) verify $(SBR_MANIFESTS)
+	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
 
+.PHONY: build-bundle-image
+## build bundle image
+build-bundle-image:
+	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION)"
+
+.PHONY: push-bundle-image
+## push bundle image
+push-bundle-image:
+	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION)"
+
+.PHONY: build-bundle-index-image
+## build bundle index image
+build-bundle-index-image:
+	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION) --tag "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:$(BUNDLE_VERSION)"
+
+.PHONY: push-bundle-index-image
+## push bundle index image
+push-bundle-index-image:
+	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:$(BUNDLE_VERSION)"
+
+.PHONY: release-operator-bundle
+## Build and release operator bundle and operator bundle index
+release-operator-bundle: merge-to-master-release push-to-manifest-repo prepare-bundle-to-quay build-bundle-image push-bundle-image build-bundle-index-image push-bundle-index-image
 
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
