@@ -136,6 +136,7 @@ BUNDLE_VERSION ?= $(BASE_BUNDLE_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_BUNDLE_IMAGE_REF ?= $(OPERATOR_REPO_REF):bundle-$(BUNDLE_VERSION)
 OPERATOR_INDEX_IMAGE_REF ?= $(OPERATOR_REPO_REF):index
 OPERATOR_IMAGE_REF ?= $(OPERATOR_REPO_REF):$(GIT_COMMIT_ID)
+OPERATOR_CHANNEL ?= beta
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
@@ -143,7 +144,6 @@ QUAY_USERNAME ?= redhat-developer+travis
 REGISTRY_USERNAME ?= $(QUAY_USERNAME)
 QUAY_TOKEN ?= ""
 REGISTRY_PASSWORD ?= $(QUAY_TOKEN)
-
 
 MANIFESTS_DIR ?= $(shell echo ${PWD})/tmp/manifests/$(BASE_BUNDLE_VERSION)
 MANIFESTS_BUNDLE_DIR ?= $(MANIFESTS_DIR)/$(GIT_COMMIT_ID)
@@ -271,10 +271,9 @@ test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup: stop-local build test-cleanup create-test-namespace deploy-test-3rd-party-crds deploy-rbac deploy-crds
 	$(Q)echo "Starting local SBO instance"
-	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" RUN_IN_BACKGROUND=true ./hack/deploy-sbo-local.sh))
+	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" RUN_IN_BACKGROUND=true ./hack/deploy-sbo-local.sh))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), remote)
 test-acceptance-setup: test-cleanup create-test-namespace
-	$(Q)echo "Using remote SBO instance running in '$(SBO_NAMESPACE)' namespace"
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
@@ -288,7 +287,6 @@ test-acceptance: test-acceptance-setup
 	$(Q)TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		SBO_NAMESPACE=$(SBO_NAMESPACE) \
 		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) $(EXTRA_BEHAVE_ARGS) test/acceptance/features
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
@@ -480,19 +478,22 @@ push-index-image: build-index-image registry-login
 ## Build and release operator, bundle and index images
 release-operator: push-operator-image push-bundle-image push-index-image
 
-.PHONY: dev-release
-## validating the operator by installing new quay releases
-dev-release:
-	BUNDLE_VERSION=$(BUNDLE_VERSION) ./hack/dev-release.sh
-
-.PHONY: validate-release
-## validate the operator by installing the releases
-validate-release: setup-venv
-	$(Q)$(PYTHON_VENV_DIR)/bin/pip install yq==2.10.0
-	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="beta" ./hack/validate-release.sh
-
 .PHONY: prepare-operatorhub-pr
 ## prepare files for OperatorHub PR
 ## use this target when the operator needs to be released as upstream operator
 prepare-operatorhub-pr:
 	./hack/prepare-operatorhub-pr.sh $(OPERATOR_VERSION) $(OPERATOR_BUNDLE_IMAGE_REF)
+
+.PHONY: deploy-from-index-image
+## deploy SBO via Catalog Source from a given index image
+deploy-from-index-image:
+	$(info "Installing SBO using a Catalog Source from '$(OPERATOR_INDEX_IMAGE_REF)' index image")
+	$(Q)OPERATOR_INDEX_IMAGE=$(OPERATOR_INDEX_IMAGE_REF) \
+		OPERATOR_CHANNEL=$(OPERATOR_CHANNEL) \
+		SKIP_REGISTRY_LOGIN=true \
+		./install.sh
+
+.PHONY: test-acceptance-with-bundle
+## Run acceptance tests with the operator installed from a given index image and channel
+test-acceptance-with-bundle: deploy-from-index-image
+	$(Q)TEST_ACCEPTANCE_START_SBO=remote $(MAKE) test-acceptance

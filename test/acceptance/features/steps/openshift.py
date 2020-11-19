@@ -397,6 +397,17 @@ spec:
         print('Resource list is empty under namespace - {}'.format(namespace))
         return None
 
+    def lookup_namespace_for_resource(self, resource_plural, name):
+        output, code = self.cmd.run(
+            f"{ctx.cli} get {resource_plural} --all-namespaces -o json"
+            + f" | jq -rc '.items[] | select(.metadata.name == \"{name}\").metadata.namespace'")
+        assert code == 0, f"Non-zero return code while trying to detect namespace for {resource_plural} '{name}': {output}"
+        output = str(output).strip()
+        if output != "":
+            return output
+        else:
+            return None
+
     def apply_yaml_file(self, yaml, namespace=None):
         if namespace is not None:
             ns_arg = f"-n {namespace}"

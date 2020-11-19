@@ -1,6 +1,5 @@
 #!/bin/bash -x
 
-OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE:-}
 ZAP_FLAGS=${ZAP_FLAGS:-}
 
 OUTPUT="${OUTPUT:-out/acceptance-tests}"
