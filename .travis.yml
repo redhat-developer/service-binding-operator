@@ -10,6 +10,7 @@ git:
 env:
   global:
     - SDK_VERSION="0.16.0"
+    - OPM_VERSION="1.15.2"
     - GO111MODULE=on
     - USER="redhat-developer"
     - EMAIL="openshift-dev-services@redhat.com"
@@ -28,7 +29,7 @@ addons:
 
 jobs:
   include:
-    - stage: Push dev image to Quay
+    - stage: Release operator on Quay.io
       if: branch = master AND type = push
       install:
 
@@ -37,11 +38,13 @@ jobs:
         - chmod +x operator-sdk
         - mv operator-sdk $GOPATH/bin/
 
+        # Download OPM tool
+        - curl -Lo opm https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/linux-amd64-opm
+        - chmod +x opm
+        - mv opm $GOPATH/bin/
+
       script:
-        # Run merge-to-master-release
-        - make merge-to-master-release
-        - make push-to-manifest-repo
-        - make prepare-bundle-to-quay
+        - make release-operator
 
       after_success:
         - MESSAGE=($TRAVIS_COMMIT)
@@ -53,8 +56,6 @@ jobs:
         - git add .
         - git commit -m ${MESSAGE}
         - git push "https://${GITHUB_TOKEN}@${GH_REMOTE_REPO}" master > /dev/null 2>&1
-        - cd ..
-        - make push-bundle-to-quay
     - stage: Acceptance tests
       if: type = pull_request
       env:
