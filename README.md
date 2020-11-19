@@ -95,8 +95,7 @@ Clone the repository and run `make local` in an existing `kube:admin` OpenShift 
 Start a kubernetes cluster. For this case we have used minikube. Any other Kubernetes cluster can be used as well.
 `minikube start`
 
-Run `chmod +x install.sh` to set execution permission for the install script.
-Now run the install script `install.sh`
+Run the install script - `bash <(curl -sL https://raw.githubusercontent.com/redhat-developer/service-binding-operator/master/install.sh)`
 
 
 ## Key Features
