@@ -1,4 +1,5 @@
 import re
+from environment import ctx
 
 from command import Command
 from openshift import Openshift
@@ -31,7 +32,7 @@ spec:
         self.namespace = namespace
 
     def create(self):
-        db_create_output = self.openshift.oc_apply(self.database_yaml_template.format(name=self.name, namespace=self.namespace))
+        db_create_output = self.openshift.apply(self.database_yaml_template.format(name=self.name, namespace=self.namespace))
         return re.search(r'.*database.postgresql.baiju.dev/%s\s(created|unchanged)' % self.name, db_create_output)
 
     def is_running(self, wait=False):
@@ -42,14 +43,14 @@ spec:
         if pod_name is not None:
             pod_status = self.openshift.check_pod_status(pod_name, self.namespace)
             print("The pod {} is running: {}".format(self.name, pod_status))
-            output, exit_code = self.cmd.run(f'oc get db {self.name} -n {self.namespace} -o jsonpath="{{.status.dbConnectionIP}}"')
+            output, exit_code = self.cmd.run(f'{ctx.cli} get db {self.name} -n {self.namespace} -o jsonpath="{{.status.dbConnectionIP}}"')
             if exit_code == 0 and re.search(r'\d+\.\d+\.\d+\.\d+', output):
                 print(f"The DB {self.name} is up and listening at {output}.")
                 return True
         return False
 
     def get_connection_ip(self):
-        cmd = f'oc get db {self.name} -n {self.namespace} -o jsonpath="{{.status.dbConnectionIP}}"'
+        cmd = f'{ctx.cli} get db {self.name} -n {self.namespace} -o jsonpath="{{.status.dbConnectionIP}}"'
         return self.cmd.run(cmd)
 
     def check_pod_status(self, status="Running"):

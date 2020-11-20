@@ -1,75 +1,22 @@
-from openshift import Openshift
-from command import Command
+from app import App
 import re
 import requests
 import time
+import polling2
 
 
-class NodeJSApp(object):
+class NodeJSApp(App):
 
-    openshift = Openshift()
     pod_name_pattern = "{name}.*$(?<!-build)"
-    name = ""
-    namespace = ""
 
     def __init__(self, name, namespace, nodejs_app_image="quay.io/pmacik/nodejs-rest-http-crud"):
-        self.cmd = Command()
-        self.name = name
-        self.namespace = namespace
-        self.nodejs_app_image = nodejs_app_image
+        App.__init__(self, name, namespace, nodejs_app_image, "8080")
 
-    def is_running(self, wait=False):
-        deployment_flag = False
-
-        if wait:
-            pod_name = self.openshift.wait_for_pod(self.get_pod_name_pattern(), self.namespace, timeout=300)
-        else:
-            pod_name = self.openshift.search_pod_in_namespace(self.get_pod_name_pattern(), self.namespace)
-
-        if pod_name is not None:
-            application_pod_status = self.openshift.check_pod_status(pod_name, self.namespace, wait_for_status="Running")
-            print("The pod {} is running: {}".format(pod_name, application_pod_status))
-
-            deployment = self.openshift.search_resource_in_namespace("deployments", f"{self.name}.*", self.namespace)
-            if deployment is not None:
-                print("deployment is {}".format(deployment))
-                deployment_flag = True
-
-            if application_pod_status and deployment_flag:
-                return True
-            else:
-                return False
-        else:
-            return False
-
-    def install(self):
-        create_new_app_output, exit_code = self.cmd.run(f"oc new-app --docker-image={self.nodejs_app_image} --name={self.name} -n {self.namespace}")
-        assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app: {create_new_app_output}"
-        assert re.search(f'imagestream.image.openshift.io.*{self.name}.*created',
-                         create_new_app_output) is not None, f"Unable to create imagestream: {create_new_app_output}"
-        assert re.search(f'deployment.apps.*{self.name}.*created',
-                         create_new_app_output) is not None, f"Unable to create deployment: {create_new_app_output}"
-        assert re.search(f'service.*{self.name}.*created',
-                         create_new_app_output) is not None, f"Unable to create service: {create_new_app_output}"
-        assert self.openshift.expose_service_route(self.name, self.namespace) is not None, "Unable to expose service route"
-        return self.is_running(wait=True)
-
-    def get_response_from_api(self, endpoint, wait=False, interval=10, timeout=300):
-        route_url = self.openshift.get_route_host(self.name, self.namespace)
-        if route_url is None:
-            return None
-        start = 0
-        while ((start + interval) <= timeout):
-            db_name = requests.get(url=f"http://{route_url}{endpoint}")
-            if wait:
-                if db_name.status_code == 200 and db_name.text != 'N/A':
-                    return db_name.text
-            else:
-                if db_name.status_code == 200:
-                    return db_name.text
-            time.sleep(interval)
-            start += interval
-        return None
+    def get_response_from_api(self, endpoint, interval=10, timeout=300):
+        resp = polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{endpoint}"),
+                             check_success=lambda r: r.status_code in [200], step=interval, timeout=timeout,
+                             ignore_exceptions=(requests.exceptions.ConnectionError,))
+        return resp.text
 
     def get_observed_generation(self):
         return self.openshift.get_resource_info_by_jsonpath("deployment", self.name, self.namespace, "{.status.observedGeneration}")
@@ -78,7 +25,7 @@ class NodeJSApp(object):
         start = 0
         while ((start + interval) <= timeout):
             pod_list = self.openshift.get_pod_lst(self.namespace)
-            for pod in pod_list.split(" "):
+            for pod in pod_list:
                 if re.fullmatch(self.get_pod_name_pattern(), pod) is not None:
                     if self.openshift.get_pod_status(pod, self.namespace) == "Running":
                         return pod
@@ -90,7 +37,7 @@ class NodeJSApp(object):
         start = 0
         while ((start + interval) <= timeout):
             pod_list = self.openshift.get_pod_lst(self.namespace)
-            for pod in pod_list.split(" "):
+            for pod in pod_list:
                 if pod != old_pod_name and re.fullmatch(self.get_pod_name_pattern(), pod) is not None:
                     if self.openshift.get_pod_status(pod, self.namespace) == "Running":
                         return pod
@@ -106,7 +53,7 @@ class NodeJSApp(object):
         while ((start + interval) <= timeout):
             current_generation = self.get_generation()
             pod_list = self.openshift.get_pod_lst(self.namespace)
-            for pod in pod_list.split(" "):
+            for pod in pod_list:
                 if (current_generation > old_generation) and (re.fullmatch(self.get_pod_name_pattern(), pod) is not None):
                     if self.openshift.get_pod_status(pod, self.namespace) == "Running":
                         return pod

@@ -26,6 +26,7 @@ class Command(object):
         self.env[key] = value
 
     def run(self, cmd, stdin=None):
+        print(f",---------,-\n| COMMAND : {cmd}\n'---------'-")  # for debugging purposes
         output = None
         exit_code = 0
         try:

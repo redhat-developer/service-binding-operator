@@ -1,10 +1,11 @@
 import re
+from environment import ctx
 
 from command import Command
 from openshift import Openshift
 
 
-class EtcdCluster():
+class EtcdCluster(object):
 
     openshift = Openshift()
     cmd = Command()
@@ -30,7 +31,7 @@ spec:
 '''
 
     def is_present(self):
-        cmd = f'oc get etcdcluster -n {self.namespace}'
+        cmd = f'{ctx.cli} get etcdcluster -n {self.namespace}'
         output, exit_code = self.cmd.run(cmd)
         if exit_code != 0:
             print(f"cmd-{cmd} result for getting available knative serving is {output} with the exit code {exit_code}")
@@ -40,7 +41,7 @@ spec:
         return False
 
     def create(self):
-        etcd_cluster_output = self.openshift.oc_apply(self.etcd_cluster_template.format(etcd_cluster_name=self.name, namespace=self.namespace))
+        etcd_cluster_output = self.openshift.apply(self.etcd_cluster_template.format(etcd_cluster_name=self.name, namespace=self.namespace))
         pattern = 'etcdcluster.etcd.database.coreos.com/%s\\screated.*' % self.name
         if re.search(pattern, etcd_cluster_output):
             return True

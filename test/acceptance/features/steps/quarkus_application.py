@@ -42,7 +42,7 @@ class QuarkusApplication(object):
             deployment_replicas = self.openshift.get_resource_info_by_jsonpath("deployment", deployment_name, self.namespace, "{.status.replicas}")
             assert deployment_replicas.isnumeric(
             ), f"Number of replicas of deployment '{deployment_name}' should be a numerical value, but is actually: '{deployment_replicas}"
-            assert int(deployment_replicas) > 0, "Number of replicas of deployment '{deployment_name}' " + \
+            assert int(str(deployment_replicas)) > 0, "Number of replicas of deployment '{deployment_name}' " + \
                 "should be greater than 0, but is actually: '{deployment_replicas}'."
             return True
 
@@ -50,17 +50,16 @@ class QuarkusApplication(object):
         route_url = self.openshift.get_knative_route_host(self.name, self.namespace)
         if route_url is None:
             return None
+        url = f"{route_url}{endpoint}"
         if wait:
             start = 0
             while ((start + interval) <= timeout):
-                url = f"{route_url}{endpoint}"
                 db_name = requests.get(url)
                 if db_name.status_code == 200:
                     return db_name.text
                 time.sleep(interval)
                 start += interval
         else:
-            url = self.api_end_point.format(route_url=route_url)
             db_name = requests.get(url)
             if db_name.status_code == 200:
                 return db_name.text
@@ -77,7 +76,7 @@ class QuarkusApplication(object):
         start = 0
         while ((start + interval) <= timeout):
             revisions = self.openshift.get_revisions(self.namespace)
-            for rev in revisions.split(" "):
+            for rev in revisions:
                 if rev != old_rev_name and re.match(self.name, rev) is not None:
                     new_revision = self.openshift.get_last_revision_status(rev, self.namespace)
                     if new_revision == 'True':
@@ -91,7 +90,7 @@ class QuarkusApplication(object):
         while ((start + interval) <= timeout):
             current_generation = self.get_generation()
             revisions = self.openshift.get_revisions(self.namespace)
-            for rev in revisions.split(" "):
+            for rev in revisions:
                 if (current_generation > old_generation) and (re.match(self.name, rev) is not None):
                     new_revision = self.openshift.get_last_revision_status(rev, self.namespace)
                     if new_revision == 'True':

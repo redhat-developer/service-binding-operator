@@ -263,21 +263,17 @@ test-unit-with-coverage:
 ## Setup the environment for the acceptance tests
 test-acceptance-setup: setup-venv
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
-test-acceptance-setup: stop-local build test-cleanup create-test-namespace deploy-test-3rd-party-crds set-test-namespace deploy-rbac deploy-crds
+test-acceptance-setup: stop-local build test-cleanup create-test-namespace deploy-test-3rd-party-crds deploy-rbac deploy-crds
 	$(Q)echo "Starting local SBO instance"
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell OPERATOR_NAMESPACE="$(TEST_NAMESPACE)" ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" RUN_IN_BACKGROUND=true ./hack/deploy-sbo-local.sh))
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), remote)
-test-acceptance-setup: test-cleanup create-test-namespace set-test-namespace
+test-acceptance-setup: test-cleanup create-test-namespace
 	$(Q)echo "Using remote SBO instance running in '$(SBO_NAMESPACE)' namespace"
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
 endif
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r test/acceptance/features/requirements.txt
-
-.PHONY: set-test-namespace
-set-test-namespace: get-test-namespace
-	$(Q)oc project $(TEST_NAMESPACE)
 
 .PHONY: test-acceptance
 ## Runs acceptance tests
@@ -287,7 +283,7 @@ test-acceptance: test-acceptance-setup
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
 		SBO_NAMESPACE=$(SBO_NAMESPACE) \
-		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) test/acceptance/features
+		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) $(EXTRA_BEHAVE_ARGS) test/acceptance/features
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
 endif
@@ -396,9 +392,9 @@ stop-local:
 .PHONY: deploy-rbac
 ## Deploy-RBAC: Setup service account and deploy RBAC
 deploy-rbac:
-	$(Q)kubectl create -f deploy/service_account.yaml
-	$(Q)kubectl create -f deploy/role.yaml
-	$(Q)kubectl create -f deploy/role_binding.yaml
+	$(Q)kubectl apply -f deploy/service_account.yaml -n $(TEST_NAMESPACE)
+	$(Q)kubectl apply -f deploy/role.yaml -n $(TEST_NAMESPACE)
+	$(Q)kubectl apply -f deploy/role_binding.yaml -n $(TEST_NAMESPACE)
 
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD
