@@ -1,4 +1,4 @@
-# Multiple Services Binding Example
+# Binding Multiple Services to an application
 
 This document describes step-by-step the actions to create the required
 infrastructure to demonstrate multiple services binding built on existing

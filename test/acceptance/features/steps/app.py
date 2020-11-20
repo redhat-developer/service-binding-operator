@@ -13,12 +13,14 @@ class App(object):
     route_url = ""
     port = ""
     bindingRoot = ""
+    remote_repo_repository = ""
 
-    def __init__(self, name, namespace, app_image, port=""):
+    def __init__(self, name, namespace, app_image=None, port="", remote_repo_repository=None):
         self.name = name
         self.namespace = namespace
         self.app_image = app_image
         self.port = port
+        self.remote_repo_repository = remote_repo_repository
 
     def is_running(self, wait=False):
         output, exit_code = self.cmd.run(
@@ -36,3 +38,8 @@ class App(object):
 
     def base_url(self):
         return self.openshift.get_route_host(self.name, self.namespace)
+
+    def install_from_remote_repository(self):
+        self.openshift.new_app_from_remote_repository(self.name, self.remote_repo_repository, self.namespace)
+        self.openshift.expose_service_route(self.name, self.namespace, self.port)
+        return self.is_running(wait=True)

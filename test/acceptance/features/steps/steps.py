@@ -507,3 +507,10 @@ def create_deployment(context, app_name, image_ref):
     app = App(app_name, context.namespace.name, image_ref)
     if not app.is_running():
         assert app.install() is True, "Failed to create deployment."
+
+
+@given(u'"{app_name}" application is deployed from remote repository "{url}"')
+def create_app_from_remote_repository(context, app_name, url):
+    app = App(app_name, context.namespace.name, remote_repo_repository=url)
+    if not app.is_running():
+        assert app.install_from_remote_repository() is True, "Failed to create deployment."

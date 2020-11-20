@@ -88,3 +88,54 @@ Feature: Verify examples provided in Service Binding Operator github repository
         Then Service Binding "service-binding-cross-ns-service" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-cross-ns-service"
+
+    # https://github.com/redhat-developer/service-binding-operator/tree/master/examples/multiple_services
+    Scenario: Binding Multiple Services to an application
+        Given DB "db-mul-svc-ex" is running
+        * Etcd operator running
+        * Etcd cluster "etcd-mul-svc-ex" is running
+        * "node-todo-mul-svc-ex" application is deployed from remote repository "https://github.com/akashshinde/node-todo.git"
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: sbr-bind-mul-svc-ex
+            spec:
+                application:
+                    name: node-todo-mul-svc-ex
+                    group: apps
+                    version: v1
+                    resource: deployments
+                services:
+                - group: postgresql.baiju.dev
+                  version: v1alpha1
+                  kind: Database
+                  name: db-mul-svc-ex
+                - group: etcd.database.coreos.com
+                  version: v1beta2
+                  kind: EtcdCluster
+                  name: etcd-mul-svc-ex
+                detectBindingResources: true
+            """
+        Then Service Binding "sbr-bind-mul-svc-ex" is ready
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DBNAME" key with value "db-mul-svc-ex"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_USER" key with value "postgres"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_PASSWORD" key with value "password"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_PASSWORD" key with value "password"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_NAME" key with value "db-mul-svc-ex"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_PORT" key with value "5432"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_USER" key with value "postgres"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_HOST" key with dynamic IP addess as the value
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_IMAGE" key with value "docker.io/postgres"
+        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_IMAGENAME" key with value "postgres"
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_CLUSTERIP" key with dynamic IP addess as the value
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_HOST" key with dynamic IP addess as the value
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_NAME" key with value "db-mul-svc-ex"
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_PASSWORD" key with value "password"
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_PORT" key with value "5432"
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_USER" key with value "postgres"
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_PASSWORD" key with value "cGFzc3dvcmQ="
+        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_USER" key with value "cG9zdGdyZXM="

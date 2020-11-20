@@ -467,3 +467,8 @@ spec:
             else:
                 (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app using following command line {cmd}\n: {output}"
+
+    def new_app_from_remote_repository(self, name, repo_url, namespace):
+        cmd = f"{ctx.cli} new-app {repo_url} --name={name} -n {namespace}"
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app using following command line {cmd}\n: {output}"
