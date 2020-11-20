@@ -509,12 +509,12 @@ push-bundle-image:
 .PHONY: build-bundle-index-image
 ## build bundle index image
 build-bundle-index-image:
-	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION) --tag "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:$(BUNDLE_VERSION)"
+	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION) --tag "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:master"
 
 .PHONY: push-bundle-index-image
 ## push bundle index image
 push-bundle-index-image:
-	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:$(BUNDLE_VERSION)"
+	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:master"
 
 .PHONY: release-operator-bundle
 ## Build and release operator bundle and operator bundle index
