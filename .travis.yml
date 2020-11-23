@@ -31,7 +31,7 @@ jobs:
   include:
     - stage: Push bundle and index images to Quay ()
       #if: branch = master AND type = push
-      if: pull_request
+      if: type = pull_request
       install:
 
         # Download Operator SDK
