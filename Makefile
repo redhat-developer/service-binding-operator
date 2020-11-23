@@ -451,21 +451,15 @@ prepare-bundle-to-quay:
 	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) verify $(MANIFESTS_TMP)
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
-
-.PHONY: build-bundle-image
-## build bundle image
-build-bundle-image:
-	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) "$(OPERATOR_BUNDLE_IMAGE):$(BUNDLE_VERSION)"
-
-.PHONY: push-bundle-image
-## push bundle image
-push-bundle-image:
-	$(Q)$(CONTAINER_RUNTIME) push "$(OPERATOR_BUNDLE_IMAGE):$(BUNDLE_VERSION)"
-
 .PHONY: build-bundle-index-image
 ## build bundle index image
 build-bundle-index-image:
-	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles "$(OPERATOR_BUNDLE_IMAGE):$(BUNDLE_VERSION)" --tag "$(OPERATOR_BUNDLE_IMAGE):index"
+	$(eval TMP_BUNDLE_IMAGE := localhost:5555/tmp-bundle:$(BUNDLE_VERSION))
+	$(Q)-$(CONTAINER_RUNTIME) rm -f tmp-registry
+	$(Q)$(CONTAINER_RUNTIME) run -d --name tmp-registry -p 5555:5000 registry:2
+	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) $(TMP_BUNDLE_IMAGE)
+	$(Q)$(CONTAINER_RUNTIME) push $(TMP_BUNDLE_IMAGE)
+	$(Q)opm index add -u $(CONTAINER_RUNTIME) -p $(CONTAINER_RUNTIME) --bundles $(TMP_BUNDLE_IMAGE) --tag "$(OPERATOR_BUNDLE_IMAGE):index"
 
 .PHONY: push-bundle-index-image
 ## push bundle index image
@@ -474,7 +468,7 @@ push-bundle-index-image:
 
 .PHONY: release-operator-bundle
 ## Build and release operator bundle and operator bundle index
-release-operator-bundle: merge-to-master-release push-to-manifest-repo prepare-bundle-to-quay build-bundle-image push-bundle-image build-bundle-index-image push-bundle-index-image
+release-operator-bundle: merge-to-master-release push-to-manifest-repo prepare-bundle-to-quay build-bundle-index-image push-bundle-index-image
 
 .PHONY: dev-release
 ## validating the operator by installing new quay releases
