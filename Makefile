@@ -327,12 +327,6 @@ build: out/operator
 out/operator:
 	$(Q)GOCACHE="$(GOCACHE)" GOARCH=$(ARCH) GOOS=$(OS) go build $(GOFLAGS) ${V_FLAG} -o $(OUTPUT_DIR)/operator cmd/manager/main.go
 
-## Build-Image: using operator-sdk to build a new image
-build-image:
-	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" operator-sdk build \
-		--image-builder=$(OPERATOR_IMAGE_BUILDER) \
-		"$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-
 ## Generate-K8S: after modifying _types, generate Kubernetes scaffolding.
 generate-k8s:
 	$(Q)GOFLAGS="$(GOFLAGS)" operator-sdk generate k8s
@@ -348,38 +342,6 @@ generate-openapi: $(OUTPUT_DIR)/openapi-gen
 ## Vendor: 'go mod vendor' resets the vendor folder to what is defined in go.mod.
 vendor: go.mod go.sum
 	$(Q)GOCACHE="$(GOCACHE)" go mod vendor ${V_FLAG}
-
-## Generate CSV: using oeprator-sdk generate cluster-service-version for current operator version
-generate-csv:
-	operator-sdk generate csv --csv-version=$(OPERATOR_VERSION) $(VERBOSE_FLAG)
-
-generate-olm:
-	operator-courier $(VERBOSE_FLAG) nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
-	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
-
-## -- Publish image and manifests targets --
-
-## Prepare-CSV: using a temporary location copy all operator CRDs and metadata to generate a CSV.
-prepare-csv: build-image
-	$(eval ICON_BASE64_DATA := $(shell cat ./assets/icon/red-hat-logo.png | base64))
-	@rm -rf $(MANIFESTS_TMP) || true
-	@mkdir -p ${MANIFESTS_TMP}
-	operator-courier $(VERBOSE_FLAG) nest $(MANIFESTS_DIR) $(MANIFESTS_TMP)
-	cp -vf deploy/crds/*_crd.yaml $(MANIFESTS_TMP)
-	sed -i -e 's,REPLACE_IMAGE,"$(OPERATOR_IMAGE):latest",g' $(MANIFESTS_TMP)/*.yaml
-	sed -i -e 's,REPLACE_ICON_BASE64_DATA,$(ICON_BASE64_DATA),' $(MANIFESTS_TMP)/*.yaml
-	operator-courier $(VERBOSE_FLAG) verify $(MANIFESTS_TMP)
-
-.PHONY: push-operator
-## Push-Operator: Uplaod operator to Quay.io application repository
-push-operator: prepare-csv
-	operator-courier push $(MANIFESTS_TMP) $(OPERATOR_GROUP) $(GO_PACKAGE_REPO_NAME) $(OPERATOR_VERSION) "$(QUAY_TOKEN)"
-
-## Push-Image: push container image to upstream, including latest tag.
-push-image: build-image
-	$(CONTAINER_RUNTIME) tag "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)" "$(OPERATOR_IMAGE):latest"
-	-$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE):$(OPERATOR_TAG_LONG)"
-	-$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE):latest"
 
 ## -- Local deployment targets --
 
@@ -421,7 +383,6 @@ deploy: deploy-rbac deploy-crds
 ## Removes temp directories
 clean:
 	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
-	$(Q)-rm -rf ${V_FLAG} bundle_tmp*
 
 
 ## -- Targets for uploading code coverage reports to Codecov.io --
@@ -490,31 +451,25 @@ prepare-bundle-to-quay:
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
 
-.PHONY: push-bundle-to-quay
-## Push manifest bundle to quay application
-push-bundle-to-quay:
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) verify $(SBR_MANIFESTS)
-	$(Q)$(PYTHON_VENV_DIR)/bin/operator-courier $(VERBOSE_FLAG) push $(SBR_MANIFESTS) redhat-developer service-binding-operator $(BUNDLE_VERSION) "$(QUAY_BUNDLE_TOKEN)"
-
 .PHONY: build-bundle-image
 ## build bundle image
 build-bundle-image:
-	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION)"
+	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):$(BUNDLE_VERSION)"
 
 .PHONY: push-bundle-image
 ## push bundle image
 push-bundle-image:
-	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION)"
+	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):$(BUNDLE_VERSION)"
 
 .PHONY: build-bundle-index-image
 ## build bundle index image
 build-bundle-index-image:
-	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-bundle:$(BUNDLE_VERSION) --tag "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:master"
+	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):$(BUNDLE_VERSION) --tag "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):index"
 
 .PHONY: push-bundle-index-image
 ## push bundle index image
 push-bundle-index-image:
-	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME)-index:master"
+	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):index"
 
 .PHONY: release-operator-bundle
 ## Build and release operator bundle and operator bundle index

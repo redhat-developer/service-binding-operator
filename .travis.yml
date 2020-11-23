@@ -56,8 +56,6 @@ jobs:
         - git add .
         - git commit -m ${MESSAGE}
         - git push "https://${GITHUB_TOKEN}@${GH_REMOTE_REPO}" master > /dev/null 2>&1
-        - cd ..
-        - make push-bundle-to-quay
     - stage: Acceptance tests
       if: type = pull_request
       env:
