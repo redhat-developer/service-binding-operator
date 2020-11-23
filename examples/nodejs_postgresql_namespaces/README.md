@@ -1,4 +1,4 @@
-# Binding an Imported app in one namespace to an In-cluster Operator Managed PostgreSQL Database in another namespace
+# Bind an application to a database running in another namespace
 
 ## Introduction
 
