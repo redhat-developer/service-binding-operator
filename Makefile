@@ -126,8 +126,9 @@ GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.3.0
 OPERATOR_GROUP ?= ${GO_PACKAGE_ORG_NAME}
-OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
-OPERATOR_IMAGE_REL ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
+#OPERATOR_BUNDLE_IMAGE ?= quay.io/${OPERATOR_GROUP}/${GO_PACKAGE_REPO_NAME}
+OPERATOR_BUNDLE_IMAGE ?= quay.io/${OPERATOR_GROUP}/servicebinding-operator
+OPERATOR_IMAGE ?= quay.io/${OPERATOR_GROUP}/app-binding-operator
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
@@ -135,7 +136,7 @@ OPERATOR_SDK_EXTRA_ARGS ?= "--debug"
 COMMIT_COUNT := $(shell git rev-list --count HEAD)
 BASE_BUNDLE_VERSION ?= $(OPERATOR_VERSION)
 BUNDLE_VERSION ?= $(BASE_BUNDLE_VERSION)-$(COMMIT_COUNT)
-OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE_REL):$(GIT_COMMIT_ID)
+OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
@@ -454,22 +455,22 @@ prepare-bundle-to-quay:
 .PHONY: build-bundle-image
 ## build bundle image
 build-bundle-image:
-	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):$(BUNDLE_VERSION)"
+	$(Q)operator-sdk bundle create --directory $(MANIFESTS_TMP)/$(BUNDLE_VERSION) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) "$(OPERATOR_BUNDLE_IMAGE):$(BUNDLE_VERSION)"
 
 .PHONY: push-bundle-image
 ## push bundle image
 push-bundle-image:
-	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):$(BUNDLE_VERSION)"
+	$(Q)$(CONTAINER_RUNTIME) push "$(OPERATOR_BUNDLE_IMAGE):$(BUNDLE_VERSION)"
 
 .PHONY: build-bundle-index-image
 ## build bundle index image
 build-bundle-index-image:
-	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):$(BUNDLE_VERSION) --tag "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):index"
+	$(Q)opm index add -u $(CONTAINER_RUNTIME) --bundles "$(OPERATOR_BUNDLE_IMAGE):$(BUNDLE_VERSION)" --tag "$(OPERATOR_BUNDLE_IMAGE):index"
 
 .PHONY: push-bundle-index-image
 ## push bundle index image
 push-bundle-index-image:
-	$(Q)$(CONTAINER_RUNTIME) push "quay.io/$(OPERATOR_GROUP)/$(GO_PACKAGE_REPO_NAME):index"
+	$(Q)$(CONTAINER_RUNTIME) push "$(OPERATOR_BUNDLE_IMAGE):index"
 
 .PHONY: release-operator-bundle
 ## Build and release operator bundle and operator bundle index
