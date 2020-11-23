@@ -140,7 +140,7 @@ OPERATOR_IMAGE_REF ?= $(OPERATOR_IMAGE):$(GIT_COMMIT_ID)
 CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
-QUAY_USERNAME ?= redhat-developer+travis
+QUAY_USERNAME ?= redhat-developer+deployer
 QUAY_TOKEN ?= ""
 QUAY_BUNDLE_TOKEN ?= ""
 
