@@ -80,5 +80,5 @@ jobs:
         - kubectl cluster-info
         # install OLM
         - curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v${OLM_VERSION}/install.sh | bash -s v${OLM_VERSION}
-      script: make test-acceptance
+      script: travis_wait 30 make test-acceptance
 
