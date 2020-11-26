@@ -373,6 +373,7 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 @when(u'The Custom Resource is present')
 @given(u'The ConfigMap is present')
 @given(u'The Secret is present')
+@when(u'The Secret is present')
 def apply_yaml(context):
     openshift = Openshift()
     metadata = yaml.full_load(context.text)["metadata"]
@@ -387,6 +388,25 @@ def apply_yaml(context):
     output = openshift.apply(context.text, ns)
     result = re.search(rf'.*{metadata_name}.*(created|unchanged|configured)', output)
     assert result is not None, f"Unable to apply YAML for CR '{metadata_name}': {output}"
+
+
+# STEP
+@given(u'BackingService is deleted')
+@when(u'BackingService is deleted')
+def delete_yaml(context):
+    openshift = Openshift()
+    metadata = yaml.full_load(context.text)["metadata"]
+    metadata_name = metadata["name"]
+    if "namespace" in metadata:
+        ns = metadata["namespace"]
+    else:
+        if "namespace" in context:
+            ns = context.namespace.name
+        else:
+            ns = None
+    output = openshift.delete(context.text, ns)
+    result = re.search(rf'.*{metadata_name}.*(deleted)', output)
+    assert result is not None, f"Unable to delete CR '{metadata_name}': {output}"
 
 
 @then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
