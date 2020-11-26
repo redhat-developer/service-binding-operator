@@ -231,6 +231,22 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		}
 	}
 
+	if sbr.Spec.Services != nil {
+		for _, service := range sbr.Spec.Services {
+			serviceGVK := service.GroupVersionKind
+			gvk := schema.GroupVersionKind{
+				Group:   serviceGVK.Group,
+				Version: serviceGVK.Version,
+				Kind:    serviceGVK.Kind,
+			}
+
+			err = r.resourceWatcher.AddWatchForGVK(gvk)
+			if err != nil {
+				logger.Error(err, "Error add watching backing service GVK")
+			}
+		}
+	}
+
 	if sbr.GetDeletionTimestamp() != nil && sbr.GetOwnerReferences() != nil {
 		logger := logger.WithName("Deleting SBR when it has ownerReference")
 		logger.Debug("Removing resource finalizers...")

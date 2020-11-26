@@ -167,6 +167,15 @@ spec:
         assert exit_code != 0, f"the command should fail but it did not, output: {output}"
         return output
 
+    def delete(self, yaml, namespace=None):
+        if namespace is not None:
+            ns_arg = f"-n {namespace}"
+        else:
+            ns_arg = ""
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} delete {ns_arg} -f -", yaml)
+        assert exit_code == 0, f"Non-zero exit code ({exit_code}) while deleting a YAML: {output}"
+        return output
+
     def create_catalog_source(self, name, catalog_image):
         catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image, olm_namespace=self.olm_namespace)
         return self.apply(catalog_source)
