@@ -125,7 +125,8 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
 OPERATOR_VERSION ?= 0.3.0
-OPERATOR_REPO_REF ?= quay.io/redhat-developer/servicebinding-operator
+OPERATOR_REGISTRY ?= quay.io
+OPERATOR_REPO_REF ?= $(OPERATOR_REGISTRY)/redhat-developer/servicebinding-operator
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
 OPERATOR_TAG_LONG ?= $(OPERATOR_VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_BUILDER ?= buildah
@@ -139,8 +140,10 @@ CSV_PACKAGE_NAME ?= $(GO_PACKAGE_REPO_NAME)
 CSV_CREATION_TIMESTAMP ?= $(shell TZ=GMT date '+%FT%TZ')
 
 QUAY_USERNAME ?= redhat-developer+travis
+REGISTRY_USERNAME ?= $(QUAY_USERNAME)
 QUAY_TOKEN ?= ""
-QUAY_BUNDLE_TOKEN ?= ""
+REGISTRY_PASSWORD ?= $(QUAY_TOKEN)
+
 
 MANIFESTS_DIR ?= $(shell echo ${PWD})/tmp/manifests/$(BASE_BUNDLE_VERSION)
 MANIFESTS_BUNDLE_DIR ?= $(MANIFESTS_DIR)/$(GIT_COMMIT_ID)
@@ -412,15 +415,18 @@ endif
 
 ## -- Bundle validation, push and release targets
 
+.PHONY: registry-login
+registry-login:
+	@$(CONTAINER_RUNTIME) login -u "$(REGISTRY_USERNAME)" --password-stdin $(OPERATOR_REGISTRY) <<<"$(REGISTRY_PASSWORD)"
+
 .PHONY: build-operator-image
 ## Make a dev release on every merge to master
 build-operator-image:
-	@echo "${QUAY_TOKEN}" | $(CONTAINER_RUNTIME) login -u "$(QUAY_USERNAME)" --password-stdin quay.io
 	$(Q)$(CONTAINER_RUNTIME) build -f Dockerfile.rhel -t $(OPERATOR_IMAGE_REF) .
 
 .PHONY: push-operator-image
 ## push operator image to quay
-push-operator-image: build-operator-image
+push-operator-image: build-operator-image registry-login
 	$(CONTAINER_RUNTIME) push "$(OPERATOR_IMAGE_REF)"
 
 .PHONY: prepare-operator-manifests
@@ -453,24 +459,21 @@ verify-operator-manifests: prepare-operator-manifests
 	rm -rf deploy/olm-catalog/$(GO_PACKAGE_REPO_NAME)/$(BUNDLE_VERSION)
 
 .PHONY: build-bundle-image
-## build bundle image
 build-bundle-image: verify-operator-manifests
 	$(Q)operator-sdk bundle create --directory $(MANIFESTS_BUNDLE_DIR) -b $(CONTAINER_RUNTIME) --package $(CSV_PACKAGE_NAME) --channels beta,alpha --default-channel beta $(VERBOSE_FLAG) $(OPERATOR_BUNDLE_IMAGE_REF)
 
-.PHONY: push-bundle-image
-## push bundle image
-push-bundle-image: build-bundle-image
+.PHONY: push-index-image
+push-bundle-image: build-bundle-image registry-login
 	$(Q)$(CONTAINER_RUNTIME) push $(OPERATOR_BUNDLE_IMAGE_REF)
 	$(Q)operator-sdk bundle validate -b $(CONTAINER_RUNTIME) $(OPERATOR_BUNDLE_IMAGE_REF)
 
-.PHONY: build-index-image
-## build index image
+.PHONY: push-bundle-image
 build-index-image: push-bundle-image
 	$(Q)opm index add -u $(CONTAINER_RUNTIME) -p $(CONTAINER_RUNTIME) --bundles $(OPERATOR_BUNDLE_IMAGE_REF) --tag $(OPERATOR_INDEX_IMAGE_REF)
 
 .PHONY: push-index-image
 ## push index image
-push-index-image: build-index-image
+push-index-image: build-index-image registry-login
 	$(Q)$(CONTAINER_RUNTIME) push $(OPERATOR_INDEX_IMAGE_REF)
 
 .PHONY: release-operator
