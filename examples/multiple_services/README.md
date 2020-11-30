@@ -13,13 +13,13 @@ a *Developer*.
 
 ## Cluster Configuration
 
+Switch to the *Administrator* perspective.
+
 ### Create a New Project
 
 Create a new project, in this example it is called `multiple-services-demo`.
 
-### Install the Postgres Operator
-
-Switch to the *Administrator* perspective.
+### Install the DB operator using a `CatalogSource`
 
 Apply the following `CatalogSource`:
 
