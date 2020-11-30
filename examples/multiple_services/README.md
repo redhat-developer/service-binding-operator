@@ -21,30 +21,6 @@ Create a new project, in this example it is called `multiple-services-demo`.
 
 Switch to the *Administrator* perspective.
 
-Add an extra OperatorSource by pushing the "+" button on the top right corner
-and pasting the following:
-
-```yaml
----
-apiVersion: operators.coreos.com/v1
-kind: OperatorSource
-metadata:
-  name: db-operators
-  namespace: openshift-marketplace
-spec:
-  type: appregistry
-  endpoint: https://quay.io/cnr
-  registryNamespace: pmacik
-```
-
-Go to "Operators > OperatorHub", search for "Postgres" and install "PostgreSQL
-Database" provided by Red Hat.
-
-Select "A specific namespace on the cluster" in "Installation Mode", select the
-"multiple-services-demo" namespace in "Installed Namespace" and push "Subscribe".
-
-#### Install the DB operator using a `CatalogSource`
-
 Apply the following `CatalogSource`:
 
 ```shell
