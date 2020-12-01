@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
@@ -244,10 +243,6 @@ func TestBinderNew(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedObjects[0].Object, &deployment)
 		require.NoError(t, err)
 
-		sbrName, err := getSBRNamespacedNameFromObject(&deployment)
-		require.NoError(t, err)
-		require.Equal(t, types.NamespacedName{Name: name, Namespace: ns}, sbrName)
-
 		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
@@ -335,10 +330,6 @@ func TestBinderNew(t *testing.T) {
 		deployment := appsv1.Deployment{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[0].Object, &deployment)
 		require.NoError(t, err)
-
-		sbrName, err := getSBRNamespacedNameFromObject(&deployment)
-		require.NoError(t, err)
-		require.Equal(t, types.NamespacedName{}, sbrName)
 
 		c := corev1.Container{}
 		u := containers[0].(map[string]interface{})
