@@ -17,7 +17,6 @@ metadata:
               "resource": "deployments",
               "version": "v1"
             },
-            "mountPathPrefix": "/var/credentials",
             "services": [
               {
                 "group": "postgresql.example.dev",

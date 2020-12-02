@@ -51,10 +51,10 @@ func (r *retriever) processServiceContext(
 	svcCtx *serviceContext,
 	customEnvVarCtx map[string]interface{},
 	globalEnvVarPrefix string,
-) (map[string][]byte, []string, error) {
+) (map[string][]byte, error) {
 	svcEnvVars, err := buildServiceEnvVars(svcCtx, globalEnvVarPrefix)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// contribute the entire resource to the context shared with the custom env parser
@@ -68,7 +68,7 @@ func (r *retriever) processServiceContext(
 		customEnvVarCtx, svcCtx.service.Object, gvk.Version, gvk.Group, gvk.Kind,
 		svcCtx.service.GetName())
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// add an entry in the custom environment variable context with modified key names (group
@@ -82,7 +82,7 @@ func (r *retriever) processServiceContext(
 		createServiceIndexPath(svcCtx.service.GetName(), svcCtx.service.GroupVersionKind())...,
 	)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// add an entry in the custom environment variable context with the informed 'id'.
@@ -95,7 +95,7 @@ func (r *retriever) processServiceContext(
 			*svcCtx.id,
 		)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
@@ -104,10 +104,7 @@ func (r *retriever) processServiceContext(
 		envVars[k] = []byte(v)
 	}
 
-	var volumeKeys []string
-	volumeKeys = append(volumeKeys, svcCtx.volumeKeys...)
-
-	return envVars, volumeKeys, nil
+	return envVars, nil
 }
 
 // ProcessServiceContexts returns environment variables and volume keys from a ServiceContext slice.
@@ -115,20 +112,18 @@ func (r *retriever) ProcessServiceContexts(
 	globalEnvVarPrefix string,
 	svcCtxs serviceContextList,
 	envVarTemplates []corev1.EnvVar,
-) (map[string][]byte, []string, error) {
+) (map[string][]byte, error) {
 	customEnvVarCtx := make(map[string]interface{})
-	volumeKeys := make([]string, 0)
 	envVars := make(map[string][]byte)
 
 	for _, svcCtx := range svcCtxs {
-		s, v, err := r.processServiceContext(svcCtx, customEnvVarCtx, globalEnvVarPrefix)
+		s, err := r.processServiceContext(svcCtx, customEnvVarCtx, globalEnvVarPrefix)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		for k, v := range s {
 			envVars[k] = []byte(v)
 		}
-		volumeKeys = append(volumeKeys, v...)
 	}
 
 	envParser := newCustomEnvParser(envVarTemplates, customEnvVarCtx)
@@ -136,14 +131,14 @@ func (r *retriever) ProcessServiceContexts(
 	if err != nil {
 		r.logger.Error(
 			err, "Creating envVars", "Templates", envVarTemplates, "TemplateContext", customEnvVarCtx)
-		return nil, nil, err
+		return nil, err
 	}
 
 	for k, v := range customEnvVars {
 		envVars[k] = []byte(v.(string))
 	}
 
-	return envVars, volumeKeys, nil
+	return envVars, nil
 }
 
 // NewRetriever instantiate a new retriever instance.

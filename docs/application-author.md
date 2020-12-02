@@ -254,7 +254,7 @@ data:
 type: Opaque
 ```
 
-This would generate a binding secret and inject it into the workload as an environment variable or a volume mount in the path `/var/data` depending on the intent expressed in the annotations on the Custom Resource.
+This would generate a binding secret and inject it into the workload as an environment variable or a file based on `bindAsFile` flag in the `ServiceBinding` resource.
 
 
 Here's how the environment variables look like:
@@ -270,14 +270,13 @@ COCKROACHDB_CONF_PORT=8090
 Here's how the mount paths look like:
 
 ```
-var
-├── data
+bindings
+├── <Service-binding-name>
 │   ├── COCKROACHDB_CLUSTERIP
 │   ├── COCKROACHDB_CONF_PORT
-
 ```
 
-Instead of `/var/data`, you can specify a custom binding root path by specifying the same in `spec.mountPathPrefix`, example,
+Instead of `/bindings`, you can specify a custom binding root path by specifying the same in `spec.mountPath`, example,
 
 ``` yaml
 apiVersion: operators.coreos.com/v1alpha1
@@ -286,6 +285,7 @@ metadata:
   name: binding-request
   namespace: service-binding-demo
 spec:
+  bindAsFiles: true
   application:
     name: java-app
     group: apps
@@ -297,7 +297,7 @@ spec:
     kind: Cockroachdb
     name: db-demo
     id: db_1
-  mounthPathPrefix: '/bindings/accounts-db' # User configurable binding root
+  mounthPath: '/bindings/accounts-db' # User configurable binding root
 ```
 
 Here's how the mount paths would look like, where applicable:
@@ -309,11 +309,18 @@ bindings
 │   ├── COCKROACHDB_CONF_PORT
 ```
 
+Setting `spec.bindAsFiles` to `true` (default: `false`) enables injecting gathered bindings as files into the application/workload.
 
-**Note**
+For determining the folder where bindings should be injected, we can specify the destination using `spec.mountPath` or we can use `SERVICE_BINDING_ROOT` environment variable. If both are set then the `SERVICE_BINDING_ROOT` environment variable takes the higher precedence.
 
-*Injection of binding information as volume mounts is in the development phase and is not stable enough for use.*
+The following table summarizes how the final bind path is computed:
 
+| spec.mountPath  | SERVICE_BINDING_ROOT | Final Bind Path                      |
+| --------------- | ---------------------| -------------------------------------|
+| nil             | non-existent         | /bindings/ServiceBinding_Name        |
+| nil             | /some/path/root      | /some/path/root/ServiceBinding_Name  |
+| /home/foo       | non-existent         | /home/foo                            |
+| /home/foo       | /some/path/root      | /some/path/root/ServiceBinding_Name  |
 
 
 # Binding non-podSpec-based application workloads
@@ -340,5 +347,4 @@ spec:
     ...
 ```
 
-A detailed documentation could be found [here](docs/binding-path.md).
-
+A detailed documentation could be found [here](binding-path.md).

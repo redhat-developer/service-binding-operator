@@ -421,8 +421,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			detectBindingResources: false,
 			sbr:                    sbrSingleService,
 			binding: &internalBinding{
-				envVars:    map[string][]byte{},
-				volumeKeys: []string{},
+				envVars: map[string][]byte{},
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},
@@ -469,7 +468,6 @@ func TestServiceBinder_Bind(t *testing.T) {
 				envVars: map[string][]byte{
 					"MY_DB_NAME": []byte("db1"),
 				},
-				volumeKeys: []string{},
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},
@@ -516,8 +514,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			detectBindingResources: true,
 			sbr:                    sbrSingleService,
 			binding: &internalBinding{
-				envVars:    map[string][]byte{},
-				volumeKeys: []string{},
+				envVars: map[string][]byte{},
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},
@@ -544,8 +541,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			detectBindingResources: true,
 			sbr:                    sbrEmptyAppSelector,
 			binding: &internalBinding{
-				envVars:    map[string][]byte{},
-				volumeKeys: []string{},
+				envVars: map[string][]byte{},
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},
@@ -574,8 +570,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			detectBindingResources: true,
 			sbr:                    sbrSingleServiceWithNonExistedApp,
 			binding: &internalBinding{
-				envVars:    map[string][]byte{},
-				volumeKeys: []string{},
+				envVars: map[string][]byte{},
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},
@@ -616,8 +611,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			detectBindingResources: false,
 			sbr:                    sbrMultipleServices,
 			binding: &internalBinding{
-				envVars:    map[string][]byte{},
-				volumeKeys: []string{},
+				envVars: map[string][]byte{},
 			},
 			restMapper: testutils.BuildTestRESTMapper(),
 		},

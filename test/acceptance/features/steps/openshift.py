@@ -88,6 +88,32 @@ spec:
   sourceNamespace: {olm_namespace}
   startingCSV: '{csv_version}'
 '''
+        self.deployment_template = '''
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{name}'
+  namespace: {namespace}
+  labels:
+    app: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: myapp
+  template:
+    metadata:
+      labels:
+        app: myapp
+    spec:
+      containers:
+      - name: myapp
+        image: {image_name}
+        env:
+        - name: SERVICE_BINDING_ROOT
+          value: {bindingRoot}
+'''
 
     def get_pod_lst(self, namespace):
         return self.get_resource_lst("pods", namespace)
@@ -426,10 +452,18 @@ spec:
         (output, exit_code) = self.cmd.run(f"{ctx.cli} delete --wait=true --timeout=120s ServiceBinding {sb_name} -n {namespace}")
         assert exit_code == 0, f"Unexpected exit code ({exit_code}) while deleting service binding '{sb_name}': {output}"
 
-    def new_app(self, name, image_name, namespace):
+    def new_app(self, name, image_name, namespace, bindingRoot=None):
         if ctx.cli == "oc":
             cmd = f"{ctx.cli} new-app --docker-image={image_name} --name={name} -n {namespace}"
+            if bindingRoot:
+                cmd = cmd + f" -e SERVICE_BINDING_ROOT={bindingRoot}"
+            (output, exit_code) = self.cmd.run(cmd)
         else:
             cmd = f"{ctx.cli} create deployment {name} -n {namespace} --image={image_name}"
-        (output, exit_code) = self.cmd.run(cmd)
+            if bindingRoot:
+                (output, exit_code) = self.cmd.run(f"{ctx.cli} apply -f -",
+                                                   self.deployment_template.format(name=name, image_name=image_name,
+                                                                                   namespace=namespace, bindingRoot=bindingRoot))
+            else:
+                (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app using following command line {cmd}\n: {output}"

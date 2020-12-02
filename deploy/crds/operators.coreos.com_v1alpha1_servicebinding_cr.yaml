@@ -4,7 +4,6 @@ kind: ServiceBinding
 metadata:
   name: example-servicebinding
 spec:
-  mountPathPrefix: "/var/credentials"
   services:
   - name: pg-instance
     group: postgresql.example.dev

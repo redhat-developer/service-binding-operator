@@ -12,6 +12,7 @@ class App(object):
     app_image = ""
     route_url = ""
     port = ""
+    bindingRoot = ""
 
     def __init__(self, name, namespace, app_image, port=""):
         self.name = name
@@ -28,8 +29,8 @@ class App(object):
                                            check_success=lambda v: v != "", step=1, timeout=100)
         return running
 
-    def install(self):
-        self.openshift.new_app(self.name, self.app_image, self.namespace)
+    def install(self, bindingRoot=None):
+        self.openshift.new_app(self.name, self.app_image, self.namespace, bindingRoot)
         self.openshift.expose_service_route(self.name, self.namespace, self.port)
         return self.is_running(wait=True)
 

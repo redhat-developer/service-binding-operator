@@ -123,7 +123,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			got, _, err := NewRetriever(fakeDynClient).ProcessServiceContexts(
+			got, err := NewRetriever(fakeDynClient).ProcessServiceContexts(
 				tc.envVarPrefix, tc.svcCtxs, tc.dataMapping)
 			require.NoError(t, err)
 			require.Equal(t, tc.expected, got)

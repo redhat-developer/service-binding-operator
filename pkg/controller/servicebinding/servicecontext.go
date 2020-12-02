@@ -22,8 +22,6 @@ type serviceContext struct {
 	service *unstructured.Unstructured
 	// envVars contains the service's contributed environment variables.
 	envVars map[string]interface{}
-	// volumeKeys contains the keys that should be mounted as volume from the binding secret.
-	volumeKeys []string
 	// envVarPrefix indicates the prefix to use in environment variables.
 	envVarPrefix *string
 	// Id indicates a name the service can be referred in custom environment variables.
@@ -159,7 +157,6 @@ func runHandler(
 	key string,
 	value string,
 	envVars map[string]interface{},
-	volumeKeys *[]string,
 	restMapper meta.RESTMapper,
 ) error {
 	h, err := binding.NewSpecHandler(client, key, value, *obj, restMapper)
@@ -180,10 +177,6 @@ func runHandler(
 	err = mergo.Merge(&envVars, r.Data, mergo.WithAppendSlice, mergo.WithOverride)
 	if err != nil {
 		return err
-	}
-
-	if r.Type == binding.TypeVolumeMount {
-		*volumeKeys = []string(append(*volumeKeys, r.Path))
 	}
 
 	return nil
@@ -239,7 +232,6 @@ func buildServiceContext(
 		return nil, err
 	}
 
-	volumeKeys := make([]string, 0)
 	envVars := make(map[string]interface{})
 
 	// outputObj will be used to keep the changes processed by the handler.
@@ -254,8 +246,8 @@ func buildServiceContext(
 
 	for _, k := range keys {
 		v := anns[k]
-		// runHandler modifies 'outputObj', 'envVars' and 'volumeKeys' in place.
-		err := runHandler(client, obj, outputObj, k, v, envVars, &volumeKeys, restMapper)
+		// runHandler modifies 'outputObj', and 'envVars' in place.
+		err := runHandler(client, obj, outputObj, k, v, envVars, restMapper)
 		if err != nil {
 			logger.Debug("Failed executing runHandler", "Error", err)
 		}
@@ -264,7 +256,6 @@ func buildServiceContext(
 	serviceCtx := &serviceContext{
 		service:      outputObj,
 		envVars:      envVars,
-		volumeKeys:   volumeKeys,
 		envVarPrefix: envVarPrefix,
 		id:           id,
 	}

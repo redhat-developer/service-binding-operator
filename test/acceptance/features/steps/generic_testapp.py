@@ -2,7 +2,7 @@ from app import App
 import requests
 import json
 import polling2
-from behave import given, step
+from behave import given, step, then
 
 
 class GenericTestApp(App):
@@ -19,13 +19,20 @@ class GenericTestApp(App):
         else:
             return None
 
+    def get_file_value(self, file_path):
+        resp = polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{file_path}"),
+                             check_success=lambda r: r.status_code == 200, step=5, timeout=400)
+        print(f'file endpoint response: {resp.text} code: {resp.status_code}')
+        return resp.text
+
 
 @given(u'Generic test application "{application_name}" is running')
-def is_running(context, application_name):
+@given(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
+def is_running(context, application_name, bindingRoot=None):
     application = GenericTestApp(application_name, context.namespace.name)
     if not application.is_running():
         print("application is not running, trying to import it")
-        application.install()
+        application.install(bindingRoot=bindingRoot)
     context.application = application
 
 
@@ -39,3 +46,9 @@ def check_env_var_value(context, name, value):
 def check_env_var_existence(context, name):
     output = polling2.poll(lambda: context.application.get_env_var_value(name) is None, step=5, timeout=400)
     assert output, f'Env var "{name}" should not exist'
+
+
+@then(u'Content of file "{file_path}" in application pod is')
+def check_file_value(context, file_path):
+    value = context.text.strip()
+    polling2.poll(lambda: context.application.get_file_value(file_path) == value, step=5, timeout=400)

@@ -56,7 +56,6 @@ func TestBindingCustomSecretPath(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbrSecretPath,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 	require.NotNil(t, binderForsbrSecretPath)
@@ -101,7 +100,6 @@ func TestBinderNew(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 	require.NotNil(t, binder)
@@ -123,7 +121,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbrWithResourceRef,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -138,7 +135,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -153,7 +149,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -175,7 +170,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -207,7 +201,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -225,7 +218,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -272,7 +264,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 		// test binder with extra modifier present
@@ -305,7 +296,6 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			[]string{},
 			testutils.BuildTestRESTMapper(),
 		)
 
@@ -373,7 +363,6 @@ func TestBinderApplicationName(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 
@@ -397,7 +386,6 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 
@@ -427,7 +415,6 @@ func TestBindTwoApplications(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr1,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 	require.NotNil(t, binder1)
@@ -443,7 +430,6 @@ func TestBindTwoApplications(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr2,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 	require.NotNil(t, binder2)
@@ -476,7 +462,6 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 
@@ -510,7 +495,6 @@ func Test_extraFieldsModifier(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 
@@ -525,7 +509,6 @@ func Test_extraFieldsModifier(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		[]string{},
 		testutils.BuildTestRESTMapper(),
 	)
 
