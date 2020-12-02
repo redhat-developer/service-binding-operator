@@ -395,11 +395,8 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    Scenario: Verify pulling data from a secret living in another namespace
-        Binding definition is declared on service CRD.
-        Given OLM Operator "backend" is running
-        * Generic test application "ssa-3" is running
-        * The Custom Resource Definition is present
+    Scenario: Inject into app all keys from a secret existing in a namespace different from the service resource
+        Given The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
             kind: CustomResourceDefinition
@@ -449,6 +446,7 @@ Feature: Bind values from a secret referred in backing service resource
             status:
                 credentials: ssa-3-secret
             """
+        * Generic test application "ssa-3" is running
         When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
