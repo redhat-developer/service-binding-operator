@@ -186,7 +186,7 @@ endif
 ## Runs linters on Go code files and YAML files - DISABLED TEMPORARILY
 lint: setup-venv lint-go-code lint-yaml lint-python-code lint-feature-files
 
-YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*y[a]ml" -print)
+YAML_FILES := $(shell find . -path ./vendor -prune -o -type f -regex ".*\.y[a]ml" -print)
 .PHONY: lint-yaml
 ## runs yamllint on all yaml files
 lint-yaml: ${YAML_FILES}
