@@ -1,4 +1,4 @@
-Feature: Bind values from a config map referred in backing service resource
+Feature: Bind values from a secret referred in backing service resource
 
     As a user I would like to inject into my app as env variables
     values persisted in a secret referred within service resource
@@ -392,5 +392,82 @@ Feature: Bind values from a config map referred in backing service resource
                     resource: deployments
             """
         Then Service Binding "ssd-2" is ready
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
+
+    Scenario: Verify pulling data from a secret living in another namespace
+        Binding definition is declared on service CRD.
+        Given OLM Operator "backend" is running
+        * Generic test application "ssa-3" is running
+        * The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: backends.stable.example.com
+                annotations:
+                    service.binding: path={.status.credentials},objectType=Secret
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                      - bk
+            """
+        * Namespace is present
+            """
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+                name: backend-services
+            """
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: ssa-3-secret
+                namespace: backend-services
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: ssa-3-service
+                namespace: backend-services
+            status:
+                credentials: ssa-3-secret
+            """
+        When Service Binding is applied
+            """
+            apiVersion: operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: ssa-3
+            spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: ssa-3-service
+                    namespace: backend-services
+                application:
+                    name: ssa-3
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding "ssa-3" is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
