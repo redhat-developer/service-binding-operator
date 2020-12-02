@@ -1,0 +1,264 @@
+#!/bin/bash -xe
+
+
+ci_main() {
+    local allowed_actions="check-patch, check-merged, scratch-build, push."
+    local action="${1:?Action was not specified. can be "$allowed_actions"}"
+    local artifacts_dir="${EXPORTED_ARTIFACTS:-exported-artifacts}"
+
+    ci_export_vars
+    ci_render_templates
+
+    case "$action" in
+        *check-patch*|scratch-build)
+            build-all-components "$artifacts_dir"
+            ;;
+        *check-merged*|push)
+            push-all-components "$artifacts_dir"
+            ;;
+        *)
+            echo "Unkown action $action" 1>&2
+            echo "Can be $allowed_actions" 1>&2
+            exit 1
+    esac
+}
+
+
+ci_export_vars() {
+    local tar_names usrc_data xyz_version
+    tar_names="$(ci_get_archive_names)"
+
+    if ! [[ "$CI_VERSION" ]]; then
+        xyz_version=($(ci_get_xyz_version))
+        CI_X_VERSION="${xyz_version[0]}"
+        CI_Y_VERSION="${xyz_version[1]}"
+        CI_Z_VERSION="${xyz_version[2]}"
+        CI_CONTAINER_VERSION="$(ci_get_container_version "${xyz_version[@]}")"
+    fi
+
+    usrc_data=$(usrc-data-extractor)
+    export $usrc_data
+
+    if [[ "$CI_UPSTREAM_URL" ]] && [[ "$CI_UPSTREAM_COMMIT" ]]; then
+        CI_UPSTREAM_VERSION="$(\
+            ci_get_upstream_version "$CI_UPSTREAM_URL" "$CI_UPSTREAM_COMMIT"
+        )"
+    fi
+
+    ci_export_container_release
+
+    # Don't define CI_SPEC_RELEASE if it's empty so that we don't render
+    # an empty value.
+    local spec_release
+    spec_release="$(ci_get_spec_release)"
+    [[ -n $spec_release ]] && CI_SPEC_RELEASE="$spec_release"
+
+    export ${!CI_@} $tar_names $usrc_data
+}
+
+
+ci_get_archive_names() {
+    [[ -f source-repos ]] || return 0
+    brewx-source-repos-to-archive-name
+}
+
+
+ci_get_spec_release() {
+    local describe revision
+
+    describe="$(git describe --tags --long --match='v*' --always)"
+
+    # we couldn't find matching tag
+    [[ $describe != v* ]] && return
+
+    revision="${describe#*-}"
+    revision="${revision%-*}"
+
+    echo "${revision}"
+}
+
+
+ci_get_container_version() {
+    local x="${1:?}"
+    local y="${2:?}"
+    local z="${3:?}"
+
+    echo "v${x}.${y}.${z}"
+}
+
+
+ci_get_xyz_version() {
+    local branch="$(ci_get_branch)"
+    case "$branch" in
+        "cnv-1.4-cpaas-mvp-rhel-7")
+            echo "1 4 0"
+            ;;
+        "cnv-1.4-rhel-7")
+            echo "1 4 1"
+            ;;
+        "cnv-2.1-rhel-8"|"cnv-2.1-rhel-7")
+            echo "2 1 1"
+            ;;
+        "cnv-2.2-rhel-8"|"cnv-2.2-rhel-7")
+            echo "2 2 1"
+            ;;
+        "cnv-2.3-rhel-8"|"cnv-2.3-rhel-7")
+            echo "2 3 1"
+            ;;
+        "cnv-2.4-rhel-8"|"cnv-2.4-rhel-7")
+            echo "2 4 4"
+            ;;
+        "cnv-2.5-rhel-8"|"cnv-2.5-rhel-7")
+            echo "2 5 1"
+            ;;
+        "cnv-2.6-rhel-8"|"cnv-2.6-rhel-7")
+            echo "2 6 0"
+            ;;
+        "rhaos-4.4-rhel-8")
+            echo "4 4 0"
+            ;;
+        "rhaos-4.5-rhel-8")
+            echo "4 5 0"
+            ;;
+        "rhaos-4.6-rhel-8")
+            echo "4 6 0"
+            ;;
+        "rhacm-4.4-rhel-8"|"rhacm-4.4-rhel-7")
+            echo "4 4 0"
+            ;;
+        *)
+            echo "ERROR: wrong branch name" >&2
+            return 1
+    esac
+}
+
+
+ci_get_branch() {
+    local msg="GERRIT_BRANCH env var is not declared, failed to detect branch"
+    echo "${GERRIT_BRANCH:?$msg}"
+}
+
+
+ci_get_upstream_version() {
+    local raw_tag us_commit us_url tmpdir
+
+    us_url="${1:?}"
+    us_commit="${2:?}"
+    tmpdir="$(mktemp -d)"
+
+    git clone -q "$us_url" "$tmpdir" 1>&2
+    raw_tag="$(\
+        git --git-dir "${tmpdir}/.git" describe --tags --always "$us_commit" \
+    )"
+    ci_normalize_tag "$raw_tag"
+}
+
+
+ci_normalize_tag() {
+    local raw_tag="${1:?}"
+
+    echo "${raw_tag#v}"
+}
+
+
+ci_export_container_release() {
+    local templates
+    templates=($(ci_get_templates))
+
+    if [[ ${#templates[@]} -eq 0 ]]; then
+        echo "No templates were found" 1>&2
+        return 0
+    elif grep -qlF "\${CI_CONTAINER_RELEASE}" "${templates[@]}"; then
+        CI_CONTAINER_RELEASE="$(ci_get_container_next_release "$CI_CONTAINER_VERSION")"
+        export CI_CONTAINER_RELEASE
+    else
+        echo "No templates use \$CI_CONTAINER_RELEASE, skipping export" 1>&2
+    fi
+}
+
+
+ci_get_container_next_release() {
+    local containers
+    local ret=0
+    local version="${1:?}"
+
+    containers=($(find distgit/containers -maxdepth 1 -mindepth 1 -type d -printf %P\\n))
+    local next_rel=1
+    local container
+
+    for container in "${containers[@]}"; do
+        local rel
+        local name
+
+        name="${container}-container"
+        rel=$(brew call --python getNextRelease "{\"name\": \"$name\", \"version\": \"$version\"}") || ret="$?"
+        [[ "$ret" -eq 0 ]] || return "$ret"
+        # removing quotes. For example: "'58'" => "58"
+        rel=$(echo $rel | xargs)
+        next_rel=$(( rel > next_rel ? rel : next_rel ))
+    done
+
+    echo "$next_rel"
+}
+
+
+ci_get_target_tag() {
+    local target="${1:?}"
+    local tag
+
+    tag="$(\
+        brew call --json-output getBuildTarget "$target" \
+        | jq -r '.dest_tag_name' \
+    )"
+    if ! [[ "$tag" ]]; then
+        echo "Failed to get target tag from target $target" 1>&2
+        return 1
+    fi
+
+    echo "$tag"
+}
+
+
+ci_render_templates() {
+    local templates template dest
+    local -a files_rendered
+    templates=($(ci_get_templates))
+
+    for template in "${templates[@]}"; do
+        # Be nice, don't overwrite the user's files
+        dest="${template%.in}"
+        [[ -e "$dest" ]] && continue
+        envsubst "$(printf "$%s," "${!CI_@}")" \
+            < "$template" \
+            > "$dest"
+            files_rendered+=("$dest")
+    done
+
+    ci_check_rendered_files "${files_rendered[@]}"
+}
+
+
+ci_get_templates() {
+    find . -type f -name '*.in'
+}
+
+
+ci_check_rendered_files() {
+    local err ret
+    ret=0
+
+    for file in "$@"; do
+        if err=$(grep -o "\${CI_\w*}" "$file"); then
+            # $err string substitution transforms multiple matches found in a
+            # single file to a single line string (from multi line string)
+            echo "ERROR: Found unchanged vars ${err//$'\n'/, } in file ${file}" >&2
+            ret=1
+        fi
+    done
+
+    return "$ret"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    ci_main "$@"
+fi

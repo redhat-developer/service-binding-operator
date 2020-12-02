@@ -1,8 +1,6 @@
 #!/bin/bash -xe
 
-GENERIC_CHECK_PATCH_PATH=$(which generic-check-patch)
-
-source $GENERIC_CHECK_PATCH_PATH || true
+source "${0%/*}/generic-check-patch" || true
 
 # override generic function so that we can use our versioning schemas
 ci_get_xyz_version() {
