@@ -21,7 +21,7 @@ class GenericTestApp(App):
 
     def get_file_value(self, file_path):
         resp = polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{file_path}"),
-                             check_success=lambda r: r.status_code == 200, step=5, timeout=400)
+                             check_success=lambda r: r.status_code == 200, step=5, timeout=400, ignore_exceptions=(requests.exceptions.ConnectionError,))
         print(f'file endpoint response: {resp.text} code: {resp.status_code}')
         return resp.text
 
