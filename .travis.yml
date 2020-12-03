@@ -17,7 +17,6 @@ env:
     - GH_REMOTE_REPO="github.com/${USER}/service-binding-operator-manifests"
     - MINIKUBE_VERSION="1.15.1"
     - K8S_VERSION="1.19.2"
-    - OLM_VERSION="0.17.0"
 
 services:
   - docker
@@ -65,7 +64,19 @@ jobs:
         # exclude knative and example annotated tests
         - EXTRA_BEHAVE_ARGS="--tags=~@knative --tags=~@examples"
         - TEST_ACCEPTANCE_CLI="kubectl"
+        - TEST_ACCEPTANCE_START_SBO="remote"
+        - SBO_NAMESPACE=operators
       install:
+        # Download Operator SDK
+        - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu
+        - chmod +x operator-sdk
+        - mv operator-sdk $GOPATH/bin/
+
+        # Download OPM tool
+        - curl -Lo opm https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/linux-amd64-opm
+        - chmod +x opm
+        - mv opm $GOPATH/bin/
+
         # install kubectl
         - curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${K8S_VERSION}/bin/linux/amd64/kubectl
         - chmod +x kubectl
@@ -76,10 +87,13 @@ jobs:
         - sudo mv minikube /usr/local/bin/
         # start minikube
         - touch $KUBECONFIG
-        - minikube start --kubernetes-version=v${K8S_VERSION} --cpus $(nproc) --memory $(free -tm | grep "Total:" | awk '{print $2}')m
+        - ./hack/start-minikube.sh start --kubernetes-version=v${K8S_VERSION} --cpus $(nproc) --memory $(free -tm | grep "Total:" | awk '{print $2}')m
+        - eval $(minikube docker-env)
         - kubectl get nodes -o yaml
         - kubectl cluster-info
-        # install OLM
-        - curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v${OLM_VERSION}/install.sh | bash -s v${OLM_VERSION}
-      script: travis_wait 60 make test-acceptance
+        - docker info
+      script:
+        - OPERATOR_REPO_REF=$(minikube ip):5000/sbo make release-operator -o registry-login
+        - OPERATOR_INDEX_IMAGE=$(minikube ip):5000/sbo:index SKIP_REGISTRY_LOGIN=true ./install.sh
+        - travis_wait 60 make test-acceptance
 
