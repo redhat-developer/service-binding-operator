@@ -124,7 +124,7 @@ GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
 GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
 
-OPERATOR_VERSION ?= 0.3.0
+OPERATOR_VERSION ?= 0.4.0
 OPERATOR_REGISTRY ?= quay.io
 OPERATOR_REPO_REF ?= $(OPERATOR_REGISTRY)/redhat-developer/servicebinding-operator
 OPERATOR_TAG_SHORT ?= $(OPERATOR_VERSION)
