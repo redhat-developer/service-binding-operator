@@ -395,7 +395,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    Scenario: Inject into app all keys from a secret existing in a namespace different from the service resource
+    Scenario: Inject into app all keys from a secret existing in a same namespace with service and different from the service binding
         Given The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
