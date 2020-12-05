@@ -3,8 +3,8 @@
 # STEPS:
 # ----------------------------------------------------------------------------
 import ipaddress
-import json
 import os
+import json
 import re
 import time
 import polling2
@@ -12,6 +12,7 @@ import parse
 import binascii
 import yaml
 
+from string import Template
 from behave import given, register_type, then, when, step
 from dboperator import DbOperator
 from etcdcluster import EtcdCluster
@@ -26,17 +27,23 @@ from serverless_operator import ServerlessOperator
 from service_binding import ServiceBinding
 from servicebindingoperator import Servicebindingoperator
 from app import App
+from util import scenario_id
 
 
 # STEP
-@given(u'Namespace "{namespace_name}" is used')
-def given_namespace_is_used(context, namespace_name):
+@given(u'Namespace "{namespace_name}" exists')
+def namespace_maybe_create(context, namespace_name):
     namespace = Namespace(namespace_name)
     if not namespace.is_present():
         print("Namespace is not present, creating namespace: {}...".format(namespace_name))
         assert namespace.create(), f"Unable to create namespace '{namespace_name}'"
     print("Namespace {} is created!!!".format(namespace_name))
-    context.namespace = namespace
+    return namespace
+
+
+@given(u'Namespace "{namespace_name}" is used')
+def namespace_is_used(context, namespace_name):
+    context.namespace = namespace_maybe_create(context, namespace_name)
 
 
 # STEP
@@ -45,7 +52,7 @@ def given_namespace_from_env_is_used(context, namespace_env):
     env = os.getenv(namespace_env)
     assert env is not None, f"{namespace_env} environment variable needs to be set"
     print(f"{namespace_env} = {env}")
-    given_namespace_is_used(context, env)
+    namespace_is_used(context, env)
 
 
 # STEP
@@ -174,17 +181,9 @@ def db_instance_is_running(context, db_name, namespace=None):
 
 
 # STEP
-sbr_is_applied_step = u'Service Binding is applied'
-
-
-@given(sbr_is_applied_step)
-@when(sbr_is_applied_step)
-@then(sbr_is_applied_step)
-def sbr_is_applied(context):
-    sbr_yaml = context.text
-    metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', sbr_yaml).group(0))
-    context.sbr_name = metadata_name
-    sbr = ServiceBinding()
+@step(u'Service Binding is applied')
+@step(u'user {user} applies Service Binding')
+def sbr_is_applied(context, user=None):
     if "application" in context and "application_type" in context:
         application = context.application
         if context.application_type == "nodejs":
@@ -194,11 +193,7 @@ def sbr_is_applied(context):
             context.application_original_generation = context.application.get_generation()
         else:
             assert False, f"Invalid application type in context.application_type={context.application_type}, valid are 'nodejs', 'knative'"
-    if "namespace" in context:
-        ns = context.namespace.name
-    else:
-        ns = None
-    assert sbr.create(sbr_yaml, ns) is not None, "Service binding not created"
+    context.sbr_name = apply_yaml(context, user)["name"]
 
 
 # STEP
@@ -247,8 +242,13 @@ def sbo_jq_is(context, jq_expression, sbr_name, json_value):
     openshift = Openshift()
     polling2.poll(lambda: json.loads(
         openshift.get_resource_info_by_jq("servicebinding", sbr_name, context.namespace.name, jq_expression,
-                                          wait=False)) == json_value, step=5, timeout=800,
+                                          wait=False)) == json_value, step=5, timeout=600,
                   ignore_exceptions=(json.JSONDecodeError,))
+
+
+@step(u'Service Binding {condition}.{field} is "{field_value}"')
+def check_sb_condition_field_value(context, condition, field, field_value):
+    sbo_jq_is(context, f'.status.conditions[] | select(.type=="{condition}").{field}', context.sbr_name, field_value)
 
 
 @step(u'Service Binding "{sbr_name}" is ready')
@@ -374,9 +374,10 @@ def check_secret_key_with_ip_value(context, secret_name, secret_key):
 @given(u'The ConfigMap is present')
 @given(u'The Secret is present')
 @when(u'The Secret is present')
-def apply_yaml(context):
+def apply_yaml(context, user=None):
     openshift = Openshift()
-    metadata = yaml.full_load(context.text)["metadata"]
+    resource = Template(context.text).substitute(scenario_id=scenario_id(context))
+    metadata = yaml.full_load(resource)["metadata"]
     metadata_name = metadata["name"]
     if "namespace" in metadata:
         ns = metadata["namespace"]
@@ -385,9 +386,10 @@ def apply_yaml(context):
             ns = context.namespace.name
         else:
             ns = None
-    output = openshift.apply(context.text, ns)
+    output = openshift.apply(resource, ns, user)
     result = re.search(rf'.*{metadata_name}.*(created|unchanged|configured)', output)
     assert result is not None, f"Unable to apply YAML for CR '{metadata_name}': {output}"
+    return metadata
 
 
 # STEP
@@ -507,3 +509,30 @@ def create_deployment(context, app_name, image_ref):
     app = App(app_name, context.namespace.name, image_ref)
     if not app.is_running():
         assert app.install() is True, "Failed to create deployment."
+
+
+@step(u'User {user} cannot read resource {resource} in namespace {namespace}')
+@step(u'User {user} cannot read resource {resource} in test namespace')
+def check_resource_unreadable(context, user, resource, namespace=None):
+    openshift = Openshift()
+    data = resource.split("/")
+    res_type = data[0]
+    res_name = Template(data[1]).substitute(scenario_id=scenario_id(context))
+    ns = namespace if namespace is not None else context.namespace.name
+    res = openshift.get_resource_info_by_jsonpath(resource_type=res_type, name=res_name, namespace=ns, user=user)
+    assert res is None, f"User {user} should not be able to read {resource} in {namespace} namespace"
+
+
+@step(u"User {user} has '{role_name}' role in test namespace")
+def user_role_maybe_create(context, user, role_name):
+    openshift = Openshift()
+    openshift.cli(f"create rolebinding {user}-{role_name} --clusterrole={role_name} --user={user}", context.namespace.name)
+
+
+@step(u'No user has access to the namespace')
+def remove_user_rolebindings(context):
+    openshift = Openshift()
+    rbs = openshift.get_resource_lst("rolebindings", context.namespace.name)
+    for rb in rbs:
+        if rb != "service-binding-operator":
+            openshift.cli(f"delete rolebinding {rb}", context.namespace.name)

@@ -175,12 +175,16 @@ spec:
             return output
         return None
 
-    def apply(self, yaml, namespace=None):
+    def apply(self, yaml, namespace=None, user=None):
         if namespace is not None:
             ns_arg = f"-n {namespace}"
         else:
             ns_arg = ""
-        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} -f -", yaml)
+        if user is not None:
+            user_arg = f"--user={user}"
+        else:
+            user_arg = ""
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} {user_arg} -f -", yaml)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) while applying a YAML: {output}"
         return output
 
@@ -288,8 +292,10 @@ spec:
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned while getting deployment's envFrom: {env_from}"
         return env_from
 
-    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path):
+    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path="{.*}", user=None):
         oc_cmd = f'{ctx.cli} get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"'
+        if user:
+            oc_cmd += f" --user={user}"
         output, exit_code = self.cmd.run(oc_cmd)
         if exit_code == 0:
             if resource_type == "secrets":
@@ -467,3 +473,8 @@ spec:
             else:
                 (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app using following command line {cmd}\n: {output}"
+
+    def cli(self, cmd, namespace):
+        output, exit_status = self.cmd.run(f'{ctx.cli} {cmd} -n {namespace}')
+        assert exit_status == 0, "Exit should be zero"
+        return output

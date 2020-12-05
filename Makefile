@@ -171,7 +171,7 @@ TEST_ACCEPTANCE_START_SBO ?= local
 TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
 TEST_ACCEPTANCE_REPORT_DIR ?= $(OUTPUT_DIR)/acceptance-tests-report
 TEST_ACCEPTANCE_ARTIFACTS ?= /tmp/artifacts
-
+TEST_ACCEPTANCE_CLI ?= oc
 TEST_ACCEPTANCE_TAGS ?=
 
 ifdef TEST_ACCEPTANCE_TAGS
@@ -280,6 +280,9 @@ test-acceptance-setup:
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ./hack/deploy-sbo-operator-hub.sh))
 endif
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r test/acceptance/features/requirements.txt
+ifeq ($(TEST_ACCEPTANCE_CLI), oc)
+	./test/acceptance/openshift-setup.sh
+endif
 
 .PHONY: test-acceptance
 ## Runs acceptance tests
@@ -363,6 +366,8 @@ deploy-rbac:
 	$(Q)kubectl apply -f deploy/service_account.yaml -n $(TEST_NAMESPACE)
 	$(Q)kubectl apply -f deploy/role.yaml -n $(TEST_NAMESPACE)
 	$(Q)kubectl apply -f deploy/role_binding.yaml -n $(TEST_NAMESPACE)
+	$(Q)kubectl apply -f deploy/cluster-roles.yaml
+
 
 .PHONY: deploy-crds
 ## Deploy-CRD: Deploy CRD

@@ -76,7 +76,7 @@ jobs:
         - sudo mv minikube /usr/local/bin/
         # start minikube
         - touch $KUBECONFIG
-        - minikube start --kubernetes-version=v${K8S_VERSION} --cpus $(nproc) --memory $(free -tm | grep "Total:" | awk '{print $2}')m
+        - ./hack/start-minikube.sh --kubernetes-version=v${K8S_VERSION} --cpus $(nproc) --memory $(free -tm | grep "Total:" | awk '{print $2}')m
         - kubectl get nodes -o yaml
         - kubectl cluster-info
         # install OLM
