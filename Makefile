@@ -122,7 +122,7 @@ GOCOV_DIR ?= $(ARTIFACT_DIR)/test-coverage
 GOCOV_FILE_TEMPL ?= $(GOCOV_DIR)/REPLACE_TEST.txt
 GOCOV ?= "-covermode=atomic -coverprofile REPLACE_FILE"
 
-GIT_COMMIT_ID ?= $(shell git rev-parse --short HEAD)
+GIT_COMMIT_ID ?= $(shell git rev-parse --short=8 HEAD)
 
 OPERATOR_VERSION ?= 0.4.0
 OPERATOR_REGISTRY ?= quay.io
