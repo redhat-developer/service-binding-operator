@@ -30,6 +30,8 @@ Feature: Insert service binding to a custom location in application resource
                     - ac
             """
 
+    @examples
+    # https://github.com/redhat-developer/service-binding-operator/tree/master/examples/pod_spec_path
     Scenario: Specify container's path in Service Binding
         Given DB "db-demo-csp" is running
         * The Custom Resource is present

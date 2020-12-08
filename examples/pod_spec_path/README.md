@@ -115,7 +115,7 @@ EOD
 
 Check the secret `binding-request-sample` has been injected:
 
-```shell 
+```shell
 kubectl get appconfigs.stable.example.com demo-appconfig -o yaml
 ```
 ```yaml
@@ -143,21 +143,4 @@ spec:
       - containerPort: 8090
       resources: {}
   uri: some uri
-```
-
-Delete the Service Binding and check that the secret has been removed.
-
-```yaml
-...
-spec:
-  spec:
-    containers:
-    - env:
-      - name: ServiceBindingOperatorChangeTriggerEnvVar
-        value: "106757"
-      image: yusufkaratoprak/kubernetes-gosample:latest
-      name: hello-world
-      ports:
-      - containerPort: 8090
-      resources: {}
 ```
