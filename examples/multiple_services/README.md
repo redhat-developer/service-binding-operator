@@ -147,7 +147,42 @@ spec:
   detectBindingResources: true
 ```
 
-Once the binding is processed, the secret can be verified by executing `curl route-of-the-application/env`. You can get route by `oc get route` command.
+***After the binding is processed***
+
+#### Check the status of Service Binding
+
+`ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+
+To check the status of Service Binding, run the command:
+
+```
+kubectl get servicebinding service-binding-multiple-services -o yaml
+```
+
+Status of Service Binding on successful binding:
+
+```yaml
+status:
+  conditions:
+  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
+    lastTransitionTime: "2020-12-08T09:02:44Z"
+    status: "True"
+    type: CollectionReady
+  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
+    lastTransitionTime: "2020-12-08T09:02:44Z"
+    status: "True"
+    type: InjectionReady
+  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
+    lastTransitionTime: "2020-12-08T09:02:44Z"
+    status: "True"
+    type: Ready
+  secret: service-binding-multiple-services
+```
+
+#### Verify the data injected
+
+You can check env var by executing `curl route-of-the-application/env`.
+You can get route by `oc get route` command.
 
 ```shell
 curl sbo-generic-test-app-test-multiple-services.apps.dev-svc-4.6-120807.devcluster.openshift.com/env
@@ -222,55 +257,5 @@ curl sbo-generic-test-app-test-multiple-services.apps.dev-svc-4.6-120807.devclus
 "TERM": "xterm"
 }
 ```
-
-#### Check the status of Service Binding
-
-`ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
-
-To check the status of Service Binding, run the command:
-
-```
-kubectl get servicebinding service-binding-multiple-services -o yaml
-```
-
-Status of Service Binding on successful binding:
-
-```yaml
-status:
-  conditions:
-  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
-    lastTransitionTime: "2020-12-08T09:02:44Z"
-    status: "True"
-    type: CollectionReady
-  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
-    lastTransitionTime: "2020-12-08T09:02:44Z"
-    status: "True"
-    type: InjectionReady
-  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
-    lastTransitionTime: "2020-12-08T09:02:44Z"
-    status: "True"
-    type: Ready
-  secret: service-binding-multiple-services
-```
-
-where
-
-* Conditions represent the latest available observations of Service Binding's state
-* Secret represents the name of the secret created by the Service Binding Operator
-
-Conditions types
-
-* `CollectionReady` type represents collection of secret from the service
-* `InjectionReady` type represents an injection of the secret into the application
-
-Conditions can have the following type, status and reason:
-
-| Type            | Status | Reason               | Type           | Status | Reason                   |
-| --------------- | ------ | -------------------- | -------------- | ------ | ------------------------ |
-| CollectionReady | False  | EmptyServiceSelector | InjectionReady | False  |                          |
-| CollectionReady | False  | ServiceNotFound      | InjectionReady | False  |                          |
-| CollectionReady | True   |                      | InjectionReady | False  | EmptyApplicationSelector |
-| CollectionReady | True   |                      | InjectionReady | False  | ApplicationNotFound      |
-| CollectionReady | True   |                      | InjectionReady | True   |                          |
 
 That's it, folks!
