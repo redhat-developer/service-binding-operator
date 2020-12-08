@@ -490,3 +490,9 @@ dev-release:
 validate-release: setup-venv
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install yq==2.10.0
 	BUNDLE_VERSION=$(BASE_BUNDLE_VERSION) CHANNEL="beta" ./hack/validate-release.sh
+
+.PHONY: prepare-operatorhub-pr
+## prepare files for OperatorHub PR
+## use this target when the operator needs to be released as upstream operator
+prepare-operatorhub-pr:
+	./hack/prepare-operatorhub-pr.sh $(OPERATOR_VERSION) $(OPERATOR_BUNDLE_IMAGE_REF)
