@@ -1,4 +1,4 @@
-# Binding Multiple Services to an application
+# Multiple Services Binding Example
 
 This document describes step-by-step the actions to create the required
 infrastructure to demonstrate multiple services binding built on existing
@@ -13,13 +13,37 @@ a *Developer*.
 
 ## Cluster Configuration
 
-Switch to the *Administrator* perspective.
-
 ### Create a New Project
 
 Create a new project, in this example it is called `multiple-services-demo`.
 
-### Install the DB operator using a `CatalogSource`
+### Install the Postgres Operator
+
+Switch to the *Administrator* perspective.
+
+Add an extra OperatorSource by pushing the "+" button on the top right corner
+and pasting the following:
+
+```yaml
+---
+apiVersion: operators.coreos.com/v1
+kind: OperatorSource
+metadata:
+  name: db-operators
+  namespace: openshift-marketplace
+spec:
+  type: appregistry
+  endpoint: https://quay.io/cnr
+  registryNamespace: pmacik
+```
+
+Go to "Operators > OperatorHub", search for "Postgres" and install "PostgreSQL
+Database" provided by Red Hat.
+
+Select "A specific namespace on the cluster" in "Installation Mode", select the
+"multiple-services-demo" namespace in "Installed Namespace" and push "Subscribe".
+
+#### Install the DB operator using a `CatalogSource`
 
 Apply the following `CatalogSource`:
 
@@ -90,12 +114,13 @@ spec:
 ```
 
 Import the application by pushing the `+Add` button on the left side of the
-screen, and then the `From Git` card. Fill the `Git Repo URL` with
-`https://github.com/akashshinde/node-todo.git`; the repository will be
-validated and the appropriate `Builder Image` and `Builder Image Version`
-will be selected. Push the `Create` button to create the application.
+screen, and then the `Container image` card. Fill the `Image name from external registry` with
+`quay.io/redhat-developer/sbo-generic-test-app:20200923`. Openshift will fill rest things correctly.
+Name of application will be `sbo-generic-test-app`.
+Check `Create a route to the application` option at the bottom.
+Push the `Create` button to create the application.
 
-Create the ServiceBinding `node-todo-git` by pushing the `(+)` button
+Create the ServiceBinding `service-binding-multiple-services` by pushing the `(+)` button
 on the top right corner and pasting the following:
 
 ```yaml
@@ -103,10 +128,10 @@ on the top right corner and pasting the following:
 apiVersion: operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
-  name: node-todo-git
+  name: service-binding-multiple-services
 spec:
   application:
-    name: node-todo-git
+    name: sbo-generic-test-app
     group: apps
     version: v1
     resource: deployments
@@ -122,41 +147,82 @@ spec:
   detectBindingResources: true
 ```
 
-Once the binding is processed, the secret can be verified by executing
+Once the binding is processed, the secret can be verified by executing `curl route-of-the-application/env`. You can get route by `oc get route` command.
+
 ```shell
-kubectl get secrets node-todo-git -o yaml
+curl sbo-generic-test-app-test-multiple-services.apps.dev-svc-4.6-120807.devcluster.openshift.com/env
 ```
-```yaml
-apiVersion: v1
-data:
-  DATABASE_DB_HOST: MTcyLjMwLjU2LjM0
-  DATABASE_DB_NAME: ZGItZGVtbw==
-  DATABASE_DB_PASSWORD: cGFzc3dvcmQ=
-  DATABASE_DB_PORT: NTQzMg==
-  DATABASE_DB_USER: cG9zdGdyZXM=
-  DATABASE_DBCONNECTIONIP: MTcyLjMwLjU2LjM0
-  DATABASE_DBCONNECTIONPORT: NTQzMg==
-  DATABASE_DBNAME: ZGItZGVtbw==
-  DATABASE_IMAGE: ZG9ja2VyLmlvL3Bvc3RncmVz
-  DATABASE_IMAGENAME: cG9zdGdyZXM=
-  DATABASE_PASSWORD: cGFzc3dvcmQ=
-  DATABASE_USER: cG9zdGdyZXM=
-  ETCDCLUSTER_CLUSTERIP: MTcyLjMwLjIwOC4yMw==
-  ETCDCLUSTER_DB_HOST: MTcyLjMwLjU2LjM0
-  ETCDCLUSTER_DB_NAME: ZGItZGVtbw==
-  ETCDCLUSTER_DB_PASSWORD: cGFzc3dvcmQ=
-  ETCDCLUSTER_DB_PORT: NTQzMg==
-  ETCDCLUSTER_DB_USER: cG9zdGdyZXM=
-  ETCDCLUSTER_PASSWORD: Y0dGemMzZHZjbVE9
-  ETCDCLUSTER_USER: Y0c5emRHZHlaWE09
-kind: Secret
-metadata:
-  ...
-  name: node-todo-git
-  namespace: multiple-services-demo
-  ...
-type: Opaque
+
+```json
+{
+"DATABASE_DBCONNECTIONIP": "172.30.228.141",
+"DATABASE_DBCONNECTIONPORT": "5432",
+"DATABASE_DBNAME": "db-demo",
+"DATABASE_DB_HOST": "172.30.228.141",
+"DATABASE_DB_NAME": "db-demo",
+"DATABASE_DB_PASSWORD": "password",
+"DATABASE_DB_PORT": "5432",
+"DATABASE_DB_USER": "postgres",
+"DATABASE_PASSWORD": "password",
+"DATABASE_USER": "postgres",
+"DB_DEMO_POSTGRESQL_PORT": "tcp://172.30.228.141:5432",
+"DB_DEMO_POSTGRESQL_PORT_5432_TCP": "tcp://172.30.228.141:5432",
+"DB_DEMO_POSTGRESQL_PORT_5432_TCP_ADDR": "172.30.228.141",
+"DB_DEMO_POSTGRESQL_PORT_5432_TCP_PORT": "5432",
+"DB_DEMO_POSTGRESQL_PORT_5432_TCP_PROTO": "tcp",
+"DB_DEMO_POSTGRESQL_SERVICE_HOST": "172.30.228.141",
+"DB_DEMO_POSTGRESQL_SERVICE_PORT": "5432",
+"DB_DEMO_POSTGRESQL_SERVICE_PORT_DB_DEMO_POSTGRESQL": "5432",
+"ETCDCLUSTER_CLUSTERIP": "172.30.205.77",
+"ETCDCLUSTER_DB_HOST": "172.30.228.141",
+"ETCDCLUSTER_DB_NAME": "db-demo",
+"ETCDCLUSTER_DB_PASSWORD": "password",
+"ETCDCLUSTER_DB_PORT": "5432",
+"ETCDCLUSTER_DB_USER": "postgres",
+"ETCDCLUSTER_PASSWORD": "cGFzc3dvcmQ=",
+"ETCDCLUSTER_USER": "cG9zdGdyZXM=",
+"ETCD_DEMO_CLIENT_PORT": "tcp://172.30.205.77:2379",
+"ETCD_DEMO_CLIENT_PORT_2379_TCP": "tcp://172.30.205.77:2379",
+"ETCD_DEMO_CLIENT_PORT_2379_TCP_ADDR": "172.30.205.77",
+"ETCD_DEMO_CLIENT_PORT_2379_TCP_PORT": "2379",
+"ETCD_DEMO_CLIENT_PORT_2379_TCP_PROTO": "tcp",
+"ETCD_DEMO_CLIENT_SERVICE_HOST": "172.30.205.77",
+"ETCD_DEMO_CLIENT_SERVICE_PORT": "2379",
+"ETCD_DEMO_CLIENT_SERVICE_PORT_CLIENT": "2379",
+"ETCD_RESTORE_OPERATOR_PORT": "tcp://172.30.149.218:19999",
+"ETCD_RESTORE_OPERATOR_PORT_19999_TCP": "tcp://172.30.149.218:19999",
+"ETCD_RESTORE_OPERATOR_PORT_19999_TCP_ADDR": "172.30.149.218",
+"ETCD_RESTORE_OPERATOR_PORT_19999_TCP_PORT": "19999",
+"ETCD_RESTORE_OPERATOR_PORT_19999_TCP_PROTO": "tcp",
+"ETCD_RESTORE_OPERATOR_SERVICE_HOST": "172.30.149.218",
+"ETCD_RESTORE_OPERATOR_SERVICE_PORT": "19999",
+"HOME": "/",
+"HOSTNAME": "sbo-generic-test-app-865978dbc-8fgjs",
+"KUBERNETES_PORT": "tcp://172.30.0.1:443",
+"KUBERNETES_PORT_443_TCP": "tcp://172.30.0.1:443",
+"KUBERNETES_PORT_443_TCP_ADDR": "172.30.0.1",
+"KUBERNETES_PORT_443_TCP_PORT": "443",
+"KUBERNETES_PORT_443_TCP_PROTO": "tcp",
+"KUBERNETES_SERVICE_HOST": "172.30.0.1",
+"KUBERNETES_SERVICE_PORT": "443",
+"KUBERNETES_SERVICE_PORT_HTTPS": "443",
+"NSS_SDB_USE_CACHE": "no",
+"PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+"PWD": "/",
+"SBO_GENERIC_TEST_APP_PORT": "tcp://172.30.95.166:8080",
+"SBO_GENERIC_TEST_APP_PORT_8080_TCP": "tcp://172.30.95.166:8080",
+"SBO_GENERIC_TEST_APP_PORT_8080_TCP_ADDR": "172.30.95.166",
+"SBO_GENERIC_TEST_APP_PORT_8080_TCP_PORT": "8080",
+"SBO_GENERIC_TEST_APP_PORT_8080_TCP_PROTO": "tcp",
+"SBO_GENERIC_TEST_APP_SERVICE_HOST": "172.30.95.166",
+"SBO_GENERIC_TEST_APP_SERVICE_PORT": "8080",
+"SBO_GENERIC_TEST_APP_SERVICE_PORT_8080_TCP": "8080",
+"SHLVL": "1",
+"ServiceBindingOperatorChangeTriggerEnvVar": "45838",
+"TERM": "xterm"
+}
 ```
+
 #### Check the status of Service Binding
 
 `ServiceBinding Status` depicts the status of the Service Binding operator. More info: https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
@@ -164,7 +230,7 @@ type: Opaque
 To check the status of Service Binding, run the command:
 
 ```
-kubectl get servicebinding binding-request -o yaml
+kubectl get servicebinding service-binding-multiple-services -o yaml
 ```
 
 Status of Service Binding on successful binding:
@@ -172,15 +238,19 @@ Status of Service Binding on successful binding:
 ```yaml
 status:
   conditions:
-  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
-    lastTransitionTime: "2020-10-15T13:23:23Z"
+  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
+    lastTransitionTime: "2020-12-08T09:02:44Z"
     status: "True"
     type: CollectionReady
-  - lastHeartbeatTime: "2020-10-15T13:23:36Z"
-    lastTransitionTime: "2020-10-15T13:23:23Z"
+  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
+    lastTransitionTime: "2020-12-08T09:02:44Z"
     status: "True"
     type: InjectionReady
-  secret: binding-request
+  - lastHeartbeatTime: "2020-12-08T09:03:12Z"
+    lastTransitionTime: "2020-12-08T09:02:44Z"
+    status: "True"
+    type: Ready
+  secret: service-binding-multiple-services
 ```
 
 where
@@ -188,10 +258,7 @@ where
 * Conditions represent the latest available observations of Service Binding's state
 * Secret represents the name of the secret created by the Service Binding Operator
 
-
-Conditions have two types `CollectionReady` and `InjectionReady`
-
-where
+Conditions types
 
 * `CollectionReady` type represents collection of secret from the service
 * `InjectionReady` type represents an injection of the secret into the application

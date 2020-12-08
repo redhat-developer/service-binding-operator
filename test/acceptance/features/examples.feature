@@ -94,7 +94,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
         Given DB "db-mul-svc-ex" is running
         * Etcd operator running
         * Etcd cluster "etcd-mul-svc-ex" is running
-        * "node-todo-mul-svc-ex" application is deployed from remote repository "https://github.com/akashshinde/node-todo.git"
+        * Generic test application "sbo-generic-test-app" is running
         When Service Binding is applied
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -103,7 +103,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
                 name: sbr-bind-mul-svc-ex
             spec:
                 application:
-                    name: node-todo-mul-svc-ex
+                    name: sbo-generic-test-app
                     group: apps
                     version: v1
                     resource: deployments
@@ -119,23 +119,19 @@ Feature: Verify examples provided in Service Binding Operator github repository
                 detectBindingResources: true
             """
         Then Service Binding "sbr-bind-mul-svc-ex" is ready
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DBNAME" key with value "db-mul-svc-ex"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_USER" key with value "postgres"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_PASSWORD" key with value "password"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_PASSWORD" key with value "password"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_NAME" key with value "db-mul-svc-ex"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_PORT" key with value "5432"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_USER" key with value "postgres"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DB_HOST" key with dynamic IP addess as the value
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_IMAGE" key with value "docker.io/postgres"
-        And Secret "sbr-bind-mul-svc-ex" contains "DATABASE_IMAGENAME" key with value "postgres"
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_CLUSTERIP" key with dynamic IP addess as the value
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_HOST" key with dynamic IP addess as the value
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_NAME" key with value "db-mul-svc-ex"
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_PASSWORD" key with value "password"
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_PORT" key with value "5432"
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_DB_USER" key with value "postgres"
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_PASSWORD" key with value "cGFzc3dvcmQ="
-        And Secret "sbr-bind-mul-svc-ex" contains "ETCDCLUSTER_USER" key with value "cG9zdGdyZXM="
+        And The application env var "DATABASE_DBNAME" has value "db-mul-svc-ex"
+        And The application env var "DATABASE_USER" has value "postgres"
+        And The application env var "DATABASE_PASSWORD" has value "password"
+        And The application env var "DATABASE_DB_PASSWORD" has value "password"
+        And The application env var "DATABASE_DB_NAME" has value "db-mul-svc-ex"
+        And The application env var "DATABASE_DB_PORT" has value "5432"
+        And The application env var "DATABASE_DB_USER" has value "postgres"
+        And The application env var "DATABASE_DBCONNECTIONPORT" has value "5432"
+        And The application env var "DATABASE_IMAGE" has value "docker.io/postgres"
+        And The application env var "DATABASE_IMAGENAME" has value "postgres"
+        And The application env var "ETCDCLUSTER_DB_NAME" has value "db-mul-svc-ex"
+        And The application env var "ETCDCLUSTER_DB_PASSWORD" has value "password"
+        And The application env var "ETCDCLUSTER_DB_PORT" has value "5432"
+        And The application env var "ETCDCLUSTER_DB_USER" has value "postgres"
+        And The application env var "ETCDCLUSTER_PASSWORD" has value "cGFzc3dvcmQ="
+        And The application env var "ETCDCLUSTER_USER" has value "cG9zdGdyZXM="
