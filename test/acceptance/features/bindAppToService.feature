@@ -215,7 +215,7 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-empty-app" should be changed to "True"
         And Secret "binding-request-empty-app" contains "BACKEND_HOST" key with value "example.common"
         And Secret "binding-request-empty-app" contains "BACKEND_USERNAME" key with value "foo"
-
+    @disconnected
     Scenario: Backend Service status update gets propagated to the binding secret
         Given OLM Operator "backend" is running
         * The Custom Resource is present
@@ -270,7 +270,6 @@ Feature: Bind an application to a service
                 ready: true
             """
         Then Secret "binding-request-backend" contains "CustomReady" key with value "true"
-
 
     Scenario: Backend Service new spec status update gets propagated to the binding secret
         Given OLM Operator "backend-new-spec" is running
@@ -338,7 +337,7 @@ Feature: Bind an application to a service
             """
         Then Service Binding "binding-request-a-d-c" is ready
         And Secret "binding-request-a-d-c" contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"
-
+    @disconnected
     Scenario: Creating binding secret from the definitions managed in OLM operator descriptors
         Given Backend service CSV is installed
             """

@@ -8,7 +8,7 @@ Feature: Bind an application to a service using annotations
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-
+    @disconnected
     Scenario: Provide binding info through backing service CRD annotation
         Given The Custom Resource Definition is present
             """
