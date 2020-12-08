@@ -38,8 +38,3 @@ class App(object):
 
     def base_url(self):
         return self.openshift.get_route_host(self.name, self.namespace)
-
-    def install_from_remote_repository(self):
-        self.openshift.new_app_from_remote_repository(self.name, self.remote_repo_repository, self.namespace)
-        self.openshift.expose_service_route(self.name, self.namespace, self.port)
-        return self.is_running(wait=True)
