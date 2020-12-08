@@ -13,14 +13,12 @@ class App(object):
     route_url = ""
     port = ""
     bindingRoot = ""
-    remote_repo_repository = ""
 
-    def __init__(self, name, namespace, app_image=None, port="", remote_repo_repository=None):
+    def __init__(self, name, namespace, app_image, port=""):
         self.name = name
         self.namespace = namespace
         self.app_image = app_image
         self.port = port
-        self.remote_repo_repository = remote_repo_repository
 
     def is_running(self, wait=False):
         output, exit_code = self.cmd.run(
