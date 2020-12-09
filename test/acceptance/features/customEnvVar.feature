@@ -41,7 +41,7 @@ Feature: Inject custom env variable into application
                     kind: Backend
                     name: backend-with-tag-sequence
                     id: backend
-                customEnvVar:
+                mappings:
                    - name: TAGS
                      value: '{{ .backend.spec.tags }}'
             """
@@ -81,7 +81,7 @@ Feature: Inject custom env variable into application
                     kind: Backend
                     name: backend-with-user-labels-map
                     id: backend
-                customEnvVar:
+                mappings:
                    - name: USER_LABELS
                      value: '{{ .backend.spec.userLabels }}'
             """
@@ -121,7 +121,7 @@ Feature: Inject custom env variable into application
                     kind: Backend
                     name: backend-with-user-labels-archive
                     id: backend
-                customEnvVar:
+                mappings:
                    - name: USER_LABELS_ARCHIVE
                      value: '{{ .backend.spec.userLabels.archive }}'
             """

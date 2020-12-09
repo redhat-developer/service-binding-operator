@@ -19,13 +19,13 @@ type ServiceBindingSpec struct {
 	// +optional
 	MountPath string `json:"mountPath,omitempty"`
 
-	// EnvVarPrefix is the prefix for environment variables
+	// NamePrefix is the prefix for environment variables or file name
 	// +optional
-	EnvVarPrefix string `json:"envVarPrefix,omitempty"`
+	NamePrefix string `json:"namePrefix,omitempty"`
 
-	// Custom env variables
+	// Custom mappings
 	// +optional
-	CustomEnvVar []corev1.EnvVar `json:"customEnvVar,omitempty"`
+	Mappings []Mapping `json:"mappings,omitempty"`
 
 	// Services is used to identify multiple backing services.
 	// +kubebuilder:validation:MinItems:=1
@@ -45,6 +45,14 @@ type ServiceBindingSpec struct {
 	// See MountPath attribute description for more details.
 	// +optional
 	BindAsFiles bool `json:"bindAsFiles,omitempty"`
+}
+
+// ServiceBindingMapping defines a new binding from set of existing bindings
+type Mapping struct {
+	// Name is the name of new binding
+	Name string `json:"name"`
+	// Value is a template which will be rendered and ibjected into the application
+	Value string `json:"value"`
 }
 
 // ServiceBindingStatus defines the observed state of ServiceBinding
@@ -67,9 +75,9 @@ type Service struct {
 	corev1.LocalObjectReference `json:",inline"`
 
 	// +optional
-	Namespace    *string `json:"namespace,omitempty"`
-	EnvVarPrefix *string `json:"envVarPrefix,omitempty"`
-	Id           *string `json:"id,omitempty"`
+	Namespace  *string `json:"namespace,omitempty"`
+	NamePrefix *string `json:"namePrefix,omitempty"`
+	Id         *string `json:"id,omitempty"`
 }
 
 // BoundApplication defines the application workloads to which the binding secret has

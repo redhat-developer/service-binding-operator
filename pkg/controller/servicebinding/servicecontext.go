@@ -22,8 +22,8 @@ type serviceContext struct {
 	service *unstructured.Unstructured
 	// envVars contains the service's contributed environment variables.
 	envVars map[string]interface{}
-	// envVarPrefix indicates the prefix to use in environment variables.
-	envVarPrefix *string
+	// namePrefix indicates the prefix to use in environment variables.
+	namePrefix *string
 	// Id indicates a name the service can be referred in custom environment variables.
 	id *string
 }
@@ -64,7 +64,7 @@ SELECTORS:
 		ns := stringValueOrDefault(s.Namespace, defaultNs)
 		gvk := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
 		svcCtx, err := buildServiceContext(logger.WithName("buildServiceContexts"), client, ns, gvk,
-			s.Name, s.EnvVarPrefix, restMapper, s.Id)
+			s.Name, s.NamePrefix, restMapper, s.Id)
 
 		if err != nil {
 			// best effort approach; should not break in common cases such as a unknown annotation
@@ -80,9 +80,9 @@ SELECTORS:
 
 		if includeServiceOwnedResources != nil && *includeServiceOwnedResources {
 			// use the selector's kind as owned resources environment variable prefix
-			svcEnvVarPrefix := svcCtx.envVarPrefix
-			if svcEnvVarPrefix == nil {
-				svcEnvVarPrefix = &s.Kind
+			svcNamePrefix := svcCtx.namePrefix
+			if svcNamePrefix == nil {
+				svcNamePrefix = &s.Kind
 			}
 			ownedResourcesCtxs, err := findOwnedResourcesCtxs(
 				logger,
@@ -91,7 +91,7 @@ SELECTORS:
 				svcCtx.service.GetName(),
 				svcCtx.service.GetUID(),
 				gvk,
-				svcEnvVarPrefix,
+				svcNamePrefix,
 				restMapper,
 			)
 			if err != nil {
@@ -111,7 +111,7 @@ func findOwnedResourcesCtxs(
 	name string,
 	uid types.UID,
 	gvk schema.GroupVersionKind,
-	envVarPrefix *string,
+	namePrefix *string,
 	restMapper meta.RESTMapper,
 ) (serviceContextList, error) {
 	ownedResources, err := getOwnedResources(
@@ -129,7 +129,7 @@ func findOwnedResourcesCtxs(
 	return buildOwnedResourceContexts(
 		client,
 		ownedResources,
-		envVarPrefix,
+		namePrefix,
 		restMapper,
 	)
 }
@@ -191,7 +191,7 @@ func buildServiceContext(
 	ns string,
 	gvk schema.GroupVersionKind,
 	name string,
-	envVarPrefix *string,
+	namePrefix *string,
 	restMapper meta.RESTMapper,
 	id *string,
 ) (*serviceContext, error) {
@@ -254,10 +254,10 @@ func buildServiceContext(
 	}
 
 	serviceCtx := &serviceContext{
-		service:      outputObj,
-		envVars:      envVars,
-		envVarPrefix: envVarPrefix,
-		id:           id,
+		service:    outputObj,
+		envVars:    envVars,
+		namePrefix: namePrefix,
+		id:         id,
 	}
 
 	return serviceCtx, nil

@@ -152,7 +152,7 @@ spec:
     name: mytranslator-binding <--- Translation service
     id: translationService
 
-  customEnvVar:
+  mappings:
     ## From the database service
     - name: JDBC_URL
       value: 'jdbc:postgresql://{{ .postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ .postgresDB.status.dbName }}'

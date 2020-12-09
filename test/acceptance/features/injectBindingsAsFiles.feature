@@ -39,7 +39,7 @@ Feature: Bindings get injected as files in application
                     name: backend-demo-01
                     id: bk
 
-                customEnvVar:
+                mappings:
                   - name: MYHOST
                     value: '{{ .bk.spec.host }}'
 
@@ -198,7 +198,7 @@ Feature: Bindings get injected as files in application
                     name: backend-demo-04
                     id: bk
 
-                customEnvVar:
+                mappings:
                   - name: MYHOST
                     value: '{{ .bk.spec.host }}'
 
@@ -255,7 +255,7 @@ Feature: Bindings get injected as files in application
                     version: v1
                     kind: Backend
                     name: backend-demo-05
-                    envVarPrefix: ""
+                    namePrefix: ""
 
                 application:
                     name: generic-app-a-d-u-5

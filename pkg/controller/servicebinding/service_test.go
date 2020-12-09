@@ -98,26 +98,26 @@ func TestFindServiceCRD(t *testing.T) {
 
 func TestGetObjectType(t *testing.T) {
 	type testCase struct {
-		name       string
+		name        string
 		descriptors []string
-		expected   string
+		expected    string
 	}
 
 	testCases := []testCase{
 		{
-			name:       "should build proper annotation",
+			name:        "should build proper annotation",
 			descriptors: []string{"urn:alm:descriptor:io.kubernetes:ConfigMap"},
-			expected: "ConfigMap",
+			expected:    "ConfigMap",
 		},
 		{
-			name:       "should build proper annotation",
+			name:        "should build proper annotation",
 			descriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret"},
-			expected: "Secret",
+			expected:    "Secret",
 		},
 		{
-			name:       "should build proper annotation",
+			name:        "should build proper annotation",
 			descriptors: []string{"incorrect.annotation:Secret"},
-			expected: "",
+			expected:    "",
 		},
 	}
 
@@ -129,61 +129,60 @@ func TestGetObjectType(t *testing.T) {
 	}
 }
 
-
 func TestLoadDescriptor(t *testing.T) {
 	type testCase struct {
-		name       string
-		path       string
+		name        string
+		path        string
 		descriptors []string
-		root       string
-		expected   map[string]string
+		root        string
+		expected    map[string]string
 	}
 
 	testCases := []testCase{
 		{
-			name:       "should build proper annotation",
+			name: "should build proper annotation",
 			descriptors: []string{
 				"urn:alm:descriptor:io.kubernetes:ConfigMap",
 				"service.binding:user:sourceKey=user",
 			},
-			root:       "status",
-			path:       "user",
+			root: "status",
+			path: "user",
 			expected: map[string]string{
 				"service.binding/user": "path={.status.user},sourceKey=user,objectType=ConfigMap",
 			},
 		},
 		{
-			name:       "should build proper annotation when object type is not specified",
+			name: "should build proper annotation when object type is not specified",
 			descriptors: []string{
 				"service.binding",
 			},
-			root:       "status",
-			path:       "user",
+			root: "status",
+			path: "user",
 			expected: map[string]string{
 				"service.binding/user": "path={.status.user}",
 			},
 		},
 		{
-			name:       "should build proper annotation",
+			name: "should build proper annotation",
 			descriptors: []string{
 				"urn:alm:descriptor:io.kubernetes:Secret",
 				"service.binding:user:sourceKey=user",
 				"service.binding:password:sourceValue=password",
 			},
-			root:       "status",
-			path:       "dbCredentials",
+			root: "status",
+			path: "dbCredentials",
 			expected: map[string]string{
-				"service.binding/user": "path={.status.dbCredentials},sourceKey=user,objectType=Secret",
+				"service.binding/user":     "path={.status.dbCredentials},sourceKey=user,objectType=Secret",
 				"service.binding/password": "path={.status.dbCredentials},sourceValue=password,objectType=Secret",
 			},
 		},
 		{
-			name:       "should build proper annotation",
+			name: "should build proper annotation",
 			descriptors: []string{
 				"service.binding:urls:elementType=sliceOfMaps,sourceKey=type,sourceValue=url",
 			},
-			root:       "status",
-			path:       "bootstrap",
+			root: "status",
+			path: "bootstrap",
 			expected: map[string]string{
 				"service.binding/urls": "path={.status.bootstrap},elementType=sliceOfMaps,sourceKey=type,sourceValue=url",
 			},
@@ -209,16 +208,16 @@ func TestBuildOwnerResourceContext(t *testing.T) {
 	obj := f.AddMockedUnstructuredSecret("secret")
 
 	type testCase struct {
-		inputPath         string
-		outputPath        string
-		ownerEnvVarPrefix *string
+		inputPath       string
+		outputPath      string
+		ownerNamePrefix *string
 	}
 
 	testCases := []testCase{
 		{
-			inputPath:         "data.user",
-			outputPath:        "user",
-			ownerEnvVarPrefix: nil,
+			inputPath:       "data.user",
+			outputPath:      "user",
+			ownerNamePrefix: nil,
 		},
 	}
 
@@ -226,7 +225,7 @@ func TestBuildOwnerResourceContext(t *testing.T) {
 		got, err := buildOwnedResourceContext(
 			f.FakeDynClient(),
 			obj,
-			tc.ownerEnvVarPrefix,
+			tc.ownerNamePrefix,
 			testutils.BuildTestRESTMapper(),
 			tc.inputPath,
 			tc.outputPath,

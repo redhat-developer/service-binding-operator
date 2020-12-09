@@ -29,7 +29,7 @@ kind: ServiceBindingRequest
 metadata:
     name: binding-request
 spec:
-    envVarPrefix: qiye111
+    namePrefix: qiye111
     applicationSelector:
         name: example-appconfig
         group: stable.example.com
@@ -43,7 +43,7 @@ spec:
         kind: Database
         name: example-db
         id: zzz
-        envVarPrefix: qiye
+        namePrefix: qiye
 ```
 
 After reconciliation, the `spec.containers` is going to be updated with
@@ -95,7 +95,7 @@ kind: ServiceBindingRequest
 metadata:
     name: binding-request
 spec:
-    envVarPrefix: qiye111
+    namePrefix: qiye111
     applicationSelector:
         name: example-appconfig
         group: stable.example.com
@@ -109,7 +109,7 @@ spec:
         kind: Database
         name: example-db
         id: zzz
-        envVarPrefix: qiye
+        namePrefix: qiye
 ```
 
 After reconciliation, the `spec.secret` is going to be updated with

@@ -5,25 +5,25 @@ import (
 	"encoding/json"
 	"text/template"
 
-	corev1 "k8s.io/api/core/v1"
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 )
 
-// customEnvParser is responsible to interpolate a given EnvVar containing templates.
-type customEnvParser struct {
-	EnvMap []corev1.EnvVar
+// mappingsParser is responsible to interpolate a given EnvVar containing templates.
+type mappingsParser struct {
+	EnvMap []v1alpha1.Mapping
 	Cache  map[string]interface{}
 }
 
-// newCustomEnvParser returns a new CustomEnvParser.
-func newCustomEnvParser(envMap []corev1.EnvVar, cache map[string]interface{}) *customEnvParser {
-	return &customEnvParser{
+// newCustomEnvParser returns a new mappingsParser.
+func newMappingsParser(envMap []v1alpha1.Mapping, cache map[string]interface{}) *mappingsParser {
+	return &mappingsParser{
 		EnvMap: envMap,
 		Cache:  cache,
 	}
 }
 
 // Parse interpolates and caches the templates in EnvMap.
-func (c *customEnvParser) Parse() (map[string]interface{}, error) {
+func (c *mappingsParser) Parse() (map[string]interface{}, error) {
 	data := make(map[string]interface{})
 	for _, v := range c.EnvMap {
 		tmpl, err := template.New("set").Funcs(template.FuncMap{"json": marshalToJSON}).Parse(v.Value)

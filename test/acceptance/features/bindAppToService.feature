@@ -243,7 +243,7 @@ Feature: Bind an application to a service
                     kind: Backend
                     name: backend-demo
                     id: SBR
-                customEnvVar:
+                mappings:
                   - name: CustomReady
                     value: '{{ .SBR.status.ready }}'
                   - name: CustomHost
@@ -319,7 +319,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-a-d-c
             spec:
-                envVarPrefix: REDHAT
+                namePrefix: REDHAT
                 application:
                     name: nodejs-rest-http-crud-a-d-c
                     group: apps
@@ -331,8 +331,8 @@ Feature: Bind an application to a service
                     kind: Database
                     name: db-demo-a-d-c
                     id: postgresDB
-                    envVarPrefix: DEVTOOLS
-                customEnvVar:
+                    namePrefix: DEVTOOLS
+                mappings:
                     - name: SOME_KEY
                       value: 'SOME_VALUE:{{ .postgresDB.status.dbConnectionPort }}:{{ .postgresDB.status.dbName }}'
             """

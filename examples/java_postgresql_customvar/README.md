@@ -200,7 +200,7 @@ spec:
     kind: Database
     name: db-demo
     id: postgresDB
-  customEnvVar:
+  mappings:
   - name: JDBC_URL
     value: 'jdbc:postgresql://{{ .postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ .postgresDB.status.dbName }}'
   - name: DB_USER
@@ -214,7 +214,7 @@ There are 2 parts in the request:
 
 * `application` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a `Deployment` named `java-app`.
 * `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
-* `customEnvVar` - used to create custom environment variables constructed using a templating engine from out-of-the-box bound information.
+* `mappings` - used to create custom environment variables constructed using a templating engine from out-of-the-box bound information.
 
 That causes the application to be re-deployed.
 Once the new version is up, go to the application's route to check the UI. Now, it works!

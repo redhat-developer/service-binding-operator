@@ -169,7 +169,7 @@ spec:
     kind: Database
     name: db-demo
     id: knav
-  customEnvVar:
+  mappings:
     - name: JDBC_URL
       value: jdbc:postgresql://{{ .knav.status.dbConnectionIP }}:{{ .knav.status.dbConnectionPort }}/{{ .knav.status.dbName }}
     - name: DB_USER
@@ -183,7 +183,7 @@ There are 3 parts in the request:
 
 * `application` - used to search for the application based on the name that we set earlier and the `group`, `version` and `resource` of the application to be a knative `Service`.
 * `services` - used to find the backing service - our operator-backed DB instance called `db-demo`.
-* `customEnvVar` - used to create custom environment variables constructed using a templating engine from out-of-the-box bound information.
+* `mappings` - used to create custom environment variables and files constructed using a templating engine from out-of-the-box bound information.
 
 That causes the application to be re-deployed.
 
