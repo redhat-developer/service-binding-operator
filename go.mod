@@ -3,34 +3,35 @@ module github.com/redhat-developer/service-binding-operator
 go 1.14
 
 require (
-	cloud.google.com/go v0.45.1 // indirect
 	github.com/coreos/etcd-operator v0.9.4
 	github.com/go-logr/logr v0.1.0
 	github.com/go-openapi/spec v0.19.4
-	github.com/google/go-cmp v0.3.1
+	github.com/google/go-cmp v0.4.0
 	github.com/google/go-containerregistry v0.0.0-20191218175032-34fb8ff33bed // indirect
 	github.com/imdario/mergo v0.3.8
+	github.com/mattbaird/jsonpatch v0.0.0-20200820163806-098863c1fc24 // indirect
 	github.com/mitchellh/copystructure v1.0.0
 	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3
 	github.com/operator-backing-service-samples/postgresql-operator v0.0.0-20191023140509-5c3697ed3069
-	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20200130164400-12c06cfc05c4
-	github.com/operator-framework/operator-sdk v0.16.0
-	github.com/pkg/errors v0.8.1
+	github.com/operator-framework/operator-lifecycle-manager v0.0.0-20200321030439-57b580e57e88
+	github.com/operator-framework/operator-sdk v0.17.0
+	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	gotest.tools v2.2.0+incompatible
-	k8s.io/api v0.17.1
-	k8s.io/apiextensions-apiserver v0.17.1
-	k8s.io/apimachinery v0.17.1
+	k8s.io/api v0.17.4
+	k8s.io/apiextensions-apiserver v0.17.4
+	k8s.io/apimachinery v0.17.4
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.0.0
+	k8s.io/code-generator v0.17.4
 	k8s.io/gengo v0.0.0-20191010091904-7fa3014cb28f
-	k8s.io/kube-openapi v0.0.0-20190918143330-0270cf2f1c1d
+	k8s.io/kube-openapi v0.0.0-20191107075043-30be4d16710a
 	knative.dev/pkg v0.0.0-20191221032535-9fda5bd59a67 // indirect
 	knative.dev/serving v0.9.0
-	sigs.k8s.io/controller-runtime v0.4.0
-	sigs.k8s.io/controller-tools v0.2.4
+	sigs.k8s.io/controller-runtime v0.5.2
+	sigs.k8s.io/controller-tools v0.2.8
+	sigs.k8s.io/testing_frameworks v0.1.2 // indirect
 )
 
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v12.2.0+incompatible
