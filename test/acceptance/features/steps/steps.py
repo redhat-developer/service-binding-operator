@@ -277,12 +277,13 @@ def given_knative_serving_is_running(context):
     creates a KnativeServing object to install Knative Serving using the OpenShift Serverless Operator.
     """
     knative_namespace = Namespace("knative-serving")
-    assert knative_namespace.create() is True, "Knative serving namespace not created"
+    if not knative_namespace.is_present():
+        assert knative_namespace.create() is True, "Failed to create namespace for Knative Serving"
     knative_serving = KnativeServing(namespace=knative_namespace.name)
     if not knative_serving.is_present():
         print("knative serving is not present, create knative serving")
-        assert knative_serving.create() is True, "Knative serving is not created"
-        assert knative_serving.is_present() is True, "Knative serving is not present"
+        assert knative_serving.create() is True, "Failed to create Knative Serving"
+        assert knative_serving.is_present() is True, "Knative Serving is not present"
 
 
 # STEP
