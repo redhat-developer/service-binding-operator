@@ -86,16 +86,13 @@ spec:
 
 ## Quick Start
 
-### Running operator locally
+### Installing in a Cluster
 
-Clone the repository and run `make local` in an existing `kube:admin` OpenShift CLI session.
+Follow [OperatorHub instructions](https://operatorhub.io/operator/service-binding-operator).
 
-### Installing the operator in a cluster
+### Running Operator Locally
 
-Start a kubernetes cluster. For this case we have used minikube. Any other Kubernetes cluster can be used as well.
-`minikube start`
-
-Run the install script - `bash <(curl -sL https://raw.githubusercontent.com/redhat-developer/service-binding-operator/master/install.sh)`
+Clone the repository and run `make local` using an existing `kube:admin` kube context.
 
 
 ## Key Features
