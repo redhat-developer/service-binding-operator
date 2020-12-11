@@ -1,6 +1,6 @@
 git:
 - branch: master
-  commit: fff80ee02bc07d6092de475e2877bb1161ac695b
+  commit: 0782b7d0a1c31bb4fa80ab7d433c788b25f11d04
   dest_formats:
     branch:
       gen_source_repos: true

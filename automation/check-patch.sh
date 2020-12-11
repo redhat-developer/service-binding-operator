@@ -4,7 +4,7 @@ source "${0%/*}/generic-check-patch" || true
 
 # override generic function so that we can use our versioning schemas
 ci_get_xyz_version() {
-    echo "0 3 0"
+    echo "0 4 0"
 }
 
 ci_get_branch() {

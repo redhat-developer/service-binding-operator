@@ -122,6 +122,9 @@ spec:
               - resource
               - version
               type: object
+            bindAsFiles:
+              description: BindAsFiles flag enable binding values as files.
+              type: boolean
             customEnvVar:
               description: Custom env variables
               items:
@@ -227,8 +230,14 @@ spec:
             envVarPrefix:
               description: EnvVarPrefix is the prefix for environment variables
               type: string
-            mountPathPrefix:
-              description: MountPathPrefix is the prefix for volume mount
+            mountPath:
+              description: MountPath is the path inside app container where bindings
+                will be mounted If `SERVICE_BINDING_ROOT` env var is present, mountPath
+                is ignored. If `SERVICE_BINDING_ROOT` is absent and mountPath is present,
+                set `SERVICE_BINDING_ROOT` as mountPath value If `SERVICE_BINDING_ROOT`
+                is absent but mounthPath is absent, set   SERVICE_BINDING_ROOT as
+                `/bindings` When mountPath is used, the file will be mounted directly
+                under that directory Otherwise it will be under `SERVICE_BINDING_ROOT`/<SERVICE-BINDING-NAME>
               type: string
             services:
               description: Services is used to identify multiple backing services.
@@ -257,7 +266,10 @@ spec:
                 - kind
                 - version
                 type: object
+              minItems: 1
               type: array
+          required:
+          - services
           type: object
         status:
           description: ServiceBindingStatus defines the observed state of ServiceBinding
@@ -320,6 +332,8 @@ spec:
           - conditions
           - secret
           type: object
+      required:
+      - spec
       type: object
   version: v1alpha1
   versions:

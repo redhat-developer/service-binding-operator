@@ -17,7 +17,6 @@ metadata:
               "resource": "deployments",
               "version": "v1"
             },
-            "mountPathPrefix": "/var/credentials",
             "services": [
               {
                 "group": "postgresql.example.dev",
@@ -31,13 +30,13 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Developer Tools, OpenShift Optional, Integration & Delivery
-    containerImage: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.3.0
-    createdAt: 2020-10-05T10:38:22Z
+    containerImage: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.4.0
+    createdAt: 2020-12-08T10:13:02Z
     description: An operator to support binding capabilities between imported apps
       and operator backed services
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Red Hat, Inc
-  name: service-binding-operator.v0.3.0
+  name: service-binding-operator.v0.4.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -95,7 +94,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: service-binding-operator
-                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.3.0
+                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.4.0
                 imagePullPolicy: Always
                 name: service-binding-operator
                 resources: {}
@@ -200,4 +199,5 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-  version: 0.3.0
+  version: 0.4.0
+  replaces: service-binding-operator.v0.4.0
