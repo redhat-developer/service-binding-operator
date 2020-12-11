@@ -12,9 +12,6 @@ env:
     - SDK_VERSION="0.16.0"
     - OPM_VERSION="1.15.2"
     - GO111MODULE=on
-    - USER="redhat-developer"
-    - EMAIL="openshift-dev-services@redhat.com"
-    - GH_REMOTE_REPO="github.com/${USER}/service-binding-operator-manifests"
     - MINIKUBE_VERSION="1.15.1"
     - K8S_VERSION="1.19.2"
 
@@ -45,16 +42,6 @@ jobs:
       script:
         - make release-operator
 
-      after_success:
-        - MESSAGE=($TRAVIS_COMMIT)
-        - git clone git://${GH_REMOTE_REPO}
-        - cp -r ./tmp/manifests/* ./service-binding-operator-manifests
-        - cd service-binding-operator-manifests
-        - git config user.email ${EMAIL}
-        - git config user.name ${USER}
-        - git add .
-        - git commit -m ${MESSAGE}
-        - git push "https://${GITHUB_TOKEN}@${GH_REMOTE_REPO}" master > /dev/null 2>&1
     - stage: Acceptance tests
       if: type = pull_request
       env:
