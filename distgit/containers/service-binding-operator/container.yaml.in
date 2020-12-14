@@ -5,7 +5,6 @@ platforms:
 compose:
     packages:
         - jq
-        - shadow-utils
 image_build_method: imagebuilder
 go:
     modules:

@@ -48,15 +48,18 @@ ARG BUILD_DIR
 
 ENV LANG=en_US.utf8
 
-RUN microdnf install -y shadow-utils && \
-    adduser --system --no-create-home -u 1001 sbo
-
 ENTRYPOINT [ "/usr/local/bin/service-binding-operator" ]
 
 COPY --from=builder $BUILD_DIR/out/operator /usr/local/bin/service-binding-operator
 
-USER sbo
+USER 10001
 
 
 LABEL com.redhat.component="service-binding-operator-container" \
-	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator"
+	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator" \
+	version="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
+	description="Service Binding Operator" \
+	summary="Service Binding Operator" \
+	io.openshift.tags="service,binding" \
+	maintainer="service-binding-support@redhat.com"
+
