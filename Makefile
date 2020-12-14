@@ -393,22 +393,23 @@ clean:
 ## Uploads the test coverage reports to codecov.io.
 ## DO NOT USE LOCALLY: must only be called by OpenShift CI when processing new PR and when a PR is merged!
 upload-codecov-report:
+	$(eval REPO_SLUG ?= $(REPO_OWNER)/$(REPO_NAME))
 ifneq ($(PR_COMMIT), null)
 	@echo "uploading test coverage report for pull-request #$(PULL_NUMBER)..."
 	@/bin/bash <(curl -s https://codecov.io/bash) \
-		-t $(shell tr -d ' \n' <$CODECOV_TOKEN_PATH) \
+		-t $(shell tr -d ' \n' <$(CODECOV_TOKEN_PATH)) \
 		-f $(GOCOV_DIR)/*.txt \
 		-C $(PR_COMMIT) \
-		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-r $(REPO_SLUG) \
 		-P $(PULL_NUMBER) \
 		-Z > codecov-upload.log
 else
 	@echo "uploading test coverage report after PR was merged..."
 	@/bin/bash <(curl -s https://codecov.io/bash) \
-		-t $(shell tr -d ' \n' <$CODECOV_TOKEN_PATH) \
+		-t $(shell tr -d ' \n' <$(CODECOV_TOKEN_PATH)) \
 		-f $(GOCOV_DIR)/*.txt \
 		-C $(BASE_COMMIT) \
-		-r $(REPO_OWNER)/$(REPO_NAME) \
+		-r $(REPO_SLUG) \
 		-Z > codecov-upload.log
 endif
 

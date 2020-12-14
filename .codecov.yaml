@@ -27,6 +27,8 @@ coverage:
     - "manifests/*"
     - "openshift-ci/*"
     - "vendor/*"
+    - "Makefile"
+    - ".travis.yml"
 
 # See http://docs.codecov.io/docs/pull-request-comments-1
 comment:
