@@ -1,6 +1,6 @@
 module github.com/redhat-developer/service-binding-operator
 
-go 1.14
+go 1.15
 
 require (
 	github.com/coreos/etcd-operator v0.9.4
