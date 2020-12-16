@@ -39,9 +39,13 @@ def before_all(_context):
     if start_sbo == "local":
         assert not os.getenv("TEST_ACCEPTANCE_SBO_STARTED").startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
     elif start_sbo == "remote":
-        sbo_namespace = os.getenv("SBO_NAMESPACE")
-        assert (sbo_namespace is not None) and (sbo_namespace != ""), f"SBO_NAMESPACE is required but it is not set or it is empty: {sbo_namespace}"
-        _context.sbo_namespace = sbo_namespace
+        output, code = cmd.run(
+            f"{ctx.cli} get deployment --all-namespaces -o json"
+            + " | jq -rc '.items[] | select(.metadata.name == \"service-binding-operator\").metadata.namespace'")
+        assert code == 0, f"Non-zero return code while trying to detect namespace for SBO: {output}"
+        output = str(output).strip()
+        assert output != "", "Unable to find SBO's deployment in any namespace."
+        _context.sbo_namespace = output
     else:
         assert False, f"TEST_ACCEPTANCE_START_SBO={start_sbo} is currently unsupported."
 

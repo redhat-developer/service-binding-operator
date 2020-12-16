@@ -52,7 +52,6 @@ jobs:
         - EXTRA_BEHAVE_ARGS="--tags=~@knative --tags=~@openshift"
         - TEST_ACCEPTANCE_CLI="kubectl"
         - TEST_ACCEPTANCE_START_SBO="remote"
-        - SBO_NAMESPACE=operators
       install:
         # Download Operator SDK
         - curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu
@@ -80,7 +79,4 @@ jobs:
         - kubectl cluster-info
         - docker info
       script:
-        - OPERATOR_REPO_REF=$(minikube ip):5000/sbo make release-operator -o registry-login
-        - OPERATOR_INDEX_IMAGE=$(minikube ip):5000/sbo:index SKIP_REGISTRY_LOGIN=true ./install.sh
-        - travis_wait 60 make test-acceptance
-
+        - travis_wait 60 make OPERATOR_REPO_REF=$(minikube ip):5000/sbo SKIP_REGISTRY_LOGIN=true release-operator -o registry-login test-acceptance-with-bundle
