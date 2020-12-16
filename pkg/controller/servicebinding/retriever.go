@@ -3,11 +3,11 @@ package servicebinding
 import (
 	"strings"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/envvars"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
@@ -32,15 +32,15 @@ func createServiceIndexPath(name string, gvk schema.GroupVersionKind) []string {
 
 }
 
-func buildServiceEnvVars(svcCtx *serviceContext, globalEnvVarPrefix string) (map[string]string, error) {
+func buildServiceEnvVars(svcCtx *serviceContext, globalNamePrefix string) (map[string]string, error) {
 	prefixes := []string{}
-	if len(globalEnvVarPrefix) > 0 {
-		prefixes = append(prefixes, globalEnvVarPrefix)
+	if len(globalNamePrefix) > 0 {
+		prefixes = append(prefixes, globalNamePrefix)
 	}
-	if svcCtx.envVarPrefix != nil && len(*svcCtx.envVarPrefix) > 0 {
-		prefixes = append(prefixes, *svcCtx.envVarPrefix)
+	if svcCtx.namePrefix != nil && len(*svcCtx.namePrefix) > 0 {
+		prefixes = append(prefixes, *svcCtx.namePrefix)
 	}
-	if svcCtx.envVarPrefix == nil {
+	if svcCtx.namePrefix == nil {
 		prefixes = append(prefixes, svcCtx.service.GroupVersionKind().Kind)
 	}
 
@@ -49,10 +49,10 @@ func buildServiceEnvVars(svcCtx *serviceContext, globalEnvVarPrefix string) (map
 
 func (r *retriever) processServiceContext(
 	svcCtx *serviceContext,
-	customEnvVarCtx map[string]interface{},
-	globalEnvVarPrefix string,
+	mappingsCtx map[string]interface{},
+	globalNamePrefix string,
 ) (map[string][]byte, error) {
-	svcEnvVars, err := buildServiceEnvVars(svcCtx, globalEnvVarPrefix)
+	svcEnvVars, err := buildServiceEnvVars(svcCtx, globalNamePrefix)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (r *retriever) processServiceContext(
 	//
 	// `{{ index "v1alpha1" "postgresql.baiju.dev" "Database", "db-testing", "status", "connectionUrl" }}`
 	err = unstructured.SetNestedField(
-		customEnvVarCtx, svcCtx.service.Object, gvk.Version, gvk.Group, gvk.Kind,
+		mappingsCtx, svcCtx.service.Object, gvk.Version, gvk.Group, gvk.Kind,
 		svcCtx.service.GetName())
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func (r *retriever) processServiceContext(
 	//
 	// `{{ .v1alpha1.postgresql_baiju_dev.Database.db_testing.status.connectionUrl }}`
 	err = unstructured.SetNestedField(
-		customEnvVarCtx,
+		mappingsCtx,
 		svcCtx.service.Object,
 		createServiceIndexPath(svcCtx.service.GetName(), svcCtx.service.GroupVersionKind())...,
 	)
@@ -90,7 +90,7 @@ func (r *retriever) processServiceContext(
 	// `{{ .db_testing.status.connectionUrl }}`
 	if svcCtx.id != nil {
 		err = unstructured.SetNestedField(
-			customEnvVarCtx,
+			mappingsCtx,
 			svcCtx.service.Object,
 			*svcCtx.id,
 		)
@@ -109,15 +109,15 @@ func (r *retriever) processServiceContext(
 
 // ProcessServiceContexts returns environment variables and volume keys from a ServiceContext slice.
 func (r *retriever) ProcessServiceContexts(
-	globalEnvVarPrefix string,
+	globalNamePrefix string,
 	svcCtxs serviceContextList,
-	envVarTemplates []corev1.EnvVar,
+	envVarTemplates []v1alpha1.Mapping,
 ) (map[string][]byte, error) {
-	customEnvVarCtx := make(map[string]interface{})
+	mappingsCtx := make(map[string]interface{})
 	envVars := make(map[string][]byte)
 
 	for _, svcCtx := range svcCtxs {
-		s, err := r.processServiceContext(svcCtx, customEnvVarCtx, globalEnvVarPrefix)
+		s, err := r.processServiceContext(svcCtx, mappingsCtx, globalNamePrefix)
 		if err != nil {
 			return nil, err
 		}
@@ -126,15 +126,15 @@ func (r *retriever) ProcessServiceContexts(
 		}
 	}
 
-	envParser := newCustomEnvParser(envVarTemplates, customEnvVarCtx)
-	customEnvVars, err := envParser.Parse()
+	envParser := newMappingsParser(envVarTemplates, mappingsCtx)
+	mappingsList, err := envParser.Parse()
 	if err != nil {
 		r.logger.Error(
-			err, "Creating envVars", "Templates", envVarTemplates, "TemplateContext", customEnvVarCtx)
+			err, "Creating envVars", "Templates", envVarTemplates, "TemplateContext", mappingsCtx)
 		return nil, err
 	}
 
-	for k, v := range customEnvVars {
+	for k, v := range mappingsList {
 		envVars[k] = []byte(v.(string))
 	}
 

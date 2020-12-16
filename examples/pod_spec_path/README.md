@@ -95,7 +95,7 @@ kind: ServiceBinding
 metadata:
     name: binding-request-sample
 spec:
-    envVarPrefix: qiye111
+    namePrefix: qiye111
     application:
         name: demo-appconfig
         group: stable.example.com
@@ -109,7 +109,7 @@ spec:
         kind: Database
         name: db-demo
         id: zzz
-        envVarPrefix: qiye
+        namePrefix: qiye
 EOD
 ```
 

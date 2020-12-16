@@ -33,7 +33,7 @@ Feature: Bind knative service to a service
                 kind: Database
                 name: db-demo-knative
                 id: knav
-              customEnvVar:
+              mappings:
                 - name: JDBC_URL
                   value: jdbc:postgresql://{{ .knav.status.dbConnectionIP }}:{{ .knav.status.dbConnectionPort }}/{{ .knav.status.dbName }}
                 - name: DB_USER

@@ -191,9 +191,9 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	binding, err := buildBinding(
 		r.dynClient,
-		sbr.Spec.CustomEnvVar,
+		sbr.Spec.Mappings,
 		serviceCtxs,
-		sbr.Spec.EnvVarPrefix,
+		sbr.Spec.NamePrefix,
 	)
 	if err != nil {
 		return requeueError(err)

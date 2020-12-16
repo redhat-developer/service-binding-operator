@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This scenario illustrates binding an imported application to an off-cluster operator-managed IBM Cloud Service. The scenario also shows the use of the `customEnvVar` feature of the Service Binding Operator to specify a mapping for the injected environment variables.
+This scenario illustrates binding an imported application to an off-cluster operator-managed IBM Cloud Service. The scenario also shows the use of the `mappings` feature of the Service Binding Operator to specify a mapping for the injected environment variables.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -184,7 +184,7 @@ environment variables required by the sample node.js app.
 More specifically, the node.js app requires two environment variables: `LANGUAGE_TRANSLATOR_URL`
 and `LANGUAGE_TRANSLATOR_IAM_APIKEY`. These keys are available in the backing service secret as
 `url` and `apikey` respectively, and they can be mapped to the variables required by the app using
-the `customEnvVar` feature of the service binding operator.
+the `mappings` feature of the service binding operator.
 
 All we need to do is to create the following `ServiceBinding`:
 
@@ -208,7 +208,7 @@ spec:
     group: apps
     version: v1
     resource: deployments
-  customEnvVar:
+  mappings:
      - name: LANGUAGE_TRANSLATOR_URL
        value: '{{ .tr.status.secretName.url }}'
      - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
@@ -220,7 +220,7 @@ There are 3 interesting parts in the request:
 
 * `services` - used to find the backing service - the operator-backed language translator instance with name `mytranslator-binding`.
 * `application` - used to search for the application based on the name and the `resourceKind` of the application to be a `DeploymentConfig`, matched by the label `app=language-translator-nodejs`.
-* `customEnvVar` - specifies the mapping for the environment variables injected into the bound application.
+* `mappings` - specifies the mapping for the environment variables injected into the bound application.
 
 That causes the node.js deployment to restart the pod with the new mapping.
 

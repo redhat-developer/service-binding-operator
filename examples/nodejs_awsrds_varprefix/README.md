@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This scenario illustrates binding an application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and use of the `envVarPrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
+This scenario illustrates binding an application to an off-cluster operated managed AWS RDS Database. The scenario also shows how to bind the backing service to two different independent applications and use of the `namePrefix` feature of the Service Binding Operator to specify a prefix for the names of the injected environment variables.
 
 ## Actions to Perform by Users in 2 Roles
 
@@ -290,7 +290,7 @@ metadata:
   name: mydb.to.shell-app
   namespace: service-binding-demo
 spec:
-  envVarPrefix: "MYDB"
+  namePrefix: "MYDB"
   services:
   - group: aws.pmacik.dev
     version: v1alpha1
@@ -306,7 +306,7 @@ EOD
 
 There are 3 interesting parts in the request:
 
-* `envVarPrefix` - specifies the prefix for all the environment variables injected to the bound application
+* `namePrefix` - specifies the prefix for all the environment variables injected to the bound application
 * `services` - used to find the backing service - our operator-backed DB instance called `mydb`
 * `application` - used to search for the application based on the name and the `resourceKind` of the application to be a `DeploymentConfig`
 

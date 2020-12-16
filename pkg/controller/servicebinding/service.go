@@ -15,8 +15,8 @@ import (
 	"k8s.io/client-go/dynamic"
 
 	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/nested"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/binding"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding/nested"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -212,7 +212,7 @@ func getOwnedResources(
 func buildOwnedResourceContext(
 	client dynamic.Interface,
 	obj *unstructured.Unstructured,
-	ownerEnvVarPrefix *string,
+	ownerNamePrefix *string,
 	restMapper meta.RESTMapper,
 	inputPath string,
 	outputPath string,
@@ -223,7 +223,7 @@ func buildOwnedResourceContext(
 		obj.GetNamespace(),
 		obj.GetObjectKind().GroupVersionKind(),
 		obj.GetName(),
-		ownerEnvVarPrefix,
+		ownerNamePrefix,
 		restMapper,
 		nil,
 	)
@@ -237,7 +237,7 @@ func buildOwnedResourceContext(
 func buildOwnedResourceContexts(
 	client dynamic.Interface,
 	objs []*unstructured.Unstructured,
-	ownerEnvVarPrefix *string,
+	ownerNamePrefix *string,
 	restMapper meta.RESTMapper,
 ) ([]*serviceContext, error) {
 	ctxs := make(serviceContextList, 0)
@@ -250,7 +250,7 @@ func buildOwnedResourceContexts(
 			svcCtx, err := buildOwnedResourceContext(
 				client,
 				obj,
-				ownerEnvVarPrefix,
+				ownerNamePrefix,
 				restMapper,
 				br.inputPath,
 				br.outputPath,

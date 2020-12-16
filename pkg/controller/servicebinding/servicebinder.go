@@ -460,12 +460,12 @@ type internalBinding struct {
 
 func buildBinding(
 	client dynamic.Interface,
-	customEnvVar []corev1.EnvVar,
+	mappings []v1alpha1.Mapping,
 	svcCtxs serviceContextList,
-	globalEnvVarPrefix string,
+	globalNamePrefix string,
 ) (*internalBinding, error) {
 	envVars, err := NewRetriever(client).
-		ProcessServiceContexts(globalEnvVarPrefix, svcCtxs, customEnvVar)
+		ProcessServiceContexts(globalNamePrefix, svcCtxs, mappings)
 	if err != nil {
 		return nil, err
 	}

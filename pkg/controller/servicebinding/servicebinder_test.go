@@ -235,7 +235,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 	f.AddMockResource(sbrSingleService)
 
-	sbrSingleServiceWithCustomEnvVar := &v1alpha1.ServiceBinding{
+	sbrSingleServiceWithMappings := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "operators.coreos.com/v1alpha1",
 			Kind:       "ServiceBinding",
@@ -265,7 +265,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 			},
-			CustomEnvVar: []corev1.EnvVar{
+			Mappings: []v1alpha1.Mapping{
 				{
 					Name:  "MY_DB_NAME",
 					Value: `{{ index . "v1alpha1" "postgresql.baiju.dev" "Database" "db1" "status" "dbName" }}`,
@@ -278,7 +278,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		Status: v1alpha1.ServiceBindingStatus{},
 	}
-	f.AddMockResource(sbrSingleServiceWithCustomEnvVar)
+	f.AddMockResource(sbrSingleServiceWithMappings)
 
 	// create the ServiceBinding
 	sbrMultipleServices := &v1alpha1.ServiceBinding{
@@ -463,7 +463,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			logger:                 logger,
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: false,
-			sbr:                    sbrSingleServiceWithCustomEnvVar,
+			sbr:                    sbrSingleServiceWithMappings,
 			binding: &internalBinding{
 				envVars: map[string][]byte{
 					"MY_DB_NAME": []byte("db1"),
@@ -489,12 +489,12 @@ func TestServiceBinder_Bind(t *testing.T) {
 			{
 				resource: "servicebindings",
 				verb:     "update",
-				name:     sbrSingleServiceWithCustomEnvVar.GetName(),
+				name:     sbrSingleServiceWithMappings.GetName(),
 			},
 			{
 				resource: "secrets",
 				verb:     "update",
-				name:     sbrSingleServiceWithCustomEnvVar.GetName(),
+				name:     sbrSingleServiceWithMappings.GetName(),
 				objAssertions: []objAssertionFunc{
 					base64StringEqual("db1", "data", "MY_DB_NAME"),
 				},

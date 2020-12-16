@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
-	corev1 "k8s.io/api/core/v1"
 )
 
 func TestCustomEnvParser(t *testing.T) {
@@ -18,12 +18,12 @@ func TestCustomEnvParser(t *testing.T) {
 	type args struct {
 		in           map[string]interface{}
 		wanted       []wantedVar
-		varTemplates []corev1.EnvVar
+		varTemplates []v1alpha1.Mapping
 	}
 
 	testCase := func(args args) func(t *testing.T) {
 		return func(t *testing.T) {
-			parser := newCustomEnvParser(args.varTemplates, args.in)
+			parser := newMappingsParser(args.varTemplates, args.in)
 			values, err := parser.Parse()
 			require.NoError(t, err)
 
@@ -49,12 +49,12 @@ func TestCustomEnvParser(t *testing.T) {
 			{name: "JDBC_CONNECTION_STRING", value: "database-name:database-user@database-pass"},
 			{name: "ANOTHER_STRING", value: "database-name_database-user"},
 		},
-		varTemplates: []corev1.EnvVar{
-			corev1.EnvVar{
+		varTemplates: []v1alpha1.Mapping{
+			{
 				Name:  "JDBC_CONNECTION_STRING",
 				Value: `{{ .spec.dbName }}:{{ .status.creds.user }}@{{ .status.creds.pass }}`,
 			},
-			corev1.EnvVar{
+			{
 				Name:  "ANOTHER_STRING",
 				Value: `{{ .spec.dbName }}_{{ .status.creds.user }}`,
 			},
@@ -65,14 +65,14 @@ func TestCustomEnvParser(t *testing.T) {
 func TestCustomEnvPath_Parse(t *testing.T) {
 	type args struct {
 		envVarCtx map[string]interface{}
-		templates []corev1.EnvVar
+		templates []v1alpha1.Mapping
 		expected  map[string]interface{}
 		wantErr   error
 	}
 
 	assertParse := func(args args) func(*testing.T) {
 		return func(t *testing.T) {
-			customEnvParser := newCustomEnvParser(args.templates, args.envVarCtx)
+			customEnvParser := newMappingsParser(args.templates, args.envVarCtx)
 			actual, err := customEnvParser.Parse()
 			if args.wantErr != nil {
 				require.Error(t, args.wantErr)
@@ -98,7 +98,7 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 
 	t.Run("JDBC connection string template", assertParse(args{
 		envVarCtx: envVarCtx,
-		templates: []corev1.EnvVar{
+		templates: []v1alpha1.Mapping{
 			{
 				Name:  "JDBC_CONNECTION_STRING",
 				Value: `{{ .spec.dbName }}:{{ .status.creds.user }}@{{ .status.creds.pass }}`,
@@ -111,7 +111,7 @@ func TestCustomEnvPath_Parse(t *testing.T) {
 
 	t.Run("incomplete template", assertParse(args{
 		envVarCtx: envVarCtx,
-		templates: []corev1.EnvVar{
+		templates: []v1alpha1.Mapping{
 			{
 				Name:  "INCOMPLETE_TEMPLATE",
 				Value: `{{ .spec.dbName `,
@@ -131,18 +131,18 @@ func TestCustomEnvPath_Parse_exampleCase(t *testing.T) {
 		},
 	}
 
-	envMap := []corev1.EnvVar{
-		corev1.EnvVar{
+	envMap := []v1alpha1.Mapping{
+		{
 			Name:  "JDBC_USERNAME",
 			Value: `{{ index .status.dbConfigMap "db.user" }}`,
 		},
-		corev1.EnvVar{
+		{
 			Name:  "JDBC_PASSWORD",
 			Value: `{{ index .status.dbConfigMap "db.password" }}`,
 		},
 	}
 
-	customEnvPath := newCustomEnvParser(envMap, cache)
+	customEnvPath := newMappingsParser(envMap, cache)
 	values, err := customEnvPath.Parse()
 	if err != nil {
 		t.Error(err)
@@ -167,33 +167,33 @@ func TestCustomEnvPath_Parse_ToJson(t *testing.T) {
 		},
 	}
 
-	envMap := []corev1.EnvVar{
-		corev1.EnvVar{
+	envMap := []v1alpha1.Mapping{
+		{
 			Name:  "root",
 			Value: `{{ json . }}`,
 		},
-		corev1.EnvVar{
+		{
 			Name:  "spec",
 			Value: `{{ json .spec }}`,
 		},
-		corev1.EnvVar{
+		{
 			Name:  "status",
 			Value: `{{ json .status }}`,
 		},
-		corev1.EnvVar{
+		{
 			Name:  "creds",
 			Value: `{{ json .status.creds }}`,
 		},
-		corev1.EnvVar{
+		{
 			Name:  "dbName",
 			Value: `{{ json .spec.dbName }}`,
 		},
-		corev1.EnvVar{
+		{
 			Name:  "notExist",
 			Value: `{{ json .notExist }}`,
 		},
 	}
-	customEnvPath := newCustomEnvParser(envMap, cache)
+	customEnvPath := newMappingsParser(envMap, cache)
 	values, err := customEnvPath.Parse()
 	if err != nil {
 		t.Error(err)
