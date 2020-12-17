@@ -26,6 +26,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/controller"
+	"github.com/redhat-developer/service-binding-operator/pkg/controller/servicebinding"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
@@ -66,6 +67,7 @@ func isLeaderWithLeaseEnabled() bool {
 func main() {
 	pflag.CommandLine.AddFlagSet(zap.FlagSet())
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	pflag.CommandLine.AddFlagSet(servicebinding.FlagSet())
 	pflag.Parse()
 	log.SetLog(zap.Logger())
 

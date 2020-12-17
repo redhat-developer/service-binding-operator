@@ -32,7 +32,7 @@ func newReconciler(mgr manager.Manager, client dynamic.Interface) (*reconciler, 
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler.
 func add(mgr manager.Manager, r *reconciler, client dynamic.Interface) error {
-	opts := controller.Options{Reconciler: r}
+	opts := controller.Options{Reconciler: r, MaxConcurrentReconciles: maxConcurrentReconciles}
 	c, err := NewSBRController(mgr, opts, client)
 	if err != nil {
 		return err
