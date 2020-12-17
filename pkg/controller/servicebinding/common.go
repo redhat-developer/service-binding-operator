@@ -1,10 +1,6 @@
 package servicebinding
 
 import (
-	goerrors "errors"
-	"fmt"
-	"os"
-	"strconv"
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -90,24 +86,4 @@ func removeStringSlice(slice []string, str string) []string {
 		}
 	}
 	return cleanSlice
-}
-
-func GetConfigFromEnv(key string) (string, error) {
-	if os.Getenv(key) != "" {
-		return os.Getenv(key), nil
-	} else {
-		return "", goerrors.New(fmt.Sprintf("Cannot find %s from from environment variable", key))
-	}
-}
-
-func GetMaxConcurrentReconciles() int {
-	maxConcurrentReconciles := 1
-	maxConcurrentReconcilesStr, err := GetConfigFromEnv("MAX_CONCURRENT_RECONCILES")
-	if err == nil {
-		maxConcurrentReconciles, err = strconv.Atoi(maxConcurrentReconcilesStr)
-		if err != nil {
-			maxConcurrentReconciles = 1
-		}
-	}
-	return maxConcurrentReconciles
 }
