@@ -469,3 +469,73 @@ Feature: Bind values from a secret referred in backing service resource
         Then Service Binding "ssa-3" is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
+
+    # Remove this disable tag once this issue is closed: https://github.com/redhat-developer/service-binding-operator/issues/808
+    @disabled
+    Scenario: Inject data from secret referred at .spec.containers.envFrom.secretRef.name
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: db-secret-x
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        * The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: backends.stable.example.com
+                annotations:
+                    service.binding: path={.spec.containers[0].envFrom[0].secretRef.name},objectType=Secret
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                      - bk
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: backend-service-x
+            spec:
+                containers:
+                - envFrom:
+                  - secretRef:
+                        name: db-secret-x
+            """
+        * Generic test application "myapp-x" is running
+        When Service Binding is applied
+          """
+          apiVersion: operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: sb-inject-secret-data
+          spec:
+              services:
+              - group: stable.example.com
+                version: v1
+                kind: Backend
+                name: backend-service-x
+              application:
+                name: myapp-x
+                group: apps
+                version: v1
+                resource: deployments
+          """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sb-inject-secret-data" should be changed to "True"
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
