@@ -420,8 +420,10 @@ def verify_injected_secretRef(context, secret_ref, cr_name, crd_name, json_path)
 @given(u'Etcd operator running')
 def etcd_operator_is_running(context):
     """
-    Checks if the etcd operator is up and running
+    Ensures that the etcd operator is up and running
     """
+    openshift = Openshift()
+    openshift.create_catalog_source("operatorhubio-catalog", "quay.io/operatorhubio/catalog:latest")
     etcd_operator = EtcdOperator()
     if not etcd_operator.is_running():
         print("Etcd operator is not installed, installing...")
