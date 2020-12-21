@@ -263,7 +263,7 @@ release-operator: push-image push-bundle-image push-index-image
 ## prepare files for OperatorHub PR
 ## use this target when the operator needs to be released as upstream operator
 prepare-operatorhub-pr:
-	./hack/prepare-operatorhub-pr.sh $(OPERATOR_VERSION) $(OPERATOR_BUNDLE_IMAGE_REF)
+	./hack/prepare-operatorhub-pr.sh $(VERSION) $(OPERATOR_BUNDLE_IMAGE_REF)
 
 .PHONY: deploy-from-index-image
 ## deploy the operator from a given index image
@@ -301,3 +301,9 @@ test-acceptance-generate-report:
 ## Serves acceptance tests report at http://localhost:8088
 test-acceptance-serve-report:
 	$(Q)CONTAINER_RUNTIME=$(CONTAINER_RUNTIME) $(HACK_DIR)/allure-report.sh serve
+
+.PHONY: release-manifests
+## prepare a manifest file for releasing operator on vanilla k8s cluster
+release-manifests: setup-venv prepare-operatorhub-pr
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r hack/check-python/requirements.txt
+	$(Q)$(PYTHON_VENV_DIR)/bin/python3 ./hack/release-manifest.py  $(OUTPUT_DIR)/operatorhub-pr-files/service-binding-operator/$(VERSION)/manifests/

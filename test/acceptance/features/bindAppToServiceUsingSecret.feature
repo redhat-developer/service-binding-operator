@@ -7,6 +7,7 @@ Feature: Bind values from a secret referred in backing service resource
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
 
+    @olm
     Scenario: Inject into app a key from a secret referred within service resource
         Binding definition is declared on service CRD.
         Given OLM Operator "backend" is running
@@ -77,6 +78,7 @@ Feature: Bind values from a secret referred in backing service resource
         Then Service Binding "ssa-1" is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
 
+    @olm
     Scenario: Inject into app all keys from a secret referred within service resource
 
         Given OLM Operator "backend" is running
@@ -149,6 +151,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
+    @olm
     Scenario: Inject into app a key from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-1" is running
@@ -259,6 +262,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_HOST" has value "example.com"
 
+    @olm
     Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-2" is running

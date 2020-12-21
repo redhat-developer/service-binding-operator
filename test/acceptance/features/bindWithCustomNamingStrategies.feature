@@ -1,3 +1,4 @@
+@olm
 Feature: Bind an application to a service using custom naming strategies
 
     As a user of Service Binding Operator
@@ -42,7 +43,6 @@ Feature: Bind an application to a service using custom naming strategies
             """
         Then Service Binding "binding-request-no-naming" is ready
         And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"
-
 
     Scenario: Bind an application to a service with naming strategy none
         * OLM Operator "backend" is running

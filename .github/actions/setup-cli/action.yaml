@@ -1,0 +1,35 @@
+# action.yml
+name: 'Setup Tools'
+description: 'Setup CLI configuration with kubectl operator-sdk opm minikube, setup path, kubeconfig, minikube and docker info '
+runs:
+  using: "composite"
+  steps:
+    - id: setup-path
+      run: |
+        mkdir -p $GITHUB_WORKSPACE/bin/
+        echo "PATH=$PATH:$GITHUB_WORKSPACE/bin/" >> $GITHUB_ENV
+      shell: bash
+
+    - run: $GITHUB_ACTION_PATH/setup_tools.sh
+      shell: bash
+
+    - id: set-kubeconfig
+      run: |
+        KUBECONFIG=$GITHUB_WORKSPACE/miniconfig
+        echo "KUBECONFIG=$KUBECONFIG" >> $GITHUB_ENV
+        touch $KUBECONFIG
+      shell: bash
+
+    - id: setup-minikube
+      run: |
+        ./hack/start-minikube.sh start --kubernetes-version=v${K8S_VERSION} --driver=$CONTAINER_RUNTIME --cpus $(nproc) --memory 5g
+      shell: bash
+
+    - id: docker-info
+      run: |
+        eval $(minikube docker-env)
+        docker ps
+        kubectl get nodes -o yaml
+        kubectl cluster-info
+        docker info
+      shell: bash

@@ -9,7 +9,7 @@
 
 TMP_OCI_PATH=$(mktemp -d out/sbo-bundle-oci.XXX)
 
-skopeo copy docker://$2 oci:$TMP_OCI_PATH:bundle
+skopeo copy --src-tls-verify=false docker://$2 oci:$TMP_OCI_PATH:bundle
 umoci unpack --image $TMP_OCI_PATH:bundle --rootless ${TMP_OCI_PATH}-unpacked
 rm -rf out/operatorhub-pr-files
 mkdir out/operatorhub-pr-files/service-binding-operator -p
