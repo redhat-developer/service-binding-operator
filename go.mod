@@ -31,7 +31,6 @@ require (
 	knative.dev/serving v0.9.0
 	sigs.k8s.io/controller-runtime v0.5.2
 	sigs.k8s.io/controller-tools v0.2.8
-	sigs.k8s.io/testing_frameworks v0.1.2 // indirect
 )
 
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v12.2.0+incompatible
