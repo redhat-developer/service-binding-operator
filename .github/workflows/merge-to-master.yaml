@@ -1,0 +1,82 @@
+name: Merge to master
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  SDK_VERSION: "0.16.0"
+  OPM_VERSION: "1.15.2"
+  GO111MODULE: on
+  K8S_VERSION: "1.19.2"
+  CONTAINER_RUNTIME: "docker"
+
+jobs:
+  release:
+    name: Release operator on Quay.io
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Set up PATH
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin/
+          echo "PATH=$PATH:$GITHUB_WORKSPACE/bin/" >> $GITHUB_ENV
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.15.6"
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Set up CLI
+        run: |
+          curl -Lo operator-sdk https://github.com/operator-framework/operator-sdk/releases/download/v${SDK_VERSION}/operator-sdk-v${SDK_VERSION}-x86_64-linux-gnu
+          chmod +x operator-sdk
+          mv -v operator-sdk $GITHUB_WORKSPACE/bin/
+
+          curl -Lo opm https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/linux-amd64-opm
+          chmod +x opm
+          mv -v opm $GITHUB_WORKSPACE/bin/
+
+          curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${K8S_VERSION}/bin/linux/amd64/kubectl
+          chmod +x kubectl
+          mv -v kubectl $GITHUB_WORKSPACE/bin/
+
+      - name: Release operator on Quay.io
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+        run: make release-operator
+
+  unit-tests-with-coverage:
+    name: Unit tests with code coverage for merge-to-master commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.15.6"
+
+      - name: Unit Tests with Code Coverage
+        run: |
+          make test-unit-with-coverage
+
+      - name: Upload Code Coverage Report
+        uses: codecov/codecov-action@v1
+        with:
+          file: out/test-coverage/*.txt
+          verbose: true
+          fail_ci_if_error: true
