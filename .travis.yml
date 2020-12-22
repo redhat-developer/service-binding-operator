@@ -42,6 +42,15 @@ jobs:
       script:
         - make release-operator
 
+    - stage: Unit tests with code coverage for merge-to-master commits
+      if: branch = master AND type = push
+      env:
+        - CODECOV_TOKEN_PATH=.codecov.token
+      install:
+        - echo $CODECOV_TOKEN > $CODECOV_TOKEN_PATH
+      script:
+        - make PR_COMMIT=null VERBOSE=2 BASE_COMMIT=$TRAVIS_COMMIT REPO_SLUG=$TRAVIS_REPO_SLUG test-unit-with-coverage upload-codecov-report
+
     - stage: Acceptance tests
       if: type = pull_request
       env:
