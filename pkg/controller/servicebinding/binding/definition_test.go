@@ -241,3 +241,30 @@ func TestMapFromConfigMapDataField(t *testing.T) {
 	}
 	require.Equal(t, v, val.Get())
 }
+
+func TestMapFromConfigMapDataFieldWithOutputNameAndSourceValue(t *testing.T) {
+	f := mocks.NewFake(t, "test-namespace")
+	f.AddMockedUnstructuredConfigMap("dbCredentials-configMap")
+	d := &mapFromDataFieldDefinition{
+		kubeClient:  f.FakeDynClient(),
+		objectType:  configMapObjectType,
+		sourceValue: "username",
+		outputName:  "user",
+		path:        []string{"status", "dbCredentials"},
+	}
+	val, err := d.Apply(&unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"namespace": "test-namespace",
+			},
+			"status": map[string]interface{}{
+				"dbCredentials": "dbCredentials-configMap",
+			},
+		},
+	})
+	require.NoError(t, err)
+	v := map[string]string{
+		"user": "user",
+	}
+	require.Equal(t, v, val.Get())
+}

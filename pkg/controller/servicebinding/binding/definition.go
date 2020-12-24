@@ -199,7 +199,11 @@ func (d *mapFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Value,
 		} else {
 			n = v
 		}
-		outputVal[k] = string(n)
+		if len(d.sourceValue) > 0 && len(d.outputName) > 0 {
+			outputVal[d.outputName] = string(n)
+		} else {
+			outputVal[k] = string(n)
+		}
 	}
 
 	return &value{v: outputVal}, nil
