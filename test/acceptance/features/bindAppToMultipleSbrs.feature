@@ -1,4 +1,4 @@
-# @olm
+@olm
 Feature: Bind a single application to multiple SBRs
 
     As a user of Service Binding operator
@@ -9,7 +9,7 @@ Feature: Bind a single application to multiple SBRs
         * Service Binding Operator is running
         * PostgreSQL DB operator is installed
 
-    Scenario: Bind two backend services by creating 2 SBRs to a single application
+    Scenario: Bind a single db instance by creating 2 SBRs to a single application
         Given Imported Nodejs application "nodejs-app" is running
         * DB "db-demo-1" is running
         * Service Binding is applied
