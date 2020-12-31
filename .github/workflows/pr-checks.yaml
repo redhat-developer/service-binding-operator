@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SDK_VERSION: "0.16.0"
+      SDK_VERSION: "0.17.0"
       OPM_VERSION: "1.15.2"
       MINIKUBE_WANTUPDATENOTIFICATION: false
       MINIKUBE_WANTREPORTERRORPROMPT: false
