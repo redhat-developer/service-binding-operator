@@ -560,7 +560,7 @@ spec:
     Annotation:
 
     ```
-    “servicebinding.dev/dbcredentials”:”path={.status.data.dbcredentials},objectType=Secret”
+    “service.binding/dbcredentials”:”path={.status.data.dbcredentials},objectType=Secret”
     ```
 
 
@@ -582,7 +582,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/dbConfiguration”: "path={.status.data.dbConfiguration},objectType=ConfigMap”
+    “service.binding/dbConfiguration”: "path={.status.data.dbConfiguration},objectType=ConfigMap”
     ```
 
 
@@ -603,7 +603,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/certificate”:
+    “service.binding/certificate”:
     "path={.status.data.dbConfiguration},objectType=ConfigMap"
     ```
 
@@ -627,7 +627,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/certificate”:
+    “service.binding/certificate”:
     "path={.status.data.dbConfiguration},bindAs=volume,objectType=ConfigMap"
     ```
 
@@ -649,7 +649,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/timeout”:
+    “service.binding/timeout”:
     “path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout”
     ```
 
@@ -670,7 +670,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/url”:"path={.status.data.url}"
+    “service.binding/url”:"path={.status.data.url}"
     ```
 
     Descriptor
@@ -688,7 +688,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/uri: "path={.status.data.connectionURL}”
+    “service.binding/uri": "path={.status.data.connectionURL}”
     ```
 
 
@@ -708,7 +708,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/endpoints”:
+    “service.binding/endpoints”:
     "path={.status.bootstrap},elementType=sliceOfMaps,sourceKey=type,sourceValue=url"
     ```
 
@@ -768,7 +768,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev:
+    “service.binding:
     "path={.status.listeners},elementType=template,source={{GO TEMPLATE}}"
     ```
 
