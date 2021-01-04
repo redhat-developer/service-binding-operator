@@ -7,32 +7,23 @@
 - [Backing Service providing binding metadata](#Backing-service-providing-binding-metadata)
 
 - [Backing Service not providing binding metadata](#Backing-service-not-providing-binding-metadata)
-  * [Annotate Service Resources](##Annotate-service-resources)
+  * [Annotate Service Resources](#Annotate-service-resources)
   * [Detect Binding Resources](#Detect-binding-resources)
   * [Compose custom binding variables](#Compose-custom-binding-variables)
 
 - [Accessing the binding data from the application](#Accessing-the-binding-data-from-the-application)
 
-- [Binding non-podSpec-based application workloads]([#Binding-non-podSpec-based-application-workloads])
+- [Binding non podSpec based application workloads](#Binding-non-podSpec-based-application-workloads)
 
 - [Custom Containers Path and Secret Path](#Custom-Containers-Path-and-Secret-Path)
-  * [Containers Path](##Containers-Path)
-  * [Secret Path](##Secret-Path)
+  * [Containers Path](#Containers-Path)
+  * [Secret Path](#Secret-Path)
 
-- [Binding Metadata in Annotations] (#Binding-Metadata-in-Annotations)
-  * [Requirements for specifying binding information in a backing service CRD / Kubernetes resource](##Requirements-for-specifying-binding-information-in-a-backing-service-CRD-/-Kubernetes-resource)
-  * [Data model : Building blocks for expressing binding information](##Data-model-:-Building-blocks-for-expressing-binding-information)
-  * [A Sample CR : The Kubernetes resource that the application would bind to](##A-Sample-CR-:-The-Kubernetes-resource-that-the-application-would-bind-to)
-  * [Scenarios](##Scenarios)
-  * [1. Use everything from the Secret  “status.data.dbCredentials”](###Use-everything-from-the-Secret-“status.data.dbCredentials”)
-  * [2. Use everything from the ConfigMap “status.data.dbConfiguration”](###Use-everything-from-the-ConfigMap-“status.data.dbConfiguration”)
-  * [3. Use “certificate” from the ConfigMap “status.data.dbConfiguration” as an environment variable](###Use-“certificate”-from-the-ConfigMap-“status.data.dbConfiguration”-as-an-environment-variable)
-  * [4. Use “certificate” from the ConfigMap “status.data.dbConfiguration” as a volume mount](###Use-“certificate”-from-the-ConfigMap-“status.data.dbConfiguration”-as-a-volume-mount)
-  * [5. Use “db_timeout” from the ConfigMap “status.data.dbConfiguration” as “timeout” in the binding Secret.](###Use-“db_timeout”-from-the-ConfigMap-“status.data.dbConfiguration”-as-“timeout”-in-the-binding-Secret)
-  * [6. Use the attribute “status.data.url”](###Use-the-attribute-“status.data.url”)
-  * [7. Use the attribute “status.data.connectionURL” as uri in the binding Secret](###Use-the-attribute-“status.data.connectionURL”-as-uri-in-the-binding-Secret)
-  * [8. Use specific elements from the CR’s “status.bootstrap” to produce key/value pairs in the  binding Secret](###Use-specific-elements-from-the-CR’s-“status.bootstrap”-to-produce-key/value-pairs-in-the-binding-Secret)
-  * [9. Use Go template to produce key/value pairs in the binding Secret](###Use-Go-template-to-produce-key/value-pairs-in-the-binding-Secret)
+- [Binding Metadata in Annotations](#Binding-Metadata-in-Annotations)
+  * [Requirements for specifying binding information in a backing service CRD / Kubernetes resource](#Requirements-for-specifying-binding-information-in-a-backing-service-CRD-/-Kubernetes-resource)
+  * [Data model : Building blocks for expressing binding information](#Data-model-:-Building-blocks-for-expressing-binding-information)
+  * [A Sample CR : The Kubernetes resource that the application would bind to](#A-Sample-CR-:-The-Kubernetes-resource-that-the-application-would-bind-to)
+  * [Scenarios](#Scenarios)
 
 <!-- toc -->
 
@@ -119,8 +110,6 @@ The application author may consider specific elements of the backing service res
 * A specific attribute in a `ConfigMap` referenced in the Kubernetes resource.
 
 As an example, if the Cockroachdb authors do not provide any binding metadata in the CRD, you, as an application author may annotate the CR/kubernetes resource that manages the backing service ( cockroach DB ).
-
-Please refer to the [documentation](docs/roadmap.md) to annotate objects for binding metadata.
 
 The backing service could be represented as any one of the following:
 * Custom Resources.
@@ -539,7 +528,7 @@ spec:
           url: myhost2.example.com
           name: hostGroup1
         - type: tls
-          url: myhost1.example.com:9092,myhost2.example.com:9092
+          url: myhost1.example.com:9092
           name: hostGroup2
       data:
         dbConfiguration: database-config  # configmap
@@ -560,7 +549,7 @@ spec:
     Annotation:
 
     ```
-    “servicebinding.dev/dbcredentials”:”path={.status.data.dbcredentials},objectType=Secret”
+    “service.binding/dbcredentials”:”path={.status.data.dbcredentials},objectType=Secret”
     ```
 
 
@@ -570,7 +559,7 @@ spec:
     - path: data.dbcredentials
       x-descriptors:
         - urn:alm:descriptor:io.kubernetes:Secret 
-        - servicebinding
+        - service.binding
     ```
 
 
@@ -582,7 +571,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/dbConfiguration”: "path={.status.data.dbConfiguration},objectType=ConfigMap”
+    “service.binding/dbConfiguration”: "path={.status.data.dbConfiguration},objectType=ConfigMap”
     ```
 
 
@@ -592,7 +581,7 @@ spec:
     - path: data.dbConfiguration
       x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap 
-        - servicebinding
+        - service.binding
     ```
 
 3. ### Use “certificate” from the ConfigMap “status.data.dbConfiguration” as an environment variable
@@ -603,7 +592,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/certificate”:
+    “service.binding/certificate”:
     "path={.status.data.dbConfiguration},objectType=ConfigMap"
     ```
 
@@ -615,7 +604,7 @@ spec:
     - path: data.dbConfiguration
       x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-        - servicebinding:certificate:bindAs=envVar
+        - service.binding:certificate:bindAs=envVar
     ```
 
 
@@ -627,7 +616,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/certificate”:
+    “service.binding/certificate”:
     "path={.status.data.dbConfiguration},bindAs=volume,objectType=ConfigMap"
     ```
 
@@ -638,7 +627,7 @@ spec:
     - path: data.dbConfiguration
       x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-        - servicebinding:certificate:bindAs=volume
+        - service.binding:certificate:bindAs=volume
     ```
 
 
@@ -649,7 +638,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/timeout”:
+    “service.binding/timeout”:
     “path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout”
     ```
 
@@ -660,7 +649,7 @@ spec:
     - path: data.dbConfiguration
       x-descriptors:
         - urn:alm:descriptor:io.kubernetes:ConfigMap
-        - servicebinding:timeout:sourceKey=db_timeout
+        - service.binding:timeout:sourceKey=db_timeout
     ```
 
 6. ### Use the attribute “status.data.url”
@@ -670,7 +659,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/url”:"path={.status.data.url}"
+    “service.binding/url”:"path={.status.data.url}"
     ```
 
     Descriptor
@@ -678,7 +667,7 @@ spec:
     ```
     - path: data.url
       x-descriptors:
-        - servicebinding
+        - service.binding
     ```
 
 7. ### Use the attribute “status.data.connectionURL” as uri in the binding Secret
@@ -688,7 +677,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/uri: "path={.status.data.connectionURL}”
+    “service.binding/uri: "path={.status.data.connectionURL}”
     ```
 
 
@@ -698,7 +687,7 @@ spec:
     ```
     - path: data.connectionURL
       x-descriptors:
-        - servicebinding:uri
+        - service.binding:uri
     ```
 
 8. ### Use specific elements from the CR’s “status.bootstrap” to produce key/value pairs in the  binding Secret
@@ -708,7 +697,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev/endpoints”:
+    “service.binding/endpoints”:
     "path={.status.bootstrap},elementType=sliceOfMaps,sourceKey=type,sourceValue=url"
     ```
 
@@ -718,7 +707,7 @@ spec:
     ```
     - path: bootstrap
       x-descriptors:
-        - servicebinding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url
+        - service.binding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url
     ```
 
 9. ### Use Go template to produce key/value pairs in the binding Secret <kbd>EXPERIMENTAL</kbd>
@@ -768,7 +757,7 @@ spec:
     Annotation
 
     ```
-    “servicebinding.dev:
+    “service.binding:
     "path={.status.listeners},elementType=template,source={{GO TEMPLATE}}"
     ```
 
@@ -777,6 +766,5 @@ spec:
     ```
     - path: listeners
       x-descriptors:
-        - servicebinding:elementType=template:source={{GO TEMPLATE}}
+        - service.binding:elementType=template:source={{GO TEMPLATE}}
     ```
-
