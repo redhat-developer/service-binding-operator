@@ -16,10 +16,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 )
 
@@ -251,7 +249,7 @@ func TestBinderNew(t *testing.T) {
 		require.NotNil(t, envVar)
 		require.NotEmpty(t, envVar.Value)
 
-		uSecret, err := fakeDynClient.Resource(secretsGVR).Get(name, metav1.GetOptions{})
+		uSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(ns).Get(name, metav1.GetOptions{})
 		require.NoError(t, err)
 		s := corev1.Secret{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(uSecret.Object, &s)
@@ -454,8 +452,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 	}
 
 	f := mocks.NewFake(t, ns)
-	gvr := knativev1.SchemeGroupVersion.WithResource("services") // Group/Version/Resource for sbr
-	sbr := f.AddMockedServiceBinding(name, nil, "", "knative-app", gvr, matchLabels)
+	sbr := f.AddMockedServiceBinding(name, nil, "", "knative-app", knativeServiceGVR, matchLabels)
 	f.AddMockedUnstructuredKnativeService("knative-app", matchLabels)
 
 	binder := newBinder(
@@ -474,10 +471,6 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 		assert.Equal(t, 1, len(list.Items))
 
 	})
-
-	ksvc := mocks.KnativeServiceMock(ns, "knative-app-with-rev-name", matchLabels)
-	ksvc.Spec.Template.Name = "knative-app-with-rev-name-revision-1"
-
 }
 
 func Test_extraFieldsModifier(t *testing.T) {
@@ -501,9 +494,8 @@ func Test_extraFieldsModifier(t *testing.T) {
 	require.NotNil(t, binder)
 	require.Nil(t, binder.modifier)
 
-	gvr := knativev1.SchemeGroupVersion.WithResource("services")
-	ksvc := mocks.KnativeServiceMock(ns, "knative-app-with-rev-name", matchLabels)
-	sbr = mocks.ServiceBindingMock(ns, name, nil, "", ksvc.Name, gvr, matchLabels)
+	ksvc := mocks.UnstructuredKnativeServiceMock(ns, "knative-app-with-rev-name", matchLabels)
+	sbr = mocks.ServiceBindingMock(ns, name, nil, "", ksvc.GetName(), knativeServiceGVR, matchLabels)
 
 	binder = newBinder(
 		context.TODO(),
@@ -516,35 +508,27 @@ func Test_extraFieldsModifier(t *testing.T) {
 	require.NotNil(t, binder.modifier)
 
 	t.Run("ksvc revision name is empty", func(t *testing.T) {
-		u, err := converter.ToUnstructured(&ksvc)
+		path := []string {"spec", "template", "metadata", "name"}
+		err := binder.modifier.ModifyExtraFields(ksvc)
 		require.NoError(t, err)
 
-		err = binder.modifier.ModifyExtraFields(u)
+		_, found, err := unstructured.NestedString(ksvc.Object, path...)
 		require.NoError(t, err)
-
-		var modified knativev1.Service
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &modified)
-		require.NoError(t, err)
-		assert.Equal(t, ksvc, modified)
+		require.False(t, found)
 	})
 
 	t.Run("ksvc revision name is not empty", func(t *testing.T) {
-		ksvc.Spec.Template.Name = fmt.Sprintf("%s-%s", ksvc.Name, "rev-1")
-
-		u, err := converter.ToUnstructured(&ksvc)
+		path := []string {"spec", "template", "metadata", "name"}
+		err := unstructured.SetNestedField(ksvc.Object, fmt.Sprintf("%s-%s", ksvc.GetName(), "rev-1"), path...)
 		require.NoError(t, err)
 
-		err = binder.modifier.ModifyExtraFields(u)
+		err = binder.modifier.ModifyExtraFields(ksvc)
 		require.NoError(t, err)
 
-		var modified knativev1.Service
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &modified)
+		_, found, err := unstructured.NestedString(ksvc.Object, path...)
 		require.NoError(t, err)
-		assert.Equal(t, "", modified.Spec.Template.Name)
+		require.False(t, found)
 
-		ksvc.Spec.Template.Name = ""
-		// the rest fields shoud not be modified
-		assert.Equal(t, ksvc, modified)
 	})
 
 }

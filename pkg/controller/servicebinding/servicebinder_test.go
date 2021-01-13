@@ -207,6 +207,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "single-sbr",
+			Namespace: reconcilerName,
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
 			Application: &v1alpha1.Application{
@@ -242,6 +243,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "single-sbr-with-customenvvar",
+			Namespace: reconcilerName,
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
 			Application: &v1alpha1.Application{
@@ -288,6 +290,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "multiple-sbr",
+			Namespace: reconcilerName,
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
 			Application: &v1alpha1.Application{

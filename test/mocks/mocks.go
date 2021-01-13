@@ -4,23 +4,17 @@ import (
 	"fmt"
 	"strings"
 
-	ocav1 "github.com/openshift/api/apps/v1"
-	ocv1 "github.com/openshift/api/route/v1"
-	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
-	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
-
-	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 // resource details employed in mocks
@@ -108,7 +102,7 @@ func DatabaseCRDMock(ns string) apiextensionv1beta1.CustomResourceDefinition {
 			APIVersion: "apiextensions.k8s.io/v1beta1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:   ns,
+			//Namespace:   ns,
 			Name:        FullCRDName,
 			Annotations: annotations,
 		},
@@ -214,15 +208,6 @@ func CRDDescriptionMock() olmv1alpha1.CRDDescription {
 	)
 }
 
-// CRDDescriptionConfigMapMock based on PostgreSQL operator, returns a mock using configmap based
-// spec-descriptor
-func CRDDescriptionConfigMapMock() olmv1alpha1.CRDDescription {
-	return crdDescriptionMock(
-		[]olmv1alpha1.SpecDescriptor{DBConfigMapSpecDesc, ImageSpecDesc},
-		[]olmv1alpha1.StatusDescriptor{DBPasswordCredentialsOnEnvStatusDesc},
-	)
-}
-
 // CRDDescriptionVolumeMountMock based on PostgreSQL operator, returns a mock having credentials
 // in a volume.
 func CRDDescriptionVolumeMountMock() olmv1alpha1.CRDDescription {
@@ -313,49 +298,37 @@ func ClusterServiceVersionListVolumeMountMock(ns, name string) *olmv1alpha1.Clus
 	}
 }
 
-// DatabaseCRMock based on PostgreSQL operator, returning a instantiated object.
-func DatabaseCRMock(ns, name string) *pgv1alpha1.Database {
-	return &pgv1alpha1.Database{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       CRDKind,
-			APIVersion: fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+func RouteCRMock(ns, name string) *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "route.openshift.io/v1",
+			"kind": "Route",
+			"metadata": map[string]interface{}{
+				"namespace": ns,
+				"name":      name,
+			},
+			"spec": map[string]interface{}{
+				"host": "https://openshift.cluster.com/host_url",
+			},
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: pgv1alpha1.DatabaseSpec{
-			Image:     "docker.io/postgres:latest",
-			ImageName: "postgres",
-			DBName:    "test-db",
-		},
-		Status: pgv1alpha1.DatabaseStatus{
-			DBCredentials: "db-credentials",
-		},
-	}
-}
-
-func RouteCRMock(ns, name string) *ocv1.Route {
-	return &ocv1.Route{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Route",
-			APIVersion: "v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: ns,
-		},
-		Spec: ocv1.RouteSpec{
-			Host: "https://openshift.cluster.com/host_url",
-		},
-		Status: ocv1.RouteStatus{},
 	}
 }
 
 // UnstructuredDatabaseCRMock returns a unstructured version of DatabaseCRMock.
-func UnstructuredDatabaseCRMock(ns, name string) (*unstructured.Unstructured, error) {
-	db := DatabaseCRMock(ns, name)
-	return converter.ToUnstructured(&db)
+func UnstructuredDatabaseCRMock(ns, name string) *ustrv1.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": fmt.Sprintf("%s/%s", CRDName, CRDVersion),
+			"kind":       CRDKind,
+			"metadata": map[string]interface{}{
+				"namespace": ns,
+				"name":      name,
+			},
+			"status": map[string]interface{}{
+				"dbCredentials": "db-credentials",
+			},
+		},
+	}
 }
 
 // SecretMock returns a Secret based on PostgreSQL operator usage.
@@ -510,70 +483,20 @@ func UnstructuredServiceBindingMock(
 	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
 }
 
-// DeploymentConfigListMock returns a list of DeploymentMock.
-func DeploymentConfigListMock(ns, name string, matchLabels map[string]string) ocav1.DeploymentConfigList {
-	return ocav1.DeploymentConfigList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "DeploymentConfigList",
-			APIVersion: "apps/v1",
-		},
-		Items: []ocav1.DeploymentConfig{DeploymentConfigMock(ns, name, matchLabels)},
-	}
-}
-
 // UnstructuredDeploymentConfigMock converts the DeploymentMock to unstructured.
-func UnstructuredDeploymentConfigMock(
-	ns,
-	name string,
-	matchLabels map[string]string,
-) (*ustrv1.Unstructured, error) {
-	d := DeploymentConfigMock(ns, name, matchLabels)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
-	return &ustrv1.Unstructured{Object: data}, err
-}
-
-// DeploymentConfigMock creates a mocked Deployment object of busybox.
-func DeploymentConfigMock(ns, name string, matchLabels map[string]string) ocav1.DeploymentConfig {
-	return ocav1.DeploymentConfig{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "DeploymentConfig",
-			APIVersion: "apps/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-			Labels:    matchLabels,
-		},
-		Spec: ocav1.DeploymentConfigSpec{
-			Selector: matchLabels,
-			Template: &corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Namespace: ns,
-					Name:      name,
-					Labels:    matchLabels,
-				},
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{{
-						Name:    "busybox",
-						Image:   "busybox:latest",
-						Command: []string{"sleep", "3600"},
-					}},
-				},
+func UnstructuredDeploymentConfigMock(ns, name string, ) *ustrv1.Unstructured {
+	return &ustrv1.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "apps.openshift.io/v1",
+			"kind":       "DeploymentConfig",
+			"metadata": map[string]interface{}{
+				"namespace": ns,
+				"name":      name,
 			},
-		},
+			},
 	}
 }
 
-// DeploymentListMock returns a list of DeploymentMock.
-func DeploymentListMock(ns, name string, matchLabels map[string]string) appsv1.DeploymentList {
-	return appsv1.DeploymentList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "DeploymentList",
-			APIVersion: "apps/v1",
-		},
-		Items: []appsv1.Deployment{DeploymentMock(ns, name, matchLabels)},
-	}
-}
 
 // UnstructuredDeploymentMock converts the DeploymentMock to unstructured.
 func UnstructuredDeploymentMock(
@@ -623,56 +546,24 @@ func DeploymentMock(ns, name string, matchLabels map[string]string) appsv1.Deplo
 	}
 }
 
-// KnativeServiceListMock returns a list of KnativeServiceMock.
-func KnativeServiceListMock(ns, name string, matchLabels map[string]string) knativev1.ServiceList {
-	return knativev1.ServiceList{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "ServiceList",
-			APIVersion: "serving.knative.dev/v1",
-		},
-		Items: []knativev1.Service{KnativeServiceMock(ns, name, matchLabels)},
-	}
-}
-
 // UnstructuredKnativeServiceMock converts the KnativeServiceMock to unstructured.
 func UnstructuredKnativeServiceMock(
 	ns,
 	name string,
 	matchLabels map[string]string,
-) (*ustrv1.Unstructured, error) {
-	d := KnativeServiceMock(ns, name, matchLabels)
-	data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&d)
-	return &ustrv1.Unstructured{Object: data}, err
-}
-
-// KnativeServiceMock creates a mocked knative serivce object of busybox.
-func KnativeServiceMock(ns, name string, matchLabels map[string]string) knativev1.Service {
-	return knativev1.Service{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Service",
-			APIVersion: "serving.knative.dev/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-			Labels:    matchLabels,
-		},
-		Spec: knativev1.ServiceSpec{
-			ConfigurationSpec: knativev1.ConfigurationSpec{
-				Template: knativev1.RevisionTemplateSpec{
-					Spec: knativev1.RevisionSpec{
-						PodSpec: corev1.PodSpec{
-							Containers: []corev1.Container{{
-								Name:    "busybox",
-								Image:   "busybox:latest",
-								Command: []string{"sleep", "3600"},
-							}},
-						},
-					},
-				},
+) (*ustrv1.Unstructured) {
+	u := &ustrv1.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "serving.knative.dev/v1",
+			"kind":       "Service",
+			"metadata": map[string]interface{}{
+				"namespace": ns,
+				"name":      name,
 			},
 		},
 	}
+	u.SetLabels(matchLabels)
+	return u
 }
 
 //ThirdLevel ...

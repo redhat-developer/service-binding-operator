@@ -22,7 +22,6 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
-	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 )
 
 // changeTriggerEnv hijacking environment in order to trigger a change
@@ -41,6 +40,8 @@ type binder struct {
 	restMapper  meta.RESTMapper     // RESTMapper to convert GVR from GVK
 	logger      *log.Log            // logger instance
 }
+
+var knativeServiceGVR = schema.GroupVersionResource{Group: "serving.knative.dev", Version: "v1", Resource: "services"}
 
 // extraFieldsModifier is useful for updating backend service which requires additional changes besides
 // env/volumes updating. eg. for knative service we need to remove or update `spec.template.metadata.name`
@@ -680,9 +681,9 @@ func newBinder(
 func buildExtraFieldsModifier(logger *log.Log, sbr *v1alpha1.ServiceBinding) extraFieldsModifier {
 	if sbr.Spec.Application != nil {
 		gvr := sbr.Spec.Application.GroupVersionResource
-		ksvcgvr := knativev1.SchemeGroupVersion.WithResource("services")
 		switch gvr.String() {
-		case ksvcgvr.String():
+		case knativeServiceGVR.String():
+			// TODO: why we need this?
 			pathToRevisionName := "spec.template.metadata.name"
 			return extraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
 				revisionName, ok, err := unstructured.NestedString(u.Object, strings.Split(pathToRevisionName, ".")...)

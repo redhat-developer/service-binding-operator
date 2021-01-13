@@ -3,9 +3,7 @@ package mocks
 import (
 	"testing"
 
-	pgapis "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis"
-	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
-	olmv1alpha1 "github.com/operator-framework/operator-lifecycle-manager/pkg/api/apis/operators/v1alpha1"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -14,9 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	ocav1 "github.com/openshift/api/apps/v1"
-	knativev1 "knative.dev/serving/pkg/apis/serving/v1"
 
 	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 )
@@ -134,26 +129,22 @@ func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
 
 // AddMockedDatabaseCR add mocked object from DatabaseCRMock.
 func (f *Fake) AddMockedDatabaseCR(ref string, namespace string) runtime.Object {
-	require.NoError(f.t, pgapis.AddToScheme(f.S))
-	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	mock := DatabaseCRMock(namespace, ref)
+	mock :=UnstructuredDatabaseCRMock(namespace, ref)
+	f.S.AddKnownTypeWithName(mock.GroupVersionKind(), &unstructured.Unstructured{})
 	f.objs = append(f.objs, mock)
 	return mock
 }
 
 func (f *Fake) AddMockedUnstructuredDatabaseCR(ref string) {
-	require.NoError(f.t, pgapis.AddToScheme(f.S))
-	d, err := UnstructuredDatabaseCRMock(f.ns, ref)
-	require.NoError(f.t, err)
+	d := UnstructuredDatabaseCRMock(f.ns, ref)
+	f.S.AddKnownTypeWithName(d.GroupVersionKind(), &unstructured.Unstructured{})
 	f.objs = append(f.objs, d)
 }
 
 // AddMockedUnstructuredDeploymentConfig adds mocked object from UnstructuredDeploymentConfigMock.
 func (f *Fake) AddMockedUnstructuredDeploymentConfig(name string, matchLabels map[string]string) {
-	require.Nil(f.t, ocav1.AddToScheme(f.S))
-	d, err := UnstructuredDeploymentConfigMock(f.ns, name, matchLabels)
-	require.Nil(f.t, err)
-	f.S.AddKnownTypes(ocav1.SchemeGroupVersion, &ocav1.DeploymentConfig{})
+	d := UnstructuredDeploymentConfigMock(f.ns, name)
+	f.S.AddKnownTypeWithName(schema.GroupVersionKind{Group: "apps.openshift.io", Version: "v1", Kind: "DeploymentConfig"}, &unstructured.Unstructured{})
 	f.objs = append(f.objs, d)
 }
 
@@ -169,10 +160,8 @@ func (f *Fake) AddMockedUnstructuredDeployment(name string, matchLabels map[stri
 
 // AddMockedUnstructuredKnativeService add mocked object from UnstructuredKnativeService.
 func (f *Fake) AddMockedUnstructuredKnativeService(name string, matchLabels map[string]string) {
-	require.NoError(f.t, knativev1.AddToScheme(f.S))
-	d, err := UnstructuredKnativeServiceMock(f.ns, name, matchLabels)
-	require.NoError(f.t, err)
-	f.S.AddKnownTypes(knativev1.SchemeGroupVersion, &knativev1.Service{})
+	d := UnstructuredKnativeServiceMock(f.ns, name, matchLabels)
+	f.S.AddKnownTypeWithName(d.GroupVersionKind(), &unstructured.Unstructured{})
 	f.objs = append(f.objs, d)
 }
 
