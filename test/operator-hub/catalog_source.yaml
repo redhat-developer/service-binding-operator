@@ -1,4 +1,4 @@
-# Ref. https://github.com/operator-framework/operator-lifecycle-manager
+# Ref. https://github.com/operator-framework/api/pkg/operators/v1alpha1
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:

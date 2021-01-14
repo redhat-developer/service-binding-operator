@@ -39,8 +39,7 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 	f.AddMockedUnstructuredCSV("csv")
 	f.AddNamespacedMockedSecret("db-credentials", backingServiceNs, nil)
 
-	cr, err := mocks.UnstructuredDatabaseCRMock(backingServiceNs, crName)
-	require.NoError(t, err)
+	cr := mocks.UnstructuredDatabaseCRMock(backingServiceNs, crName)
 
 	fakeDynClient := f.FakeDynClient()
 
@@ -139,8 +138,7 @@ func TestBuildServiceEnvVars(t *testing.T) {
 		expected         map[string]string
 	}
 
-	cr, err := mocks.UnstructuredDatabaseCRMock("namespace", "name")
-	require.NoError(t, err)
+	cr := mocks.UnstructuredDatabaseCRMock("namespace", "name")
 
 	serviceNamePrefix := "serviceprefix"
 	emptyString := ""

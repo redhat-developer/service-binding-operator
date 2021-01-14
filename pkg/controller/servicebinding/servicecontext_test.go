@@ -1,12 +1,11 @@
 package servicebinding
 
 import (
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"testing"
 
 	corev1 "k8s.io/api/core/v1"
 
-	routev1 "github.com/openshift/api/route/v1"
-	pgv1alpha1 "github.com/operator-backing-service-samples/postgresql-operator/pkg/apis/postgresql/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
@@ -14,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestBuildServiceContexts(t *testing.T) {
@@ -175,30 +173,24 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 	f.AddMockedUnstructuredDatabaseCRD()
 	f.AddMockedUnstructuredSecret("db-credentials")
 
-	cr := mocks.DatabaseCRMock("test", "test")
+	cr := mocks.UnstructuredDatabaseCRMock("test", "test")
 	reference := metav1.OwnerReference{
-		APIVersion:         cr.APIVersion,
-		Kind:               cr.Kind,
-		Name:               cr.Name,
-		UID:                cr.UID,
+		APIVersion:         cr.GetAPIVersion(),
+		Kind:               cr.GetKind(),
+		Name:               cr.GetName(),
+		UID:                cr.GetUID(),
 		Controller:         &trueBool,
 		BlockOwnerDeletion: &trueBool,
 	}
-	configMap := mocks.ConfigMapMock("test", "test_database")
-	us := &unstructured.Unstructured{}
-	uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&configMap)
+	configMap, err := converter.ToUnstructured(mocks.ConfigMapMock("test", "test_database"))
 	require.NoError(t, err)
-	us.Object = uc
-	us.SetOwnerReferences([]metav1.OwnerReference{reference})
-	route, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mocks.RouteCRMock("test", "test"))
-	require.NoError(t, err)
-	usRoute := &unstructured.Unstructured{Object: route}
-	usRoute.SetOwnerReferences([]metav1.OwnerReference{reference})
-	f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-	f.S.AddKnownTypes(routev1.SchemeGroupVersion, &routev1.Route{})
+	configMap.SetOwnerReferences([]metav1.OwnerReference{reference})
+	route := mocks.RouteCRMock("test", "test")
+	route.SetOwnerReferences([]metav1.OwnerReference{reference})
+	f.S.AddKnownTypeWithName(cr.GroupVersionKind(), &unstructured.Unstructured{})
 	f.AddMockResource(cr)
-	f.AddMockResource(us)
-	f.AddMockResource(&unstructured.Unstructured{Object: route})
+	f.AddMockResource(configMap)
+	f.AddMockResource(route)
 	logger := log.NewLog("testFindOwnedResourcesCtxs_cm")
 
 	restMapper := testutils.BuildTestRESTMapper()
@@ -215,7 +207,7 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 			restMapper,
 		)
 		require.NoError(t, err)
-		require.Len(t, got, 1)
+		require.Len(t, got, 2)
 
 		expected := map[string]interface{}{
 			"": map[string]interface{}{
@@ -246,35 +238,26 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			f := mocks.NewFake(t, "test")
-			cr := mocks.DatabaseCRMock("test", "test")
+			cr := mocks.UnstructuredDatabaseCRMock("test", "test")
 			reference := metav1.OwnerReference{
-				APIVersion:         cr.APIVersion,
-				Kind:               cr.Kind,
-				Name:               cr.Name,
-				UID:                cr.UID,
+				APIVersion:         cr.GetAPIVersion(),
+				Kind:               cr.GetKind(),
+				Name:               cr.GetName(),
+				UID:                cr.GetUID(),
 				Controller:         &trueBool,
 				BlockOwnerDeletion: &trueBool,
 			}
-			route, err := runtime.DefaultUnstructuredConverter.ToUnstructured(mocks.RouteCRMock("test", "test"))
-			require.NoError(t, err)
-			usRoute := &unstructured.Unstructured{Object: route}
-			usRoute.SetOwnerReferences([]metav1.OwnerReference{reference})
-			f.S.AddKnownTypes(pgv1alpha1.SchemeGroupVersion, &pgv1alpha1.Database{})
-			f.S.AddKnownTypes(routev1.SchemeGroupVersion, &routev1.Route{})
+			f.S.AddKnownTypeWithName(cr.GroupVersionKind(), &unstructured.Unstructured{})
 			f.AddMockResource(cr)
-			f.AddMockResource(&unstructured.Unstructured{Object: route})
 			logger := log.NewLog("testFindOwnedResourcesCtxs_secret")
 
 			restMapper := testutils.BuildTestRESTMapper()
 
 			for _, secret := range tC.secrets {
-				secret := mocks.SecretMock("test", secret, nil)
-				us := &unstructured.Unstructured{}
-				uc, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
+				secret, err := mocks.UnstructuredSecretMock("test", secret)
 				require.NoError(t, err)
-				us.Object = uc
-				us.SetOwnerReferences([]metav1.OwnerReference{reference})
-				f.AddMockResource(us)
+				secret.SetOwnerReferences([]metav1.OwnerReference{reference})
+				f.AddMockResource(secret)
 			}
 
 			ownedResourcesCtxs, err := findOwnedResourcesCtxs(

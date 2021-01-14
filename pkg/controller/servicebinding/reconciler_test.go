@@ -33,7 +33,7 @@ const (
 var (
 	secretsGVR           = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
 	deploymentsGVR       = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
-	deploymentConfigsGVR = schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deploymentconfigs"}
+	deploymentConfigsGVR = schema.GroupVersionResource{Group: "apps.openshift.io", Version: "v1", Resource: "deploymentconfigs"}
 )
 
 func init() {
@@ -178,7 +178,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 
-		u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+		u, err := fakeDynClient.Resource(deploymentsGVR).Namespace(reconcilerNs).Get(reconcilerName, metav1.GetOptions{})
 		require.NoError(t, err)
 
 		d := appsv1.Deployment{}
@@ -297,7 +297,7 @@ func TestServiceNotFound(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
-	u, err := fakeDynClient.Resource(deploymentsGVR).Get(applicationResourceRef, metav1.GetOptions{})
+	u, err := fakeDynClient.Resource(deploymentsGVR).Namespace(reconcilerNs).Get(applicationResourceRef, metav1.GetOptions{})
 	require.NoError(t, err)
 
 	d := appsv1.Deployment{}
@@ -355,7 +355,7 @@ func TestApplicationNotFound(t *testing.T) {
 	require.NoError(t, err)
 	require.False(t, res.Requeue)
 
-	u, err := fakeDynClient.Resource(deploymentsGVR).Get(reconcilerName, metav1.GetOptions{})
+	u, err := fakeDynClient.Resource(deploymentsGVR).Namespace(reconcilerNs).Get(reconcilerName, metav1.GetOptions{})
 	require.NoError(t, err)
 
 	d := appsv1.Deployment{}
@@ -391,7 +391,7 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 	r := &reconciler{dynClient: fakeDynClient, restMapper: mapper, scheme: f.S}
 	r.resourceWatcher = newFakeResourceWatcher(mapper)
 
-	u, err := fakeDynClient.Resource(secretsGVR).Get("db-credentials", metav1.GetOptions{})
+	u, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get("db-credentials", metav1.GetOptions{})
 	require.NoError(t, err)
 	s := corev1.Secret{}
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &s)
