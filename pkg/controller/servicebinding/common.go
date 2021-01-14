@@ -10,8 +10,6 @@ import (
 const (
 	// serviceBindingRequestResource the name of ServiceBinding resource.
 	serviceBindingRequestResource = "servicebindings"
-	// serviceBindingRequestKind defines the name of the CRD kind.
-	serviceBindingRequestKind = "ServiceBinding"
 	// clusterServiceVersionKind the name of ClusterServiceVersion kind.
 	clusterServiceVersionKind = "ClusterServiceVersion"
 	// secretResource defines the resource name for Secrets.

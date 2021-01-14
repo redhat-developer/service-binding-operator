@@ -6,6 +6,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// BindingReady indicates that the overall sbr succeeded
+	BindingReady conditionsv1.ConditionType = "Ready"
+	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
+	CollectionReady conditionsv1.ConditionType = "CollectionReady"
+	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
+	// If status is true, it indicates that the binding succeeded
+	InjectionReady conditionsv1.ConditionType = "InjectionReady"
+	// EmptyServiceSelectorsReason is used when the ServiceBinding has empty
+	// services.
+	EmptyServiceSelectorsReason = "EmptyServiceSelectors"
+	// EmptyApplicationReason is used when the ServiceBinding has empty
+	// application.
+	EmptyApplicationReason = "EmptyApplication"
+	// ApplicationNotFoundReason is used when the application is not found.
+	ApplicationNotFoundReason = "ApplicationNotFound"
+	// ServiceNotFoundReason is used when the service is not found.
+	ServiceNotFoundReason = "ServiceNotFound"
+)
+
 // Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 
 // ServiceBindingSpec defines the desired state of ServiceBinding

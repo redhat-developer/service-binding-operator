@@ -430,15 +430,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   CollectionReady,
+				Type:   v1alpha1.CollectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   InjectionReady,
+				Type:   v1alpha1.InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -476,15 +476,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   CollectionReady,
+				Type:   v1alpha1.CollectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   InjectionReady,
+				Type:   v1alpha1.InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -523,15 +523,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   CollectionReady,
+				Type:   v1alpha1.CollectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   InjectionReady,
+				Type:   v1alpha1.InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -550,17 +550,17 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   CollectionReady,
+				Type:   v1alpha1.CollectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:    InjectionReady,
+				Type:    v1alpha1.InjectionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  EmptyApplicationReason,
+				Reason:  v1alpha1.EmptyApplicationReason,
 				Message: errEmptyApplication.Error(),
 			},
 			{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
@@ -579,17 +579,17 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   CollectionReady,
+				Type:   v1alpha1.CollectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:    InjectionReady,
+				Type:    v1alpha1.InjectionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  ApplicationNotFoundReason,
+				Reason:  v1alpha1.ApplicationNotFoundReason,
 				Message: errApplicationNotFound.Error(),
 			},
 			{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionFalse,
 			},
 		},
@@ -620,15 +620,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		},
 		wantConditions: []wantedCondition{
 			{
-				Type:   CollectionReady,
+				Type:   v1alpha1.CollectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   InjectionReady,
+				Type:   v1alpha1.InjectionReady,
 				Status: corev1.ConditionTrue,
 			},
 			{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionTrue,
 			},
 		},
