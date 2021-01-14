@@ -227,13 +227,13 @@ func (b *serviceBinder) onError(
 		b.setApplicationObjects(sbrStatus, objs)
 	}
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:    InjectionReady,
+		Type:    v1alpha1.InjectionReady,
 		Status:  corev1.ConditionFalse,
 		Reason:  bindingFail,
 		Message: b.message(err),
 	})
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   BindingReady,
+		Type:   v1alpha1.BindingReady,
 		Status: corev1.ConditionFalse,
 	})
 	newSbr, errStatus := b.updateStatusServiceBinding(sbr, sbrStatus)
@@ -306,19 +306,19 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	sbrStatus.Secret = secretObj.GetName()
 
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   CollectionReady,
+		Type:   v1alpha1.CollectionReady,
 		Status: corev1.ConditionTrue,
 	})
 
 	if isApplicationEmpty(b.sbr.Spec.Application) {
 		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-			Type:    InjectionReady,
+			Type:    v1alpha1.InjectionReady,
 			Status:  corev1.ConditionFalse,
-			Reason:  EmptyApplicationReason,
+			Reason:  v1alpha1.EmptyApplicationReason,
 			Message: errEmptyApplication.Error(),
 		})
 		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-			Type:   BindingReady,
+			Type:   v1alpha1.BindingReady,
 			Status: corev1.ConditionTrue,
 		})
 		return b.handleApplicationError(errEmptyApplication, sbrStatus)
@@ -328,13 +328,13 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		b.logger.Error(err, "On binding application.")
 		if errors.Is(err, errApplicationNotFound) {
 			conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-				Type:    InjectionReady,
+				Type:    v1alpha1.InjectionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  ApplicationNotFoundReason,
+				Reason:  v1alpha1.ApplicationNotFoundReason,
 				Message: errApplicationNotFound.Error(),
 			})
 			conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionFalse,
 			})
 			return b.handleApplicationError(errApplicationNotFound, sbrStatus)
@@ -344,11 +344,11 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	b.setApplicationObjects(sbrStatus, updatedObjects)
 
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   InjectionReady,
+		Type:   v1alpha1.InjectionReady,
 		Status: corev1.ConditionTrue,
 	})
 	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
-		Type:   BindingReady,
+		Type:   v1alpha1.BindingReady,
 		Status: corev1.ConditionTrue,
 	})
 

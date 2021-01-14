@@ -20,25 +20,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
 
-const (
-	// BindingReady indicates that the overall sbr succeeded
-	BindingReady conditionsv1.ConditionType = "Ready"
-	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
-	CollectionReady conditionsv1.ConditionType = "CollectionReady"
-	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
-	// If status is true, it indicates that the binding succeeded
-	InjectionReady conditionsv1.ConditionType = "InjectionReady"
-	// EmptyServiceSelectorsReason is used when the ServiceBinding has empty
-	// services.
-	EmptyServiceSelectorsReason = "EmptyServiceSelectors"
-	// EmptyApplicationReason is used when the ServiceBinding has empty
-	// application.
-	EmptyApplicationReason = "EmptyApplication"
-	// ApplicationNotFoundReason is used when the application is not found.
-	ApplicationNotFoundReason = "ApplicationNotFound"
-	// ServiceNotFoundReason is used when the service is not found.
-	ServiceNotFoundReason = "ServiceNotFound"
-)
 
 // Reconciler reconciles a ServiceBinding object
 type reconciler struct {
@@ -131,17 +112,17 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			r.dynClient,
 			sbr,
 			conditionsv1.Condition{
-				Type:    CollectionReady,
+				Type:    v1alpha1.CollectionReady,
 				Status:  corev1.ConditionFalse,
-				Reason:  EmptyServiceSelectorsReason,
+				Reason:  v1alpha1.EmptyServiceSelectorsReason,
 				Message: errEmptyServices.Error(),
 			},
 			conditionsv1.Condition{
-				Type:   InjectionReady,
+				Type:   v1alpha1.InjectionReady,
 				Status: corev1.ConditionFalse,
 			},
 			conditionsv1.Condition{
-				Type:   BindingReady,
+				Type:   v1alpha1.BindingReady,
 				Status: corev1.ConditionFalse,
 			},
 		)
@@ -169,17 +150,17 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		if k8serrors.IsNotFound(err) {
 			err = updateSBRConditions(r.dynClient, sbr,
 				conditionsv1.Condition{
-					Type:    CollectionReady,
+					Type:    v1alpha1.CollectionReady,
 					Status:  corev1.ConditionFalse,
-					Reason:  ServiceNotFoundReason,
+					Reason:  v1alpha1.ServiceNotFoundReason,
 					Message: err.Error(),
 				},
 				conditionsv1.Condition{
-					Type:   InjectionReady,
+					Type:   v1alpha1.InjectionReady,
 					Status: corev1.ConditionFalse,
 				},
 				conditionsv1.Condition{
-					Type:   BindingReady,
+					Type:   v1alpha1.BindingReady,
 					Status: corev1.ConditionFalse,
 				},
 			)

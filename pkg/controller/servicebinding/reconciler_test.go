@@ -131,9 +131,9 @@ func TestApplicationByName(t *testing.T) {
 		sbrOutput, err := r.getServiceBinding(namespacedName)
 		require.NoError(t, err)
 
-		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
@@ -195,9 +195,9 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		sbrOutput, err := r.getServiceBinding(namespacedName)
 		require.NoError(t, err)
 
-		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
@@ -282,9 +282,9 @@ func TestServiceNotFound(t *testing.T) {
 	sbrOutput, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndFalse(t, CollectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, BindingReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 	require.Len(t, sbrOutput.Status.Applications, 0)
 
 	// Reconcile with service
@@ -306,9 +306,9 @@ func TestServiceNotFound(t *testing.T) {
 	sbrOutput2, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput2.Status.Conditions)
-	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput2.Status.Conditions)
-	requireConditionPresentAndTrue(t, BindingReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput2.Status.Conditions)
 
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
@@ -341,9 +341,9 @@ func TestApplicationNotFound(t *testing.T) {
 	sbrOutput, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, BindingReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 	require.Len(t, sbrOutput.Status.Applications, 0)
 
 	// Reconcile with deployment
@@ -364,9 +364,9 @@ func TestApplicationNotFound(t *testing.T) {
 	sbrOutput2, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput2.Status.Conditions)
-	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput2.Status.Conditions)
-	requireConditionPresentAndTrue(t, BindingReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput2.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput2.Status.Conditions)
 
 	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
@@ -416,9 +416,9 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 	sbrOutput3, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput3.Status.Conditions)
-	requireConditionPresentAndTrue(t, InjectionReady, sbrOutput3.Status.Conditions)
-	requireConditionPresentAndTrue(t, BindingReady, sbrOutput3.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput3.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput3.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput3.Status.Conditions)
 
 	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
@@ -476,9 +476,9 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 			},
 		}
 
-		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
@@ -506,9 +506,9 @@ func TestEmptyApplication(t *testing.T) {
 	sbrOutput, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 }
 
 // TestEmptyServiceSelector tests that CollectionReady,InjectionReady and BindingReady are all successfully updated to True when ServiceSelector is empty
@@ -530,9 +530,9 @@ func TestEmptyServiceSelectorAndAllConditionAreSetToFalse(t *testing.T) {
 	sbrOutput, err := r.getServiceBinding(namespacedName)
 	require.NoError(t, err)
 
-	requireConditionPresentAndFalse(t, CollectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, InjectionReady, sbrOutput.Status.Conditions)
-	requireConditionPresentAndFalse(t, BindingReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+	requireConditionPresentAndFalse(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
 }
 
@@ -588,9 +588,9 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			},
 		}
 
-		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName1, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
@@ -626,9 +626,9 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			},
 		}
 
-		requireConditionPresentAndTrue(t, CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, BindingReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 		require.Equal(t, sbrName2, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))

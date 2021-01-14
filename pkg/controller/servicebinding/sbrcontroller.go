@@ -271,9 +271,8 @@ func buildSBRPredicate(logger *log.Log) predicate.Funcs {
 
 // addSBRWatch creates a watchon ServiceBinding GVK.
 func (s *sbrController) addSBRWatch() error {
-	gvk := v1alpha1.SchemeGroupVersion.WithKind(serviceBindingRequestKind)
-	l := s.logger.WithValues("GKV", gvk)
-	src := s.createSourceForGVK(gvk)
+	l := s.logger.WithValues("GKV", v1alpha1.GroupVersionKind)
+	src := s.createSourceForGVK(v1alpha1.GroupVersionKind)
 	err := s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), buildSBRPredicate(l))
 	if err != nil {
 		l.Error(err, "on creating watch for ServiceBinding")
