@@ -2,6 +2,7 @@
 
 OLM_VERSION=0.17.0
 OPERATOR_CHANNEL=${OPERATOR_CHANNEL:-beta}
+OPERATOR_PACKAGE=${OPERATOR_PACKAGE:-service-binding-operator}
 DOCKER_CFG=${DOCKER_CFG:-$HOME/.docker/config.json}
 CONTAINER_RUNTIME=${CONTAINER_RUNTIME:-docker}
 
@@ -78,12 +79,12 @@ else
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: service-binding-operator
+  name: $OPERATOR_PACKAGE
   namespace: $OPERATOR_NAMESPACE
 spec:
   channel: $OPERATOR_CHANNEL
   installPlanApproval: Automatic
-  name: service-binding-operator
+  name: $OPERATOR_PACKAGE
   source: $CATSRC_NAME
   sourceNamespace: $CATSRC_NAMESPACE
 EOD

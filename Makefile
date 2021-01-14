@@ -491,6 +491,7 @@ deploy-from-index-image:
 	$(info "Installing SBO using a Catalog Source from '$(OPERATOR_INDEX_IMAGE_REF)' index image")
 	$(Q)OPERATOR_INDEX_IMAGE=$(OPERATOR_INDEX_IMAGE_REF) \
 		OPERATOR_CHANNEL=$(OPERATOR_CHANNEL) \
+		OPERATOR_PACKAGE=$(CSV_PACKAGE_NAME) \
 		SKIP_REGISTRY_LOGIN=true \
 		./install.sh
 
