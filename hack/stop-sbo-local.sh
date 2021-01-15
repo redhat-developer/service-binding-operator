@@ -10,10 +10,7 @@ _killall(){
 }
 
 # Kill SBO running locally (no matter how it was started);
-_killall out/operator
-_killall operator
-_killall operator-sdk
-_killall service-binding-operator
-_killall service-binding-operator-local
+_killall bin/manager
+_killall manager
 
 exit 0

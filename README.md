@@ -85,7 +85,7 @@ Follow [OperatorHub instructions](https://operatorhub.io/operator/service-bindin
 
 ### Running Operator Locally
 
-Clone the repository and run `make local` using an existing `kube:admin` kube context.
+Clone the repository and run `make run` using an existing `kube:admin` kube context.
 
 
 ## Key Features

@@ -1,0 +1,13 @@
+resources:
+- ../default
+- ../samples
+#- ../scorecard
+
+patches:
+  - target:
+      kind: Deployment
+      name: .*
+    patch: |-
+      - op: replace
+        path: /metadata/name
+        value: service-binding-operator

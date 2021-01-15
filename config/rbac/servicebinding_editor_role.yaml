@@ -1,0 +1,24 @@
+# permissions for end users to edit servicebindings.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: servicebinding-editor-role
+rules:
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - servicebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - operators.coreos.com
+  resources:
+  - servicebindings/status
+  verbs:
+  - get
