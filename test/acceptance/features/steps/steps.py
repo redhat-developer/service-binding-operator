@@ -510,3 +510,12 @@ def create_deployment(context, app_name, image_ref):
     app = App(app_name, context.namespace.name, image_ref)
     if not app.is_running():
         assert app.install() is True, "Failed to create deployment."
+
+
+@then(u'Secret "{secret_name}" does not have key "{secret_key}"')
+def check_key_in_secret(context, secret_name, secret_key):
+    time.sleep(10)
+    openshift = Openshift()
+    json_path = f'{{.data.{secret_key}}}'
+    output = openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)
+    assert output is None, f"Secret '{secret_name}' must not have key '{secret_key}'"
