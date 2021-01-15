@@ -68,14 +68,7 @@ spec:
     id: postgresDB
 ```
 
-## User guide
-
-
-* [Application Workload Author's Guide](docs/application-author.md)
-* [Backing Service Provider Best Practices Guide](docs/BackingServiceBestPractices.md)
-
-
-
+## [User guide](docs/User_Guide.md)
 
 ## Dependencies
 
