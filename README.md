@@ -136,9 +136,9 @@ The following example scenarios are available:
 
 ## Community, discussion, contribution, and support
 
-The Service Binding community meets weekly on Thursdays at 11:15 AM UTC via [Google Meet](https://meet.google.com/jti-pujt-zqs).
+The Service Binding community meets weekly on Thursdays at 1:00 PM UTC via [Google Meet](https://meet.google.com/nkc-ngfv-ojn).
 
-Meeting Agenda is maintained [here](https://github.com/redhat-developer/service-binding-operator/issues?q=is%3Aissue+is%3Aopen+label%3Ameeting)
+Meeting Agenda is maintained [here](https://docs.google.com/document/d/1HwhAKqpM6l4Ur3h3IApDFzbH2Y_xvj_n1x1pEdwRuSY/edit?usp=sharing)
 
 Please file bug reports on [Github](https://github.com/redhat-developer/service-binding-operator/issues/new). For any other questions, reach out on [service-binding-support@redhat.com](https://www.redhat.com/mailman/listinfo/service-binding-support).
 
