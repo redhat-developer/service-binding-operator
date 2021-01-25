@@ -13,7 +13,7 @@ import (
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
+	v1alpha1 "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 )
 
 // Fake defines all the elements to fake a kubernetes api client.
@@ -33,7 +33,7 @@ func (f *Fake) AddMockedServiceBinding(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBinding {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
 	sbr := ServiceBindingMock(f.ns, name, backingServiceNamespace, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -47,7 +47,7 @@ func (f *Fake) AddMockedServiceBindingWithUnannotated(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *v1alpha1.ServiceBinding {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
 	sbr := ServiceBindingMock(f.ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -58,7 +58,7 @@ func (f *Fake) AddMockedUnstructuredServiceBindingWithoutApplication(
 	name string,
 	backingServiceResourceRef string,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
 	var emptyGVR = schema.GroupVersionResource{}
 	sbr, err := UnstructuredServiceBindingMock(f.ns, name, backingServiceResourceRef, "", emptyGVR, nil)
 	require.NoError(f.t, err)
@@ -72,7 +72,7 @@ func (f *Fake) AddMockedUnstructuredServiceBindingWithoutService(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
 	sbr, err := UnstructuredServiceBindingMock(f.ns, name, "", applicationResourceRef, applicationGVR, nil)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
@@ -87,7 +87,7 @@ func (f *Fake) AddMockedUnstructuredServiceBinding(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.SchemeGroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
 	sbr, err := UnstructuredServiceBindingMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
@@ -129,7 +129,7 @@ func (f *Fake) AddMockedUnstructuredCSVWithVolumeMount(name string) {
 
 // AddMockedDatabaseCR add mocked object from DatabaseCRMock.
 func (f *Fake) AddMockedDatabaseCR(ref string, namespace string) runtime.Object {
-	mock :=UnstructuredDatabaseCRMock(namespace, ref)
+	mock := UnstructuredDatabaseCRMock(namespace, ref)
 	f.S.AddKnownTypeWithName(mock.GroupVersionKind(), &unstructured.Unstructured{})
 	f.objs = append(f.objs, mock)
 	return mock

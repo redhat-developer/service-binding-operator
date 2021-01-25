@@ -13,7 +13,7 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/apis/operators/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 )
 
@@ -302,7 +302,7 @@ func RouteCRMock(ns, name string) *unstructured.Unstructured {
 	return &unstructured.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "route.openshift.io/v1",
-			"kind": "Route",
+			"kind":       "Route",
 			"metadata": map[string]interface{}{
 				"namespace": ns,
 				"name":      name,
@@ -480,11 +480,11 @@ func UnstructuredServiceBindingMock(
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
 	sbr := ServiceBindingMock(ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
-	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.SchemeGroupVersion.WithKind(OperatorKind))
+	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.GroupVersionKind)
 }
 
 // UnstructuredDeploymentConfigMock converts the DeploymentMock to unstructured.
-func UnstructuredDeploymentConfigMock(ns, name string, ) *ustrv1.Unstructured {
+func UnstructuredDeploymentConfigMock(ns, name string) *ustrv1.Unstructured {
 	return &ustrv1.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "apps.openshift.io/v1",
@@ -493,10 +493,9 @@ func UnstructuredDeploymentConfigMock(ns, name string, ) *ustrv1.Unstructured {
 				"namespace": ns,
 				"name":      name,
 			},
-			},
+		},
 	}
 }
-
 
 // UnstructuredDeploymentMock converts the DeploymentMock to unstructured.
 func UnstructuredDeploymentMock(
@@ -551,7 +550,7 @@ func UnstructuredKnativeServiceMock(
 	ns,
 	name string,
 	matchLabels map[string]string,
-) (*ustrv1.Unstructured) {
+) *ustrv1.Unstructured {
 	u := &ustrv1.Unstructured{
 		Object: map[string]interface{}{
 			"apiVersion": "serving.knative.dev/v1",

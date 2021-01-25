@@ -94,3 +94,19 @@ tags
 ### Logs
 **/*.log
 **/*/__pycache__
+
+
+# editor and IDE paraphernalia
+.idea
+*.swp
+*.swo
+*~
+
+bin
+testbin/*
+
+# Test binary, build with `go test -c`
+*.test
+
+bundle
+bundle.Dockerfile

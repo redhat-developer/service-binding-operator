@@ -554,7 +554,7 @@ Feature: Bind an application to a service
             spec:
                 services:
             """
-        Then Error message "invalid: spec.services: Invalid value: \"null\"" is thrown
+        Then Error message is thrown
         And Service Binding "binding-request-empty-services" is not persistent in the cluster
 
     @negative
@@ -569,10 +569,7 @@ Feature: Bind an application to a service
                 services:
                 -   name: backend-demo
             """
-        Then Error message "spec.services.group: Required value" is thrown
-        And Error message "spec.services.kind: Required value" is thrown
-        And Error message "spec.services.version: Required value" is thrown
-        And Service Binding "binding-request-without-gvk" is not persistent in the cluster
+        Then Error message is thrown
 
     @negative
     Scenario: Removing service from services field from existing serivce binding is not allowed
@@ -610,7 +607,7 @@ Feature: Bind an application to a service
             spec:
                 services:
             """
-        Then Error message "invalid: spec.services: Required value" is thrown
+        Then Error message is thrown
         And Service Binding "binding-request-remove-service" is not updated
 
     @negative
@@ -622,7 +619,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-without-spec
             """
-        Then Error message "spec: Required value" is thrown
+        Then Error message is thrown
         And Service Binding "binding-request-without-spec" is not persistent in the cluster
 
     @negative
@@ -677,7 +674,7 @@ Feature: Bind an application to a service
         And Service Binding "binding-request-emptying-spec" is not updated
 
     @negative
-    Scenario: Removing spec of existing serivce binding is not allowed
+    Scenario: Removing spec of existing service binding is not allowed
         Given OLM Operator "backend" is running
         * The Custom Resource is present
             """
@@ -710,7 +707,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-remove-spec
             """
-        Then Error message "spec: Required value" is thrown
+        Then Error message is thrown
         And Service Binding "binding-request-remove-spec" is not updated
 
     Scenario: Bind an application to a service present in a different namespace
