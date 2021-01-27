@@ -45,6 +45,19 @@ connect to a backing service (for example, a database):
   * Injects environment variables into the applications' `Deployment`, `DeploymentConfig`,
     `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
 
+## Key Features
+
+* Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
+* Support binding with multiple-backing services.
+* Extract binding information based on annotations present in CRDs/CRs/resources. 
+* Extract binding values based on annotations present in OLM descriptors.
+* Project binding values as volume mounts.
+* Project binding values as environment variables.
+* Binding of PodSpec-based workloads.
+* Binding of non-PodSpec-based Kubernetes resources.
+* Custom binding variables composed from one or more backing services.
+* Auto-detect binding resources in the absence of binding decorators.
+
 ### Example
 #### Binding a Java Application with a Database
 
@@ -87,21 +100,6 @@ Follow [OperatorHub instructions](https://operatorhub.io/operator/service-bindin
 
 Clone the repository and run `make run` using an existing `kube:admin` kube context.
 
-
-## Key Features
-
-* Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
-* Support binding with multiple-backing services.
-* Extract binding information based on annotations present in CRDs/CRs/resources. 
-* Extract binding values based on annotations present in OLM descriptors.
-* Project binding values as volume mounts.
-* Project binding values as environment variables.
-* Binding of PodSpec-based workloads.
-* Binding of non-PodSpec-based Kubernetes resources.
-* Custom binding variables composed from one or more backing services.
-* Auto-detect binding resources in the absence of binding decorators.
-
-
 ## Getting Started
 
 The best way to get started with the Service Binding Operator is to see it in action.
@@ -133,6 +131,10 @@ The following example scenarios are available:
 [Binding an Imported app in one namespace with an In-cluster Managed PostgreSQL Database in another namespace](examples/nodejs_postgresql_namespaces/README.md)
 
 [Binding an Imported app to a Route/Ingress](examples/route_k8s_resource/README.md)
+
+## Roadmap
+
+The [Service Binding Operator roadmap uses Github milestones](https://github.com/redhat-developer/service-binding-operator/milestones) to track the progress of the project.
 
 ## Community, discussion, contribution, and support
 
