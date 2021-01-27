@@ -45,6 +45,7 @@ TEST_ACCEPTANCE_START_SBO ?= local
 TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
 TEST_ACCEPTANCE_REPORT_DIR ?= $(OUTPUT_DIR)/acceptance-tests-report
 TEST_ACCEPTANCE_ARTIFACTS ?= /tmp/artifacts
+TEST_NAMESPACE = $(shell $(HACK_DIR)/get-test-namespace $(OUTPUT_DIR))
 
 TEST_ACCEPTANCE_TAGS ?=
 
@@ -164,30 +165,20 @@ setup-venv:
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade setuptools
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
 
-.PHONY: out/test-namespace
-# Generate namespace name for test
-out/test-namespace:
-	$(Q)mkdir -p $(OUTPUT_DIR)
-	@echo -n "test-namespace-$(shell uuidgen | tr '[:upper:]' '[:lower:]' | head -c 8)" > $(OUTPUT_DIR)/test-namespace
-
-.PHONY: get-test-namespace
-get-test-namespace: out/test-namespace
-	$(eval TEST_NAMESPACE := $(shell cat $(OUTPUT_DIR)/test-namespace))
-
 # Testing setup
 .PHONY: deploy-test-3rd-party-crds
-deploy-test-3rd-party-crds: get-test-namespace
+deploy-test-3rd-party-crds:
 	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/
 
 .PHONY: create-test-namespace
 create-test-namespace:
-	$(Q)kubectl create namespace $(TEST_NAMESPACE)
+	$(Q)kubectl get namespace $(TEST_NAMESPACE) || kubectl create namespace $(TEST_NAMESPACE)
 
 .PHONY: test-setup
 test-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds
 
 .PHONY: test-cleanup
-test-cleanup: get-test-namespace
+test-cleanup:
 	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/test-cleanup.sh
 
 .PHONY: deploy-rbac
