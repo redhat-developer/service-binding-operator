@@ -21,8 +21,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"github.com/openshift/custom-resource-status/conditions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -32,7 +31,7 @@ func (in *Application) DeepCopyInto(out *Application) {
 	out.LocalObjectReference = in.LocalObjectReference
 	if in.LabelSelector != nil {
 		in, out := &in.LabelSelector, &out.LabelSelector
-		*out = new(metav1.LabelSelector)
+		*out = new(v1.LabelSelector)
 		(*in).DeepCopyInto(*out)
 	}
 	out.GroupVersionResource = in.GroupVersionResource

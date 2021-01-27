@@ -82,9 +82,6 @@ github.com/modern-go/reflect2
 ## explicit
 # github.com/onsi/gomega v1.10.2
 ## explicit
-# github.com/openshift/custom-resource-status v0.0.0-20190822192428-e62f2f3b79f3
-## explicit
-github.com/openshift/custom-resource-status/conditions/v1
 # github.com/operator-framework/api v0.3.8
 ## explicit
 github.com/operator-framework/api/pkg/lib/version
