@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"errors"
+
 	"k8s.io/apimachinery/pkg/api/meta"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -113,41 +114,43 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 		// being worked in https://github.com/redhat-developer/service-binding-operator/pull/442.
 		return requeueError(errEmptyServices)
 	}
-
-	serviceCtxs, err := buildServiceContexts(
-		logger.WithName("buildServiceContexts"),
-		r.dynClient,
-		sbr.GetNamespace(),
-		sbr.Spec.Services,
-		sbr.Spec.DetectBindingResources,
-		r.restMapper,
-	)
-	if err != nil {
-		//handle service not found error
-		if k8serrors.IsNotFound(err) {
-			err = updateSBRConditions(r.dynClient, sbr,
-				metav1.Condition{
-					Type:    v1alpha1.CollectionReady,
-					Status:  metav1.ConditionFalse,
-					Reason:  v1alpha1.ServiceNotFoundReason,
-					Message: err.Error(),
-				},
-				metav1.Condition{
-					Type:   v1alpha1.InjectionReady,
-					Reason: v1alpha1.ServiceNotFoundReason,
-					Status: metav1.ConditionFalse,
-				},
-				metav1.Condition{
-					Type:   v1alpha1.BindingReady,
-					Reason: v1alpha1.ServiceNotFoundReason,
-					Status: metav1.ConditionFalse,
-				},
-			)
-			if err != nil {
-				logger.Error(err, "Failed to update SBR conditions", "sbr", sbr)
+	serviceCtxs := serviceContextList{}
+	// we only need to build the service context if SBR is not deleted
+	if sbr.GetDeletionTimestamp() == nil {
+		serviceCtxs, err = buildServiceContexts(
+			logger.WithName("buildServiceContexts"),
+			r.dynClient,
+			sbr.GetNamespace(),
+			sbr.Spec.Services,
+			sbr.Spec.DetectBindingResources,
+			r.restMapper,
+		)
+		if err != nil {
+			//handle service not found error
+			if k8serrors.IsNotFound(err) {
+				err = updateSBRConditions(r.dynClient, sbr,
+					metav1.Condition{
+						Type:    v1alpha1.CollectionReady,
+						Status:  metav1.ConditionFalse,
+						Reason:  v1alpha1.ServiceNotFoundReason,
+						Message: err.Error(),
+					},
+					metav1.Condition{
+						Type:   v1alpha1.InjectionReady,
+						Status: metav1.ConditionFalse,
+					},
+					metav1.Condition{
+						Type:   v1alpha1.BindingReady,
+						Status: metav1.ConditionFalse,
+					},
+				)
+				if err != nil {
+					logger.Error(err, "Failed to update SBR conditions", "sbr", sbr)
+				}
 			}
+			return requeueError(err)
+
 		}
-		return requeueError(err)
 	}
 	binding, err := buildBinding(
 		r.dynClient,
