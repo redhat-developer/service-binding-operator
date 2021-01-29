@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 
-	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"gotest.tools/assert/cmp"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -112,7 +110,7 @@ func updateServiceBinding(
 		Resource(v1alpha1.GroupVersionResource).
 		Namespace(sbr.GetNamespace())
 
-	u, err = nsClient.Update(context.TODO(), u, v1.UpdateOptions{})
+	u, err = nsClient.Update(context.TODO(), u, metav1.UpdateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -164,10 +162,10 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 func updateServiceBindingStatus(
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBinding,
-	conditions ...conditionsv1.Condition,
+	conditions ...metav1.Condition,
 ) (*v1alpha1.ServiceBinding, error) {
 	for _, v := range conditions {
-		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, v)
+		meta.SetStatusCondition(&sbr.Status.Conditions, v)
 	}
 	u, err := converter.ToUnstructured(sbr)
 	if err != nil {
@@ -178,7 +176,7 @@ func updateServiceBindingStatus(
 		Resource(v1alpha1.GroupVersionResource).
 		Namespace(sbr.GetNamespace())
 
-	u, err = nsClient.UpdateStatus(context.TODO(), u, v1.UpdateOptions{})
+	u, err = nsClient.UpdateStatus(context.TODO(), u, metav1.UpdateOptions{})
 
 	if err != nil {
 		return nil, err
@@ -223,15 +221,16 @@ func (b *serviceBinder) onError(
 	if objs != nil {
 		b.setApplicationObjects(sbrStatus, objs)
 	}
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 		Type:    v1alpha1.InjectionReady,
-		Status:  corev1.ConditionFalse,
+		Status:  metav1.ConditionFalse,
 		Reason:  bindingFail,
 		Message: b.message(err),
 	})
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 		Type:   v1alpha1.BindingReady,
-		Status: corev1.ConditionFalse,
+		Reason: bindingFail,
+		Status: metav1.ConditionFalse,
 	})
 	newSbr, errStatus := b.updateStatusServiceBinding(sbr, sbrStatus)
 	if errStatus != nil {
@@ -252,7 +251,7 @@ func isApplicationEmpty(
 		return true
 	}
 	emptyApplication := &v1alpha1.Application{
-		LabelSelector: &v1.LabelSelector{},
+		LabelSelector: &metav1.LabelSelector{},
 	}
 	return application == emptyApplication ||
 		application.Name == "" && application.LabelSelector != nil && application.LabelSelector.MatchLabels == nil
@@ -302,21 +301,23 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	}
 	sbrStatus.Secret = secretObj.GetName()
 
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 		Type:   v1alpha1.CollectionReady,
-		Status: corev1.ConditionTrue,
+		Status: metav1.ConditionTrue,
+		Reason: v1alpha1.BindingInjectedReason,
 	})
 
 	if isApplicationEmpty(b.sbr.Spec.Application) {
-		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 			Type:    v1alpha1.InjectionReady,
-			Status:  corev1.ConditionFalse,
+			Status:  metav1.ConditionFalse,
 			Reason:  v1alpha1.EmptyApplicationReason,
 			Message: errEmptyApplication.Error(),
 		})
-		conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+		meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 			Type:   v1alpha1.BindingReady,
-			Status: corev1.ConditionTrue,
+			Reason: v1alpha1.EmptyApplicationReason,
+			Status: metav1.ConditionTrue,
 		})
 		return b.handleApplicationError(errEmptyApplication, sbrStatus)
 	}
@@ -324,15 +325,16 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	if err != nil {
 		b.logger.Error(err, "On binding application.")
 		if errors.Is(err, errApplicationNotFound) {
-			conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 				Type:    v1alpha1.InjectionReady,
-				Status:  corev1.ConditionFalse,
+				Status:  metav1.ConditionFalse,
 				Reason:  v1alpha1.ApplicationNotFoundReason,
 				Message: errApplicationNotFound.Error(),
 			})
-			conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+			meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionFalse,
+				Reason: v1alpha1.ApplicationNotFoundReason,
+				Status: metav1.ConditionFalse,
 			})
 			return b.handleApplicationError(errApplicationNotFound, sbrStatus)
 		}
@@ -340,13 +342,15 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 	}
 	b.setApplicationObjects(sbrStatus, updatedObjects)
 
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 		Type:   v1alpha1.InjectionReady,
-		Status: corev1.ConditionTrue,
+		Reason: v1alpha1.BindingInjectedReason,
+		Status: metav1.ConditionTrue,
 	})
-	conditionsv1.SetStatusCondition(&sbrStatus.Conditions, conditionsv1.Condition{
+	meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 		Type:   v1alpha1.BindingReady,
-		Status: corev1.ConditionTrue,
+		Reason: v1alpha1.BindingInjectedReason,
+		Status: metav1.ConditionTrue,
 	})
 
 	// updating status of request instance
@@ -375,7 +379,7 @@ func (b *serviceBinder) setApplicationObjects(
 	boundApps := []v1alpha1.BoundApplication{}
 	for _, obj := range objs {
 		boundApp := v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   obj.GroupVersionKind().Group,
 				Version: obj.GroupVersionKind().Version,
 				Kind:    obj.GetKind(),

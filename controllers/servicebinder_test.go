@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"testing"
 
-	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
@@ -47,8 +46,8 @@ func TestServiceBinder_Bind(t *testing.T) {
 	}
 
 	type wantedCondition struct {
-		Type    conditionsv1.ConditionType
-		Status  corev1.ConditionStatus
+		Type    string
+		Status  metav1.ConditionStatus
 		Reason  string
 		Message string
 	}
@@ -104,10 +103,10 @@ func TestServiceBinder_Bind(t *testing.T) {
 			if len(args.wantConditions) > 0 {
 				// proceed to find whether conditions match wanted conditions
 				for _, c := range args.wantConditions {
-					if c.Status == corev1.ConditionTrue {
+					if c.Status == metav1.ConditionTrue {
 						requireConditionPresentAndTrue(t, c.Type, sb.sbr.Status.Conditions)
 					}
-					if c.Status == corev1.ConditionFalse {
+					if c.Status == metav1.ConditionFalse {
 						requireConditionPresentAndFalse(t, c.Type, sb.sbr.Status.Conditions)
 					}
 				}
@@ -431,15 +430,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions: []wantedCondition{
 			{
 				Type:   v1alpha1.CollectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.InjectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 		},
 		wantActions: []wantedAction{
@@ -477,15 +476,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions: []wantedCondition{
 			{
 				Type:   v1alpha1.CollectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.InjectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 		},
 		wantActions: []wantedAction{
@@ -524,15 +523,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions: []wantedCondition{
 			{
 				Type:   v1alpha1.CollectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.InjectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 		},
 	}))
@@ -551,17 +550,17 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions: []wantedCondition{
 			{
 				Type:   v1alpha1.CollectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:    v1alpha1.InjectionReady,
-				Status:  corev1.ConditionFalse,
+				Status:  metav1.ConditionFalse,
 				Reason:  v1alpha1.EmptyApplicationReason,
 				Message: errEmptyApplication.Error(),
 			},
 			{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 		},
 	}))
@@ -580,17 +579,17 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions: []wantedCondition{
 			{
 				Type:   v1alpha1.CollectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:    v1alpha1.InjectionReady,
-				Status:  corev1.ConditionFalse,
+				Status:  metav1.ConditionFalse,
 				Reason:  v1alpha1.ApplicationNotFoundReason,
 				Message: errApplicationNotFound.Error(),
 			},
 			{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionFalse,
+				Status: metav1.ConditionFalse,
 			},
 		},
 	}))
@@ -621,15 +620,15 @@ func TestServiceBinder_Bind(t *testing.T) {
 		wantConditions: []wantedCondition{
 			{
 				Type:   v1alpha1.CollectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.InjectionReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 			{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionTrue,
+				Status: metav1.ConditionTrue,
 			},
 		},
 		wantActions: []wantedAction{

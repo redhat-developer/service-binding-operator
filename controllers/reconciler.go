@@ -3,9 +3,8 @@ package controllers
 import (
 	"context"
 	"errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 
-	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -87,19 +86,21 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 		_, updateErr := updateServiceBindingStatus(
 			r.dynClient,
 			sbr,
-			conditionsv1.Condition{
+			metav1.Condition{
 				Type:    v1alpha1.CollectionReady,
-				Status:  corev1.ConditionFalse,
+				Status:  metav1.ConditionFalse,
 				Reason:  v1alpha1.EmptyServiceSelectorsReason,
 				Message: errEmptyServices.Error(),
 			},
-			conditionsv1.Condition{
+			metav1.Condition{
 				Type:   v1alpha1.InjectionReady,
-				Status: corev1.ConditionFalse,
+				Reason: v1alpha1.EmptyServiceSelectorsReason,
+				Status: metav1.ConditionFalse,
 			},
-			conditionsv1.Condition{
+			metav1.Condition{
 				Type:   v1alpha1.BindingReady,
-				Status: corev1.ConditionFalse,
+				Reason: v1alpha1.EmptyServiceSelectorsReason,
+				Status: metav1.ConditionFalse,
 			},
 		)
 		if updateErr == nil {
@@ -125,19 +126,21 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 		//handle service not found error
 		if k8serrors.IsNotFound(err) {
 			err = updateSBRConditions(r.dynClient, sbr,
-				conditionsv1.Condition{
+				metav1.Condition{
 					Type:    v1alpha1.CollectionReady,
-					Status:  corev1.ConditionFalse,
+					Status:  metav1.ConditionFalse,
 					Reason:  v1alpha1.ServiceNotFoundReason,
 					Message: err.Error(),
 				},
-				conditionsv1.Condition{
+				metav1.Condition{
 					Type:   v1alpha1.InjectionReady,
-					Status: corev1.ConditionFalse,
+					Reason: v1alpha1.ServiceNotFoundReason,
+					Status: metav1.ConditionFalse,
 				},
-				conditionsv1.Condition{
+				metav1.Condition{
 					Type:   v1alpha1.BindingReady,
-					Status: corev1.ConditionFalse,
+					Reason: v1alpha1.ServiceNotFoundReason,
+					Status: metav1.ConditionFalse,
 				},
 			)
 			if err != nil {
@@ -223,9 +226,9 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 	return sb.bind()
 }
 
-func updateSBRConditions(dynClient dynamic.Interface, sbr *v1alpha1.ServiceBinding, conditions ...conditionsv1.Condition) error {
+func updateSBRConditions(dynClient dynamic.Interface, sbr *v1alpha1.ServiceBinding, conditions ...metav1.Condition) error {
 	for _, v := range conditions {
-		conditionsv1.SetStatusCondition(&sbr.Status.Conditions, v)
+		meta.SetStatusCondition(&sbr.Status.Conditions, v)
 	}
 	u, err := converter.ToUnstructured(sbr)
 	if err != nil {

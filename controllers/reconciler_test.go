@@ -13,7 +13,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -21,8 +20,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 )
@@ -52,28 +49,28 @@ func reconcileRequest() reconcile.Request {
 	}
 }
 
-func requireConditionPresentAndTrue(t *testing.T, condition conditionsv1.ConditionType, sbrConditions []conditionsv1.Condition) {
+func requireConditionPresentAndTrue(t *testing.T, conditionType string, sbrConditions []metav1.Condition) {
 	require.True(t,
-		conditionsv1.IsStatusConditionPresentAndEqual(
+		meta.IsStatusConditionPresentAndEqual(
 			sbrConditions,
-			condition,
-			corev1.ConditionTrue,
+			conditionType,
+			metav1.ConditionTrue,
 		),
 		"%+v should exist and be true; existing conditions: %+v",
-		condition,
+		conditionType,
 		sbrConditions,
 	)
 }
 
-func requireConditionPresentAndFalse(t *testing.T, condition conditionsv1.ConditionType, sbrConditions []conditionsv1.Condition) {
+func requireConditionPresentAndFalse(t *testing.T, conditionType string, sbrConditions []metav1.Condition) {
 	require.True(t,
-		conditionsv1.IsStatusConditionPresentAndEqual(
+		meta.IsStatusConditionPresentAndEqual(
 			sbrConditions,
-			condition,
-			corev1.ConditionFalse,
+			conditionType,
+			metav1.ConditionFalse,
 		),
 		"%+v should exist and be false; existing conditions: %+v",
-		condition,
+		conditionType,
 		sbrConditions,
 	)
 }
@@ -139,7 +136,7 @@ func TestApplicationByName(t *testing.T) {
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
 				Version: deploymentsGVR.Version,
 				Kind:    "Deployment",
@@ -205,7 +202,7 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
 				Version: deploymentsGVR.Version,
 				Kind:    "Deployment",
@@ -468,7 +465,7 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		require.NoError(t, err)
 
 		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
 				Version: deploymentsGVR.Version,
 				Kind:    "Deployment",
@@ -580,7 +577,7 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 
 		// expected sbr assertion
 		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
 				Version: deploymentsGVR.Version,
 				Kind:    "Deployment",
@@ -618,7 +615,7 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 
 		// expected sbr assertion
 		expectedStatus = v1alpha1.BoundApplication{
-			GroupVersionKind: v1.GroupVersionKind{
+			GroupVersionKind: metav1.GroupVersionKind{
 				Group:   deploymentsGVR.Group,
 				Version: deploymentsGVR.Version,
 				Kind:    "Deployment",

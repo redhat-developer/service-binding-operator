@@ -17,19 +17,18 @@ limitations under the License.
 package v1alpha1
 
 import (
-	conditionsv1 "github.com/openshift/custom-resource-status/conditions/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	// BindingReady indicates that the overall sbr succeeded
-	BindingReady conditionsv1.ConditionType = "Ready"
+	BindingReady string = "Ready"
 	// CollectionReady indicates readiness for collection and persistance of intermediate manifests
-	CollectionReady conditionsv1.ConditionType = "CollectionReady"
+	CollectionReady string = "CollectionReady"
 	// InjectionReady indicates readiness to change application manifests to use those intermediate manifests
 	// If status is true, it indicates that the binding succeeded
-	InjectionReady conditionsv1.ConditionType = "InjectionReady"
+	InjectionReady string = "InjectionReady"
 	// EmptyServiceSelectorsReason is used when the ServiceBinding has empty
 	// services.
 	EmptyServiceSelectorsReason = "EmptyServiceSelectors"
@@ -40,6 +39,8 @@ const (
 	ApplicationNotFoundReason = "ApplicationNotFound"
 	// ServiceNotFoundReason is used when the service is not found.
 	ServiceNotFoundReason = "ServiceNotFound"
+
+	BindingInjectedReason = "BindingInjected"
 )
 
 // ServiceBindingSpec defines the desired state of ServiceBinding
@@ -93,7 +94,11 @@ type Mapping struct {
 // +k8s:openapi-gen=true
 type ServiceBindingStatus struct {
 	// Conditions describes the state of the operator's reconciliation functionality.
-	Conditions []conditionsv1.Condition `json:"conditions"`
+	// +patchMergeKey=type
+	// +patchStrategy=merge
+	// +listType=map
+	// +listMapKey=type
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
 	// Applications contain all the applications filtered by name or label
