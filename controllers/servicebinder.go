@@ -143,6 +143,10 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 	}
 
 	if err := b.binder.unbind(); err != nil {
+		if errors.Is(err, errApplicationNotFound) {
+			b.logger.Error(err, "Bound application has been deleted!", "sbr.Namespace", b.binder.sbr.Namespace, "sbr.Name", b.binder.sbr.Name)
+			return noRequeue(err)
+		}
 		logger.Error(err, "On unbinding related objects")
 		return requeueError(err)
 	}

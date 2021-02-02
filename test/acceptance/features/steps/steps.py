@@ -394,6 +394,8 @@ def apply_yaml(context):
 # STEP
 @given(u'BackingService is deleted')
 @when(u'BackingService is deleted')
+@given(u'App is deleted')
+@when(u'App is deleted')
 def delete_yaml(context):
     openshift = Openshift()
     metadata = yaml.full_load(context.text)["metadata"]
