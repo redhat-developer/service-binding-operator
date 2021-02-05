@@ -20,7 +20,7 @@ func TestSBRRequestMapperMap(t *testing.T) {
 	sbr := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceBinding",
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: "mapper-unit",

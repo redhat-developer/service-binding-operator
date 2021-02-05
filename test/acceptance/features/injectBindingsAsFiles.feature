@@ -26,7 +26,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-01
@@ -85,7 +85,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-02
@@ -134,7 +134,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-03
@@ -184,7 +184,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-04
@@ -243,7 +243,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-05
@@ -293,7 +293,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-06
@@ -327,7 +327,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-backend-vm-06

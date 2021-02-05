@@ -6,9 +6,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: servicebindings.operators.coreos.com
+  name: servicebindings.binding.operators.coreos.com
 spec:
-  group: operators.coreos.com
+  group: binding.operators.coreos.com
   names:
     kind: ServiceBinding
     listKind: ServiceBindingList

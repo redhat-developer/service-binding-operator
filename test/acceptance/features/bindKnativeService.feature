@@ -17,7 +17,7 @@ Feature: Bind knative service to a service
         * Quarkus application "knative-app" is imported as Knative service
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
               name: binding-request-knative

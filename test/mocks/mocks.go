@@ -21,11 +21,9 @@ import (
 const (
 	// Fixme(Akash): This values are tightly coupled with postgresql operator.
 	// Need to make it more dynamic.
-	CRDName            = "postgresql.baiju.dev"
-	CRDVersion         = "v1alpha1"
-	CRDKind            = "Database"
-	OperatorKind       = "ServiceBinding"
-	OperatorAPIVersion = "operators.coreos.com/v1alpha1"
+	CRDName    = "postgresql.baiju.dev"
+	CRDVersion = "v1alpha1"
+	CRDKind    = "Database"
 )
 
 var (
@@ -454,7 +452,7 @@ func ServiceBindingMock(
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceBinding",
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
 			Mappings: []v1alpha1.Mapping{},

@@ -122,7 +122,7 @@ Create the following `ServiceBinding`:
 ```shell
 kubectl apply -f - << EOD
 ---
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: binding-request

@@ -15,7 +15,7 @@ Feature: Bind a single application to multiple services
         * DB "db-demo-2" is running
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-1
@@ -33,7 +33,7 @@ Feature: Bind a single application to multiple services
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-2
@@ -81,7 +81,7 @@ Feature: Bind a single application to multiple services
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-1sbr

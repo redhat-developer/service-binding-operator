@@ -124,7 +124,7 @@ on the top right corner and pasting the following:
 
 ```yaml
 ---
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: node-todo-git

@@ -54,7 +54,7 @@ Feature: Insert service binding to a custom location in application resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-csp
@@ -90,7 +90,7 @@ Feature: Insert service binding to a custom location in application resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-ssp

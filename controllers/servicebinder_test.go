@@ -201,7 +201,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	// create the ServiceBinding
 	sbrSingleService := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "ServiceBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -237,7 +237,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 	sbrSingleServiceWithMappings := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "ServiceBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -284,7 +284,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 	// create the ServiceBinding
 	sbrMultipleServices := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "ServiceBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -328,7 +328,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 	sbrSingleServiceWithNonExistedApp := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "ServiceBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -363,7 +363,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 	sbrEmptyAppSelector := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "ServiceBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -390,7 +390,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 
 	sbrEmptyServices := &v1alpha1.ServiceBinding{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "operators.coreos.com/v1alpha1",
+			APIVersion: v1alpha1.GroupVersion.String(),
 			Kind:       "ServiceBinding",
 		},
 		ObjectMeta: metav1.ObjectMeta{

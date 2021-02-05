@@ -32,7 +32,7 @@
 A Service Binding involves connecting an application to one or more backing services using a binding secret generated for the purpose of storing information to be consumed by the application.
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: binding-request
@@ -134,7 +134,7 @@ Example, the backing service CR may expose the host, port and database user in s
 
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: multi-service-binding
@@ -197,7 +197,7 @@ The Service Binding Operator binds all information 'dependent' to the backing se
 The binding is initiated by the setting this `detectBindingResources: true` in the `ServiceBinding` CR's `spec`.
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: etcdbinding
@@ -228,7 +228,7 @@ The binding secret generated for the `ServiceBinding` may be associated with the
 
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: binding-request
@@ -286,7 +286,7 @@ bindings
 Instead of `/bindings`, you can specify a custom binding root path by specifying the same in `spec.mountPath`, example,
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: binding-request
@@ -427,7 +427,7 @@ If your application is to be deployed as a non-podSPec-based workload such that 
 
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: binding-request

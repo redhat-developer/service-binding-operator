@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +16,7 @@ var secretOwnerReference = v1.OwnerReference{
 	Name:       "binding-request",
 	UID:        "c77ca1ae-72d0-4fdd-809f-58fdd37facf3",
 	Kind:       "ServiceBinding",
-	APIVersion: "operators.coreos.com/v1alpha1",
+	APIVersion: v1alpha1.GroupVersion.String(),
 	Controller: &ownerRefController,
 }
 
