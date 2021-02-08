@@ -19,7 +19,7 @@ Feature: Bind values from a config map referred in backing service resource
             metadata:
                 name: backends.stable.example.com
                 annotations:
-                    service.binding/username: path={.status.data.dbConfiguration},objectType=ConfigMap,valueKey=username
+                    service.binding/username: path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=username
             spec:
                 group: stable.example.com
                 versions:

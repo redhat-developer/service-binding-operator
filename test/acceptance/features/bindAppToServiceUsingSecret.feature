@@ -18,7 +18,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: backends.stable.example.com
                 annotations:
-                    service.binding/username: path={.status.data.dbCredentials},objectType=Secret,valueKey=username
+                    service.binding/username: path={.status.data.dbCredentials},objectType=Secret,sourceKey=username
             spec:
                 group: stable.example.com
                 versions:

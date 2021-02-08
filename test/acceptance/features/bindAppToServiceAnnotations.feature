@@ -429,7 +429,7 @@ Feature: Bind an application to a service using annotations
         Then Secret "binding-request-backend-ann" is empty
 
 
-    @disabled
+    # @disabled
     # Verify https://github.com/redhat-developer/service-binding-operator/issues/838
     Scenario: Verify data of secret created by service binding
         Given OLM Operator "backend" is running
@@ -476,7 +476,7 @@ Feature: Bind an application to a service using annotations
                 dbName: db-demo
             status:
                 data:
-                    dbConfiguration: cmsa-3-configmap    # ConfigMap
+                    dbConfiguration: cmsa-3-configmap
             """
         When Service Binding is applied
             """
