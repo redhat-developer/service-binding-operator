@@ -134,7 +134,7 @@ The following example scenarios are available:
 
 ## Roadmap
 
-The [Service Binding Operator roadmap uses Github milestones](https://github.com/redhat-developer/service-binding-operator/milestones) to track the progress of the project.
+The [Service Binding Operator roadmap uses the label roadmap](https://github.com/redhat-developer/service-binding-operator/labels/roadmap) to track the direction of the project.
 
 ## Community, discussion, contribution, and support
 
