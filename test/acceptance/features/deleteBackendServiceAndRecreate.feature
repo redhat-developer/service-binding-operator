@@ -6,7 +6,7 @@ Feature: Reconcile when BackingService CR got deleted and recreated
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-    Scenario: Reconcile when BackingService CR got deleted and recreated 
+    Scenario: Reconcile when BackingService CR got deleted and recreated
         Given OLM Operator "backend" is running
         And Generic test application "ssa-3" is running
         And The Custom Resource Definition is present

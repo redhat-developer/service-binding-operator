@@ -41,7 +41,16 @@ const (
 	ServiceNotFoundReason = "ServiceNotFound"
 
 	BindingInjectedReason = "BindingInjected"
+
+	// NamingStrategyError is used when naming strategy/template used is incorrect
+	NamingStrategyError = "NamingStrategyError"
 )
+
+var templates = map[string]string{
+	"none":      "{{ .name }}",
+	"uppercase": "{{ .service.kind | upper }}_{{ .name | upper }}",
+	"lowercase": "{{ .name | lower }}",
+}
 
 // ServiceBindingSpec defines the desired state of ServiceBinding
 type ServiceBindingSpec struct {
@@ -54,9 +63,11 @@ type ServiceBindingSpec struct {
 	// +optional
 	MountPath string `json:"mountPath,omitempty"`
 
-	// NamePrefix is the prefix for environment variables or file name
+	// NamingStrategy defines custom string template for preparing binding names.
+	// It can be pre-defined strategies(i.e none,uppercase), in case strategy provided in this field isn't defined
+	// we are going to treat the value as a custom template and prepare binding names accordingly.
 	// +optional
-	NamePrefix string `json:"namePrefix,omitempty"`
+	NamingStrategy string `json:"namingStrategy,omitempty"`
 
 	// Custom mappings
 	// +optional
@@ -111,9 +122,8 @@ type Service struct {
 	corev1.LocalObjectReference `json:",inline"`
 
 	// +optional
-	Namespace  *string `json:"namespace,omitempty"`
-	NamePrefix *string `json:"namePrefix,omitempty"`
-	Id         *string `json:"id,omitempty"`
+	Namespace *string `json:"namespace,omitempty"`
+	Id        *string `json:"id,omitempty"`
 }
 
 // BoundApplication defines the application workloads to which the binding secret has
@@ -194,4 +204,19 @@ func (sbr ServiceBinding) AsOwnerReference() metav1.OwnerReference {
 		APIVersion: sbr.APIVersion,
 		Controller: &ownerRefController,
 	}
+}
+
+func (spec *ServiceBindingSpec) NamingTemplate() string {
+	if spec.BindAsFiles && spec.NamingStrategy == "" {
+		return templates["lowercase"]
+	} else if spec.NamingStrategy == "" {
+		return templates["uppercase"]
+	} else if spec.NamingStrategy != "" {
+		if v, ok := templates[spec.NamingStrategy]; ok {
+			return v
+		} else {
+			return spec.NamingStrategy
+		}
+	}
+	return templates["none"]
 }

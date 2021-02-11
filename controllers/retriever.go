@@ -10,6 +10,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/envvars"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
+	"github.com/redhat-developer/service-binding-operator/pkg/naming"
 )
 
 // retriever reads all data referred in plan instance, and store in a secret.
@@ -32,27 +33,42 @@ func createServiceIndexPath(name string, gvk schema.GroupVersionKind) []string {
 
 }
 
-func buildServiceEnvVars(svcCtx *serviceContext, globalNamePrefix string) (map[string]string, error) {
-	prefixes := []string{}
-	if len(globalNamePrefix) > 0 {
-		prefixes = append(prefixes, globalNamePrefix)
-	}
-	if svcCtx.namePrefix != nil && len(*svcCtx.namePrefix) > 0 {
-		prefixes = append(prefixes, *svcCtx.namePrefix)
-	}
-	if svcCtx.namePrefix == nil {
-		prefixes = append(prefixes, svcCtx.service.GroupVersionKind().Kind)
+func buildServiceEnvVars(svcCtx *serviceContext, namingTemplate string) (map[string]string, error) {
+	bindingNames := map[string]string{}
+	svcCtx.namingTemplate = namingTemplate
+	data := map[string]interface{}{}
+
+	listEnvVars, err := envvars.Build(svcCtx.envVars, "")
+	if err != nil {
+		return nil, err
 	}
 
-	return envvars.Build(svcCtx.envVars, prefixes...)
+	if svcCtx.service == nil {
+		svcCtx.service = &unstructured.Unstructured{Object: data}
+	}
+
+	t, err := naming.NewTemplate(namingTemplate, svcCtx.service.Object)
+	if err != nil {
+		return bindingNames, err
+	}
+
+	for k, v := range listEnvVars {
+		bindingName, err := t.GetBindingName(k)
+		if err != nil {
+			return bindingNames, err
+		}
+		bindingNames[bindingName] = v
+	}
+
+	return bindingNames, nil
 }
 
 func (r *retriever) processServiceContext(
 	svcCtx *serviceContext,
 	mappingsCtx map[string]interface{},
-	globalNamePrefix string,
+	globalNameStrategy string,
 ) (map[string][]byte, error) {
-	svcEnvVars, err := buildServiceEnvVars(svcCtx, globalNamePrefix)
+	svcEnvVars, err := buildServiceEnvVars(svcCtx, globalNameStrategy)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +125,7 @@ func (r *retriever) processServiceContext(
 
 // ProcessServiceContexts returns environment variables and volume keys from a ServiceContext slice.
 func (r *retriever) ProcessServiceContexts(
-	globalNamePrefix string,
+	globalNameStrategy string,
 	svcCtxs serviceContextList,
 	envVarTemplates []v1alpha1.Mapping,
 ) (map[string][]byte, error) {
@@ -117,7 +133,7 @@ func (r *retriever) ProcessServiceContexts(
 	envVars := make(map[string][]byte)
 
 	for _, svcCtx := range svcCtxs {
-		s, err := r.processServiceContext(svcCtx, mappingsCtx, globalNamePrefix)
+		s, err := r.processServiceContext(svcCtx, mappingsCtx, globalNameStrategy)
 		if err != nil {
 			return nil, err
 		}

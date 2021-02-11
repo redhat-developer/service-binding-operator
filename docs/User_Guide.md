@@ -11,8 +11,8 @@
   * [Detect Binding Resources](#Detect-binding-resources)
   * [Compose custom binding variables](#Compose-custom-binding-variables)
 
+- [Configuring custom naming strategy for binding names](#Custom-Naming-Strategy)
 - [Accessing the binding data from the application](#Accessing-the-binding-data-from-the-application)
-
 - [Binding non podSpec based application workloads](#Binding-non-podSpec-based-application-workloads)
 
 - [Custom Containers Path and Secret Path](#Custom-Containers-Path-and-Secret-Path)
@@ -89,13 +89,13 @@ to express an intent to bind your workload with one or more service resources, b
 
 If the backing service hasn't provided any binding metadata, the application author may annotate the Kubernetes resource representing the backing service such that the managed binding secret generated has the necessary binding information.
 
-As an application author, you have a couple of options to extract binding information 
-from the backing service: 
+As an application author, you have a couple of options to extract binding information
+from the backing service:
 
 * Decorate the backing service resource using annotations.
 * Define custom binding variables.
 
-In the following section, details of the above methods to make 
+In the following section, details of the above methods to make
 a backing service consumable for your application workload, is explained.
 
 ## Annotate Service Resources
@@ -148,7 +148,7 @@ spec:
     resource: deployments
 
  services:
-  - group: postgresql.baiju.dev 
+  - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
     name: db-demo   <--- Database service
@@ -175,11 +175,11 @@ spec:
     ## From both the services!
     - name: EXAMPLE_VARIABLE
       value: '{{ .postgresDB.status.dbName }}{{ translationService.status.secretName}}'
-   
-    ## Generate JSON. 
+
+    ## Generate JSON.
     - name: DB_JSON
       value: {{ json .postgresDB.status }}
-    
+
 ```
 
 This has been adopted in [IBM CodeEngine](https://cloud.ibm.com/docs/codeengine?topic=codeengine-kn-service-binding).
@@ -329,10 +329,101 @@ The following table summarizes how the final bind path is computed:
 | /home/foo       | non-existent         | /home/foo                            |
 | /home/foo       | /some/path/root      | /some/path/root/ServiceBinding_Name  |
 
+## Custom naming strategy
+Binding names declared through annotations or CSV descriptors are processed before injected into the application according to the following strategy
+ - names are upper-cased
+ - service resource kind is upper-cased and prepended to the name
+
+example:
+```yaml
+DATABASE_HOST: example.com
+```
+`DATABASE` is backend service `Kind` and `HOST` is the binding name.
+
+With custom naming strategy/templates we can build custom binding names.
+
+Naming strategy defines a way to prepare binding names through
+ServiceBinding request.
+
+1. We have a nodejs application which connects to database.
+2. Application mostly requires host address and exposed port information.
+3. Application access this information through binding names.
+
+
+###How ?
+Following fields are part of `ServiceBinding` request.
+- Application
+```yaml
+  application:
+    name: nodejs-app
+    group: apps
+    version: v1
+    resource: deployments
+```
+
+- Backend/Database Service
+```yaml
+namingStrategy: 'POSTGRES_{{ .service.kind | upper }}_{{ .name | upper }}_ENV'
+services:
+  - group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    name: db-demo
+```
+
+Considering following are the fields exposed by above service to use for binding
+1. host
+2. port
+
+We have applied `POSTGRES_{{ .service.kind | upper }}_{{ .name | upper }}_ENV` naming strategy
+1. `.name` refers to the binding name specified in the crd annotation or descriptor.
+2. `.service` refer to the services in the `ServiceBinding` request.
+3. `upper` is the string function used to postprocess the string while compiling the template string.
+4. `POSTGRES` is the prefix used.
+5. `ENV` is the suffix used.
+
+Following would be list of binding names prepared by above `ServiceBinding`
+
+```yaml
+POSTGRES_DATABASE_HOST_ENV: example.com
+POSTGRES_DATABASE_PORT_ENV: 8080
+```
+
+We can define how that key should be prepared defining string template in `namingStrategy`
+
+#### Naming Strategies
+
+There are few naming strategies predefine.
+1. `none` - When this is applied, we get binding names in following form - `{{ .name }}`
+```yaml
+host: example.com
+port: 8080
+```
+
+
+2. `uppercase` - This is by uppercase set when no `namingStrategy` is defined and `bindAsFiles` set to false - `{{ .service.kind | upper}}_{{ .name | upper }}`
+
+```yaml
+DATABASE_HOST: example.com
+DATABASE_PORT: 8080
+```
+
+3. `lowercase` - This is by default set when `bindAsFiles` set to true -`{{ .name | lower }}`
+
+```yaml
+host: example.com
+port: 8080
+```
+
+#### Predefined string post processing functions
+1. `upper` - Capatalize all letters
+2. `lower` - Lowercase all letters
+3. `title` - Title case all letters.
+
 
 # Binding non-podSpec-based application workloads
 
-If your application is to be deployed as a non-podSPec-based workload such that the containers path should bind at a custom location, the `ServiceBinding` API provides an API to achieve that. 
+If your application is to be deployed as a non-podSPec-based workload such that the containers path should bind at a custom location, the `ServiceBinding` API provides an API to achieve that.
 
 
 ``` yaml
@@ -558,7 +649,7 @@ spec:
     ```
     - path: data.dbcredentials
       x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret 
+        - urn:alm:descriptor:io.kubernetes:Secret
         - service.binding
     ```
 
@@ -580,7 +671,7 @@ spec:
     ```
     - path: data.dbConfiguration
       x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:ConfigMap 
+        - urn:alm:descriptor:io.kubernetes:ConfigMap
         - service.binding
     ```
 

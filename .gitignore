@@ -110,3 +110,5 @@ testbin/*
 
 bundle
 bundle.Dockerfile
+
+config/crd/bases/_.yaml

@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"github.com/redhat-developer/service-binding-operator/pkg/naming"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 
@@ -123,7 +124,9 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 			sbr.GetNamespace(),
 			sbr.Spec.Services,
 			sbr.Spec.DetectBindingResources,
+			sbr.Spec.BindAsFiles,
 			r.restMapper,
+			sbr.Spec.NamingTemplate(),
 		)
 		if err != nil {
 			//handle service not found error
@@ -149,16 +152,29 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 				}
 			}
 			return requeueError(err)
-
 		}
 	}
 	binding, err := buildBinding(
 		r.dynClient,
 		sbr.Spec.Mappings,
 		serviceCtxs,
-		sbr.Spec.NamePrefix,
+		sbr.Spec.NamingTemplate(),
 	)
 	if err != nil {
+		if errors.Is(err, naming.TemplateError) {
+			err = updateSBRConditions(r.dynClient, sbr,
+				metav1.Condition{
+					Type:    v1alpha1.CollectionReady,
+					Status:  metav1.ConditionFalse,
+					Reason:  v1alpha1.NamingStrategyError,
+					Message: err.Error(),
+				},
+			)
+			if err != nil {
+				logger.Error(err, "Failed to update SBR conditions", "sbr", sbr)
+			}
+			return done()
+		}
 		return requeueError(err)
 	}
 

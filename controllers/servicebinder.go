@@ -246,7 +246,6 @@ func (b *serviceBinder) onError(
 func isApplicationEmpty(
 	application *v1alpha1.Application,
 ) bool {
-	fmt.Println("Current APPLICATION IS : ", application)
 	if application == nil {
 		return true
 	}
@@ -463,10 +462,10 @@ func buildBinding(
 	client dynamic.Interface,
 	mappings []v1alpha1.Mapping,
 	svcCtxs serviceContextList,
-	globalNamePrefix string,
+	namingTemplate string,
 ) (*internalBinding, error) {
 	envVars, err := NewRetriever(client).
-		ProcessServiceContexts(globalNamePrefix, svcCtxs, mappings)
+		ProcessServiceContexts(namingTemplate, svcCtxs, mappings)
 	if err != nil {
 		return nil, err
 	}

@@ -59,7 +59,6 @@ Feature: Insert service binding to a custom location in application resource
             metadata:
                 name: binding-request-csp
             spec:
-                namePrefix: qiye111
                 application:
                     name: demo-appconfig-csp
                     group: stable.example.com
@@ -73,7 +72,6 @@ Feature: Insert service binding to a custom location in application resource
                     kind: Database
                     name: db-demo-csp
                     id: zzz
-                    namePrefix: qiye
             """
         Then Service Binding "binding-request-csp" is ready
         And Secret "binding-request-csp" has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
@@ -97,7 +95,6 @@ Feature: Insert service binding to a custom location in application resource
             metadata:
                 name: binding-request-ssp
             spec:
-                namePrefix: qiye111
                 application:
                     name: demo-appconfig-ssp
                     group: stable.example.com
@@ -111,7 +108,6 @@ Feature: Insert service binding to a custom location in application resource
                     kind: Database
                     name: db-demo-ssp
                     id: zzz
-                    namePrefix: qiye
             """
         Then Service Binding "binding-request-ssp" is ready
         And Secret "binding-request-ssp" has been injected in to CR "demo-appconfig-ssp" of kind "AppConfig" at path "{.spec.spec.secret}"

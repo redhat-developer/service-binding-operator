@@ -19,9 +19,9 @@ func TestBuild(t *testing.T) {
 		{
 			name: "should create envvars without prefix",
 			expected: map[string]string{
-				"STATUS_LISTENERS_0_TYPE":             "secure",
-				"STATUS_LISTENERS_0_ADDRESSES_0_HOST": "my-cluster-kafka-bootstrap.coffeeshop.svc",
-				"STATUS_LISTENERS_0_ADDRESSES_0_PORT": "9093",
+				"status_listeners_0_type":             "secure",
+				"status_listeners_0_addresses_0_host": "my-cluster-kafka-bootstrap.coffeeshop.svc",
+				"status_listeners_0_addresses_0_port": "9093",
 			},
 			src: map[string]interface{}{
 				"status": map[string]interface{}{
@@ -42,9 +42,9 @@ func TestBuild(t *testing.T) {
 		{
 			name: "should create envvars with service prefix",
 			expected: map[string]string{
-				"KAFKA_STATUS_LISTENERS_0_TYPE":             "secure",
-				"KAFKA_STATUS_LISTENERS_0_ADDRESSES_0_HOST": "my-cluster-kafka-bootstrap.coffeeshop.svc",
-				"KAFKA_STATUS_LISTENERS_0_ADDRESSES_0_PORT": "9093",
+				"kafka_status_listeners_0_type":             "secure",
+				"kafka_status_listeners_0_addresses_0_host": "my-cluster-kafka-bootstrap.coffeeshop.svc",
+				"kafka_status_listeners_0_addresses_0_port": "9093",
 			},
 			path: []string{"kafka"},
 			src: map[string]interface{}{
@@ -66,9 +66,9 @@ func TestBuild(t *testing.T) {
 		{
 			name: "should create envvars with binding and service prefixes",
 			expected: map[string]string{
-				"BINDING_KAFKA_STATUS_LISTENERS_0_TYPE":             "secure",
-				"BINDING_KAFKA_STATUS_LISTENERS_0_ADDRESSES_0_HOST": "my-cluster-kafka-bootstrap.coffeeshop.svc",
-				"BINDING_KAFKA_STATUS_LISTENERS_0_ADDRESSES_0_PORT": "9093",
+				"binding_kafka_status_listeners_0_type":             "secure",
+				"binding_kafka_status_listeners_0_addresses_0_host": "my-cluster-kafka-bootstrap.coffeeshop.svc",
+				"binding_kafka_status_listeners_0_addresses_0_port": "9093",
 			},
 			path: []string{"binding", "kafka"},
 			src: map[string]interface{}{
@@ -90,9 +90,9 @@ func TestBuild(t *testing.T) {
 		{
 			name: "should create envvars without prefix",
 			expected: map[string]string{
-				"STATUS_LISTENERS_0_TYPE":             "secure",
-				"STATUS_LISTENERS_0_ADDRESSES_0_HOST": "my-cluster-kafka-bootstrap.coffeeshop.svc",
-				"STATUS_LISTENERS_0_ADDRESSES_0_PORT": "9093",
+				"status_listeners_0_type":             "secure",
+				"status_listeners_0_addresses_0_host": "my-cluster-kafka-bootstrap.coffeeshop.svc",
+				"status_listeners_0_addresses_0_port": "9093",
 			},
 			path: []string{""},
 			src: map[string]interface{}{
@@ -114,7 +114,7 @@ func TestBuild(t *testing.T) {
 		{
 			name: "should create envvar for int64 type",
 			expected: map[string]string{
-				"STATUS_VALUE": "-9223372036",
+				"status_value": "-9223372036",
 			},
 			src: map[string]interface{}{
 				"status": map[string]interface{}{
@@ -139,9 +139,9 @@ func TestBuild(t *testing.T) {
 		{
 			name: "should create envvars for each string in slice",
 			expected: map[string]string{
-				"TAGS_0": "knowledge",
-				"TAGS_1": "is",
-				"TAGS_2": "power",
+				"tags_0": "knowledge",
+				"tags_1": "is",
+				"tags_2": "power",
 			},
 			src: map[string]interface{}{
 				"tags": []string{

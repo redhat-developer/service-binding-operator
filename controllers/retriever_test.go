@@ -134,82 +134,122 @@ func TestRetrieverProcessServiceContexts(t *testing.T) {
 func TestBuildServiceEnvVars(t *testing.T) {
 
 	type testCase struct {
-		ctx              *serviceContext
-		globalNamePrefix string
-		expected         map[string]string
+		ctx      *serviceContext
+		expected map[string]string
 	}
 
 	cr := mocks.UnstructuredDatabaseCRMock("namespace", "name")
 
-	serviceNamePrefix := "serviceprefix"
-	emptyString := ""
+	noneNamingStrategy := "{{ .name }}"
+	bindAsFilesNaming := "{{ .name | lower}}"
+	customNamingStrategy := "CUSTOM_{{ .service.kind | upper }}_{{ .name | upper }}"
 
 	testCases := []testCase{
 		{
-			globalNamePrefix: "",
 			ctx: &serviceContext{
-				namePrefix: &emptyString,
+				service:        cr,
+				namingTemplate: "{{ .name }}",
 				envVars: map[string]interface{}{
-					"apiKey": "my-secret-key",
+					"apiKey": map[string]interface{}{
+						"key": "my-secret-key",
+					},
 				},
 			},
 			expected: map[string]string{
-				"APIKEY": "my-secret-key",
+				"apiKey_key": "my-secret-key",
 			},
 		},
 		{
-			globalNamePrefix: "globalprefix",
 			ctx: &serviceContext{
-				namePrefix: &emptyString,
+				service:        cr,
+				namingTemplate: noneNamingStrategy,
 				envVars: map[string]interface{}{
-					"apiKey": "my-secret-key",
+					"apiKey": map[string]interface{}{
+						"key": "my-secret-key",
+					},
 				},
 			},
 			expected: map[string]string{
-				"GLOBALPREFIX_APIKEY": "my-secret-key",
+				"apiKey_key": "my-secret-key",
 			},
 		},
 		{
-			globalNamePrefix: "globalprefix",
 			ctx: &serviceContext{
-				namePrefix: &serviceNamePrefix,
+				service:        cr,
+				namingTemplate: noneNamingStrategy,
 				envVars: map[string]interface{}{
-					"apiKey": "my-secret-key",
+					"apiKey": map[string]interface{}{
+						"key": "my-secret-key",
+					},
 				},
 			},
 			expected: map[string]string{
-				"GLOBALPREFIX_SERVICEPREFIX_APIKEY": "my-secret-key",
+				"apiKey_key": "my-secret-key",
 			},
 		},
 		{
-			globalNamePrefix: "",
 			ctx: &serviceContext{
-				service:    cr,
-				namePrefix: nil,
+				namingTemplate: noneNamingStrategy,
 				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
 			expected: map[string]string{
-				"DATABASE_APIKEY": "my-secret-key",
+				"apiKey": "my-secret-key",
 			},
 		},
 		{
-			globalNamePrefix: "",
 			ctx: &serviceContext{
-				namePrefix: &serviceNamePrefix,
+				service:        cr,
+				namingTemplate: noneNamingStrategy,
 				envVars: map[string]interface{}{
 					"apiKey": "my-secret-key",
 				},
 			},
 			expected: map[string]string{
-				"SERVICEPREFIX_APIKEY": "my-secret-key",
+				"apiKey": "my-secret-key",
+			},
+		},
+		{
+			ctx: &serviceContext{
+				namingTemplate: noneNamingStrategy,
+				service:        cr,
+				envVars: map[string]interface{}{
+					"apiKey": "my-secret-key",
+				},
+			},
+			expected: map[string]string{
+				"apiKey": "my-secret-key",
+			},
+		},
+		{
+			ctx: &serviceContext{
+				namingTemplate: bindAsFilesNaming,
+				service:        cr,
+				envVars: map[string]interface{}{
+					"apiKey": "my-secret-key",
+				},
+			},
+			expected: map[string]string{
+				"apikey": "my-secret-key",
+			},
+		},
+		{
+			ctx: &serviceContext{
+				namingTemplate: customNamingStrategy,
+				service:        cr,
+				envVars: map[string]interface{}{
+					"apiKey": "my-secret-key",
+				},
+			},
+			expected: map[string]string{
+				"CUSTOM_DATABASE_APIKEY": "my-secret-key",
 			},
 		},
 	}
 
 	for _, tc := range testCases {
-		actual, err := buildServiceEnvVars(tc.ctx, tc.globalNamePrefix)
+		actual, err := buildServiceEnvVars(tc.ctx, tc.ctx.namingTemplate)
 		require.NoError(t, err)
 		require.Equal(t, tc.expected, actual)
 	}

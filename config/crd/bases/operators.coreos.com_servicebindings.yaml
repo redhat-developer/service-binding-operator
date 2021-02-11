@@ -164,9 +164,12 @@ spec:
                   `/bindings` When mountPath is used, the file will be mounted directly
                   under that directory Otherwise it will be under `SERVICE_BINDING_ROOT`/<SERVICE-BINDING-NAME>
                 type: string
-              namePrefix:
-                description: NamePrefix is the prefix for environment variables or
-                  file name
+              namingStrategy:
+                description: NamingStrategy defines custom string template for preparing
+                  binding names. It can be pre-defined strategies(i.e none,uppercase),
+                  in case strategy provided in this field isn't defined we are going
+                  to treat the value as a custom template and prepare binding names
+                  accordingly.
                 type: string
               services:
                 description: Services is used to identify multiple backing services.
@@ -183,8 +186,6 @@ spec:
                     name:
                       description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
                         TODO: Add other useful fields. apiVersion, kind, uid?'
-                      type: string
-                    namePrefix:
                       type: string
                     namespace:
                       type: string

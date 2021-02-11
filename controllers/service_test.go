@@ -203,21 +203,21 @@ func TestLoadDescriptor(t *testing.T) {
 
 func TestBuildOwnerResourceContext(t *testing.T) {
 	ns := "planner"
+	namingTemplate := "{{ .service.kind | upper }}_{{ .name | upper }}"
+
 	f := mocks.NewFake(t, ns)
 
 	obj := f.AddMockedUnstructuredSecret("secret")
 
 	type testCase struct {
-		inputPath       string
-		outputPath      string
-		ownerNamePrefix *string
+		inputPath  string
+		outputPath string
 	}
 
 	testCases := []testCase{
 		{
-			inputPath:       "data.user",
-			outputPath:      "user",
-			ownerNamePrefix: nil,
+			inputPath:  "data.user",
+			outputPath: "user",
 		},
 	}
 
@@ -225,7 +225,8 @@ func TestBuildOwnerResourceContext(t *testing.T) {
 		got, err := buildOwnedResourceContext(
 			f.FakeDynClient(),
 			obj,
-			tc.ownerNamePrefix,
+			namingTemplate,
+			false,
 			testutils.BuildTestRESTMapper(),
 			tc.inputPath,
 			tc.outputPath,
