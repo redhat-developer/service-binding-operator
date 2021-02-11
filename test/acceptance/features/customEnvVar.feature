@@ -25,7 +25,7 @@ Feature: Inject custom env variable into application
         * Generic test application "foo" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: custom-env-var-from-sequence
@@ -65,7 +65,7 @@ Feature: Inject custom env variable into application
         * Generic test application "foo2" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: custom-env-var-from-map
@@ -105,7 +105,7 @@ Feature: Inject custom env variable into application
         * Generic test application "foo3" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: custom-env-var-from-scalar

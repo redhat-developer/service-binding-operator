@@ -42,9 +42,9 @@ type ServiceBindingReconciler struct {
 	restMapper      meta.RESTMapper
 }
 
-// +kubebuilder:rbac:groups=operators.coreos.com,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=operators.coreos.com,resources=servicebindings/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=operators.coreos.com,resources=servicebindings/finalizers,verbs=update
+// +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=servicebindings/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=servicebindings/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=pods;services;endpoints;persistentvolumeclaims;events;configmaps;secrets,verbs=*
 // +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=*
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch

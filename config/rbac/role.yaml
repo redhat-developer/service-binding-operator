@@ -45,7 +45,7 @@ rules:
   verbs:
   - '*'
 - apiGroups:
-  - operators.coreos.com
+  - binding.operators.coreos.com
   resources:
   - servicebindings
   verbs:
@@ -57,13 +57,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - operators.coreos.com
+  - binding.operators.coreos.com
   resources:
   - servicebindings/finalizers
   verbs:
   - update
 - apiGroups:
-  - operators.coreos.com
+  - binding.operators.coreos.com
   resources:
   - servicebindings/status
   verbs:

@@ -35,7 +35,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
         * "hello-app" is deployed from image "openshift/hello-openshift"
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: sbr-to-bind-hello-app-to-route
@@ -69,7 +69,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
         * DB "db-cross-ns-service" is running in "database-services" namespace
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: service-binding-cross-ns-service

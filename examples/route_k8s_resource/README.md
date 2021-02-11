@@ -94,7 +94,7 @@ Now create a Service Binding as below:
 ``` shell
 kubectl apply -f - << EOD
 ---
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 
 metadata:
@@ -123,7 +123,7 @@ When the `ServiceBinding` was created the Service Binding Operator's controller 
 kubectl get sbr binding-request -n service-binding-demo -o yaml
 ```
 ```yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   ...

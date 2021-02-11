@@ -15,7 +15,7 @@ Feature: Bind an application to a service
         * DB "db-demo-a-d-s" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-a-d-s
@@ -49,7 +49,7 @@ Feature: Bind an application to a service
         Given Imported Nodejs application "nodejs-rest-http-crud-a-s-d" is running
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-a-s-d
@@ -76,7 +76,7 @@ Feature: Bind an application to a service
         Given DB "db-demo-d-s-a" is running
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-d-s-a
@@ -103,7 +103,7 @@ Feature: Bind an application to a service
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Service Binding, Application and DB
         Given Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-s-a-d
@@ -130,7 +130,7 @@ Feature: Bind an application to a service
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Service Binding, DB and Application
         Given Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-s-d-a
@@ -159,7 +159,7 @@ Feature: Bind an application to a service
         * Imported Nodejs application "nodejs-missing-app" is not running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-missing-app
@@ -198,7 +198,7 @@ Feature: Bind an application to a service
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-empty-app
@@ -232,7 +232,7 @@ Feature: Bind an application to a service
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-backend
@@ -290,7 +290,7 @@ Feature: Bind an application to a service
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-backend-new-spec
@@ -314,7 +314,7 @@ Feature: Bind an application to a service
         * DB "db-demo-a-d-c" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-a-d-c
@@ -422,7 +422,7 @@ Feature: Bind an application to a service
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: sbr-csv-secret-cm-descriptors
@@ -447,7 +447,7 @@ Feature: Bind an application to a service
     Scenario: Create binding secret using specDescriptors definitions managed in OLM operator descriptors
         Given Backend service CSV is installed
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ClusterServiceVersion
             metadata:
                 name: some-backend-service.v0.1.0
@@ -499,7 +499,7 @@ Feature: Bind an application to a service
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: sbr-csv-attribute
@@ -521,7 +521,7 @@ Feature: Bind an application to a service
         * Nodejs application "node-todo-git" imported from "quay.io/pmacik/node-todo" image is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
               name: binding-request-etcd
@@ -546,7 +546,7 @@ Feature: Bind an application to a service
     Scenario: Service Binding with empty services is not allowed in the cluster
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-empty-services
@@ -560,7 +560,7 @@ Feature: Bind an application to a service
     Scenario: Service Binding without gvk of services is not allowed in the cluster
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-without-gvk
@@ -582,7 +582,7 @@ Feature: Bind an application to a service
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-remove-service
@@ -599,7 +599,7 @@ Feature: Bind an application to a service
         * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-remove-service" should be changed to "True"
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-remove-service
@@ -613,7 +613,7 @@ Feature: Bind an application to a service
     Scenario: Service Binding without spec is not allowed in the cluster
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-without-spec
@@ -625,7 +625,7 @@ Feature: Bind an application to a service
     Scenario: Service Binding with empty spec is not allowed in the cluster
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-empty-spec
@@ -646,7 +646,7 @@ Feature: Bind an application to a service
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-emptying-spec
@@ -663,7 +663,7 @@ Feature: Bind an application to a service
         * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-emptying-spec" should be changed to "True"
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-emptying-spec
@@ -684,7 +684,7 @@ Feature: Bind an application to a service
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-remove-spec
@@ -701,7 +701,7 @@ Feature: Bind an application to a service
         * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-remove-spec" should be changed to "True"
         When Invalid Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-remove-spec
@@ -733,7 +733,7 @@ Feature: Bind an application to a service
         * Generic test application "myapp-in-sbr-ns" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-cross-ns-service

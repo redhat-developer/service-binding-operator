@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package v1alpha1 contains API Schema definitions for the operators v1alpha1 API group
 // +kubebuilder:object:generate=true
-// +groupName=operators.coreos.com
+// +groupName=binding.operators.coreos.com
 package v1alpha1
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "operators.coreos.com", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "binding.operators.coreos.com", Version: "v1alpha1"}
 
 	GroupVersionResource = GroupVersion.WithResource("servicebindings")
 

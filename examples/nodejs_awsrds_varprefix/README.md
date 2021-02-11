@@ -284,7 +284,7 @@ All we need to do is to create the following [`ServiceBinding`](./service-bindin
 ```shell
 kubectl apply -f - << EOD
 ---
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: mydb.to.shell-app

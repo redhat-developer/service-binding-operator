@@ -59,7 +59,7 @@ Feature: Bind values from a config map referred in backing service resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: cmsa-1
@@ -131,7 +131,7 @@ Feature: Bind values from a config map referred in backing service resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: cmsa-2

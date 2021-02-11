@@ -58,7 +58,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: ssa-1
@@ -78,7 +78,6 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
 
     Scenario: Inject into app all keys from a secret referred within service resource
-        Binding definition is declared on service CRD.
 
         Given OLM Operator "backend" is running
         And Generic test application "ssa-2" is running
@@ -130,7 +129,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: ssa-2
@@ -150,8 +149,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    Scenario: Inject into app a key from a secret referred within service resource
-        Binding definition is declared via OLM descriptor.
+    Scenario: Inject into app a key from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-1" is running
         And The Custom Resource Definition is present
@@ -241,7 +239,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: ssd-1
@@ -261,8 +259,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_HOST" has value "example.com"
 
-    Scenario: Inject into app all keys from a secret referred within service resource
-        Binding definition is declared via OLM descriptor.
+    Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-2" is running
         And The Custom Resource Definition is present
@@ -375,7 +372,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: ssd-2
@@ -449,7 +446,7 @@ Feature: Bind values from a secret referred in backing service resource
         * Generic test application "ssa-3" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: ssa-3
@@ -520,7 +517,7 @@ Feature: Bind values from a secret referred in backing service resource
         * Generic test application "myapp-x" is running
         When Service Binding is applied
           """
-          apiVersion: operators.coreos.com/v1alpha1
+          apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
               name: sb-inject-secret-data

@@ -57,7 +57,7 @@ Feature: Reconcile when BackingService CR got deleted and recreated
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: ssa-3

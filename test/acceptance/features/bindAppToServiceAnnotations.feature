@@ -46,7 +46,7 @@ Feature: Bind an application to a service using annotations
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-backend-a
@@ -114,7 +114,7 @@ Feature: Bind an application to a service using annotations
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: rsa-2
@@ -176,7 +176,7 @@ Feature: Bind an application to a service using annotations
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: slos-binding
@@ -240,7 +240,7 @@ Feature: Bind an application to a service using annotations
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: slom-to-slos-binding
@@ -304,7 +304,7 @@ Feature: Bind an application to a service using annotations
             """
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: slom-binding
@@ -342,7 +342,7 @@ Feature: Bind an application to a service using annotations
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-backend-ann-sb
@@ -396,7 +396,7 @@ Feature: Bind an application to a service using annotations
             """
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-backend-ann

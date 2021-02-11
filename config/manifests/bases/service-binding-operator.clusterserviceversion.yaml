@@ -1,4 +1,4 @@
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
@@ -18,7 +18,7 @@ spec:
     - description: ServiceBinding expresses intent to bind an operator-backed service with an application workload.
       displayName: Service Binding
       kind: ServiceBinding
-      name: servicebindings.operators.coreos.com
+      name: servicebindings.binding.operators.coreos.com
       version: v1alpha1
   description: " The Service Binding Operator enables application developers to more
                    easily bind applications together with operator managed backing services such

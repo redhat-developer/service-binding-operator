@@ -25,7 +25,7 @@ Feature: Unbind an application from a service
         * Generic test application "generic-app-a-d-u" is running
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-a-d-u
@@ -69,7 +69,7 @@ Feature: Unbind an application from a service
         * Generic test application "generic-app-a-d-u" is running
         * Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-a-d-u

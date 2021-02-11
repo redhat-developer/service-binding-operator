@@ -62,7 +62,7 @@ connect to a backing service (for example, a database):
 #### Binding a Java Application with a Database
 
 ``` yaml
-apiVersion: operators.coreos.com/v1alpha1
+apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: binding-request

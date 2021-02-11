@@ -24,7 +24,7 @@ Feature: Bind an application to a service using custom naming strategies
         * Generic test application "myapp-no-naming" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-no-naming
@@ -60,7 +60,7 @@ Feature: Bind an application to a service using custom naming strategies
         * Generic test application "myapp-naming-none" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-naming-none
@@ -96,7 +96,7 @@ Feature: Bind an application to a service using custom naming strategies
         * Generic test application "myapp-custom-naming" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-custom-naming
@@ -132,7 +132,7 @@ Feature: Bind an application to a service using custom naming strategies
         * Generic test application "myapp-bind-files" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-bind-files
@@ -172,7 +172,7 @@ Feature: Bind an application to a service using custom naming strategies
         * Generic test application "myapp-custom-file-naming" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-custom-file-naming
@@ -214,7 +214,7 @@ Feature: Bind an application to a service using custom naming strategies
         * Generic test application "myapp-naming-error" is running
         When Service Binding is applied
             """
-            apiVersion: operators.coreos.com/v1alpha1
+            apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
                 name: binding-request-naming-error

@@ -5,7 +5,7 @@ metadata:
   name: servicebinding-viewer-role
 rules:
 - apiGroups:
-  - operators.coreos.com
+  - binding.operators.coreos.com
   resources:
   - servicebindings
   verbs:
@@ -13,7 +13,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - operators.coreos.com
+  - binding.operators.coreos.com
   resources:
   - servicebindings/status
   verbs:
