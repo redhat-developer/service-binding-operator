@@ -51,15 +51,15 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-01" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-01" should be changed to "True"
-        And The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The env var "MYHOST" is not available to the application
         And The application env var "SERVICE_BINDING_ROOT" has value "/var/data"
-        And Content of file "/var/data/binding-backend-vm-01/BACKEND_HOST" in application pod is
+        And Content of file "/var/data/binding-backend-vm-01/host" in application pod is
             """
             example.common
             """
-        And Content of file "/var/data/binding-backend-vm-01/BACKEND_PORT" in application pod is
+        And Content of file "/var/data/binding-backend-vm-01/port" in application pod is
             """
             8080
             """
@@ -105,14 +105,14 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-02" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-02" should be changed to "True"
-        And The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The application env var "SERVICE_BINDING_ROOT" has value "/bindings"
-        And Content of file "/bindings/binding-backend-vm-02/BACKEND_HOST" in application pod is
+        And Content of file "/bindings/binding-backend-vm-02/host" in application pod is
             """
             example.common
             """
-        And Content of file "/bindings/binding-backend-vm-02/BACKEND_PORT" in application pod is
+        And Content of file "/bindings/binding-backend-vm-02/port" in application pod is
             """
             8080
             """
@@ -155,14 +155,14 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-03" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-03" should be changed to "True"
-        And The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The env var "SERVICE_BINDING_ROOT" is not available to the application
-        And Content of file "/foo/bar/BACKEND_HOST" in application pod is
+        And Content of file "/foo/bar/host" in application pod is
             """
             example.common
             """
-        And Content of file "/foo/bar/BACKEND_PORT" in application pod is
+        And Content of file "/foo/bar/port" in application pod is
             """
             8080
             """
@@ -210,14 +210,14 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-04" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-04" should be changed to "True"
-        And The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The application env var "SERVICE_BINDING_ROOT" has value "/var/data"
-        And Content of file "/var/data/binding-backend-vm-04/BACKEND_HOST" in application pod is
+        And Content of file "/var/data/binding-backend-vm-04/host" in application pod is
             """
             example.common
             """
-        And Content of file "/var/data/binding-backend-vm-04/BACKEND_PORT" in application pod is
+        And Content of file "/var/data/binding-backend-vm-04/port" in application pod is
             """
             8080
             """
@@ -255,7 +255,6 @@ Feature: Bindings get injected as files in application
                     version: v1
                     kind: Backend
                     name: backend-demo-05
-                    namePrefix: ""
 
                 application:
                     name: generic-app-a-d-u-5
@@ -265,14 +264,14 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-05" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-05" should be changed to "True"
-        And The env var "HOST" is not available to the application
-        And The env var "PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The env var "SERVICE_BINDING_ROOT" is not available to the application
-        And Content of file "/foo/bar/HOST" in application pod is
+        And Content of file "/foo/bar/host" in application pod is
             """
             example.common
             """
-        And Content of file "/foo/bar/PORT" in application pod is
+        And Content of file "/foo/bar/port" in application pod is
             """
             8080
             """
@@ -315,14 +314,14 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-06" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-06" should be changed to "True"
-        And The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The env var "SERVICE_BINDING_ROOT" is not available to the application
-        And Content of file "/foo/bar/BACKEND_HOST" in application pod is
+        And Content of file "/foo/bar/host" in application pod is
             """
             example.common
             """
-        And Content of file "/foo/bar/BACKEND_PORT" in application pod is
+        And Content of file "/foo/bar/port" in application pod is
             """
             8080
             """
@@ -349,14 +348,14 @@ Feature: Bindings get injected as files in application
             """
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-06" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-06" should be changed to "True"
-        And The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_PORT" is not available to the application
+        And The env var "host" is not available to the application
+        And The env var "port" is not available to the application
         And The env var "SERVICE_BINDING_ROOT" is not available to the application
-        And Content of file "/foo/newbar/BACKEND_HOST" in application pod is
+        And Content of file "/foo/newbar/host" in application pod is
             """
             example.common
             """
-        And Content of file "/foo/newbar/BACKEND_PORT" in application pod is
+        And Content of file "/foo/newbar/port" in application pod is
             """
             8080
             """

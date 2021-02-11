@@ -49,7 +49,7 @@ connect to a backing service (for example, a database):
 
 * Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
 * Support binding with multiple-backing services.
-* Extract binding information based on annotations present in CRDs/CRs/resources. 
+* Extract binding information based on annotations present in CRDs/CRs/resources.
 * Extract binding values based on annotations present in OLM descriptors.
 * Project binding values as volume mounts.
 * Project binding values as environment variables.
@@ -99,6 +99,20 @@ Follow [OperatorHub instructions](https://operatorhub.io/operator/service-bindin
 ### Running Operator Locally
 
 Clone the repository and run `make run` using an existing `kube:admin` kube context.
+
+## Key Features
+
+* Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
+* Support binding with multiple-backing services.
+* Extract binding information based on annotations present in CRDs/CRs/resources.
+* Extract binding values based on annotations present in OLM descriptors.
+* Project binding values as volume mounts.
+* Project binding values as environment variables.
+* Binding of PodSpec-based workloads.
+* Binding of non-PodSpec-based Kubernetes resources.
+* Custom binding variables composed from one or more backing services.
+* Auto-detect binding resources in the absence of binding decorators.
+
 
 ## Getting Started
 

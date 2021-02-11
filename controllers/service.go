@@ -213,7 +213,8 @@ func getOwnedResources(
 func buildOwnedResourceContext(
 	client dynamic.Interface,
 	obj *unstructured.Unstructured,
-	ownerNamePrefix *string,
+	namingTemplate string,
+	isBindAsFiles bool,
 	restMapper meta.RESTMapper,
 	inputPath string,
 	outputPath string,
@@ -224,7 +225,8 @@ func buildOwnedResourceContext(
 		obj.GetNamespace(),
 		obj.GetObjectKind().GroupVersionKind(),
 		obj.GetName(),
-		ownerNamePrefix,
+		namingTemplate,
+		isBindAsFiles,
 		restMapper,
 		nil,
 	)
@@ -238,7 +240,8 @@ func buildOwnedResourceContext(
 func buildOwnedResourceContexts(
 	client dynamic.Interface,
 	objs []*unstructured.Unstructured,
-	ownerNamePrefix *string,
+	namingTemplate string,
+	isBindAsFiles bool,
 	restMapper meta.RESTMapper,
 ) ([]*serviceContext, error) {
 	ctxs := make(serviceContextList, 0)
@@ -251,7 +254,8 @@ func buildOwnedResourceContexts(
 			svcCtx, err := buildOwnedResourceContext(
 				client,
 				obj,
-				ownerNamePrefix,
+				namingTemplate,
+				isBindAsFiles,
 				restMapper,
 				br.inputPath,
 				br.outputPath,

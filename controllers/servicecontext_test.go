@@ -19,12 +19,13 @@ func TestBuildServiceContexts(t *testing.T) {
 	logger := log.NewLog("testBuildServiceContexts")
 	restMapper := testutils.BuildTestRESTMapper()
 	falseBool := false
+	namingTemplate := "{{ .service.kind | upper }}_{{ .name | upper }}"
 
 	t.Run("empty selectors", func(t *testing.T) {
 		ns := "planner"
 		f := mocks.NewFake(t, ns)
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), ns, nil, &falseBool, restMapper)
+			logger, f.FakeDynClient(), ns, nil, &falseBool, false, restMapper, namingTemplate)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Empty(t, serviceCtxs, "buildServiceContexts must be empty")
@@ -48,7 +49,7 @@ func TestBuildServiceContexts(t *testing.T) {
 		sbr := f.AddMockedServiceBinding(sbrName, nil, firstResourceRef, "", deploymentsGVR, matchLabels)
 
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), firstNamespace, sbr.Spec.Services, &falseBool, restMapper)
+			logger, f.FakeDynClient(), firstNamespace, sbr.Spec.Services, &falseBool, false, restMapper, namingTemplate)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Len(t, serviceCtxs, 1, "buildServiceContexts must return only one item")
@@ -119,7 +120,7 @@ func TestBuildServiceContexts(t *testing.T) {
 		}
 
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), sameNs, sbr.Spec.Services, &falseBool, restMapper)
+			logger, f.FakeDynClient(), sameNs, sbr.Spec.Services, &falseBool, false, restMapper, namingTemplate)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Len(t, serviceCtxs, 2, "buildServiceContexts must return both service contexts")
@@ -164,6 +165,8 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 		"connects-to": "database",
 		"environment": "planner",
 	}
+	nameTemplate := "{{ .service.kind | upper }}_{{ .name | upper }}"
+
 	f := mocks.NewFake(t, ns)
 	sbr := f.AddMockedServiceBinding(name, nil, backendService, "", deploymentsGVR, matchLabels)
 	sbr.Spec.DetectBindingResources = &trueBool
@@ -203,7 +206,8 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 			cr.GetName(),
 			cr.GetUID(),
 			cr.GroupVersionKind(),
-			nil,
+			nameTemplate,
+			false,
 			restMapper,
 		)
 		require.NoError(t, err)
@@ -221,6 +225,8 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 }
 
 func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
+	namingTemplate := "{{ .service.kind | upper }}_{{ .name | upper }}"
+
 	testCases := []struct {
 		desc    string
 		secrets []string
@@ -267,7 +273,8 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 				cr.GetName(),
 				cr.GetUID(),
 				cr.GroupVersionKind(),
-				nil,
+				namingTemplate,
+				false,
 				restMapper,
 			)
 			require.NoError(t, err)
