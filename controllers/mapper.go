@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -24,7 +23,7 @@ var (
 // enqueue process considering the resources informed.
 type sbrRequestMapper struct {
 	client     dynamic.Interface
-	restMapper meta.RESTMapper
+	typeLookup K8STypeLookup
 }
 
 var secretGVK = corev1.SchemeGroupVersion.WithKind("Secret")
@@ -41,10 +40,13 @@ func isSecret(obj runtime.Object) bool {
 }
 
 // isSBRService checks whether the given obj is a service in given sbr.
-func isSBRService(sbr *v1alpha1.ServiceBinding, obj runtime.Object) bool {
+func isSBRService(typeLookup K8STypeLookup, sbr *v1alpha1.ServiceBinding, obj runtime.Object) bool {
 	for _, svc := range sbr.Spec.Services {
-		svcGVK := schema.GroupVersionKind{Group: svc.Group, Version: svc.Version, Kind: svc.Kind}
-		if obj.GetObjectKind().GroupVersionKind() == svcGVK {
+		gvk, err := typeLookup.KindForReferable(&svc)
+		if err != nil {
+			return false
+		}
+		if obj.GetObjectKind().GroupVersionKind() == *gvk {
 			return true
 		}
 	}
@@ -53,7 +55,7 @@ func isSBRService(sbr *v1alpha1.ServiceBinding, obj runtime.Object) bool {
 
 // isSBRApplication checks whether the given obj is an application in given sbr.
 func isSBRApplication(
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 	app *v1alpha1.Application,
 	gvk schema.GroupVersionKind,
 	name string,
@@ -61,17 +63,13 @@ func isSBRApplication(
 	if app == nil {
 		return false, nil
 	}
-	appGVR := schema.GroupVersionResource{
-		Group:    app.Group,
-		Version:  app.Version,
-		Resource: app.Resource,
-	}
-	appGVK, err := restMapper.KindFor(appGVR)
+	appGVK, err := typeLookup.KindForReferable(app)
+
 	if err != nil {
 		return false, err
 	}
 
-	isEqual := gvk == appGVK
+	isEqual := gvk == *appGVK
 
 	if len(app.Name) > 0 {
 		isEqual = app.Name == name
@@ -168,7 +166,7 @@ ITEMS:
 			log.Trace("resource is not a secret owned by the SBR")
 		}
 
-		if isSBRService(sbr, obj.Object) {
+		if isSBRService(m.typeLookup, sbr, obj.Object) {
 			log.Debug("resource identified as service in SBR", "NamespacedName", namespacedName)
 			namespacedNamesToReconcile.add(namespacedName)
 		} else {
@@ -176,7 +174,7 @@ ITEMS:
 		}
 
 		if ok, err := isSBRApplication(
-			m.restMapper,
+			m.typeLookup,
 			sbr.Spec.Application,
 			obj.Object.GetObjectKind().GroupVersionKind(),
 			obj.Meta.GetName(),
@@ -199,4 +197,53 @@ ITEMS:
 		log.Debug("no SBRs found for resource")
 	}
 	return requests
+}
+
+type Referable interface {
+	GroupVersionResource() (*schema.GroupVersionResource, error)
+	GroupVersionKind() (*schema.GroupVersionKind, error)
+}
+
+type K8STypeLookup interface {
+	ResourceForReferable(obj Referable) (*schema.GroupVersionResource, error)
+	KindForReferable(obj Referable) (*schema.GroupVersionKind, error)
+	ResourceForKind(gvk schema.GroupVersionKind) (*schema.GroupVersionResource, error)
+	KindForResource(gvr schema.GroupVersionResource) (*schema.GroupVersionKind, error)
+}
+
+func (r *ServiceBindingReconciler) ResourceForReferable(obj Referable) (*schema.GroupVersionResource, error) {
+	gvr, err := obj.GroupVersionResource()
+	if err == nil {
+		return gvr, nil
+	}
+	gvk, err := obj.GroupVersionKind()
+	if err != nil {
+		return nil, err
+	}
+	return r.ResourceForKind(*gvk)
+}
+
+func (r *ServiceBindingReconciler) KindForReferable(obj Referable) (*schema.GroupVersionKind, error) {
+	gvk, err := obj.GroupVersionKind()
+	if err == nil {
+		return gvk, nil
+	}
+	gvr, err := obj.GroupVersionResource()
+	if err != nil {
+		return nil, err
+	}
+	return r.KindForResource(*gvr)
+}
+
+func (r *ServiceBindingReconciler) ResourceForKind(gvk schema.GroupVersionKind) (*schema.GroupVersionResource, error) {
+	mapping, err := r.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, err
+	}
+	return &mapping.Resource, nil
+}
+
+func (r *ServiceBindingReconciler) KindForResource(gvr schema.GroupVersionResource) (*schema.GroupVersionKind, error) {
+	gvk, err := r.restMapper.KindFor(gvr)
+	return &gvk, err
 }

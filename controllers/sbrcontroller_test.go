@@ -37,8 +37,11 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 			Spec: v1alpha1.ServiceBindingSpec{
 				Services: []v1alpha1.Service{
 					{
-						GroupVersionKind:     metav1.GroupVersionKind{Group: "test", Version: "v1alpha1", Kind: "TestHost"},
-						LocalObjectReference: corev1.LocalObjectReference{Name: ""},
+						NamespacedRef: v1alpha1.NamespacedRef{
+							Ref: v1alpha1.Ref{
+								Group: "test", Version: "v1alpha1", Kind: "TestHost", Name: "",
+							},
+						},
 					},
 				},
 			},
@@ -47,8 +50,11 @@ func TestSBRControllerBuildSBRPredicate(t *testing.T) {
 			Spec: v1alpha1.ServiceBindingSpec{
 				Services: []v1alpha1.Service{
 					{
-						GroupVersionKind:     metav1.GroupVersionKind{Group: "test", Version: "v1", Kind: "TestHost"},
-						LocalObjectReference: corev1.LocalObjectReference{Name: ""},
+						NamespacedRef: v1alpha1.NamespacedRef{
+							Ref: v1alpha1.Ref{
+								Group: "test", Version: "v1", Kind: "TestHost",
+							},
+						},
 					},
 				},
 			},
@@ -362,7 +368,7 @@ func (f *fakeController) Watch(src source.Source, eventhandler handler.EventHand
 func TestSBRController_ResourceWatcher(t *testing.T) {
 
 	controller := &sbrController{
-		RestMapper: testutils.BuildTestRESTMapper(),
+		typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		logger:     log.NewLog("testSBRController"),
 	}
 

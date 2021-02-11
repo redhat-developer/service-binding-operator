@@ -4,8 +4,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
@@ -18,6 +16,7 @@ import (
 func TestBuildServiceContexts(t *testing.T) {
 	logger := log.NewLog("testBuildServiceContexts")
 	restMapper := testutils.BuildTestRESTMapper()
+	typeLookup := &ServiceBindingReconciler{restMapper: restMapper}
 	falseBool := false
 	namingTemplate := "{{ .service.kind | upper }}_{{ .name | upper }}"
 
@@ -25,7 +24,7 @@ func TestBuildServiceContexts(t *testing.T) {
 		ns := "planner"
 		f := mocks.NewFake(t, ns)
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), ns, nil, &falseBool, false, restMapper, namingTemplate)
+			logger, f.FakeDynClient(), ns, nil, &falseBool, false, typeLookup, namingTemplate)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Empty(t, serviceCtxs, "buildServiceContexts must be empty")
@@ -49,7 +48,7 @@ func TestBuildServiceContexts(t *testing.T) {
 		sbr := f.AddMockedServiceBinding(sbrName, nil, firstResourceRef, "", deploymentsGVR, matchLabels)
 
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), firstNamespace, sbr.Spec.Services, &falseBool, false, restMapper, namingTemplate)
+			logger, f.FakeDynClient(), firstNamespace, sbr.Spec.Services, &falseBool, false, typeLookup, namingTemplate)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Len(t, serviceCtxs, 1, "buildServiceContexts must return only one item")
@@ -99,28 +98,31 @@ func TestBuildServiceContexts(t *testing.T) {
 		sbr := f.AddMockedServiceBinding(sbrName, &sameNs, sameNsResourceRef, "", deploymentsGVR, matchLabels)
 		sbr.Spec.Services = []v1alpha1.Service{
 			{
-				GroupVersionKind: metav1.GroupVersionKind{
-					Group:   mocks.CRDName,
-					Version: mocks.CRDVersion,
-					Kind:    mocks.CRDKind,
+				NamespacedRef: v1alpha1.NamespacedRef{
+					Ref: v1alpha1.Ref{
+						Group:   mocks.CRDName,
+						Version: mocks.CRDVersion,
+						Kind:    mocks.CRDKind,
+						Name:    otherNsResourceRef,
+					},
+					Namespace: &otherNs,
 				},
-
-				LocalObjectReference: corev1.LocalObjectReference{Name: otherNsResourceRef},
-				Namespace:            &otherNs,
 			},
 			{
-				GroupVersionKind: metav1.GroupVersionKind{
-					Group:   mocks.CRDName,
-					Version: mocks.CRDVersion,
-					Kind:    mocks.CRDKind,
+				NamespacedRef: v1alpha1.NamespacedRef{
+					Ref: v1alpha1.Ref{
+						Group:   mocks.CRDName,
+						Version: mocks.CRDVersion,
+						Kind:    mocks.CRDKind,
+						Name:    sameNsResourceRef,
+					},
+					Namespace: &sameNs,
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: sameNsResourceRef},
-				Namespace:            &sameNs,
 			},
 		}
 
 		serviceCtxs, err := buildServiceContexts(
-			logger, f.FakeDynClient(), sameNs, sbr.Spec.Services, &falseBool, false, restMapper, namingTemplate)
+			logger, f.FakeDynClient(), sameNs, sbr.Spec.Services, &falseBool, false, typeLookup, namingTemplate)
 
 		require.NoError(t, err, "buildServiceContexts must execute without errors")
 		require.Len(t, serviceCtxs, 2, "buildServiceContexts must return both service contexts")
@@ -196,19 +198,17 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 	f.AddMockResource(route)
 	logger := log.NewLog("testFindOwnedResourcesCtxs_cm")
 
-	restMapper := testutils.BuildTestRESTMapper()
+	typeLookup := &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()}
 
 	t.Run("existing selectors", func(t *testing.T) {
 		got, err := findOwnedResourcesCtxs(
 			logger,
 			f.FakeDynClient(),
 			cr.GetNamespace(),
-			cr.GetName(),
 			cr.GetUID(),
-			cr.GroupVersionKind(),
 			nameTemplate,
 			false,
-			restMapper,
+			typeLookup,
 		)
 		require.NoError(t, err)
 		require.Len(t, got, 2)
@@ -257,7 +257,7 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 			f.AddMockResource(cr)
 			logger := log.NewLog("testFindOwnedResourcesCtxs_secret")
 
-			restMapper := testutils.BuildTestRESTMapper()
+			typeLookup := &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()}
 
 			for _, secret := range tC.secrets {
 				secret, err := mocks.UnstructuredSecretMock("test", secret)
@@ -270,12 +270,10 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 				logger,
 				f.FakeDynClient(),
 				cr.GetNamespace(),
-				cr.GetName(),
 				cr.GetUID(),
-				cr.GroupVersionKind(),
 				namingTemplate,
 				false,
-				restMapper,
+				typeLookup,
 			)
 			require.NoError(t, err)
 			require.NotEmpty(t, ownedResourcesCtxs)

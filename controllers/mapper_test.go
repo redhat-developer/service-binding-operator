@@ -28,21 +28,23 @@ func TestSBRRequestMapperMap(t *testing.T) {
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
 			Application: &v1alpha1.Application{
-				GroupVersionResource: metav1.GroupVersionResource{
+				Ref: v1alpha1.Ref{
 					Group:    "apps",
 					Version:  "v1",
 					Resource: "deployments",
+					Name:     "mapper-unit-deployment",
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: "mapper-unit-deployment"},
 			},
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   "",
-						Version: "v1",
-						Kind:    "Secret",
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   "",
+							Version: "v1",
+							Kind:    "Secret",
+							Name:    "mapper-unit-secret",
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: "mapper-unit-secret"},
 				},
 			},
 		},
@@ -135,10 +137,10 @@ func TestSBRRequestMapperMap(t *testing.T) {
 			f := tc.buildFakeFn()
 			mapObject := tc.buildMapObjectFn(f)
 			client := f.FakeDynClient()
-			restMapper := testutils.BuildTestRESTMapper()
+			typeLookup := &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()}
 			mapper := &sbrRequestMapper{
 				client:     client,
-				restMapper: restMapper,
+				typeLookup: typeLookup,
 			}
 			mappedRequests := mapper.Map(mapObject)
 			require.Len(t, mappedRequests, tc.expectedRequestsLen)

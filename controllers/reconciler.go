@@ -10,7 +10,6 @@ import (
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -125,7 +124,7 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 			sbr.Spec.Services,
 			sbr.Spec.DetectBindingResources,
 			sbr.Spec.BindAsFiles,
-			r.restMapper,
+			r,
 			sbr.Spec.NamingTemplate(),
 		)
 		if err != nil {
@@ -185,7 +184,7 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 		logger:                 logger,
 		objects:                serviceCtxs.getServices(),
 		binding:                binding,
-		restMapper:             r.restMapper,
+		typeLookup:             r,
 	}
 
 	sb, err := buildServiceBinder(ctx, options)
@@ -197,29 +196,25 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 	}
 
 	if sbr.Spec.Application != nil {
-		gvrSpec := sbr.Spec.Application.GroupVersionResource
-		gvr := schema.GroupVersionResource{
-			Group:    gvrSpec.Group,
-			Version:  gvrSpec.Version,
-			Resource: gvrSpec.Resource,
-		}
-
-		err = r.resourceWatcher.AddWatchForGVR(gvr)
+		gvr, err := r.ResourceForReferable(sbr.Spec.Application)
 		if err != nil {
-			logger.Error(err, "Error add watching application GVR")
+			logger.Error(err, "Error getting application GVR")
+		} else {
+			err = r.resourceWatcher.AddWatchForGVR(*gvr)
+			if err != nil {
+				logger.Error(err, "Error add watching application GVR")
+			}
 		}
 	}
 
 	if sbr.Spec.Services != nil {
 		for _, service := range sbr.Spec.Services {
-			serviceGVK := service.GroupVersionKind
-			gvk := schema.GroupVersionKind{
-				Group:   serviceGVK.Group,
-				Version: serviceGVK.Version,
-				Kind:    serviceGVK.Kind,
+			gvr, err := r.ResourceForReferable(&service)
+			if err != nil {
+				logger.Error(err, "Error getting backing service GVR")
 			}
 
-			err = r.resourceWatcher.AddWatchForGVK(gvk)
+			err = r.resourceWatcher.AddWatchForGVR(*gvr)
 			if err != nil {
 				logger.Error(err, "Error add watching backing service GVK")
 			}

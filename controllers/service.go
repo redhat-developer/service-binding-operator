@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,14 +37,12 @@ var (
 func findService(
 	client dynamic.Interface,
 	ns string,
-	gvk schema.GroupVersionKind,
+	gvr schema.GroupVersionResource,
 	name string,
 ) (
 	*unstructured.Unstructured,
 	error,
 ) {
-	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
-
 	if len(ns) == 0 {
 		return nil, errUnspecifiedBackingServiceNamespace
 	}
@@ -64,9 +61,7 @@ var crdGVR = schema.GroupVersionResource{
 	Resource: "customresourcedefinitions",
 }
 
-func findServiceCRD(client dynamic.Interface, gvk schema.GroupVersionKind) (*unstructured.Unstructured, error) {
-	// gvr is the plural guessed resource for the given GVK
-	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+func findServiceCRD(client dynamic.Interface, gvr schema.GroupVersionResource) (*unstructured.Unstructured, error) {
 	// crdName is the string'fied GroupResource, e.g. "deployments.apps"
 	crdName := gvr.GroupResource().String()
 	// delegate the search to the CustomResourceDefinition resource client
@@ -181,8 +176,6 @@ func getOwnedResources(
 	logger *log.Log,
 	client dynamic.Interface,
 	ns string,
-	gvk schema.GroupVersionKind,
-	name string,
 	uid types.UID,
 ) (
 	[]*unstructured.Unstructured,
@@ -215,7 +208,7 @@ func buildOwnedResourceContext(
 	obj *unstructured.Unstructured,
 	namingTemplate string,
 	isBindAsFiles bool,
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 	inputPath string,
 	outputPath string,
 ) (*serviceContext, error) {
@@ -227,7 +220,7 @@ func buildOwnedResourceContext(
 		obj.GetName(),
 		namingTemplate,
 		isBindAsFiles,
-		restMapper,
+		typeLookup,
 		nil,
 	)
 	if err != nil {
@@ -242,7 +235,7 @@ func buildOwnedResourceContexts(
 	objs []*unstructured.Unstructured,
 	namingTemplate string,
 	isBindAsFiles bool,
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 ) ([]*serviceContext, error) {
 	ctxs := make(serviceContextList, 0)
 
@@ -256,7 +249,7 @@ func buildOwnedResourceContexts(
 				obj,
 				namingTemplate,
 				isBindAsFiles,
-				restMapper,
+				typeLookup,
 				br.inputPath,
 				br.outputPath,
 			)

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -37,8 +36,8 @@ type binder struct {
 	sbr         *v1alpha1.ServiceBinding // instantiated service binding request
 	bindingRoot string
 	modifier    extraFieldsModifier // extra modifier for CRDs before updating
-	restMapper  meta.RESTMapper     // RESTMapper to convert GVR from GVK
 	logger      *log.Log            // logger instance
+	typeLookup  K8STypeLookup
 }
 
 var knativeServiceGVR = schema.GroupVersionResource{Group: "serving.knative.dev", Version: "v1", Resource: "services"}
@@ -72,12 +71,11 @@ func (b *binder) search() (*unstructured.UnstructuredList, error) {
 
 func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
-	gvr := schema.GroupVersionResource{
-		Group:    b.sbr.Spec.Application.GroupVersionResource.Group,
-		Version:  b.sbr.Spec.Application.GroupVersionResource.Version,
-		Resource: b.sbr.Spec.Application.GroupVersionResource.Resource,
+	gvr, err := b.typeLookup.ResourceForReferable(b.sbr.Spec.Application)
+	if err != nil {
+		return nil, err
 	}
-	object, err := b.dynClient.Resource(gvr).Namespace(ns).
+	object, err := b.dynClient.Resource(*gvr).Namespace(ns).
 		Get(context.TODO(), b.sbr.Spec.Application.Name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -91,17 +89,16 @@ func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) 
 
 func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList, error) {
 	ns := b.sbr.GetNamespace()
-	gvr := schema.GroupVersionResource{
-		Group:    b.sbr.Spec.Application.GroupVersionResource.Group,
-		Version:  b.sbr.Spec.Application.GroupVersionResource.Version,
-		Resource: b.sbr.Spec.Application.GroupVersionResource.Resource,
+	gvr, err := b.typeLookup.ResourceForReferable(b.sbr.Spec.Application)
+	if err != nil {
+		return nil, err
 	}
 	matchLabels := b.sbr.Spec.Application.LabelSelector.MatchLabels
 	opts := metav1.ListOptions{
 		LabelSelector: labels.Set(matchLabels).String(),
 	}
 
-	objList, err := b.dynClient.Resource(gvr).Namespace(ns).List(context.TODO(), opts)
+	objList, err := b.dynClient.Resource(*gvr).Namespace(ns).List(context.TODO(), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -584,13 +581,11 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 			}
 		}
 		log.Debug("Updating object...")
-		gk := updatedObj.GroupVersionKind().GroupKind()
-		version := updatedObj.GroupVersionKind().Version
-		mapping, err := b.restMapper.RESTMapping(gk, version)
+		gvr, err := b.typeLookup.ResourceForKind(updatedObj.GroupVersionKind())
 		if err != nil {
 			return nil, err
 		}
-		updated, err := b.dynClient.Resource(mapping.Resource).
+		updated, err := b.dynClient.Resource(*gvr).
 			Namespace(updatedObj.GetNamespace()).
 			Update(context.TODO(), updatedObj, metav1.UpdateOptions{})
 		if err != nil {
@@ -619,14 +614,12 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 			}
 		}
 
-		gk := updatedObj.GroupVersionKind().GroupKind()
-		version := updatedObj.GroupVersionKind().Version
-		mapping, err := b.restMapper.RESTMapping(gk, version)
+		gvr, err := b.typeLookup.ResourceForKind(updatedObj.GroupVersionKind())
 		if err != nil {
 			return err
 		}
 
-		_, err = b.dynClient.Resource(mapping.Resource).
+		_, err = b.dynClient.Resource(*gvr).
 			Namespace(updatedObj.GetNamespace()).
 			Update(context.TODO(), updatedObj, metav1.UpdateOptions{})
 
@@ -662,25 +655,28 @@ func newBinder(
 	ctx context.Context,
 	dynClient dynamic.Interface,
 	sbr *v1alpha1.ServiceBinding,
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 ) *binder {
 
 	logger := log.NewLog("binder")
-	modifier := buildExtraFieldsModifier(logger, sbr)
+	modifier := buildExtraFieldsModifier(typeLookup, logger, sbr)
 
 	return &binder{
 		ctx:        ctx,
 		dynClient:  dynClient,
 		sbr:        sbr,
 		modifier:   modifier,
-		restMapper: restMapper,
+		typeLookup: typeLookup,
 		logger:     logger,
 	}
 }
 
-func buildExtraFieldsModifier(logger *log.Log, sbr *v1alpha1.ServiceBinding) extraFieldsModifier {
+func buildExtraFieldsModifier(typeLookup K8STypeLookup, logger *log.Log, sbr *v1alpha1.ServiceBinding) extraFieldsModifier {
 	if sbr.Spec.Application != nil {
-		gvr := sbr.Spec.Application.GroupVersionResource
+		gvr, err := typeLookup.ResourceForReferable(sbr.Spec.Application)
+		if err != nil {
+			return nil
+		}
 		switch gvr.String() {
 		case knativeServiceGVR.String():
 			// TODO: why we need this?

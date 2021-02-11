@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	"errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 const (
@@ -112,34 +113,56 @@ type ServiceBindingStatus struct {
 	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type"`
 	// Secret is the name of the intermediate secret
 	Secret string `json:"secret"`
-	// Applications contain all the applications filtered by name or label
-	Applications []BoundApplication `json:"applications,omitempty"`
+
+	// Application defines the application workloads to which the binding secret has
+	// injected
+	Applications []Ref `json:"applications,omitempty"`
+}
+
+// Object reference in the same namespace
+// +mapType=atomic
+type Ref struct {
+
+	// Group of the referent.
+	Group string `json:"group"`
+
+	// Version of the referent.
+	Version string `json:"version"`
+
+	// Kind of the referent.
+	// +optional
+	Kind string `json:"kind,omitempty"`
+
+	// Resource of the referent.
+	// +optional
+	Resource string `json:"resource,omitempty"`
+
+	// Name of the referent.
+	Name string `json:"name,omitempty"`
+}
+
+// Object reference in some namespace
+type NamespacedRef struct {
+	Ref `json:",inline"`
+
+	// Namespace of the referent.
+	// if empty assumes the same namespace as ServiceBinding
+	// +optional
+	Namespace *string `json:"namespace,omitempty"`
 }
 
 // Service defines the selector based on resource name, version, and resource kind
 type Service struct {
-	metav1.GroupVersionKind     `json:",inline"`
-	corev1.LocalObjectReference `json:",inline"`
+	NamespacedRef `json:",inline"`
 
-	// +optional
-	Namespace *string `json:"namespace,omitempty"`
-	Id        *string `json:"id,omitempty"`
-}
-
-// BoundApplication defines the application workloads to which the binding secret has
-// injected.
-// +mapType=atomic
-type BoundApplication struct {
-	metav1.GroupVersionKind     `json:",inline"`
-	corev1.LocalObjectReference `json:",inline"`
+	Id *string `json:"id,omitempty"`
 }
 
 // Application defines the selector based on labels and GVR
 type Application struct {
-	corev1.LocalObjectReference `json:",inline"`
+	Ref `json:",inline"`
 	// +optional
-	LabelSelector               *metav1.LabelSelector `json:"labelSelector,omitempty"`
-	metav1.GroupVersionResource `json:",inline"`
+	LabelSelector *metav1.LabelSelector `json:"labelSelector,omitempty"`
 
 	// BindingPath refers to the paths in the application workload's schema
 	// where the binding workload would be referenced.
@@ -219,4 +242,28 @@ func (spec *ServiceBindingSpec) NamingTemplate() string {
 		}
 	}
 	return templates["none"]
+}
+
+// Returns GVR of reference if available, otherwise error
+func (ref *Ref) GroupVersionResource() (*schema.GroupVersionResource, error) {
+	if ref.Resource == "" {
+		return nil, errors.New("Resource undefined")
+	}
+	return &schema.GroupVersionResource{
+		Group:    ref.Group,
+		Version:  ref.Version,
+		Resource: ref.Resource,
+	}, nil
+}
+
+// Returns GVK of reference if available, otherwise error
+func (ref *Ref) GroupVersionKind() (*schema.GroupVersionKind, error) {
+	if ref.Kind == "" {
+		return nil, errors.New("Kind undefined")
+	}
+	return &schema.GroupVersionKind{
+		Group:   ref.Group,
+		Version: ref.Version,
+		Kind:    ref.Kind,
+	}, nil
 }

@@ -3,7 +3,6 @@ package binding
 import (
 	"testing"
 
-	"github.com/redhat-developer/service-binding-operator/pkg/testutils"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -30,14 +29,11 @@ func TestSpecHandler(t *testing.T) {
 				f.AddMockResource(r)
 			}
 
-			restMapper := testutils.BuildTestRESTMapper()
-
 			handler, err := NewSpecHandler(
 				f.FakeDynClient(),
 				args.name,
 				args.value,
 				unstructured.Unstructured{Object: args.service},
-				restMapper,
 			)
 			require.NoError(t, err)
 			got, err := handler.Handle()
