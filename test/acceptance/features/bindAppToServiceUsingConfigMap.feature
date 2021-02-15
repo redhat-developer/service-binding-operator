@@ -20,7 +20,7 @@ Feature: Bind values from a config map referred in backing service resource
             metadata:
                 name: backends.stable.example.com
                 annotations:
-                    service.binding/username: path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=username
+                    service.binding/certificate: path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=certificate
             spec:
                 group: stable.example.com
                 versions:
@@ -77,6 +77,7 @@ Feature: Bind values from a config map referred in backing service resource
                     resource: deployments
             """
         Then Service Binding "cmsa-1" is ready
+        And Secret "cmsa-1" does not have key "BACKEND"
         And The application env var "BACKEND_CERTIFICATE" has value "certificate value"
 
     Scenario: Inject into app all keys from a config map referred within service resource

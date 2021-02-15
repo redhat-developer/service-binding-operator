@@ -76,6 +76,7 @@ Feature: Bind values from a secret referred in backing service resource
                     resource: deployments
             """
         Then Service Binding "ssa-1" is ready
+        And Secret "ssa-1" does not have key "BACKEND"
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
 
     Scenario: Inject into app all keys from a secret referred within service resource
