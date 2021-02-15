@@ -7,7 +7,7 @@ else
 fi
 
 # Remove SBR finalizers if CRD exists
-CRD_NAME=$(kubectl get -f deploy/crds/*crd.yaml -o jsonpath="{.metadata.name}" --ignore-not-found)
+CRD_NAME=$(kubectl get -f config/crd/bases/operators.coreos.com*.yaml -o jsonpath="{.metadata.name}" --ignore-not-found)
 [ -z $CRD_NAME ] && exit 0
 
 SBRS=($(kubectl get $CRD_NAME $USE_NS -o jsonpath="{.items[*].metadata.name}"))

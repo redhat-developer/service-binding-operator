@@ -178,7 +178,7 @@ create-test-namespace:
 test-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds
 
 .PHONY: test-cleanup
-test-cleanup:
+test-cleanup: manifests
 	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/test-cleanup.sh
 
 .PHONY: deploy-rbac
