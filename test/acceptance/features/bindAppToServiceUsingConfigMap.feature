@@ -7,6 +7,7 @@ Feature: Bind values from a config map referred in backing service resource
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
 
+    @disabled
     Scenario: Inject into app a key from a config map referred within service resource
         Binding definition is declared on service CRD.
 

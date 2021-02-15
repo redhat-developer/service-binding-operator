@@ -7,6 +7,7 @@ Feature: Bind values from a secret referred in backing service resource
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
 
+    @disabled
     Scenario: Inject into app a key from a secret referred within service resource
         Binding definition is declared on service CRD.
         Given OLM Operator "backend" is running
