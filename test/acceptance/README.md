@@ -10,7 +10,7 @@ Get the `oc` binary from [here](https://mirror.openshift.com/pub/openshift-v4/cl
 
 If you have an OpenShift 4.5+ cluster available, you can use it or get the CodeReady Containers binaries with an embedded OpenShift disk image from [this page](https://cloud.redhat.com/openshift/install/crc/installer-provisioned) and install the `crc` into your system.
 
-Let the version of CRC is `4.5.7`.
+Let the version of CRC is `4.6.15`.
 
 Setup CRC:
 ```bash
@@ -28,7 +28,7 @@ crc start
 
 .
 .
-INFO Creating CodeReady Containers VM for OpenShift 4.5.7...
+INFO Creating CodeReady Containers VM for OpenShift 4.6.15...
 .
 .
 INFO Starting OpenShift cluster ... [waiting 3m]
@@ -62,7 +62,7 @@ export KUBECONFIG=<path-to-kubeconfig>
 
 ### CRC
 ```bash
-export KUBECONFIG=$HOME/.crc/cache/crc_libvirt_4.5.7/kubeconfig
+export KUBECONFIG=$HOME/.crc/cache/crc_libvirt_4.6.15/kubeconfig
 ```
 
 ### Verify `oc` is working with your cluster
@@ -160,14 +160,27 @@ Compared with the defaults this command only:
 * Creates a new namespace with generated name like `test-namespace-xxxxxxxx`,
 * Executes the acceptance tests.
 
-The `remote` option requires to specify the namespace where the operator is running by setting the `SBO_NAMESPACE` env variable.
 
-To run acceptance tests with remote instance of SBO running in a given namespace (e.g. `sbo`):
+### Run acceptance tests with SBO installed from a given index image
+
+This is similar to the running the acceptance tests with a remote instance of the SBO, however in this case the SBO is being installed from a given index image before the acceptance tests are executed.
+
+
+For that there is `OPERATOR_INDEX_IMAGE_REF` environment variable that can be used to specify the given index image.
+
+The remote cluster where the SBO should be installed is determined by the `KUBECONFIG`.
+
+To run acceptance tests with the remote instance of SBO installed from [OperatorHub.io](https://operatorhub.io/operator/service-binding-operator)'s index image:
 
 ```bash
-TEST_ACCEPTANCE_START_SBO=remote SBO_NAMESPACE=sbo make test-acceptance
+OPERATOR_INDEX_IMAGE_REF=quay.io/operatorhubio/catalog:latest make test-acceptance-with-bundle 
 ```
 
+To run acceptance tests with the remote instance of SBO installed from the latest master's index image (`OPERATOR_INDEX_IMAGE_REF` variable is set to `quay.io/redhat-developer/servicebinding-operator:index` by default):
+
+```bash
+make test-acceptance-with-bundle 
+```
 
 ### Run a sub-set of features or scenarios
 
