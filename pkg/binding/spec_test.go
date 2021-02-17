@@ -87,7 +87,7 @@ func TestSpecHandler(t *testing.T) {
 
 	t.Run("should return only password from related secret", assertHandler(args{
 		name:  "service.binding/password",
-		value: "path={.status.dbCredentials},objectType=Secret,sourceValue=password",
+		value: "path={.status.dbCredentials},objectType=Secret,sourceKey=password",
 		service: map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"namespace": "the-namespace",
@@ -167,7 +167,7 @@ func TestSpecHandler(t *testing.T) {
 
 	t.Run("should return only password from related config map", assertHandler(args{
 		name:  "service.binding/password",
-		value: "path={.status.dbCredentials},objectType=ConfigMap,sourceValue=password",
+		value: "path={.status.dbCredentials},objectType=ConfigMap,sourceKey=password",
 		service: map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"namespace": "the-namespace",
@@ -336,7 +336,7 @@ func TestSpecHandler(t *testing.T) {
 
 	t.Run("should return a slice of strings with all urls", assertHandler(args{
 		name:  "service.binding",
-		value: "path={.status.bootstrap},elementType=sliceOfStrings,sourceValue=url",
+		value: "path={.status.bootstrap},elementType=sliceOfStrings,sourceKey=url",
 		service: map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"namespace": "the-namespace",
@@ -360,7 +360,7 @@ func TestSpecHandler(t *testing.T) {
 
 	t.Run("should return a slice of strings with all urls", assertHandler(args{
 		name:  "service.binding/urls",
-		value: "path={.status.bootstrap},elementType=sliceOfStrings,sourceValue=url",
+		value: "path={.status.bootstrap},elementType=sliceOfStrings,sourceKey=url",
 		service: map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"namespace": "the-namespace",

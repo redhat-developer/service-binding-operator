@@ -19,7 +19,7 @@ Feature: Bind values from a config map referred in backing service resource
             metadata:
                 name: backends.stable.example.com
                 annotations:
-                    service.binding/username: path={.status.data.dbConfiguration},objectType=ConfigMap,valueKey=username
+                    service.binding/certificate: path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=certificate
             spec:
                 group: stable.example.com
                 versions:
@@ -55,7 +55,7 @@ Feature: Bind values from a config map referred in backing service resource
                 dbName: db-demo
             status:
                 data:
-                    dbConfiguration: cmsa-1-configmap    # ConfigMap
+                    dbConfiguration: cmsa-1-configmap
             """
         When Service Binding is applied
             """
@@ -148,5 +148,4 @@ Feature: Bind values from a config map referred in backing service resource
                     resource: deployments
             """
         Then Service Binding "cmsa-2" is ready
-        And The application env var "BACKEND_CERTIFICATE" has value "certificate value"
         And The application env var "BACKEND_CERTIFICATE" has value "certificate value"
