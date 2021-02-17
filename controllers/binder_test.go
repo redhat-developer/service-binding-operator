@@ -55,7 +55,7 @@ func TestBindingCustomSecretPath(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbrSecretPath,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 	require.NotNil(t, binderForsbrSecretPath)
 
@@ -99,7 +99,7 @@ func TestBinderNew(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 	require.NotNil(t, binder)
 
@@ -120,7 +120,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbrWithResourceRef,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binderForSBRWithResourceRef)
@@ -134,7 +134,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binder)
@@ -148,7 +148,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binder)
@@ -169,7 +169,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binder)
@@ -200,7 +200,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binder)
@@ -217,7 +217,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binder)
@@ -263,7 +263,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 		// test binder with extra modifier present
 		ch := make(chan struct{})
@@ -295,7 +295,7 @@ func TestBinderNew(t *testing.T) {
 			context.TODO(),
 			f.FakeDynClient(),
 			sbr,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
 
 		require.NotNil(t, binder)
@@ -362,7 +362,7 @@ func TestBinderApplicationName(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 
 	require.NotNil(t, binder)
@@ -385,7 +385,7 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 
 	require.NotNil(t, binder)
@@ -414,7 +414,7 @@ func TestBindTwoApplications(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr1,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 	require.NotNil(t, binder1)
 
@@ -429,7 +429,7 @@ func TestBindTwoApplications(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr2,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 	require.NotNil(t, binder2)
 
@@ -460,7 +460,7 @@ func TestKnativeServicesContractWithBinder(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 
 	require.NotNil(t, binder)
@@ -489,7 +489,7 @@ func Test_extraFieldsModifier(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 
 	require.NotNil(t, binder)
@@ -502,7 +502,7 @@ func Test_extraFieldsModifier(t *testing.T) {
 		context.TODO(),
 		f.FakeDynClient(),
 		sbr,
-		testutils.BuildTestRESTMapper(),
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 	)
 
 	require.NotNil(t, binder)

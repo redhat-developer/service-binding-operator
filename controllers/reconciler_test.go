@@ -135,15 +135,11 @@ func TestApplicationByName(t *testing.T) {
 		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
-		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: metav1.GroupVersionKind{
-				Group:   deploymentsGVR.Group,
-				Version: deploymentsGVR.Version,
-				Kind:    "Deployment",
-			},
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: applicationResourceRef,
-			},
+		expectedStatus := v1alpha1.Ref{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+			Name:    applicationResourceRef,
 		}
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
@@ -201,15 +197,11 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
-		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: metav1.GroupVersionKind{
-				Group:   deploymentsGVR.Group,
-				Version: deploymentsGVR.Version,
-				Kind:    "Deployment",
-			},
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: namespacedName.Name,
-			},
+		expectedStatus := v1alpha1.Ref{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+			Name:    namespacedName.Name,
 		}
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
@@ -464,15 +456,11 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		sbrOutput, err := r.getServiceBinding(namespacedName)
 		require.NoError(t, err)
 
-		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: metav1.GroupVersionKind{
-				Group:   deploymentsGVR.Group,
-				Version: deploymentsGVR.Version,
-				Kind:    "Deployment",
-			},
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: applicationResourceRef2,
-			},
+		expectedStatus := v1alpha1.Ref{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+			Name:    applicationResourceRef2,
 		}
 
 		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
@@ -576,15 +564,11 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 		require.NoError(t, err)
 
 		// expected sbr assertion
-		expectedStatus := v1alpha1.BoundApplication{
-			GroupVersionKind: metav1.GroupVersionKind{
-				Group:   deploymentsGVR.Group,
-				Version: deploymentsGVR.Version,
-				Kind:    "Deployment",
-			},
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: applicationResourceRef,
-			},
+		expectedStatus := v1alpha1.Ref{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+			Name:    applicationResourceRef,
 		}
 
 		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
@@ -614,15 +598,11 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 		require.NoError(t, err)
 
 		// expected sbr assertion
-		expectedStatus = v1alpha1.BoundApplication{
-			GroupVersionKind: metav1.GroupVersionKind{
-				Group:   deploymentsGVR.Group,
-				Version: deploymentsGVR.Version,
-				Kind:    "Deployment",
-			},
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: applicationResourceRef,
-			},
+		expectedStatus = v1alpha1.Ref{
+			Group:   deploymentsGVR.Group,
+			Version: deploymentsGVR.Version,
+			Kind:    "Deployment",
+			Name:    applicationResourceRef,
 		}
 
 		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)

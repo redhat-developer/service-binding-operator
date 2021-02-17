@@ -406,16 +406,18 @@ func MultiNamespaceServiceBindingMock(
 		Spec: v1alpha1.ServiceBindingSpec{
 			Mappings: []v1alpha1.Mapping{},
 			Application: &v1alpha1.Application{
-				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
-				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
-				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
+				Ref:           v1alpha1.Ref{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource, Name: applicationResourceRef},
+				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: &falseBoolPtr,
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-					LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
-					Namespace:            &backingServiceNamespace,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group: CRDName, Version: CRDVersion, Kind: CRDKind, Name: backingServiceResourceRef,
+						},
+						Namespace: &backingServiceNamespace,
+					},
 				},
 			},
 		},
@@ -439,9 +441,12 @@ func ServiceBindingMock(
 	} else {
 		services = []v1alpha1.Service{
 			{
-				GroupVersionKind:     metav1.GroupVersionKind{Group: CRDName, Version: CRDVersion, Kind: CRDKind},
-				LocalObjectReference: corev1.LocalObjectReference{Name: backingServiceResourceRef},
-				Namespace:            backingServiceNamespace,
+				NamespacedRef: v1alpha1.NamespacedRef{
+					Ref: v1alpha1.Ref{
+						Group: CRDName, Version: CRDVersion, Kind: CRDKind, Name: backingServiceResourceRef,
+					},
+					Namespace: backingServiceNamespace,
+				},
 			},
 		}
 	}
@@ -457,9 +462,10 @@ func ServiceBindingMock(
 		Spec: v1alpha1.ServiceBindingSpec{
 			Mappings: []v1alpha1.Mapping{},
 			Application: &v1alpha1.Application{
-				GroupVersionResource: metav1.GroupVersionResource{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource},
-				LocalObjectReference: corev1.LocalObjectReference{Name: applicationResourceRef},
-				LabelSelector:        &metav1.LabelSelector{MatchLabels: matchLabels},
+				Ref: v1alpha1.Ref{
+					Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource, Name: applicationResourceRef,
+				},
+				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: &falseBoolPtr,
 			Services:               services,

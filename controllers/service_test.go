@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"testing"
@@ -12,6 +13,14 @@ import (
 
 func init() {
 	log.SetLogger(zap.New(zap.UseDevMode((true))))
+}
+
+func gvr(gvk schema.GroupVersionKind, res string) *schema.GroupVersionResource {
+	return &schema.GroupVersionResource{
+		Group:    gvk.Group,
+		Version:  gvk.Version,
+		Resource: res,
+	}
 }
 
 func TestFindServiceNewSpecCSV(t *testing.T) {
@@ -26,7 +35,7 @@ func TestFindServiceNewSpecCSV(t *testing.T) {
 
 	t.Run("golden path", func(t *testing.T) {
 		cr, err := findService(
-			f.FakeDynClient(), ns, db.GetObjectKind().GroupVersionKind(), resourceRef)
+			f.FakeDynClient(), ns, *gvr(db.GetObjectKind().GroupVersionKind(), "databases"), resourceRef)
 		require.NoError(t, err)
 		require.NotNil(t, cr)
 	})
@@ -44,7 +53,7 @@ func TestFindService(t *testing.T) {
 
 	t.Run("missing service namespace", func(t *testing.T) {
 		cr, err := findService(
-			f.FakeDynClient(), "", db.GetObjectKind().GroupVersionKind(), name)
+			f.FakeDynClient(), "", *gvr(db.GetObjectKind().GroupVersionKind(), "databases"), name)
 		require.Error(t, err)
 		require.Equal(t, err, errUnspecifiedBackingServiceNamespace)
 		require.Nil(t, cr)
@@ -52,7 +61,7 @@ func TestFindService(t *testing.T) {
 
 	t.Run("golden path", func(t *testing.T) {
 		cr, err := findService(
-			f.FakeDynClient(), ns, db.GetObjectKind().GroupVersionKind(), name)
+			f.FakeDynClient(), ns, *gvr(db.GetObjectKind().GroupVersionKind(), "databases"), name)
 		require.NoError(t, err)
 		require.NotNil(t, cr)
 	})
@@ -74,7 +83,7 @@ func TestPlannerWithExplicitBackingServiceNamespace(t *testing.T) {
 		cr, err := findService(
 			f.FakeDynClient(),
 			backingServiceNamespace,
-			db.GetObjectKind().GroupVersionKind(),
+			*gvr(db.GetObjectKind().GroupVersionKind(), "databases"),
 			name,
 		)
 		require.NoError(t, err)
@@ -89,7 +98,7 @@ func TestFindServiceCRD(t *testing.T) {
 	cr := f.AddMockedDatabaseCR("database", ns)
 
 	t.Run("golden path", func(t *testing.T) {
-		crd, err := findServiceCRD(f.FakeDynClient(), cr.GetObjectKind().GroupVersionKind())
+		crd, err := findServiceCRD(f.FakeDynClient(), *gvr(cr.GetObjectKind().GroupVersionKind(), "databases"))
 		require.NoError(t, err)
 		require.NotNil(t, crd)
 		require.Equal(t, expected, crd)
@@ -227,7 +236,7 @@ func TestBuildOwnerResourceContext(t *testing.T) {
 			obj,
 			namingTemplate,
 			false,
-			testutils.BuildTestRESTMapper(),
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 			tc.inputPath,
 			tc.outputPath,
 		)

@@ -427,3 +427,75 @@ Feature: Bind an application to a service using annotations
                 ready: true
             """
         Then Secret "binding-request-backend-ann" is empty
+
+    @olm
+    Scenario: Bind referring service using group version resource
+        Given Generic test application "binding-service-via-gvr" is running
+        * OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: binding-service-via-gvr-service
+                annotations:
+                    service.binding/host_internal_db: path={.spec.host_internal_db}
+            spec:
+                host_internal_db: internal.db.stable.example.com
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-service-via-gvr
+            spec:
+                application:
+                    name: binding-service-via-gvr
+                    group: apps
+                    version: v1
+                    resource: deployments
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    resource: backends
+                    name: binding-service-via-gvr-service
+            """
+        Then Service Binding "binding-service-via-gvr" is ready
+        And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
+
+    @olm
+    Scenario: Bind referring application using group version kind
+        Given Generic test application "binding-app-via-gvk" is running
+        * OLM Operator "backend" is running
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: binding-app-via-gvk-service
+                annotations:
+                    service.binding/host_internal_db: path={.spec.host_internal_db}
+            spec:
+                host_internal_db: internal.db.stable.example.com
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-app-via-gvk
+            spec:
+                application:
+                    name: binding-app-via-gvk
+                    group: apps
+                    version: v1
+                    kind: Deployment
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: binding-app-via-gvk-service
+            """
+        Then Service Binding "binding-app-via-gvk" is ready
+        And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"

@@ -5,7 +5,6 @@ import (
 
 	"github.com/imdario/mergo"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -57,7 +56,7 @@ func buildServiceContexts(
 	selectors []v1alpha1.Service,
 	includeServiceOwnedResources *bool,
 	isBindAsFiles bool,
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 	namingTemplate string,
 ) (serviceContextList, error) {
 	svcCtxs := make(serviceContextList, 0)
@@ -65,9 +64,18 @@ func buildServiceContexts(
 SELECTORS:
 	for _, s := range selectors {
 		ns := stringValueOrDefault(s.Namespace, defaultNs)
-		gvk := schema.GroupVersionKind{Kind: s.Kind, Version: s.Version, Group: s.Group}
-		svcCtx, err := buildServiceContext(logger.WithName("buildServiceContexts"), client, ns, gvk,
-			s.Name, namingTemplate, isBindAsFiles, restMapper, s.Id)
+		gvr, err := typeLookup.ResourceForReferable(&s)
+		if err != nil {
+			return nil, err
+		}
+		gvk, err := typeLookup.KindForResource(*gvr)
+
+		if err != nil {
+			return nil, err
+		}
+
+		svcCtx, err := buildServiceContext(logger.WithName("buildServiceContexts"), client, ns, *gvk,
+			s.Name, namingTemplate, isBindAsFiles, typeLookup, s.Id)
 
 		if err != nil {
 			// best effort approach; should not break in common cases such as a unknown annotation
@@ -87,12 +95,10 @@ SELECTORS:
 				logger,
 				client,
 				ns,
-				svcCtx.service.GetName(),
 				svcCtx.service.GetUID(),
-				gvk,
 				namingTemplate,
 				isBindAsFiles,
-				restMapper,
+				typeLookup,
 			)
 			if err != nil {
 				return nil, err
@@ -108,19 +114,15 @@ func findOwnedResourcesCtxs(
 	logger *log.Log,
 	client dynamic.Interface,
 	ns string,
-	name string,
 	uid types.UID,
-	gvk schema.GroupVersionKind,
 	namingTemplate string,
 	isBindAsFiles bool,
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 ) (serviceContextList, error) {
 	ownedResources, err := getOwnedResources(
 		logger,
 		client,
 		ns,
-		gvk,
-		name,
 		uid,
 	)
 	if err != nil {
@@ -132,7 +134,7 @@ func findOwnedResourcesCtxs(
 		ownedResources,
 		namingTemplate,
 		isBindAsFiles,
-		restMapper,
+		typeLookup,
 	)
 }
 
@@ -159,9 +161,8 @@ func runHandler(
 	key string,
 	value string,
 	envVars map[string]interface{},
-	restMapper meta.RESTMapper,
 ) error {
-	h, err := binding.NewSpecHandler(client, key, value, *obj, restMapper)
+	h, err := binding.NewSpecHandler(client, key, value, *obj)
 	if err != nil {
 		return err
 	}
@@ -195,10 +196,14 @@ func buildServiceContext(
 	name string,
 	namingTemplate string,
 	bindAsFiles bool,
-	restMapper meta.RESTMapper,
+	typeLookup K8STypeLookup,
 	id *string,
 ) (*serviceContext, error) {
-	obj, err := findService(client, ns, gvk, name)
+	gvr, err := typeLookup.ResourceForKind(gvk)
+	if err != nil {
+		return nil, err
+	}
+	obj, err := findService(client, ns, *gvr, name)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +212,7 @@ func buildServiceContext(
 
 	// attempt to search the CRD of given gvk and bail out right away if a CRD can't be found; this
 	// means also a CRDDescription can't exist or if it does exist it is not meaningful.
-	crd, err := findServiceCRD(client, gvk)
+	crd, err := findServiceCRD(client, *gvr)
 	if err != nil && !errors.IsNotFound(err) {
 		return nil, err
 	} else if !errors.IsNotFound(err) {
@@ -250,7 +255,7 @@ func buildServiceContext(
 	for _, k := range keys {
 		v := anns[k]
 		// runHandler modifies 'outputObj', and 'envVars' in place.
-		err := runHandler(client, obj, outputObj, k, v, envVars, restMapper)
+		err := runHandler(client, obj, outputObj, k, v, envVars)
 		if err != nil {
 			logger.Debug("Failed executing runHandler in envars", "Error", err)
 		}

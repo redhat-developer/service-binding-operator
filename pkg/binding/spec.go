@@ -6,7 +6,6 @@ import (
 
 	"github.com/mitchellh/copystructure"
 	"github.com/redhat-developer/service-binding-operator/pkg/nested"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 )
@@ -54,7 +53,6 @@ type SpecHandler struct {
 	obj             unstructured.Unstructured
 	annotationKey   string
 	annotationValue string
-	restMapper      meta.RESTMapper
 }
 
 func (s *SpecHandler) Handle() (result, error) {
@@ -108,13 +106,11 @@ func NewSpecHandler(
 	annotationKey string,
 	annotationValue string,
 	obj unstructured.Unstructured,
-	restMapper meta.RESTMapper,
 ) (*SpecHandler, error) {
 	return &SpecHandler{
 		kubeClient:      kubeClient,
 		obj:             obj,
 		annotationKey:   annotationKey,
 		annotationValue: annotationValue,
-		restMapper:      restMapper,
 	}, nil
 }

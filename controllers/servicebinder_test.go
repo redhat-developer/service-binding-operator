@@ -213,21 +213,23 @@ func TestServiceBinder_Bind(t *testing.T) {
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
-				GroupVersionResource: metav1.GroupVersionResource{
+				Ref: v1alpha1.Ref{
 					Group:    d.GetObjectKind().GroupVersionKind().Group,
 					Version:  d.GetObjectKind().GroupVersionKind().Version,
 					Resource: "deployments",
+					Name:     d.GetName(),
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   db1.GetObjectKind().GroupVersionKind().Group,
-						Version: db1.GetObjectKind().GroupVersionKind().Version,
-						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 			},
 		},
@@ -249,21 +251,23 @@ func TestServiceBinder_Bind(t *testing.T) {
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
-				GroupVersionResource: metav1.GroupVersionResource{
+				Ref: v1alpha1.Ref{
 					Group:    d.GetObjectKind().GroupVersionKind().Group,
 					Version:  d.GetObjectKind().GroupVersionKind().Version,
 					Resource: "deployments",
+					Name:     d.GetName(),
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   db1.GetObjectKind().GroupVersionKind().Group,
-						Version: db1.GetObjectKind().GroupVersionKind().Version,
-						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 			},
 			Mappings: []v1alpha1.Mapping{
@@ -296,29 +300,33 @@ func TestServiceBinder_Bind(t *testing.T) {
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
-				GroupVersionResource: metav1.GroupVersionResource{
+				Ref: v1alpha1.Ref{
 					Group:    d.GetObjectKind().GroupVersionKind().Group,
 					Version:  d.GetObjectKind().GroupVersionKind().Version,
 					Resource: "deployments",
+					Name:     d.GetName(),
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   db1.GetObjectKind().GroupVersionKind().Group,
-						Version: db1.GetObjectKind().GroupVersionKind().Version,
-						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   db2.GetObjectKind().GroupVersionKind().Group,
-						Version: db2.GetObjectKind().GroupVersionKind().Version,
-						Kind:    db2.GetObjectKind().GroupVersionKind().Kind,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db2.GetObjectKind().GroupVersionKind().Group,
+							Version: db2.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db2.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 			},
 		},
@@ -339,21 +347,23 @@ func TestServiceBinder_Bind(t *testing.T) {
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
-				GroupVersionResource: metav1.GroupVersionResource{
+				Ref: v1alpha1.Ref{
 					Group:    d.GetObjectKind().GroupVersionKind().Group,
 					Version:  d.GetObjectKind().GroupVersionKind().Version,
 					Resource: "deployments",
+					Name:     "app-not-existed",
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: "app-not-existed"},
 			},
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   db1.GetObjectKind().GroupVersionKind().Group,
-						Version: db1.GetObjectKind().GroupVersionKind().Version,
-						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 			},
 		},
@@ -375,12 +385,14 @@ func TestServiceBinder_Bind(t *testing.T) {
 			},
 			Services: []v1alpha1.Service{
 				{
-					GroupVersionKind: metav1.GroupVersionKind{
-						Group:   db1.GetObjectKind().GroupVersionKind().Group,
-						Version: db1.GetObjectKind().GroupVersionKind().Version,
-						Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
 					},
-					LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 				},
 			},
 		},
@@ -401,12 +413,12 @@ func TestServiceBinder_Bind(t *testing.T) {
 				LabelSelector: &metav1.LabelSelector{
 					MatchLabels: matchLabels,
 				},
-				GroupVersionResource: metav1.GroupVersionResource{
+				Ref: v1alpha1.Ref{
 					Group:    d.GetObjectKind().GroupVersionKind().Group,
 					Version:  d.GetObjectKind().GroupVersionKind().Version,
 					Resource: "deployments",
+					Name:     d.GetName(),
 				},
-				LocalObjectReference: corev1.LocalObjectReference{Name: d.GetName()},
 			},
 			Services: []v1alpha1.Service{},
 		},
@@ -425,7 +437,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			binding: &internalBinding{
 				envVars: map[string][]byte{},
 			},
-			restMapper: testutils.BuildTestRESTMapper(),
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -471,7 +483,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 					"MY_DB_NAME": []byte("db1"),
 				},
 			},
-			restMapper: testutils.BuildTestRESTMapper(),
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -518,7 +530,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			binding: &internalBinding{
 				envVars: map[string][]byte{},
 			},
-			restMapper: testutils.BuildTestRESTMapper(),
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -545,7 +557,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			binding: &internalBinding{
 				envVars: map[string][]byte{},
 			},
-			restMapper: testutils.BuildTestRESTMapper(),
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -574,7 +586,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			binding: &internalBinding{
 				envVars: map[string][]byte{},
 			},
-			restMapper: testutils.BuildTestRESTMapper(),
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantConditions: []wantedCondition{
 			{
@@ -601,7 +613,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			dynClient:              f.FakeDynClient(),
 			detectBindingResources: false,
 			sbr:                    nil,
-			restMapper:             testutils.BuildTestRESTMapper(),
+			typeLookup:             &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantBuildErr: errInvalidServiceBinderOptions("SBR"),
 	}))
@@ -615,7 +627,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			binding: &internalBinding{
 				envVars: map[string][]byte{},
 			},
-			restMapper: testutils.BuildTestRESTMapper(),
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		},
 		wantConditions: []wantedCondition{
 			{

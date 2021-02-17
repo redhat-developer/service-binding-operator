@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"gotest.tools/assert/cmp"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -46,7 +45,7 @@ type serviceBinderOptions struct {
 	sbr                    *v1alpha1.ServiceBinding
 	objects                []*unstructured.Unstructured
 	binding                *internalBinding
-	restMapper             meta.RESTMapper
+	typeLookup             K8STypeLookup
 }
 
 // errInvalidServiceBinderOptions is returned when ServiceBinderOptions contains an invalid value.
@@ -70,8 +69,8 @@ func (o *serviceBinderOptions) Valid() error {
 		return errInvalidServiceBinderOptions("Binding")
 	}
 
-	if o.restMapper == nil {
-		return errInvalidServiceBinderOptions("RESTMapper")
+	if o.typeLookup == nil {
+		return errInvalidServiceBinderOptions("typeLookup")
 	}
 
 	return nil
@@ -375,17 +374,13 @@ func (b *serviceBinder) setApplicationObjects(
 	sbrStatus *v1alpha1.ServiceBindingStatus,
 	objs []*unstructured.Unstructured,
 ) {
-	boundApps := []v1alpha1.BoundApplication{}
+	boundApps := []v1alpha1.Ref{}
 	for _, obj := range objs {
-		boundApp := v1alpha1.BoundApplication{
-			GroupVersionKind: metav1.GroupVersionKind{
-				Group:   obj.GroupVersionKind().Group,
-				Version: obj.GroupVersionKind().Version,
-				Kind:    obj.GetKind(),
-			},
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: obj.GetName(),
-			},
+		boundApp := v1alpha1.Ref{
+			Group:   obj.GroupVersionKind().Group,
+			Version: obj.GroupVersionKind().Version,
+			Kind:    obj.GetKind(),
+			Name:    obj.GetName(),
 		}
 		boundApps = append(boundApps, boundApp)
 	}
@@ -438,7 +433,7 @@ func buildServiceBinder(
 		ctx,
 		options.dynClient,
 		options.sbr,
-		options.restMapper,
+		options.typeLookup,
 	)
 
 	ensureDefaults(options.sbr.Spec.Application)

@@ -81,7 +81,7 @@ func (r *ServiceBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	sbr := &sbrController{
 		Controller:   c,
 		Client:       client,
-		RestMapper:   mgr.GetRESTMapper(),
+		typeLookup:   r,
 		watchingGVKs: make(map[schema.GroupVersionKind]bool),
 		logger:       log.NewLog("sbrcontroller"),
 	}

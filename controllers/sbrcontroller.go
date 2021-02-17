@@ -8,7 +8,6 @@ import (
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,7 +34,7 @@ type ResourceWatcher interface {
 type sbrController struct {
 	Controller   controller.Controller            // controller-runtime instance
 	Client       dynamic.Interface                // kubernetes dynamic api client
-	RestMapper   meta.RESTMapper                  // restMapper to convert GVK and GVR
+	typeLookup 		K8STypeLookup
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
 	logger       *log.Log                         // logger instance
 }
@@ -68,7 +67,7 @@ func compareObjectFields(objOld, objNew runtime.Object, fields ...string) (*comp
 func (s *sbrController) newEnqueueRequestsForSBR() handler.EventHandler {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: &sbrRequestMapper{
 		client:     s.Client,
-		restMapper: s.RestMapper,
+		typeLookup: s.typeLookup,
 	}}
 }
 
@@ -203,11 +202,11 @@ func (s *sbrController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
 
 // AddWatchForGVR creates a watch on a given GVR
 func (s *sbrController) AddWatchForGVR(gvr schema.GroupVersionResource) error {
-	gvk, err := s.RestMapper.KindFor(gvr)
+	gvk, err := s.typeLookup.KindForResource(gvr)
 	if err != nil {
 		return err
 	}
-	return s.AddWatchForGVK(gvk)
+	return s.AddWatchForGVK(*gvk)
 }
 
 // addCSVWatch creates a watch on ClusterServiceVersion.

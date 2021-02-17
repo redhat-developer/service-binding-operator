@@ -11,6 +11,6 @@ configMapGenerator:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- digest: sha256:ded3b7810ac0800c42f3646ed5c453a505585d8e9fac50070f357780ed2ff49b
-  name: controller
-  newName: 192.168.49.2:5000/sbo
+- name: controller
+  newName: quay.io/redhat-developer/servicebinding-operator
+  newTag: 395e87bc

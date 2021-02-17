@@ -23,5 +23,13 @@ func BuildTestRESTMapper() meta.RESTMapper {
 		schema.GroupVersionKind{Kind: "Deployment", Version: "v1", Group: "apps"},
 		meta.RESTScopeNamespace,
 	)
+	restMapper.Add(
+		schema.GroupVersionKind{Kind: "Database", Version: "v1alpha1", Group: "postgresql.baiju.dev"},
+		meta.RESTScopeNamespace,
+	)
+	restMapper.Add(
+		schema.GroupVersionKind{Kind: "Route", Version: "v1", Group: "route.openshift.io"},
+		meta.RESTScopeNamespace,
+	)
 	return restMapper
 }
