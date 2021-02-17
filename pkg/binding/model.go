@@ -95,16 +95,23 @@ func newModel(annotationValue string) (*model, error) {
 		sourceKey = ""
 	}
 
+	sourceValue, found := raw[sourceValueModelKey]
+	if !found {
+		sourceValue, found = raw[sourceKeyModelKey]
+		if !found {
+			sourceValue = ""
+		}
+	}
+
 	// hasData indicates the configured or inferred objectType is either a Secret or ConfigMap
-	hasData := (objType == secretObjectType || objType == configMapObjectType)
+	hasData := objType == secretObjectType || objType == configMapObjectType
 	// hasSourceKey indicates a value for sourceKey has been informed
-	hasSourceKey := len(sourceKey) > 0
 
 	var eltType elementType
 	if rawEltType, found := raw[elementTypeModelKey]; found {
 		// the input string contains an elementType configuration, use it
 		eltType = elementType(rawEltType)
-	} else if hasData && !hasSourceKey {
+	} else if hasData {
 		// the input doesn't contain an elementType configuration, does contain a sourceKey
 		// configuration, and is either a Secret or ConfigMap
 		eltType = mapElementType
@@ -112,12 +119,6 @@ func newModel(annotationValue string) (*model, error) {
 		// elementType configuration hasn't been informed and there's no extra hints, assume it is a
 		// string element
 		eltType = stringElementType
-	}
-
-	// ensure SourceValueModelKey has a default value
-	sourceValue, found := raw[sourceValueModelKey]
-	if !found {
-		sourceValue = ""
 	}
 
 	// ensure an error is returned if not all required information is available for sliceOfMaps
