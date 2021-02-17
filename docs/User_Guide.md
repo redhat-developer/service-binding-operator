@@ -470,7 +470,7 @@ spec:
 
 In the above CR, the containers path is at `spec.containers`.  You can specify
 this path in the `ServiceBindingRequest` config at
-`spec.applicationSelector.bindingPath.containersPath`:
+`spec.application.bindingPath.containersPath`:
 
 ```
 apiVersion: apps.openshift.io/v1alpha1
@@ -479,14 +479,14 @@ metadata:
     name: binding-request
 spec:
     namePrefix: qiye111
-    applicationSelector:
+    application:
         name: example-appconfig
         group: stable.example.com
         version: v1
         resource: appconfigs
         bindingPath:
             containersPath: spec.containers
-    backingServiceSelectors:
+    services:
       - group: postgresql.baiju.dev
         version: v1alpha1
         kind: Database
@@ -535,7 +535,7 @@ spec:
 
 In the above CR, the secret path is at `spec.secret`.  You can specify
 this path in the `ServiceBindingRequest` config at
-`spec.applicationSelector.bindingPath.secretPath`:
+`spec.application.bindingPath.secretPath`:
 
 
 ```
@@ -545,14 +545,14 @@ metadata:
     name: binding-request
 spec:
     namePrefix: qiye111
-    applicationSelector:
+    application:
         name: example-appconfig
         group: stable.example.com
         version: v1
         resource: appconfigs
         bindingPath:
             secretPath: spec.secret
-    backingServiceSelectors:
+    services:
       - group: postgresql.baiju.dev
         version: v1alpha1
         kind: Database
