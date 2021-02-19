@@ -135,7 +135,6 @@ Feature: Bind an application to a service using annotations
         And The application env var "BACKEND_SPEC_IMAGENAME" has value "postgres"
         And The application env var "BACKEND_SPEC_DBNAME" has value "db-demo"
 
-
     Scenario: Each value in referred slice of strings from service resource gets injected into app as separate env variable
         Given Generic test application "slos-app" is running
         And The Custom Resource Definition is present
@@ -325,6 +324,7 @@ Feature: Bind an application to a service using annotations
         And The application env var "BACKEND_WEBARROWS_SECONDARY" has value "secondary.example.com"
         And The application env var "BACKEND_WEBARROWS_404" has value "black-hole.example.com"
 
+    @olm
     Scenario: Backend Service metadata annotations update for service bindings gets propagated to the binding secret
         Given OLM Operator "backend" is running
         * The Custom Resource is present
@@ -379,6 +379,7 @@ Feature: Bind an application to a service using annotations
 
 
     @negative
+    @olm
     Scenario: Backend Service metadata annotations update not specific to service bindings does not get propagated to the binding secret
         Given OLM Operator "backend" is running
         * The Custom Resource is present

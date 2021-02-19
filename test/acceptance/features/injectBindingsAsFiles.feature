@@ -1,3 +1,4 @@
+@olm
 Feature: Bindings get injected as files in application
 
     As a user of Service Binding Operator
