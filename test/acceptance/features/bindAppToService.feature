@@ -34,16 +34,16 @@ Feature: Bind an application to a service
         Then Service Binding "binding-request-a-d-s" is ready
         And application should be re-deployed
         And application should be connected to the DB "db-demo-a-d-s"
-        And Secret "binding-request-a-d-s" contains "DATABASE_DBNAME" key with value "db-demo-a-d-s"
-        And Secret "binding-request-a-d-s" contains "DATABASE_USER" key with value "postgres"
-        And Secret "binding-request-a-d-s" contains "DATABASE_PASSWORD" key with value "password"
-        And Secret "binding-request-a-d-s" contains "DATABASE_DB_PASSWORD" key with value "password"
-        And Secret "binding-request-a-d-s" contains "DATABASE_DB_NAME" key with value "db-demo-a-d-s"
-        And Secret "binding-request-a-d-s" contains "DATABASE_DB_PORT" key with value "5432"
-        And Secret "binding-request-a-d-s" contains "DATABASE_DB_USER" key with value "postgres"
-        And Secret "binding-request-a-d-s" contains "DATABASE_DB_HOST" key with dynamic IP addess as the value
-        And Secret "binding-request-a-d-s" contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
-        And Secret "binding-request-a-d-s" contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
+        And Secret contains "DATABASE_DBNAME" key with value "db-demo-a-d-s"
+        And Secret contains "DATABASE_USER" key with value "postgres"
+        And Secret contains "DATABASE_PASSWORD" key with value "password"
+        And Secret contains "DATABASE_DB_PASSWORD" key with value "password"
+        And Secret contains "DATABASE_DB_NAME" key with value "db-demo-a-d-s"
+        And Secret contains "DATABASE_DB_PORT" key with value "5432"
+        And Secret contains "DATABASE_DB_USER" key with value "postgres"
+        And Secret contains "DATABASE_DB_HOST" key with dynamic IP addess as the value
+        And Secret contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
+        And Secret contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
 
     Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, Service Binding and DB
         Given Imported Nodejs application "nodejs-rest-http-crud-a-s-d" is running
@@ -213,8 +213,8 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-empty-app" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-empty-app" should be changed to "EmptyApplication"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-empty-app" should be changed to "True"
-        And Secret "binding-request-empty-app" contains "BACKEND_HOST" key with value "example.common"
-        And Secret "binding-request-empty-app" contains "BACKEND_USERNAME" key with value "foo"
+        And Secret contains "BACKEND_HOST" key with value "example.common"
+        And Secret contains "BACKEND_USERNAME" key with value "foo"
 
     Scenario: Backend Service status update gets propagated to the binding secret
         Given OLM Operator "backend" is running
@@ -249,10 +249,11 @@ Feature: Bind an application to a service
                   - name: CustomHost
                     value: '{{ .SBR.spec.host }}'
             """
-        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend" should be changed to "False"
-        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend" should be changed to "True"
-        * Secret "binding-request-backend" contains "CustomReady" key with value "<no value>"
+        Then Secret name should be updated in Service Binding status
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend" should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend" should be changed to "True"
+        And Secret contains "CustomReady" key with value "<no value>"
 
         # Backend status in "backend-demo" is updated
         When The Custom Resource is present
@@ -269,8 +270,80 @@ Feature: Bind an application to a service
             status:
                 ready: true
             """
-        Then Secret "binding-request-backend" contains "CustomReady" key with value "true"
+        Then Secret name should be updated in Service Binding status
+        Then Secret contains "CustomReady" key with value "true"
 
+
+    Scenario: Backend Service status update gets propagated to the application
+        Given OLM Operator "backend" is running
+        * Generic test application "generic-app-demo-volume-mount" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-volume-mount
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/ready: path={.status.ready}
+            spec:
+                host: example.common
+            """
+        * Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-backend-volume-mount
+            spec:
+                bindAsFiles: true
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo-volume-mount
+                    id: SBR
+                application:
+                    name: generic-app-demo-volume-mount
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-volume-mount" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-volume-mount" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-volume-mount" should be changed to "True"
+        And The env var "host" is not available to the application
+        And The env var "ready" is not available to the application
+        And Content of file "/bindings/binding-request-backend-volume-mount/host" in application pod is
+            """
+            example.common
+            """
+
+        # Backend status in "backend-demo" is updated
+        When The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-volume-mount
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/ready: path={.status.ready}
+            spec:
+                host: example.common
+            status:
+                ready: true
+            """
+        Then The env var "host" is not available to the application
+        And The env var "ready" is not available to the application
+        And Content of file "/bindings/binding-request-backend-volume-mount/host" in application pod is
+            """
+            example.common
+            """
+        And Content of file "/bindings/binding-request-backend-volume-mount/ready" in application pod is
+            """
+            true
+            """
 
     Scenario: Backend Service new spec status update gets propagated to the binding secret
         Given OLM Operator "backend-new-spec" is running
@@ -304,9 +377,9 @@ Feature: Bind an application to a service
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-new-spec" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-new-spec" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-new-spec" should be changed to "True"
-        And Secret "binding-request-backend-new-spec" contains "BACKEND_HOST" key with value "example.common"
-        And Secret "binding-request-backend-new-spec" contains "BACKEND_PORTS_FTP" key with value "22"
-        And Secret "binding-request-backend-new-spec" contains "BACKEND_PORTS_TCP" key with value "8080"
+        And Secret contains "BACKEND_HOST" key with value "example.common"
+        And Secret contains "BACKEND_PORTS_FTP" key with value "22"
+        And Secret contains "BACKEND_PORTS_TCP" key with value "8080"
 
 
     Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
@@ -335,7 +408,7 @@ Feature: Bind an application to a service
                       value: 'SOME_VALUE:{{ .postgresDB.status.dbConnectionPort }}:{{ .postgresDB.status.dbName }}'
             """
         Then Service Binding "binding-request-a-d-c" is ready
-        And Secret "binding-request-a-d-c" contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"
+        And Secret contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"
 
     Scenario: Creating binding secret from the definitions managed in OLM operator descriptors
         Given Backend service CSV is installed
@@ -436,10 +509,10 @@ Feature: Bind an application to a service
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sbr-csv-secret-cm-descriptors" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "sbr-csv-secret-cm-descriptors" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "sbr-csv-secret-cm-descriptors" should be changed to "True"
-        And Secret "sbr-csv-secret-cm-descriptors" contains "BACKSERV_DB_HOST" key with value "172.72.2.0"
-        And Secret "sbr-csv-secret-cm-descriptors" contains "BACKSERV_DB_PORT" key with value "3306"
-        And Secret "sbr-csv-secret-cm-descriptors" contains "BACKSERV_PASSWORD" key with value "secret123"
-        And Secret "sbr-csv-secret-cm-descriptors" contains "BACKSERV_USERNAME" key with value "admin"
+        And Secret contains "BACKSERV_DB_HOST" key with value "172.72.2.0"
+        And Secret contains "BACKSERV_DB_PORT" key with value "3306"
+        And Secret contains "BACKSERV_PASSWORD" key with value "secret123"
+        And Secret contains "BACKSERV_USERNAME" key with value "admin"
 
 
     # This test scenario is disabled until the issue is resolved: https://github.com/redhat-developer/service-binding-operator/issues/656
@@ -513,7 +586,7 @@ Feature: Bind an application to a service
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sbr-csv-attribute" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "sbr-csv-attribute" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "sbr-csv-attribute" should be changed to "True"
-        And Secret "sbr-csv-secret-cm-descriptors" contains "BACKSERV_ENV_SVCNAME" key with value "demo-backserv-cr-1"
+        And Secret contains "BACKSERV_ENV_SVCNAME" key with value "demo-backserv-cr-1"
 
     Scenario: Bind an imported Node.js application to Etcd database
         Given Etcd operator running
@@ -752,3 +825,49 @@ Feature: Bind an application to a service
             """
         Then Service Binding "binding-request-cross-ns-service" is ready
         And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"
+
+    Scenario: Binding secret is repopulated on external update 
+        Given OLM Operator "backend-new-spec" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo
+            spec:
+                host: example.common
+            """
+        * Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-secret-updated-externally
+            spec:
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo
+            """
+        Then Secret name should be updated in Service Binding status
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "True"
+        And Secret contains "BACKEND_HOST" key with value "example.common"
+
+        * Binding secret is updated
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: binding-request-secret-updated-externally
+            type: Opaque
+            stringData:
+                host2: example2.common
+            """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "True"
+        And Secret contains "BACKEND_HOST" key with value "example.common"
+        And Secret does not contain "host2"

@@ -194,7 +194,7 @@ func getOwnedResources(
 		for idx, item := range lst.Items {
 			owners := item.GetOwnerReferences()
 			for _, owner := range owners {
-				if owner.UID == uid {
+				if owner.UID != "" && owner.UID == uid {
 					resources = append(resources, &lst.Items[idx])
 				}
 			}

@@ -2,10 +2,12 @@ from app import App
 import requests
 import json
 import polling2
-from behave import given, step, then
+from behave import given, step
 
 
 class GenericTestApp(App):
+
+    deployment_name_pattern = "{name}"
 
     def __init__(self, name, namespace, app_image="quay.io/redhat-developer/sbo-generic-test-app:20200923"):
         App.__init__(self, name, namespace, app_image, "8080")
@@ -18,6 +20,13 @@ class GenericTestApp(App):
             return json.loads(resp.text)
         else:
             return None
+
+    def format_pattern(self, pattern):
+        return pattern.format(name=self.name)
+
+    def get_generation(self):
+        deployment_name = self.openshift.get_deployment_name_in_namespace(self.format_pattern(self.deployment_name_pattern), self.namespace)
+        return int(self.openshift.get_resource_info_by_jsonpath("deployment", deployment_name, self.namespace, "{.metadata.generation}"))
 
     def get_file_value(self, file_path):
         resp = polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{file_path}"),
@@ -35,6 +44,10 @@ def is_running(context, application_name, bindingRoot=None):
         application.install(bindingRoot=bindingRoot)
     context.application = application
 
+    # save the generation number
+    context.original_application_generation = application.get_generation()
+    context.latest_application_generation = application.get_generation()
+
 
 @step(u'The application env var "{name}" has value "{value}"')
 def check_env_var_value(context, name, value):
@@ -48,7 +61,7 @@ def check_env_var_existence(context, name):
     assert output, f'Env var "{name}" should not exist'
 
 
-@then(u'Content of file "{file_path}" in application pod is')
+@step(u'Content of file "{file_path}" in application pod is')
 def check_file_value(context, file_path):
     value = context.text.strip()
     polling2.poll(lambda: context.application.get_file_value(file_path) == value, step=5, timeout=400)

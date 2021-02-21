@@ -242,7 +242,7 @@ status:
     lastTransitionTime: "2020-08-12T06:39:13Z"
     status: "True"
     type: InjectionReady
-  secret: binding-request
+  secret: binding-request-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
 where
@@ -272,7 +272,7 @@ Conditions can have the following type, status and reason:
 
 ### Check secret injection into the application deployment
 
-When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables via an intermediate `Secret` called `binding-request`:
+When `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the application's `Deployment` as environment variables through the secret `binding-request-72ddc0c540ab3a290e138726940591debf14c581`:
 
 ```shell
 kubectl get deployment java-app -n service-binding-demo -o yaml
@@ -285,7 +285,7 @@ spec:
       containers:
         - envFrom:
           - secretRef:
-              name: binding-request
+              name: binding-request-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
 ### Check the environment variable creation in the application pod

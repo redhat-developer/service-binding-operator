@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,16 +23,6 @@ import (
 
 func init() {
 	log.SetLogger(zap.New(zap.UseDevMode((true))))
-}
-
-// getEnvVar returns an EnvVar with given name if exists in the given envVars.
-func getEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
-	for _, v := range envVars {
-		if v.Name == name {
-			return &v
-		}
-	}
-	return nil
 }
 
 func TestBindingCustomSecretPath(t *testing.T) {
@@ -78,7 +67,7 @@ func TestBindingCustomSecretPath(t *testing.T) {
 		customSecretInMeta, found, err := unstructured.NestedFieldCopy(obj.Object, customSecretPathSlice...)
 		require.NoError(t, err)
 		require.True(t, found)
-		require.Equal(t, name, customSecretInMeta)
+		require.Equal(t, binderForsbrSecretPath.sbr.Status.Secret, customSecretInMeta)
 	})
 }
 
@@ -143,7 +132,7 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, 1, len(list.Items))
 	})
 
-	t.Run("appendEnvFrom-removeEnvFrom-with-empty-envFrom", func(t *testing.T) {
+	t.Run("updateEnvFrom-removeEnvFrom-with-empty-envFrom", func(t *testing.T) {
 		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
@@ -156,7 +145,7 @@ func TestBinderNew(t *testing.T) {
 		d := mocks.DeploymentMock("binder", "binder", map[string]string{})
 		envFrom := d.Spec.Template.Spec.Containers[0].EnvFrom
 
-		list := binder.appendEnvFrom(envFrom, secretName)
+		list := binder.updateEnvFromList(envFrom, secretName)
 		require.Equal(t, 1, len(list))
 		require.Equal(t, secretName, list[0].SecretRef.Name)
 
@@ -164,7 +153,7 @@ func TestBinderNew(t *testing.T) {
 		require.Equal(t, 0, len(list))
 	})
 
-	t.Run("appendEnvFrom-removeEnvFrom-with-configMapRef", func(t *testing.T) {
+	t.Run("updateEnvFrom-removeEnvFrom-with-configMapRef", func(t *testing.T) {
 		binder := newBinder(
 			context.TODO(),
 			f.FakeDynClient(),
@@ -185,7 +174,7 @@ func TestBinderNew(t *testing.T) {
 			},
 		})
 
-		list := binder.appendEnvFrom(envFrom, secretName)
+		list := binder.updateEnvFromList(envFrom, secretName)
 		require.Equal(t, 2, len(list))
 		require.Equal(t, configMapName, list[0].ConfigMapRef.Name)
 		require.Equal(t, secretName, list[1].SecretRef.Name)
@@ -229,11 +218,6 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, updatedObjects, 1)
 
-		// make sure SBR annonation is added
-		deployment := appsv1.Deployment{}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedObjects[0].Object, &deployment)
-		require.NoError(t, err)
-
 		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
 		require.True(t, found)
@@ -244,18 +228,11 @@ func TestBinderNew(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
 		require.NoError(t, err)
 
-		// special env-var should exist to trigger a side effect such as Pod restart when the
-		// intermediate secret has been modified
-		envVar := getEnvVar(c.Env, changeTriggerEnv)
-		require.NotNil(t, envVar)
-		require.NotEmpty(t, envVar.Value)
-
 		uSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(ns).Get(context.TODO(), name, metav1.GetOptions{})
 		require.NoError(t, err)
 		s := corev1.Secret{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(uSecret.Object, &s)
 		require.NoError(t, err)
-		require.Equal(t, s.ObjectMeta.ResourceVersion, envVar.Value)
 	})
 
 	t.Run("update with extra modifier present", func(t *testing.T) {
@@ -397,6 +374,28 @@ func TestBindingWithDeploymentConfig(t *testing.T) {
 		require.Equal(t, "DeploymentConfig", list.Items[0].Object["kind"])
 	})
 
+}
+
+func TestBindEmptyApplication(t *testing.T) {
+	ns := "binder"
+	f := mocks.NewFake(t, ns)
+
+	name := "service-binding-empty-application"
+	sbr := f.AddMockedServiceBinding(name, nil, "backingServiceResourceRef", "", deploymentsGVR, nil)
+
+	binder1 := newBinder(
+		context.TODO(),
+		f.FakeDynClient(),
+		sbr,
+		&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
+	)
+	require.NotNil(t, binder1)
+
+	t.Run("Binder search should return errEmptyApplication error for service binding with empty application", func(t *testing.T) {
+		applicationList, err := binder1.search()
+		assert.Error(t, errEmptyApplication, err)
+		assert.Empty(t, applicationList)
+	})
 }
 
 func TestBindTwoApplications(t *testing.T) {

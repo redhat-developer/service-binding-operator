@@ -111,7 +111,7 @@ spec:
 EOD
 ```
 
-Check the secret `binding-request-sample` has been injected:
+Check the secret `binding-request-sample-72ddc0c540ab3a290e138726940591debf14c581` has been injected:
 
 ```shell
 kubectl get appconfigs.stable.example.com demo-appconfig -o yaml

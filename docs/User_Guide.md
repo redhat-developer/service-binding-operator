@@ -530,7 +530,7 @@ kind: AppConfig
 metadata:
     name: example-appconfig
 spec:
-    secret: some-value
+    secret: some-value-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
 In the above CR, the secret path is at `spec.secret`.  You can specify
@@ -570,7 +570,7 @@ kind: AppConfig
 metadata:
     name: example-appconfig
 spec:
-    secret: binding-request
+    secret: binding-request-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
 # Binding Metadata in Annotations

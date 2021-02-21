@@ -1,8 +1,9 @@
 package controllers
 
 import (
-	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"testing"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
@@ -179,6 +180,7 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 	f.AddMockedUnstructuredSecret("db-credentials")
 
 	cr := mocks.UnstructuredDatabaseCRMock("test", "test")
+	cr.SetUID("123")
 	reference := metav1.OwnerReference{
 		APIVersion:         cr.GetAPIVersion(),
 		Kind:               cr.GetKind(),
@@ -212,7 +214,6 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Len(t, got, 2)
-
 		expected := map[string]interface{}{
 			"": map[string]interface{}{
 				"password": "password",
@@ -220,7 +221,21 @@ func TestFindOwnedResourcesCtxs_ConfigMap(t *testing.T) {
 			},
 		}
 		require.Equal(t, expected, got[0].envVars)
+	})
 
+	t.Run("findOwnedResourcesCtxs returns no items if owner id is empty", func(t *testing.T) {
+		cr.SetUID("")
+		got, err := findOwnedResourcesCtxs(
+			logger,
+			f.FakeDynClient(),
+			cr.GetNamespace(),
+			cr.GetUID(),
+			nameTemplate,
+			false,
+			typeLookup,
+		)
+		require.NoError(t, err)
+		require.Len(t, got, 0)
 	})
 }
 
@@ -245,6 +260,7 @@ func TestFindOwnedResourcesCtxs_Secrets(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			f := mocks.NewFake(t, "test")
 			cr := mocks.UnstructuredDatabaseCRMock("test", "test")
+			cr.SetUID("123")
 			reference := metav1.OwnerReference{
 				APIVersion:         cr.GetAPIVersion(),
 				Kind:               cr.GetKind(),

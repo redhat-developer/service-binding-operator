@@ -190,7 +190,7 @@ That causes the application to be re-deployed.
 Once the new version is up, go to the application's route to check the UI. Now, it works!
 
 When the `ServiceBinding` was created the Service Binding Operator's controller injected the DB connection information into the
-application as environment variables via an intermediate `Secret` called `binding-request`:
+application as environment variables via an intermediate `Secret` called `binding-request-72ddc0c540ab3a290e138726940591debf14c581`:
 
 ```shell
 kubectl get servicebinding binding-request -o yaml
@@ -202,8 +202,9 @@ spec:
       containers:
         - envFrom:
           - secretRef:
-              name: binding-request
+              name: binding-request-72ddc0c540ab3a290e138726940591debf14c581
 ```
+The name of the binding secret has the format `Service Binding name + hash of the secret content`. So the name of binding secret changes when the content of binding secret changes.
 
 #### Check the status of Service Binding
 
@@ -228,7 +229,7 @@ status:
     lastTransitionTime: "2020-10-15T13:23:23Z"
     status: "True"
     type: InjectionReady
-  secret: binding-request
+  secret: binding-request-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
 where

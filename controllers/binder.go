@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	err "errors"
 	"fmt"
 	"path"
 	"strings"
@@ -22,9 +21,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
-
-// changeTriggerEnv hijacking environment in order to trigger a change
-const changeTriggerEnv = "ServiceBindingOperatorChangeTriggerEnvVar"
 
 const serviceBindingRootEnvVar = "SERVICE_BINDING_ROOT"
 
@@ -60,13 +56,14 @@ func (f extraFieldsModifierFunc) ModifyExtraFields(u *unstructured.Unstructured)
 // search objects based in Kind/APIVersion, which contain the labels defined in Application.
 func (b *binder) search() (*unstructured.UnstructuredList, error) {
 	// If Application name is present
-	if b.sbr.Spec.Application.Name != "" {
-		return b.getApplicationByName()
-	} else if b.sbr.Spec.Application.LabelSelector != nil && b.sbr.Spec.Application.LabelSelector.MatchLabels != nil {
-		return b.getApplicationByLabelSelector()
-	} else {
-		return nil, errEmptyApplication
+	if b.sbr.Spec.Application != nil {
+		if b.sbr.Spec.Application.Name != "" {
+			return b.getApplicationByName()
+		} else if b.sbr.Spec.Application.LabelSelector != nil && b.sbr.Spec.Application.LabelSelector.MatchLabels != nil {
+			return b.getApplicationByLabelSelector()
+		}
 	}
+	return nil, errEmptyApplication
 }
 
 func (b *binder) getApplicationByName() (*unstructured.UnstructuredList, error) {
@@ -112,28 +109,44 @@ func (b *binder) getApplicationByLabelSelector() (*unstructured.UnstructuredList
 
 // extractSpecVolumes based on volume path, extract it unstructured. It can return error on trying
 // to find data in informed Unstructured object.
-func (b *binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]interface{}, error) {
+func (b *binder) extractSpecVolumes(obj *unstructured.Unstructured) ([]corev1.Volume, error) {
+	var volumes []corev1.Volume
 	log := b.logger.WithValues("Volumes.NestedPath", b.getVolumesPath())
 	log.Debug("Reading volumes definitions...")
-	volumes, _, err := unstructured.NestedSlice(obj.Object, b.getVolumesPath()...)
+	volumesUnstructured, _, err := unstructured.NestedSlice(obj.Object, b.getVolumesPath()...)
 	if err != nil {
 		return nil, err
+	}
+	for _, v := range volumesUnstructured {
+		volume := corev1.Volume{}
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(v.(map[string]interface{}), &volume)
+		if err != nil {
+			return nil, err
+		}
+		volumes = append(volumes, volume)
 	}
 	return volumes, nil
 }
 
 // updateSpecVolumes execute the inspection and update "volumes" entries in informed spec.
 func (b *binder) updateSpecVolumes(obj *unstructured.Unstructured) error {
+	var volumesUnstructured []interface{}
 	volumes, err := b.extractSpecVolumes(obj)
 	if err != nil {
 		return err
 	}
-
 	volumes, err = b.updateVolumes(volumes)
 	if err != nil {
 		return err
 	}
-	if err = unstructured.SetNestedSlice(obj.Object, volumes, b.getVolumesPath()...); err != nil {
+	for _, v := range volumes {
+		volume, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&v)
+		if err != nil {
+			return err
+		}
+		volumesUnstructured = append(volumesUnstructured, volume)
+	}
+	if err = unstructured.SetNestedSlice(obj.Object, volumesUnstructured, b.getVolumesPath()...); err != nil {
 		return err
 	}
 	return nil
@@ -150,7 +163,7 @@ func (b *binder) removeSpecVolumes(
 		return nil, err
 	}
 	volumes = b.removeVolumes(volumes)
-	if err = unstructured.SetNestedSlice(obj.Object, volumes, b.getVolumesPath()...); err != nil {
+	if err = unstructured.SetNestedField(obj.Object, volumes, b.getVolumesPath()...); err != nil {
 		return nil, err
 	}
 	return obj, nil
@@ -158,47 +171,39 @@ func (b *binder) removeSpecVolumes(
 
 // updateVolumes inspect informed list assuming as []corev1.Volume, and if binding volume is already
 // defined just return the same list, otherwise, appending the binding volume.
-func (b *binder) updateVolumes(volumes []interface{}) ([]interface{}, error) {
+func (b *binder) updateVolumes(volumes []corev1.Volume) ([]corev1.Volume, error) {
 	name := b.sbr.GetName()
 	log := b.logger
-
 	log.Debug("Checking if binding volume is already defined...")
-	for _, v := range volumes {
-		volume, ok := v.(map[string]interface{})
-		if !ok {
-			return nil, err.New("type asserting volume to map of string to interface{} error")
+	if len(volumes) > 0 {
+		for _, v := range volumes {
+			if v.Name == name {
+				if v.Secret.SecretName == b.sbr.Status.Secret {
+					return volumes, nil
+				}
+				v.Secret.SecretName = b.sbr.Status.Secret
+			}
+			v.Name = name
 		}
-		if name == volume["name"] {
-			log.Debug("Volume is already defined!")
-			return volumes, nil
-		}
-	}
-
-	log.Debug("Appending new volume.", "Secret.Name", name)
-	bindVolume := &corev1.Volume{
-		Name: name,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: name,
+	} else {
+		volume := &corev1.Volume{
+			Name: name,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: b.sbr.Status.Secret,
+				},
 			},
-		},
+		}
+		volumes = append(volumes, *volume)
 	}
-
-	// making sure tranforming it back to unstructured before returning
-	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(bindVolume)
-	if err != nil {
-		return nil, err
-	}
-	return append(volumes, u), nil
+	return volumes, nil
 }
 
-// removeVolumes remove the bind volumes from informed list of unstructured volumes.
-func (b *binder) removeVolumes(volumes []interface{}) []interface{} {
-	name := b.sbr.GetName()
-	var cleanVolumes []interface{}
+// removeVolumes remove the Service Binding volumes from informed list of unstructured volumes.
+func (b *binder) removeVolumes(volumes []corev1.Volume) []corev1.Volume {
+	var cleanVolumes []corev1.Volume
 	for _, v := range volumes {
-		volume := v.(corev1.Volume)
-		if name != volume.Name {
+		if v.Name != b.sbr.GetName() {
 			cleanVolumes = append(cleanVolumes, v)
 		}
 	}
@@ -224,7 +229,7 @@ func (b *binder) extractSpecContainers(obj *unstructured.Unstructured) ([]interf
 // updateSecretField extract the specific secret field from
 // the object, and triggers an update.
 func (b *binder) updateSecretField(obj *unstructured.Unstructured) error {
-	return unstructured.SetNestedField(obj.Object, b.sbr.GetName(), b.getSecretFieldPath()...)
+	return unstructured.SetNestedField(obj.Object, b.sbr.Status.Secret, b.getSecretFieldPath()...)
 }
 
 // updateSpecContainers extract containers from object, and trigger update.
@@ -293,7 +298,6 @@ func (b *binder) updateContainers(containers []interface{}) ([]interface{}, erro
 			return nil, err
 		}
 	}
-
 	return containers, nil
 }
 
@@ -340,17 +344,22 @@ func (b *binder) appendEnvVar(
 	return updatedEnvList
 }
 
-// appendEnvFrom based on secret name and list of EnvFromSource instances, making sure secret is
+// updateEnvFromList based on secret name and list of EnvFromSource instances, making sure secret is
 // part of the list or appended.
-func (b *binder) appendEnvFrom(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
-	for _, env := range envList {
-		if env.SecretRef != nil && env.SecretRef.Name == secret {
-			b.logger.Debug("Directive 'envFrom' is already present!")
-			// secret name is already referenced
-			return envList
+func (b *binder) updateEnvFromList(envList []corev1.EnvFromSource, secret string) []corev1.EnvFromSource {
+	var indices []int
+	for k, env := range envList {
+		if env.SecretRef != nil {
+			if env.SecretRef.Name == secret {
+				return envList
+			} else if strings.Contains(env.SecretRef.Name, b.sbr.GetName()) {
+				indices = append(indices, k)
+			}
 		}
 	}
-
+	for _, v := range indices {
+		envList = append(envList[:v], envList[v+1:]...)
+	}
 	b.logger.Debug("Adding 'envFrom' directive...")
 	return append(envList, corev1.EnvFromSource{
 		SecretRef: &corev1.SecretEnvSource{
@@ -390,38 +399,23 @@ func (b *binder) updateContainer(container interface{}) (map[string]interface{},
 	if err != nil {
 		return nil, err
 	}
-
 	if !b.sbr.Spec.BindAsFiles {
-		c.EnvFrom = b.appendEnvFrom(c.EnvFrom, b.sbr.GetName())
+		c.EnvFrom = b.updateEnvFromList(c.EnvFrom, b.sbr.Status.Secret)
 	}
-
 	// and adding volume mount entries
 	if b.sbr.Spec.BindAsFiles {
-
 		for _, e := range c.Env {
 			if e.Name == serviceBindingRootEnvVar {
 				b.bindingRoot = e.Value
 				break
 			}
 		}
-
 		p, bindingRoot, fixedMountPath := b.mountPath()
 		c.VolumeMounts = b.appendVolumeMounts(c.VolumeMounts, p)
 		if !fixedMountPath {
 			c.Env = b.appendEnvVar(c.Env, serviceBindingRootEnvVar, bindingRoot)
 		}
 	}
-
-	secretRes := schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	existingSecret, err := b.dynClient.Resource(secretRes).Namespace(b.sbr.GetNamespace()).Get(context.TODO(), b.sbr.GetName(), metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	// add a special environment variable that is only used to trigger a change in the declaration,
-	// attempting to force a side effect (in case of a Deployment, it would result in its Pods to be
-	// restarted)
-	c.Env = b.appendEnvVar(c.Env, changeTriggerEnv, existingSecret.GetResourceVersion())
-
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(c)
 }
 
@@ -434,7 +428,7 @@ func (b *binder) removeContainer(container interface{}) (map[string]interface{},
 
 	if !b.sbr.Spec.BindAsFiles {
 		// removing intermediary secret, effectively unbinding the application
-		c.EnvFrom = b.removeEnvFrom(c.EnvFrom, b.sbr.GetName())
+		c.EnvFrom = b.removeEnvFrom(c.EnvFrom, b.sbr.Status.Secret)
 	}
 
 	if b.sbr.Spec.BindAsFiles {
@@ -547,26 +541,25 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 		log.Debug("Inspecting object...")
 
 		var err error
-		if b.sbr.Spec.Application.BindingPath.SecretPath != "" {
-			err = b.updateSecretField(updatedObj)
-			if err != nil {
-				return nil, err
+		if b.sbr.Spec.Application.BindingPath != nil {
+			if b.sbr.Spec.Application.BindingPath.SecretPath != "" {
+				err = b.updateSecretField(updatedObj)
+				if err != nil {
+					return nil, err
+				}
+			}
+			if b.sbr.Spec.Application.BindingPath.ContainersPath != "" {
+				err = b.updateSpecContainers(updatedObj)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
-
-		if b.sbr.Spec.Application.BindingPath.ContainersPath != "" {
-			err = b.updateSpecContainers(updatedObj)
-			if err != nil {
-				return nil, err
-			}
-		}
-
 		if b.sbr.Spec.BindAsFiles {
 			if err = b.updateSpecVolumes(updatedObj); err != nil {
 				return nil, err
 			}
 		}
-
 		if specsAreEqual, err := nestedUnstructuredComparison(&obj, updatedObj); err != nil {
 			log.Error(err, "Error comparing previous and updated object")
 			continue
@@ -641,7 +634,6 @@ func (b *binder) unbind() error {
 }
 
 // bind resources to intermediary secret, by searching informed ResourceKind containing the labels
-// in Application, and then updating spec.
 func (b *binder) bind() ([]*unstructured.Unstructured, error) {
 	objs, err := b.search()
 	if err != nil {

@@ -62,8 +62,8 @@ Feature: Bind an application to a service using annotations
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-a" should be changed to "EmptyApplication"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-a" should be changed to "True"
-        And Secret "binding-request-backend-a" contains "BACKEND_READY" key with value "true"
-        And Secret "binding-request-backend-a" contains "BACKEND_HOST" key with value "example.common"
+        And Secret contains "BACKEND_READY" key with value "true"
+        And Secret contains "BACKEND_HOST" key with value "example.common"
 
     Scenario: Each value in referred map from service resource gets injected into app as separate env variable
         Given Generic test application "rsa-2-service" is running
@@ -353,8 +353,9 @@ Feature: Bind an application to a service using annotations
                     kind: Backend
                     name: backend-demo-2
             """
-        And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
-        And Secret "binding-request-backend-ann-sb" does not contain "BACKEND_READY"
+        Then Secret name should be updated in Service Binding status
+        And Secret contains "BACKEND_HOST" key with value "example.com"
+        And Secret does not contain "BACKEND_READY"
         # Backend metadata.annotations for service binding is updated
         When The Custom Resource is present
             """
@@ -370,12 +371,13 @@ Feature: Bind an application to a service using annotations
             status:
                 ready: true
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
+        Then Secret name should be updated in Service Binding status
+        And jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann-sb" should be changed to "EmptyApplication"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-ann-sb" should be changed to "True"
-        And Secret "binding-request-backend-ann-sb" contains "BACKEND_READY" key with value "true"
-        And Secret "binding-request-backend-ann-sb" contains "BACKEND_HOST" key with value "example.com"
+        And Secret contains "BACKEND_READY" key with value "true"
+        And Secret contains "BACKEND_HOST" key with value "example.com"
 
 
     @negative
@@ -412,7 +414,7 @@ Feature: Bind an application to a service using annotations
         And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-ann" should be changed to "False"
         And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-ann" should be changed to "EmptyApplication"
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-ann" should be changed to "True"
-        And Secret "binding-request-backend-ann" is empty
+        And Secret is empty
         # Backend metadata.annotations not pertaining to service binding is updated
         When The Custom Resource is present
             """
@@ -427,7 +429,7 @@ Feature: Bind an application to a service using annotations
             status:
                 ready: true
             """
-        Then Secret "binding-request-backend-ann" is empty
+        Then Secret is empty
 
     @olm
     Scenario: Bind referring service using group version resource

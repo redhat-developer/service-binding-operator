@@ -141,13 +141,13 @@ status:
     lastTransitionTime: "2020-10-19T11:35:37Z"
     status: "True"
     type: InjectionReady
-  secret: binding-request
+  secret: binding-request-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
-Check the contents of `Secret` - `binding-request` by executing:
+Check the contents of `Secret` - `binding-request-72ddc0c540ab3a290e138726940591debf14c581` by executing:
 
 ```shell
-kubectl get secrets binding-request -n service-binding-demo -o yaml
+kubectl get secrets binding-request-72ddc0c540ab3a290e138726940591debf14c581 -n service-binding-demo -o yaml
 ```
 
 for the following result:
@@ -159,7 +159,7 @@ data:
 kind: Secret
 metadata:
   ...
-  name: binding-request
+  name: binding-request-72ddc0c540ab3a290e138726940591debf14c581
   namespace: service-binding-demo
   ...
 ...
@@ -168,7 +168,7 @@ metadata:
 The secret value is actually encoded with base64 so to get the actual value we need to decode it properly:
 
 ```shell
-kubectl get secret binding-request -n service-binding-demo -o jsonpath='{.data.ROUTE_HOST}' | base64 --decode
+kubectl get secret binding-request-72ddc0c540ab3a290e138726940591debf14c581 -n service-binding-demo -o jsonpath='{.data.ROUTE_HOST}' | base64 --decode
 ```
 for the following result:
 ```

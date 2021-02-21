@@ -184,7 +184,6 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		require.Equal(t, 1, len(containers))
 		require.Equal(t, 1, len(containers[0].EnvFrom))
 		require.NotNil(t, containers[0].EnvFrom[0].SecretRef)
-		require.Equal(t, reconcilerName, containers[0].EnvFrom[0].SecretRef.Name)
 
 		namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 		sbrOutput, err := r.getServiceBinding(namespacedName)
@@ -194,7 +193,15 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
-		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
+		var envList []corev1.EnvFromSource
+		envList = append(envList, corev1.EnvFromSource{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: sbrOutput.Status.Secret,
+				},
+			},
+		})
+		require.Contains(t, containers[0].EnvFrom, envList[0])
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.Ref{
@@ -301,7 +308,6 @@ func TestServiceNotFound(t *testing.T) {
 	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput2.Status.Conditions)
 	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput2.Status.Conditions)
 
-	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 }
 
@@ -359,7 +365,6 @@ func TestApplicationNotFound(t *testing.T) {
 	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput2.Status.Conditions)
 	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput2.Status.Conditions)
 
-	require.Equal(t, reconcilerName, sbrOutput2.Status.Secret)
 	require.Equal(t, 1, len(sbrOutput2.Status.Applications))
 }
 
@@ -411,13 +416,10 @@ func TestReconcilerUpdateCredentials(t *testing.T) {
 	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput3.Status.Conditions)
 	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput3.Status.Conditions)
 
-	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
 	require.Equal(t, s.Data["password"], []byte("abc123"))
 	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
-	require.Equal(t, reconcilerName, sbrOutput3.Status.Secret)
-	fetchSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Get(context.TODO(), reconcilerName, metav1.GetOptions{})
+	fetchSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(updated.GetNamespace()).Get(context.TODO(), sbrOutput3.Status.Secret, metav1.GetOptions{})
 	require.NoError(t, err)
-	require.Equal(t, fetchSecret.GetName(), reconcilerName)
 	require.Equal(t, fetchSecret.GetResourceVersion(), "")
 	require.Equal(t, 1, len(sbrOutput3.Status.Applications))
 }
@@ -467,7 +469,6 @@ func TestReconcilerReconcileWithConflictingAppSelc(t *testing.T) {
 		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
-		require.Equal(t, reconcilerName, sbrOutput.Status.Secret)
 		require.Len(t, sbrOutput.Status.Applications, 1)
 		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
 	})
@@ -560,7 +561,7 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 
 		// Get sbr after reconciling
 		namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: sbrName1}
-		sbrOutput, err := r.getServiceBinding(namespacedName)
+		sbrOutput1, err := r.getServiceBinding(namespacedName)
 		require.NoError(t, err)
 
 		// expected sbr assertion
@@ -571,12 +572,11 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			Name:    applicationResourceRef,
 		}
 
-		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
-		require.Equal(t, sbrName1, sbrOutput.Status.Secret)
-		require.Len(t, sbrOutput.Status.Applications, 1)
-		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput1.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput1.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput1.Status.Conditions)
+		require.Len(t, sbrOutput1.Status.Applications, 1)
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput1.Status.Applications[0]))
 
 		// Reconciling second sbr
 		// Second sbr reconcile request
@@ -594,7 +594,7 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 
 		// Get sbr after reconciling
 		namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: sbrName2}
-		sbrOutput, err = r.getServiceBinding(namespacedName)
+		sbrOutput2, err := r.getServiceBinding(namespacedName)
 		require.NoError(t, err)
 
 		// expected sbr assertion
@@ -605,12 +605,11 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 			Name:    applicationResourceRef,
 		}
 
-		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
-		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
-		require.Equal(t, sbrName2, sbrOutput.Status.Secret)
-		require.Len(t, sbrOutput.Status.Applications, 1)
-		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput.Status.Applications[0]))
+		requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbrOutput2.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput2.Status.Conditions)
+		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput2.Status.Conditions)
+		require.Len(t, sbrOutput2.Status.Applications, 1)
+		require.True(t, reflect.DeepEqual(expectedStatus, sbrOutput2.Status.Applications[0]))
 
 		// Get applicationResourceRef deployment
 		resourceClient := r.dynClient.Resource(deploymentsGVR).Namespace(namespacedName.Namespace)
@@ -620,10 +619,98 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, dep)
 		require.NoError(t, err)
 
+		var envList []corev1.EnvFromSource
 		// Assert SBR name with secretRef object in containers env var
 		// Expected secretRef=binding-request1
-		require.Equal(t, sbrName1, dep.Spec.Template.Spec.Containers[0].EnvFrom[0].SecretRef.LocalObjectReference.Name)
+		bindingSecret1, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get(context.TODO(), sbrOutput1.Status.Secret, metav1.GetOptions{})
+		require.NoError(t, err)
+		require.Equal(t, sbrOutput1.Status.Secret, bindingSecret1.GetName())
+		envList = append(envList, corev1.EnvFromSource{
+			ConfigMapRef: nil,
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: bindingSecret1.GetName(),
+				},
+			},
+		})
 		// Expected secretRef=binding-request2
-		require.Equal(t, sbrName2, dep.Spec.Template.Spec.Containers[0].EnvFrom[1].SecretRef.LocalObjectReference.Name)
+		bindingSecret2, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get(context.TODO(), sbrOutput2.Status.Secret, metav1.GetOptions{})
+		require.NoError(t, err)
+		require.Equal(t, sbrOutput2.Status.Secret, bindingSecret2.GetName())
+		envList = append(envList, corev1.EnvFromSource{
+			ConfigMapRef: nil,
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: bindingSecret2.GetName(),
+				},
+			},
+		})
+		require.Contains(t, dep.Spec.Template.Spec.Containers[0].EnvFrom, envList[0])
+		require.Contains(t, dep.Spec.Template.Spec.Containers[0].EnvFrom, envList[1])
 	})
+}
+
+func TestRepopulateBindingSecretOnExternalUpdate(t *testing.T) {
+	backingServiceResourceRef := "backingService"
+	matchLabels := map[string]string{
+		"connects-to": "database",
+		"environment": "reconciler",
+	}
+	f := mocks.NewFake(t, reconcilerNs)
+	f.AddMockedUnstructuredServiceBinding(reconcilerName, backingServiceResourceRef, "", deploymentsGVR, matchLabels)
+	f.AddMockedUnstructuredCSV("cluster-service-version-list")
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredDatabaseCR(backingServiceResourceRef)
+	f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+	f.AddMockedUnstructuredSecret("db-credentials")
+
+	fakeDynClient := f.FakeDynClient()
+	mapper := testutils.BuildTestRESTMapper()
+	r := &ServiceBindingReconciler{dynClient: fakeDynClient, restMapper: mapper, Scheme: f.S}
+	r.resourceWatcher = newFakeResourceWatcher(mapper)
+
+	res, err := r.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	namespacedName := types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
+	sbr, err := r.getServiceBinding(namespacedName)
+	require.NoError(t, err)
+
+	requireConditionPresentAndTrue(t, v1alpha1.CollectionReady, sbr.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbr.Status.Conditions)
+	requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbr.Status.Conditions)
+
+	bindingSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get(context.TODO(), sbr.Status.Secret, metav1.GetOptions{})
+	require.NoError(t, err)
+
+	// Update Credentials
+	secret := &corev1.Secret{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(bindingSecret.Object, secret)
+	require.NoError(t, err)
+	bindingData := make(map[string][]byte)
+	bindingData["love"] = []byte("dhriti")
+	secret.Data = bindingData
+
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
+	require.NoError(t, err)
+	updated := unstructured.Unstructured{Object: obj}
+
+	updatedSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(secret.Namespace).Update(context.TODO(), &updated, metav1.UpdateOptions{})
+	require.NoError(t, err)
+
+	secrett := &corev1.Secret{}
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(updatedSecret.Object, secrett)
+	require.NoError(t, err)
+
+	require.Equal(t, secrett.Data["love"], []byte("dhriti"))
+
+	res, err = r.Reconcile(reconcileRequest())
+	require.NoError(t, err)
+	require.False(t, res.Requeue)
+
+	bindingSecret2, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get(context.TODO(), sbr.Status.Secret, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, bindingSecret.GetName(), bindingSecret2.GetName())
+	require.Equal(t, bindingSecret.Object, bindingSecret2.Object)
 }
