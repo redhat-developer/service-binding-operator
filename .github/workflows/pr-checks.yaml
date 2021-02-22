@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples"
 
     steps:
       - name: Checkout Git Repository

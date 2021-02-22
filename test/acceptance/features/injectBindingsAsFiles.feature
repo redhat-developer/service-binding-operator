@@ -1,4 +1,3 @@
-@olm
 Feature: Bindings get injected as files in application
 
     As a user of Service Binding Operator
@@ -8,7 +7,7 @@ Feature: Bindings get injected as files in application
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-        * OLM Operator "backend" is running
+        * CustomResourceDefinition backends.stable.example.com is available
 
     Scenario: Binding is injected as files at the location of SERVICE_BINDING_ROOT env var
         Given Generic test application "generic-app-a-d-u-1" is running with binding root as "/var/data"

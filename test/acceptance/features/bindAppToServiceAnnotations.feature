@@ -324,9 +324,8 @@ Feature: Bind an application to a service using annotations
         And The application env var "BACKEND_WEBARROWS_SECONDARY" has value "secondary.example.com"
         And The application env var "BACKEND_WEBARROWS_404" has value "black-hole.example.com"
 
-    @olm
     Scenario: Backend Service metadata annotations update for service bindings gets propagated to the binding secret
-        Given OLM Operator "backend" is running
+        Given CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
@@ -381,9 +380,8 @@ Feature: Bind an application to a service using annotations
 
 
     @negative
-    @olm
     Scenario: Backend Service metadata annotations update not specific to service bindings does not get propagated to the binding secret
-        Given OLM Operator "backend" is running
+        Given CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
@@ -431,10 +429,9 @@ Feature: Bind an application to a service using annotations
             """
         Then Secret is empty
 
-    @olm
     Scenario: Bind referring service using group version resource
         Given Generic test application "binding-service-via-gvr" is running
-        * OLM Operator "backend" is running
+        * CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
@@ -467,10 +464,9 @@ Feature: Bind an application to a service using annotations
         Then Service Binding "binding-service-via-gvr" is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
 
-    @olm
     Scenario: Bind referring application using group version kind
         Given Generic test application "binding-app-via-gvk" is running
-        * OLM Operator "backend" is running
+        * CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1

@@ -1,4 +1,3 @@
-@olm
 Feature: Unbind an application from a service
 
     As a user of Service Binding Operator
@@ -7,10 +6,10 @@ Feature: Unbind an application from a service
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
+        * CustomResourceDefinition backends.stable.example.com is available
 
     Scenario: Unbind a generic test application from the backing service
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -53,8 +52,7 @@ Feature: Unbind an application from a service
 
 
     Scenario: Unbind a generic test application from the backing service when the backing service has been deleted
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend

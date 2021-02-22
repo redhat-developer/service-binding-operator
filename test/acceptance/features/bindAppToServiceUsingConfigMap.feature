@@ -7,12 +7,8 @@ Feature: Bind values from a config map referred in backing service resource
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
 
-    @olm
     Scenario: Inject into app a key from a config map referred within service resource
-        Binding definition is declared on service CRD.
-
-        Given OLM Operator "backend" is running
-        And Generic test application "cmsa-1" is running
+        Given Generic test application "cmsa-1" is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
@@ -79,12 +75,8 @@ Feature: Bind values from a config map referred in backing service resource
         Then Service Binding "cmsa-1" is ready
         And The application env var "BACKEND_CERTIFICATE" has value "certificate value"
 
-    @olm
     Scenario: Inject into app all keys from a config map referred within service resource
-        Binding definition is declared on service CRD.
-
-        Given OLM Operator "backend" is running
-        And Generic test application "cmsa-2" is running
+        Given Generic test application "cmsa-2" is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1

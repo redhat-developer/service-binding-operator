@@ -1,4 +1,3 @@
-@olm
 Feature: Bind a single application to multiple services
 
     As a user of Service Binding operator
@@ -7,9 +6,10 @@ Feature: Bind a single application to multiple services
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
+        * CustomResourceDefinition backends.stable.example.com is available
+
     Scenario: Bind two backend services by creating 2 SBRs to a single application
         Given Generic test application "myapp-2-sbrs" is running
-        * OLM Operator "backend" is running
         * The Custom Resource is present
         """
         apiVersion: stable.example.com/v1
@@ -53,7 +53,7 @@ Feature: Bind a single application to multiple services
         Then Service Binding "binding1-myapp-2-sbrs" is ready
         And "myapp-2-sbrs" deployment must contain reference to secret existing in service binding
         And The application env var "BACKEND_HOST" has value "foo"
-        
+
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
@@ -75,13 +75,12 @@ Feature: Bind a single application to multiple services
         Then Service Binding "binding2-myapp-2-sbrs" is ready
         And "myapp-2-sbrs" deployment must contain reference to secret existing in service binding
         And The application env var "BACKEND_HOST" has value "foo"
-        And The application env var "BACKEND_PORT" has value "bar" 
+        And The application env var "BACKEND_PORT" has value "bar"
         And The application got redeployed 2 times so far
         And The application does not get redeployed again with 5 minutes
 
     Scenario: Bind two backend services by creating 1 SBR to a single application
         Given Generic test application "myapp-1sbr" is running
-        * OLM Operator "backend" is running
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1

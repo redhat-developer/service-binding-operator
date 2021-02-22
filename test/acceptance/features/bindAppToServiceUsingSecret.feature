@@ -7,11 +7,9 @@ Feature: Bind values from a secret referred in backing service resource
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
 
-    @olm
     Scenario: Inject into app a key from a secret referred within service resource
         Binding definition is declared on service CRD.
-        Given OLM Operator "backend" is running
-        And Generic test application "ssa-1" is running
+        Given Generic test application "ssa-1" is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
@@ -78,11 +76,8 @@ Feature: Bind values from a secret referred in backing service resource
         Then Service Binding "ssa-1" is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
 
-    @olm
     Scenario: Inject into app all keys from a secret referred within service resource
-
-        Given OLM Operator "backend" is running
-        And Generic test application "ssa-2" is running
+        Given Generic test application "ssa-2" is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
@@ -266,26 +261,7 @@ Feature: Bind values from a secret referred in backing service resource
     Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-2" is running
-        And The Custom Resource Definition is present
-            """
-            apiVersion: apiextensions.k8s.io/v1beta1
-            kind: CustomResourceDefinition
-            metadata:
-                name: backends.stable.example.com
-            spec:
-                group: stable.example.com
-                versions:
-                  - name: v1
-                    served: true
-                    storage: true
-                scope: Namespaced
-                names:
-                    plural: backends
-                    singular: backend
-                    kind: Backend
-                    shortNames:
-                      - bk
-            """
+        And CustomResourceDefinition backends.stable.example.com is available
         And The Custom Resource is present
             """
             apiVersion: operators.coreos.com/v1alpha1
