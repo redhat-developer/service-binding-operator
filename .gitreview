@@ -1,5 +1,5 @@
 [gerrit]
 host=code.engineering.redhat.com
-defaultbranch=ocp-tools-4.5-rhel-8
+defaultbranch=ocp-tools-4.6-rhel-8
 project=service-binding-operator
 port=22
