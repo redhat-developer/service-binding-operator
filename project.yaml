@@ -1,0 +1,7 @@
+---
+project:
+  updaters:
+    - type: decorated-dockerfile
+    - type: usrc
+  build-source-generators:
+    - type: distgit-maker
