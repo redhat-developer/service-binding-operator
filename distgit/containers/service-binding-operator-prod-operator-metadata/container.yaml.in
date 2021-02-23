@@ -11,6 +11,3 @@ operator_manifests:
 
   # Relative path to your manifests dir from root of repo
   manifests_dir: manifests
-  enable_digest_pinning: ${CI_DIGEST_PINNING}
-  enable_repo_replacements: ${CI_DIGEST_PINNING}
-  enable_registry_replacements: ${CI_DIGEST_PINNING}

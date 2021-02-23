@@ -1,65 +1,45 @@
 ARG BUILD_DIR=/tmp/github.com/redhat-developer/service-binding-operator
 
-# On CI, use
-# FROM registry.svc.ci.openshift.org/ocp/builder:golang-1.13 AS builder
-
-#FROM openshift/origin-release:golang-1.13 AS builder
-#@follow_tag(rhel8/go-toolset:1.14)
-FROM rhel8/go-toolset:1.14 AS builder
+#@follow_tag(rhel8/go-toolset:1.15)
+FROM rhel8/go-toolset:1.15 AS builder
 
 USER root
-RUN dnf install -y jq
 
 ARG BUILD_DIR
 
-ENV LANG=en_US.utf8
-
-# GOPATH-ish dir structure not needed anymore
 WORKDIR $BUILD_DIR
 
 # TODO: Use a RUN command to copy over specific files/dirs in a different PR
 # Collapsing it into a single COPY to reduce layers, as of now.
 COPY ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} .
 
-RUN tar xf ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} --strip-components=1 && rm ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} 
+RUN tar xf ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR} --strip-components=1 && rm ${CI_ARCHIVE_SERVICE_BINDING_OPERATOR}
 
-#RUN curl -Lo /usr/local/bin/operator-sdk http://pkgs.devel.redhat.com/repo/containers/service-binding-operator/operator-sdk-v0.15.1-x86_64-linux-gnu/f01af7292432e048580e69e413c55dce/operator-sdk-v0.15.1-x86_64-linux-gnu && \
-#    chmod +x /usr/local/bin/operator-sdk
-
-ARG VERBOSE=2
-
-ENV GOFLAGS="-mod=vendor"
-
-RUN BUNDLE_VERSION="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
-    OPERATOR_IMAGE_REF="registry.redhat.io/ocp-tools-4-tech-preview/service-binding-rhel8-operator:${CI_CONTAINER_VERSION}" \
-    CSV_PACKAGE_NAME="rh-service-binding-operator" \
-    make build
+RUN make build
 
 
 #--------------------------------------------------------------------
-
-# On CI with pull secrets , use
-# FROM registry.redhat.io/ubi8/ubi
 
 #@follow_tag(ubi8-minimal:8-released)
 FROM ubi8-minimal:8.3
 
 ARG BUILD_DIR
 
-ENV LANG=en_US.utf8
-
-ENTRYPOINT [ "/usr/local/bin/service-binding-operator" ]
-
-COPY --from=builder $BUILD_DIR/out/operator /usr/local/bin/service-binding-operator
+WORKDIR /
+COPY --from=builder $BUILD_DIR/bin/manager .
 
 USER 10001
 
+ENTRYPOINT ["/manager"]
 
 LABEL com.redhat.component="service-binding-operator-container" \
 	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator" \
-	version="${CI_X_VERSION}.${CI_Y_VERSION}.${CI_Z_VERSION}" \
 	description="Service Binding Operator" \
 	summary="Service Binding Operator" \
 	io.openshift.tags="service,binding" \
-	maintainer="service-binding-support@redhat.com"
-
+	maintainer="service-binding-support@redhat.com" \
+	version="${CI_CONTAINER_VERSION}" \
+    io.k8s.display-name="The Service Binding Operator" \
+    io.openshift.build.source-location="${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_URL}" \
+    io.openshift.build.commit.url="${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_URL}/commit/${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_COMMIT}" \
+    io.openshift.build.commit.id="${CI_SERVICE_BINDING_OPERATOR_UPSTREAM_COMMIT}"

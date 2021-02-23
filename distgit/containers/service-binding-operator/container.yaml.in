@@ -2,9 +2,6 @@
 platforms:
     only:
         - x86_64
-compose:
-    packages:
-        - jq
 image_build_method: imagebuilder
 go:
     modules:
