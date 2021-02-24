@@ -176,7 +176,6 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 		}
 		return requeueError(err)
 	}
-
 	options := &serviceBinderOptions{
 		dynClient:              r.dynClient,
 		detectBindingResources: *sbr.Spec.DetectBindingResources,

@@ -14,6 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/controllers/secret"
+
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
@@ -90,8 +92,6 @@ type serviceBinder struct {
 	objects []*unstructured.Unstructured
 	// sbr is the ServiceBinding associated with binding.
 	sbr *v1alpha1.ServiceBinding
-	// secret is the secret associated with the Service Binding.
-	secret *secret
 }
 
 // updateServiceBinding execute update API call on a SBR request. It can return errors from
@@ -292,7 +292,13 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 
 	b.logger.Debug("Saving data on intermediary secret...")
 
-	secretObj, err := b.secret.createOrUpdate(b.envVars, b.sbr.AsOwnerReference())
+	secretObj, err := secret.WriteServiceBindingSecret(
+		b.dynClient,
+		b.sbr.GetNamespace(),
+		b.sbr.GetName(),
+		b.envVars,
+		b.sbr.AsOwnerReference(),
+	)
 	if err != nil {
 		b.logger.Error(err, "On saving secret data..")
 		return b.onError(err, b.sbr, sbrStatus, nil)
@@ -305,6 +311,12 @@ func (b *serviceBinder) bind() (reconcile.Result, error) {
 		Reason: v1alpha1.BindingInjectedReason,
 	})
 
+	// updating status of request instance
+	_, err = b.updateStatusServiceBinding(b.sbr, sbrStatus)
+	if err != nil {
+		return requeueOnConflict(err)
+	}
+	ensureDefaults(b.sbr.Spec.Application)
 	if isApplicationEmpty(b.sbr.Spec.Application) {
 		meta.SetStatusCondition(&sbrStatus.Conditions, metav1.Condition{
 			Type:    v1alpha1.InjectionReady,
@@ -419,14 +431,6 @@ func buildServiceBinder(
 		return nil, err
 	}
 
-	// FIXME(isuttonl): review whether it is possible to move Secret.Commit() and Secret.Delete() to
-	// ServiceBinder.
-	secret := newSecret(
-		options.dynClient,
-		options.sbr.GetNamespace(),
-		options.sbr.GetName(),
-	)
-
 	// FIXME(isuttonl): review whether binder can be lazily created in Bind() and Unbind(); also
 	// consider renaming to ResourceBinder
 	binder := newBinder(
@@ -445,7 +449,6 @@ func buildServiceBinder(
 		sbr:       options.sbr,
 		objects:   options.objects,
 		envVars:   options.binding.envVars,
-		secret:    secret,
 	}, nil
 }
 

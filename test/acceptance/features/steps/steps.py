@@ -199,6 +199,7 @@ def sbr_is_applied(context):
     else:
         ns = None
     assert sbr.create(sbr_yaml, ns) is not None, "Service binding not created"
+    context.sb_secret = ""
 
 
 # STEP
@@ -303,27 +304,40 @@ def quarkus_app_is_imported_as_knative_service(context, application_name):
     context.application_type = "knative"
 
 
+def get_sbr_secret_name(context):
+    openshift = Openshift()
+    output = openshift.get_resource_info_by_jsonpath("servicebindings", context.sbr_name, context.namespace.name, "{.status.secret}")
+    assert output is not None, "Failed to fetch secret name from ServiceBinding"
+    return output
+
+
+@step(u'Secret name should be updated in Service Binding status')
+def then_secret_should_be_updated(context):
+    context.sb_secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,),
+                                      check_success=lambda v: v is not None and context.sb_secret != v)
+
+
 # STEP
-
-
-@then(u'"{app_name}" deployment must contain SBR name "{sbr_name}"')
-def then_envFrom_contains(context, app_name, sbr_name):
+@then(u'"{app_name}" deployment must contain reference to secret existing in service binding')
+def then_envFrom_contains(context, app_name):
     time.sleep(60)
     openshift = Openshift()
+    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     result = openshift.get_deployment_envFrom_info(app_name, context.namespace.name)
     # Expected result from 'oc' (openshift client) v4.5
-    expected_result_oc_45 = f'secretRef:map[name:{sbr_name}]'
+    expected_result_oc_45 = f'secretRef:map[name:{secret}]'
     # Expected result from 'oc' (openshift client) v4.6+
-    expected_result_oc_46 = f'{{"secretRef":{{"name":"{sbr_name}"}}}}'
+    expected_result_oc_46 = f'{{"secretRef":{{"name":"{secret}"}}}}'
     assert re.search(re.escape(expected_result_oc_45), result) is not None or re.search(re.escape(expected_result_oc_46), result) is not None, \
-        f'\n{app_name} deployment should contain secretRef: {sbr_name} \nActual secretRef: {result}'
+        f'\n{app_name} deployment should contain secretRef: {secret} \nActual secretRef: {result}'
 
 
 # STEP
-@then(u'deployment must contain intermediate secret "{intermediate_secret_name}"')
-def envFrom_contains_intermediate_secret_name(context, intermediate_secret_name):
+@then(u'deployment must contain reference to binding secret')
+def envFrom_contains_intermediate_secret_name(context):
+    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     assert context.application.get_deployment_with_intermediate_secret(
-        intermediate_secret_name) is not None, f"There is no deployment with intermediate secret {intermediate_secret_name}"
+        secret) is not None, f"There is no deployment with intermediate secret {secret}"
 
 
 # STEP
@@ -346,22 +360,24 @@ register_type(NullableString=parse_nullable_string)
 
 
 # STEP
-@step(u'Secret "{secret_name}" contains "{secret_key}" key with value "{secret_value:NullableString}"')
-def check_secret_key_value(context, secret_name, secret_key, secret_value):
+@step(u'Secret contains "{secret_key}" key with value "{secret_value:NullableString}"')
+def check_secret_key_value(context, secret_key, secret_value):
     openshift = Openshift()
+    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     json_path = f'{{.data.{secret_key}}}'
-    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name,
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name,
                                                                   json_path) == secret_value,
                   step=5, timeout=120, ignore_exceptions=(binascii.Error,))
 
 
 # STEP
-@then(u'Secret "{secret_name}" contains "{secret_key}" key with dynamic IP addess as the value')
-def check_secret_key_with_ip_value(context, secret_name, secret_key):
+@then(u'Secret contains "{secret_key}" key with dynamic IP addess as the value')
+def check_secret_key_with_ip_value(context, secret_key):
     openshift = Openshift()
+    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     json_path = f'{{.data.{secret_key}}}'
     polling2.poll(lambda: ipaddress.ip_address(
-        openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name, json_path)),
+        openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name, json_path)),
         step=5, timeout=120, ignore_exceptions=(ValueError,))
 
 
@@ -410,10 +426,11 @@ def delete_yaml(context):
     assert result is not None, f"Unable to delete CR '{metadata_name}': {output}"
 
 
-@then(u'Secret "{secret_ref}" has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
-def verify_injected_secretRef(context, secret_ref, cr_name, crd_name, json_path):
+@then(u'Secret has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
+def verify_injected_secretRef(context, cr_name, crd_name, json_path):
     openshift = Openshift()
-    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path) == secret_ref,
+    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path) == secret,
                   step=5, timeout=400)
 
 
@@ -484,23 +501,43 @@ def validate_persistent_sb(context, sb_name):
         assert False, "Service Binding got updated"
 
 
-@given(u'Secret "{secret_name}" does not contain "{key}"')
-def check_secret_key(context, secret_name, key):
+@then(u'Secret does not contain "{key}"')
+def check_secret_key(context, key):
     openshift = Openshift()
+    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     json_path = f'{{.data.{key}}}'
-    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret_name, context.namespace.name,
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name,
                                                                   json_path) == "",
                   step=5, timeout=120, ignore_exceptions=(binascii.Error,))
 
 
-@step(u'Secret "{secret_name}" is empty')
-def validate_secret_empty(context, secret_name):
+@step(u'Secret is empty')
+def validate_secret_empty(context):
     openshift = Openshift()
+    if "sbr_name" in context:
+        secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,),
+                               check_success=lambda v: v is not None)
+        try:
+            polling2.poll(lambda: json.loads(
+                openshift.get_resource_info_by_jq("secrets", secret, context.namespace.name, ".data", wait=False)) == "null",
+                          step=5, timeout=20, ignore_exceptions=(json.JSONDecodeError,))
+        except polling2.TimeoutException:
+            pass
+    else:
+        assert False, "sbr_name not in context"
+
+
+@then(u'The application got redeployed {count} times so far')
+def check_generation(context, count):
+    context.latest_application_generation = context.application.get_generation()
+    assert context.latest_application_generation - context.original_application_generation == int(count), "Unexpected number of application redeployments"
+
+
+@then(u'The application does not get redeployed again with {time} minutes')
+def check_no_redeployment(context, time):
     try:
-        polling2.poll(lambda: json.loads(
-            openshift.get_resource_info_by_jq("secrets", secret_name, context.namespace.name, ".data",
-                                              wait=False)) == "null", step=5, timeout=20,
-                      ignore_exceptions=(json.JSONDecodeError,))
+        polling2.poll(lambda: context.application.get_generation() > context.latest_application_generation, step=5, timeout=int(time)*60)
+        assert False, "Application has redeployed again unexpectedly"
     except polling2.TimeoutException:
         pass
 
@@ -510,3 +547,13 @@ def create_deployment(context, app_name, image_ref):
     app = App(app_name, context.namespace.name, image_ref)
     if not app.is_running():
         assert app.install() is True, "Failed to create deployment."
+
+
+@given(u'Binding secret is updated')
+def update_binding_secret(context):
+    openshift = Openshift()
+    secret_yaml = yaml.full_load(context.text)
+    secret_yaml["metadata"]["name"] = context.sb_secret
+    output = openshift.apply(yaml.dump(secret_yaml), context.namespace.name)
+    result = re.search(rf'.*{context.sb_secret}.*(created|unchanged|configured)', output)
+    assert result is not None, f"Unable to apply YAML for binding secret '{context.sb_secret}': {output}"

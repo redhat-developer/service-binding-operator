@@ -462,7 +462,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			{
 				resource: "secrets",
 				verb:     "update",
-				name:     sbrSingleService.GetName(),
+				name:     sbrSingleService.Status.Secret,
 			},
 			{
 				resource: "databases",
@@ -508,7 +508,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 			{
 				resource: "secrets",
 				verb:     "update",
-				name:     sbrSingleServiceWithMappings.GetName(),
+				name:     sbrSingleServiceWithMappings.Status.Secret,
 				objAssertions: []objAssertionFunc{
 					base64StringEqual("db1", "data", "MY_DB_NAME"),
 				},

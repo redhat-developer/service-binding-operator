@@ -10,10 +10,6 @@ import (
 const (
 	// clusterServiceVersionKind the name of ClusterServiceVersion kind.
 	clusterServiceVersionKind = "ClusterServiceVersion"
-	// secretResource defines the resource name for Secrets.
-	secretResource = "secrets"
-	// secretKind defines the name of Secret kind.
-	secretKind = "Secret"
 )
 
 // requeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.

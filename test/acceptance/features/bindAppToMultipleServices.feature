@@ -7,52 +7,77 @@ Feature: Bind a single application to multiple services
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-        * PostgreSQL DB operator is installed
-
     Scenario: Bind two backend services by creating 2 SBRs to a single application
-        Given Imported Nodejs application "nodejs-app" is running
-        * DB "db-demo-1" is running
-        * DB "db-demo-2" is running
-        * Service Binding is applied
-            """
-            apiVersion: binding.operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: binding-request-1
-            spec:
-                application:
-                    name: nodejs-app
-                    group: apps
-                    version: v1
-                    resource: deployments
-                services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-1
-            """
+        Given Generic test application "myapp-2-sbrs" is running
+        * OLM Operator "backend" is running
+        * The Custom Resource is present
+        """
+        apiVersion: stable.example.com/v1
+        kind: Backend
+        metadata:
+            name: myapp-2-sbrs-service-1
+            annotations:
+                service.binding/host: path={.spec.host}
+        spec:
+            host: foo
+        """
+        * The Custom Resource is present
+        """
+        apiVersion: stable.example.com/v1
+        kind: Backend
+        metadata:
+            name: myapp-2-sbrs-service-2
+            annotations:
+                service.binding/port: path={.spec.port}
+        spec:
+            port: bar
+        """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-2
+                name: binding1-myapp-2-sbrs
             spec:
                 application:
-                    name: nodejs-app
+                    name: myapp-2-sbrs
                     group: apps
                     version: v1
                     resource: deployments
                 services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-2
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: myapp-2-sbrs-service-1
             """
-        Then Service Binding "binding-request-1" is ready
-        And Service Binding "binding-request-2" is ready
-        And "nodejs-app" deployment must contain SBR name "binding-request-1"
-        And "nodejs-app" deployment must contain SBR name "binding-request-2"
+        Then Service Binding "binding1-myapp-2-sbrs" is ready
+        And "myapp-2-sbrs" deployment must contain reference to secret existing in service binding
+        And The application env var "BACKEND_HOST" has value "foo"
+        
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding2-myapp-2-sbrs
+            spec:
+                application:
+                    name: myapp-2-sbrs
+                    group: apps
+                    version: v1
+                    resource: deployments
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: myapp-2-sbrs-service-2
+            """
+        Then Service Binding "binding2-myapp-2-sbrs" is ready
+        And "myapp-2-sbrs" deployment must contain reference to secret existing in service binding
+        And The application env var "BACKEND_HOST" has value "foo"
+        And The application env var "BACKEND_PORT" has value "bar" 
+        And The application got redeployed 2 times so far
+        And The application does not get redeployed again with 5 minutes
 
     Scenario: Bind two backend services by creating 1 SBR to a single application
         Given Generic test application "myapp-1sbr" is running

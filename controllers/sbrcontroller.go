@@ -32,9 +32,9 @@ type ResourceWatcher interface {
 
 // sbrController hold the controller instance and methods for a ServiceBinding.
 type sbrController struct {
-	Controller   controller.Controller            // controller-runtime instance
-	Client       dynamic.Interface                // kubernetes dynamic api client
-	typeLookup 		K8STypeLookup
+	Controller   controller.Controller // controller-runtime instance
+	Client       dynamic.Interface     // kubernetes dynamic api client
+	typeLookup   K8STypeLookup
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
 	logger       *log.Log                         // logger instance
 }

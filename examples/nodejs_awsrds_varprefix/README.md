@@ -363,7 +363,7 @@ status:
     lastTransitionTime: "2020-10-15T13:23:23Z"
     status: "True"
     type: InjectionReady
-  secret: mydb.to.shell-app
+  secret: mydb.to.shell-app-72ddc0c540ab3a290e138726940591debf14c581
 ```
 
 where
