@@ -193,8 +193,8 @@ deploy-crds: install
 .PHONY: stop-local
 ## Stop Local: Stop locally running operator
 stop-local:
-	$(Q)-./remove-sbr-finalizers.sh
-	$(Q)-./hack/stop-sbo-local.sh
+	$(Q)-$(HACK_DIR)/remove-sbr-finalizers.sh
+	$(Q)-$(HACK_DIR)/stop-sbo-local.sh
 
 .PHONY: test-acceptance-setup
 # Setup the environment for the acceptance tests
