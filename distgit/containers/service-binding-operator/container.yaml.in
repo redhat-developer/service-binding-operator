@@ -2,6 +2,8 @@
 platforms:
     only:
         - x86_64
+        - ppc64le
+        - s390x
 image_build_method: imagebuilder
 go:
     modules:
