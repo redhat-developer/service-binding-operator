@@ -215,4 +215,4 @@ spec:
     name: Red Hat
     url: redhat.com
   version: 0.5.0
-  replaces: rh-service-binding-operator.v0.5.0
+  replaces: rh-service-binding-operator.v0.4.0
