@@ -308,3 +308,8 @@ test-acceptance-serve-report:
 release-manifests: setup-venv prepare-operatorhub-pr
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r hack/check-python/requirements.txt
 	$(Q)$(PYTHON_VENV_DIR)/bin/python3 ./hack/release-manifest.py  $(OUTPUT_DIR)/operatorhub-pr-files/service-binding-operator/$(VERSION)/manifests/
+
+.PHONY: clean
+## Removes temp directories
+clean:
+	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
