@@ -593,7 +593,7 @@ spec:
 
 * `path`: A template representation of the path to the element in the Kubernetes resource. The value of `path` could be specified in either [JSONPath](https://kubernetes.io/docs/reference/kubectl/jsonpath/) or [GO templates](https://golang.org/pkg/text/template/)
 
-* `elementType`: Specifies if the value of the element referenced in `path` is of type `string` / `sliceOfStrings` / `sliceOfMaps`. Defaults to `string` if omitted.
+* `elementType`: Specifies if the value of the element referenced in `path` is of type `string` / `sliceOfStrings` / `sliceOfMaps` / `map`. Defaults to `string` if omitted.
 
 * `objectType`: Specifies if the value of the element indicated in `path` refers to a `ConfigMap`, `Secret` or a plain string in the current namespace!  Defaults to `Secret` if omitted and `elementType` is a non-`string`.
 
@@ -859,3 +859,13 @@ spec:
       x-descriptors:
         - service.binding:elementType=template:source={{GO TEMPLATE}}
     ```
+
+10. ### Use all the elements of Secret/ConfigMap
+
+  Requirement: *Extract a “map” from the Kubernetes resource and generate multiple fields in the binding Secret.*
+
+  Annotation
+
+  ```
+    service.binding: path={.data},elementType=map
+  ```

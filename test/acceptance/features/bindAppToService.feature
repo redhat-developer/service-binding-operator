@@ -871,3 +871,72 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-secret-updated-externally" should be changed to "True"
         And Secret contains "BACKEND_HOST" key with value "example.common"
         And Secret does not contain "host2"
+
+    Scenario: Inject all configmap keys into application
+        Given The ConfigMap is present
+            """
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+                name: example
+                annotations:
+                    service.binding: path={.data},elementType=map
+            data:
+                word: "hello"
+            """
+        * Generic test application "myapp-cm" is running
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-configmap
+            spec:
+                services:
+                -   group: ""
+                    version: v1
+                    kind: ConfigMap
+                    name: example
+                application:
+                    name: myapp-cm
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding "binding-request-configmap" is ready
+        And The application env var "CONFIGMAP_DATA_WORD" has value "hello"
+
+
+    Scenario: Inject all secret keys into application
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: example
+                annotations:
+                    service.binding: path={.data},elementType=map
+            data:
+                word: "aGVsbG8="
+            """
+        * Generic test application "myapp-secret" is running
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-secret
+            spec:
+                services:
+                -   group: ""
+                    version: v1
+                    kind: Secret
+                    name: example
+                application:
+                    name: myapp-secret
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding "binding-request-secret" is ready
+        And The application env var "SECRET_DATA_WORD" has value "aGVsbG8="
