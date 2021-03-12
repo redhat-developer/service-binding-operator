@@ -102,7 +102,6 @@ jobs:
     env:
       EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm"
       UMOCI_VERSION: "0.4.5"
-      OPERATOR_VERSION: "0.4.0"
 
     steps:
       - name: Checkout Git Repository
@@ -134,4 +133,4 @@ jobs:
           eval $(minikube docker-env)
           make OPERATOR_REPO_REF=$(minikube ip):5000/sbo SKIP_REGISTRY_LOGIN=true release-operator -o registry-login release-manifests
           kubectl apply -f out/release.yaml
-          make test-acceptance
+          make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
