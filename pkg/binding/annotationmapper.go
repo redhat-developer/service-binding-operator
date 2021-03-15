@@ -57,6 +57,11 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 	}
 
 	switch {
+	case mod.isStringElementType() && mod.isStringObjectType() && len(mod.path) == 0:
+		return &constantDefinition{
+			outputName:  outputName,
+			outputValue: m.value,
+		}, nil
 	case mod.isStringElementType() && mod.isStringObjectType():
 		return &stringDefinition{
 			outputName: outputName,

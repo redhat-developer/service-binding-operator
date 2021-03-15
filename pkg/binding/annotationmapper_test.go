@@ -265,6 +265,18 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				sourceValue: "url",
 			},
 		},
+
+		{
+			description: "constant definition",
+			builder: &annotationBackedDefinitionBuilder{
+				name:  "service.binding/Type",
+				value: "PostgreSQL",
+			},
+			expectedValue: &constantDefinition{
+				outputName:  "Type",
+				outputValue: "PostgreSQL",
+			},
+		},
 	}
 
 	for _, tc := range testCases {

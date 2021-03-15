@@ -41,6 +41,18 @@ func (m *model) hasDataField() bool {
 }
 
 func newModel(annotationValue string) (*model, error) {
+	// support for constants: annotation does not contain a Path
+	if !strings.Contains(annotationValue, string(pathModelKey)) {
+		return &model{
+			path:        nil,
+			elementType: stringElementType,
+			objectType:  stringObjectType,
+			sourceValue: "",
+			sourceKey:   "",
+			bindAs:      "",
+		}, nil
+	}
+
 	// re contains a regular expression to split the input string using '=' and ',' as separators
 	re := regexp.MustCompile("[=,]")
 

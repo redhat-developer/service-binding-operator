@@ -48,6 +48,23 @@ type DefinitionBuilder interface {
 	Build() (Definition, error)
 }
 
+type constantDefinition struct {
+	outputName  string
+	outputValue string
+}
+
+func (d *constantDefinition) Apply(u *unstructured.Unstructured) (Value, error) {
+	m := map[string]interface{}{
+		d.outputName: fmt.Sprintf("%v", d.outputValue),
+	}
+
+	return &value{v: m}, nil
+}
+
+func (d *constantDefinition) GetPath() []string { return make([]string, 0) }
+
+var _ Definition = (*constantDefinition)(nil)
+
 type stringDefinition struct {
 	outputName string
 	path       []string

@@ -869,3 +869,12 @@ spec:
   ```
     service.binding: path={.data},elementType=map
   ```
+11. ### Use a constant
+
+  Requirement: *Use a constant to be present in all binding Secrets*
+
+  Annotation
+
+  ```
+    service.binding/type: PostgreSQL
+  ```
