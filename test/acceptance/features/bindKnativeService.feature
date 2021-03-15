@@ -1,5 +1,7 @@
+@examples
 @knative
 @olm
+@openshift
 Feature: Bind knative service to a service
 
     As a user of Service Binding Operator

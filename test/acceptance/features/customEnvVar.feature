@@ -7,11 +7,10 @@ Feature: Inject custom env variable into application
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
+        * CustomResourceDefinition backends.stable.example.com is available
 
-    @olm
     Scenario: Sequence from service resource is injected into application using custom env variables without specifying annotations
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -49,10 +48,8 @@ Feature: Inject custom env variable into application
         Then Service Binding "custom-env-var-from-sequence" is ready
         And The application env var "TAGS" has value "[centos7-12.3 123]"
 
-    @olm
     Scenario: Map from service resource is injected into application using custom env variables without specifying annotations
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -90,10 +87,8 @@ Feature: Inject custom env variable into application
         Then Service Binding "custom-env-var-from-map" is ready
         And The application env var "USER_LABELS" has value "map[archive:false environment:demo]"
 
-    @olm
     Scenario: Scalar from service resource is injected into application using custom env variables without specifying annotations
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend

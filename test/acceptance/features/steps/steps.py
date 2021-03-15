@@ -341,14 +341,19 @@ def envFrom_contains_intermediate_secret_name(context):
 
 
 # STEP
+@given(u'CustomResourceDefinition backends.stable.example.com is available')
 @given(u'OLM Operator "{backend_service}" is running')
-def operator_manifest_installed(context, backend_service):
+def operator_manifest_installed(context, backend_service=None):
     openshift = Openshift()
     if "namespace" in context:
         ns = context.namespace.name
     else:
         ns = None
-    _ = openshift.apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/", backend_service + ".operator.manifest.yaml"), namespace=ns)
+
+    if backend_service is None:
+        _ = openshift.apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/backend_crd.yaml"), namespace=ns)
+    else:
+        _ = openshift.apply_yaml_file(os.path.join(os.getcwd(), "test/acceptance/resources/", backend_service + ".operator.manifest.yaml"), namespace=ns)
 
 
 @parse.with_pattern(r'.*')

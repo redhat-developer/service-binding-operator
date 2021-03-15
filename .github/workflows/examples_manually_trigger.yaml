@@ -1,0 +1,46 @@
+name: Run Examples
+
+on: workflow_dispatch
+
+env:
+  GO111MODULE: on
+  SDK_VERSION: "1.3.0"
+  OPM_VERSION: "1.15.2"
+  MINIKUBE_WANTUPDATENOTIFICATION: false
+  MINIKUBE_WANTREPORTERRORPROMPT: false
+  K8S_VERSION: "1.19.2"
+  MINIKUBE_VERSION: "1.15.1"
+  TEST_ACCEPTANCE_CLI: "kubectl"
+  CONTAINER_RUNTIME: "docker"
+
+jobs:
+  examples:
+    name: Run examples with Kubernetes and using OLM
+    runs-on: ubuntu-20.04
+
+    env:
+      TEST_ACCEPTANCE_TAGS_ARG: "--tags=~@disabled --tags=@examples --tags=~@openshift"
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.15.6"
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Setup-cli
+        uses: ./.github/actions/setup-cli
+
+      - name: Examples
+        timeout-minutes: 60
+        run: |
+          eval $(minikube docker-env)
+          make OPERATOR_REPO_REF=$(minikube ip):5000/sbo SKIP_REGISTRY_LOGIN=true release-operator -o registry-login test-acceptance-with-bundle

@@ -1,5 +1,4 @@
 @examples
-@openshift
 Feature: Verify examples provided in Service Binding Operator github repository
 
     As a user of Service Binding Operator
@@ -11,6 +10,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
         * PostgreSQL DB operator is installed
 
     # https://github.com/redhat-developer/service-binding-operator/blob/master/examples/route_k8s_resource/README.md
+    @openshift
     Scenario: Bind an application to an openshift route
         Given The openshift route is present
             """

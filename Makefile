@@ -51,9 +51,9 @@ TEST_NAMESPACE = $(shell $(HACK_DIR)/get-test-namespace $(OUTPUT_DIR))
 TEST_ACCEPTANCE_TAGS ?=
 
 ifdef TEST_ACCEPTANCE_TAGS
-TEST_ACCEPTANCE_TAGS_ARG := --tags="~@disabled" --tags="$(TEST_ACCEPTANCE_TAGS)"
+TEST_ACCEPTANCE_TAGS_ARG ?= --tags="~@disabled" --tags="~@examples" --tags="$(TEST_ACCEPTANCE_TAGS)"
 else
-TEST_ACCEPTANCE_TAGS_ARG := --tags="~@disabled"
+TEST_ACCEPTANCE_TAGS_ARG ?= --tags="~@disabled" --tags="~@examples"
 endif
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)

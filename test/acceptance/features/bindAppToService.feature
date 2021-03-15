@@ -1,4 +1,3 @@
-@olm
 Feature: Bind an application to a service
 
     As a user of Service Binding Operator
@@ -7,182 +6,301 @@ Feature: Bind an application to a service
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-        * PostgreSQL DB operator is installed
 
     @smoke
-    Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, DB and Service Binding
-        Given Imported Nodejs application "nodejs-rest-http-crud-a-d-s" is running
-        * DB "db-demo-a-d-s" is running
+    Scenario: Bind an application to backend service in the following order: Application, Service and Binding
+        Given Generic test application "gen-app-a-s-b" is running
+        * CustomResourceDefinition backends.stable.example.com is available
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: backend-secret
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-a-s-b
+                annotations:
+                    service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
+            status:
+                data:
+                    dbCredentials: backend-secret
+            """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-a-d-s
+                name: service-binding-a-s-b
             spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-a-s-b
                 application:
-                    name: nodejs-rest-http-crud-a-d-s
+                    name: gen-app-a-s-b
                     group: apps
                     version: v1
                     resource: deployments
-                services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-a-d-s
             """
-        Then Service Binding "binding-request-a-d-s" is ready
-        And application should be re-deployed
-        And application should be connected to the DB "db-demo-a-d-s"
-        And Secret contains "DATABASE_DBNAME" key with value "db-demo-a-d-s"
-        And Secret contains "DATABASE_USER" key with value "postgres"
-        And Secret contains "DATABASE_PASSWORD" key with value "password"
-        And Secret contains "DATABASE_DB_PASSWORD" key with value "password"
-        And Secret contains "DATABASE_DB_NAME" key with value "db-demo-a-d-s"
-        And Secret contains "DATABASE_DB_PORT" key with value "5432"
-        And Secret contains "DATABASE_DB_USER" key with value "postgres"
-        And Secret contains "DATABASE_DB_HOST" key with dynamic IP addess as the value
-        And Secret contains "DATABASE_DBCONNECTIONIP" key with dynamic IP addess as the value
-        And Secret contains "DATABASE_DBCONNECTIONPORT" key with value "5432"
+        Then Service Binding "service-binding-a-s-b" is ready
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Application, Service Binding and DB
-        Given Imported Nodejs application "nodejs-rest-http-crud-a-s-d" is running
-        * Service Binding is applied
+    Scenario:  Bind an application to backend service in the following order: Application, Binding and Service
+        Given Generic test application "gen-app-a-b-s" is running
+        And Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-a-s-d
+                name: service-binding-a-b-s
             spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-a-b-s
                 application:
-                    name: nodejs-rest-http-crud-a-s-d
+                    name: gen-app-a-b-s
                     group: apps
                     version: v1
                     resource: deployments
-                services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-a-s-d
             """
-        When DB "db-demo-a-s-d" is running
-        Then Service Binding "binding-request-a-s-d" is ready
-        And application should be re-deployed
-        And application should be connected to the DB "db-demo-a-s-d"
+        * CustomResourceDefinition backends.stable.example.com is available
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: backend-secret
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        When The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-a-b-s
+                annotations:
+                    service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
+            status:
+                data:
+                    dbCredentials: backend-secret
+            """
+        Then Service Binding "service-binding-a-b-s" is ready
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
     # Currently disabled as not supported by SBO
     @disabled
-    Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: DB, Service Binding and Application
-        Given DB "db-demo-d-s-a" is running
-        * Service Binding is applied
+    Scenario: Bind an application to backend service in the following order: Service, Binding and Application
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: backend-secret
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-s-b-a
+                annotations:
+                    service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
+            status:
+                data:
+                    dbCredentials: backend-secret
+            """
+        And Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-d-s-a
+                name: service-binding-s-b-a
             spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-s-b-a
                 application:
-                    name: nodejs-rest-http-crud-d-s-a
+                    name: gen-app-s-b-a
                     group: apps
                     version: v1
                     resource: deployments
-                services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-d-s-a
             """
-        When Imported Nodejs application "nodejs-rest-http-crud-d-s-a" is running
-        Then Service Binding "binding-request-d-s-a" is ready
-        And application should be re-deployed
-        And application should be connected to the DB "db-demo-d-s-a"
-
+        When Generic test application "gen-app-s-b-a" is running
+        Then Service Binding "service-binding-s-b-a" is ready
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
     # Currently disabled as not supported by SBO
     @disabled
-    Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Service Binding, Application and DB
+    Scenario: Bind an application to backend service in the following order: Binding, Application and Service
         Given Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-s-a-d
+                name: service-binding-b-a-s
             spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-b-a-s
                 application:
-                    name: nodejs-rest-http-crud-s-a-d
+                    name: gen-app-b-a-s
                     group: apps
                     version: v1
                     resource: deployments
-                services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-s-a-d
             """
-        * Imported Nodejs application "nodejs-rest-http-crud-s-a-d" is running
-        When DB "db-demo-s-a-d" is running
-        Then Service Binding "binding-request-s-a-d" is ready
-        And application should be re-deployed
-        And application should be connected to the DB "db-demo-s-a-d"
+        * Generic test application "gen-app-b-a-s" is running
+        * CustomResourceDefinition backends.stable.example.com is available
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: backend-secret
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        When The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-b-a-s
+                annotations:
+                    service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
+            status:
+                data:
+                    dbCredentials: backend-secret
+            """
+        Then Service Binding "service-binding-b-a-s" is ready
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
     # Currently disabled as not supported by SBO
     @disabled
-    Scenario: Bind an imported Node.js application to PostgreSQL database in the following order: Service Binding, DB and Application
+    Scenario: Bind an application to backend service in the following order: Binding, Service and Application
         Given Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-s-d-a
+                name: service-binding-b-s-a
             spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-b-s-a
                 application:
-                    name: nodejs-rest-http-crud-s-d-a
+                    name: gen-app-b-s-a
                     group: apps
                     version: v1
                     resource: deployments
-                services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-s-d-a
             """
-        * DB "db-demo-s-d-a" is running
-        When Imported Nodejs application "nodejs-rest-http-crud-s-d-a" is running
-        Then Service Binding "binding-request-s-d-a" is ready
-        And application should be re-deployed
-        And application should be connected to the DB "db-demo-s-d-a"
-
+        * CustomResourceDefinition backends.stable.example.com is available
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: backend-secret
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-b-s-a
+                annotations:
+                    service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
+            status:
+                data:
+                    dbCredentials: backend-secret
+            """
+        When Generic test application "gen-app-b-s-a" is running
+        Then Service Binding "service-binding-b-s-a" is ready
+        And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
+        And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
     @negative
-    Scenario: Attempt to bind a non existing application to PostgreSQL database
-        Given DB "db-demo-missing-app" is running
-        * Imported Nodejs application "nodejs-missing-app" is not running
+    Scenario: Attempt to bind a non existing application to a backend service
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: backend-secret
+            stringData:
+                username: AzureDiamond
+                password: hunter2
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-missing-app
+                annotations:
+                    service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
+            status:
+                data:
+                    dbCredentials: backend-secret
+            """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-missing-app
+                name: service-binding-missing-app
             spec:
                 application:
-                    name: nodejs-missing-app
+                    name: gen-missing-app
                     group: apps
                     version: v1
                     resource: deployments
                 services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-missing-app
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-missing-app
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-missing-app" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-missing-app" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-missing-app" should be changed to "ApplicationNotFound"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-missing-app" should be changed to "False"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "service-binding-missing-app" should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "service-binding-missing-app" should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "service-binding-missing-app" should be changed to "ApplicationNotFound"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "service-binding-missing-app" should be changed to "False"
+
 
     @negative
     Scenario: Service Binding without application selector
-        Given OLM Operator "backend" is running
+        Given CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
@@ -217,7 +335,7 @@ Feature: Bind an application to a service
         And Secret contains "BACKEND_USERNAME" key with value "foo"
 
     Scenario: Backend Service status update gets propagated to the binding secret
-        Given OLM Operator "backend" is running
+        Given CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
@@ -275,8 +393,8 @@ Feature: Bind an application to a service
 
 
     Scenario: Backend Service status update gets propagated to the application
-        Given OLM Operator "backend" is running
-        * Generic test application "generic-app-demo-volume-mount" is running
+        Given Generic test application "generic-app-demo-volume-mount" is running
+        * CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
@@ -344,7 +462,7 @@ Feature: Bind an application to a service
             """
             true
             """
-
+    @olm
     Scenario: Backend Service new spec status update gets propagated to the binding secret
         Given OLM Operator "backend-new-spec" is running
         * The Custom Resource is present
@@ -381,35 +499,48 @@ Feature: Bind an application to a service
         And Secret contains "BACKEND_PORTS_FTP" key with value "22"
         And Secret contains "BACKEND_PORTS_TCP" key with value "8080"
 
-
     Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
-        Given Imported Nodejs application "nodejs-rest-http-crud-a-d-c" is running
-        * DB "db-demo-a-d-c" is running
+        Given Generic test application "gen-app-c-e" is running
+        * CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: service-c-e
+                annotations:
+                    service.binding/port: path={.data.port}
+                    service.binding/host: path={.data.host}
+            data:
+                port: "8080"
+                host: "127.0.0.1"
+            """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-a-d-c
+                name: service-binding-c-e
             spec:
                 application:
-                    name: nodejs-rest-http-crud-a-d-c
+                    name: gen-app-c-e
                     group: apps
                     version: v1
                     resource: deployments
                 services:
-                -   group: postgresql.baiju.dev
-                    version: v1alpha1
-                    kind: Database
-                    name: db-demo-a-d-c
-                    id: postgresDB
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-c-e
+                    id: backendSVC
                 mappings:
-                    - name: SOME_KEY
-                      value: 'SOME_VALUE:{{ .postgresDB.status.dbConnectionPort }}:{{ .postgresDB.status.dbName }}'
+                    - name: HOST_ADDR
+                      value: '{{ .backendSVC.data.host }}:{{ .backendSVC.data.port }}'
             """
-        Then Service Binding "binding-request-a-d-c" is ready
-        And Secret contains "SOME_KEY" key with value "SOME_VALUE:5432:db-demo-a-d-c"
+        Then Service Binding "service-binding-c-e" is ready
+        And The application env var "HOST_ADDR" has value "127.0.0.1:8080"
 
+    @olm
     Scenario: Creating binding secret from the definitions managed in OLM operator descriptors
         Given Backend service CSV is installed
             """
@@ -517,6 +648,7 @@ Feature: Bind an application to a service
 
     # This test scenario is disabled until the issue is resolved: https://github.com/redhat-developer/service-binding-operator/issues/656
     @disabled
+    @olm
     Scenario: Create binding secret using specDescriptors definitions managed in OLM operator descriptors
         Given Backend service CSV is installed
             """
@@ -588,6 +720,7 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "sbr-csv-attribute" should be changed to "True"
         And Secret contains "BACKSERV_ENV_SVCNAME" key with value "demo-backserv-cr-1"
 
+    @examples
     Scenario: Bind an imported Node.js application to Etcd database
         Given Etcd operator running
         * Etcd cluster "etcd-cluster-example" is running
@@ -645,8 +778,7 @@ Feature: Bind an application to a service
 
     @negative
     Scenario: Removing service from services field from existing serivce binding is not allowed
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -708,9 +840,11 @@ Feature: Bind an application to a service
         And Service Binding "binding-request-empty-spec" is not persistent in the cluster
 
     @negative
+    # Adding olm tag due to flakiness of this test on non-olm ci
+    # This tests are also run on openshift and k8s with olm CI so no harm in skipping on non-olm CI run
+    @olm
     Scenario: Emptying spec of existing service binding is not allowed
-        Given OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -746,8 +880,11 @@ Feature: Bind an application to a service
         And Service Binding "binding-request-emptying-spec" is not updated
 
     @negative
+    # Adding olm tag due to flakiness of this test on non-olm ci
+    # This tests are also run on openshift and k8s with olm CI so no harm in skipping non-olm CI run
+    @olm
     Scenario: Removing spec of existing service binding is not allowed
-        Given OLM Operator "backend" is running
+        Given CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
@@ -790,7 +927,6 @@ Feature: Bind an application to a service
             metadata:
                 name: backend-services
             """
-        * OLM Operator "backend" is running
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
@@ -826,7 +962,8 @@ Feature: Bind an application to a service
         Then Service Binding "binding-request-cross-ns-service" is ready
         And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"
 
-    Scenario: Binding secret is repopulated on external update 
+    @olm
+    Scenario: Binding secret is repopulated on external update
         Given OLM Operator "backend-new-spec" is running
         * The Custom Resource is present
             """

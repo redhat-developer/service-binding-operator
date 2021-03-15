@@ -1,4 +1,3 @@
-@olm
 Feature: Bind an application to a service using custom naming strategies
 
     As a user of Service Binding Operator
@@ -7,11 +6,10 @@ Feature: Bind an application to a service using custom naming strategies
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
-        * PostgreSQL DB operator is installed
+        * CustomResourceDefinition backends.stable.example.com is available
 
     Scenario: Bind an application to a service with no naming strategy specified
-        * OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
@@ -45,8 +43,7 @@ Feature: Bind an application to a service using custom naming strategies
         And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"
 
     Scenario: Bind an application to a service with naming strategy none
-        * OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
@@ -81,8 +78,7 @@ Feature: Bind an application to a service using custom naming strategies
         And The application env var "host_cross_ns_service" has value "cross.ns.service.stable.example.com"
 
     Scenario: Bind an application to a service with custom naming strategy
-        * OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
@@ -117,8 +113,7 @@ Feature: Bind an application to a service using custom naming strategies
         And The application env var "PREFIX_BACKEND_HOST_CROSS_NS_SERVICE_SUFFIX" has value "cross.ns.service.stable.example.com"
 
     Scenario: Bind an application to a service with bind as file and no naming strategy
-        * OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
@@ -157,8 +152,7 @@ Feature: Bind an application to a service using custom naming strategies
             """
 
     Scenario: Bind an application to a service with bind files and custom naming strategy
-        * OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
@@ -199,8 +193,7 @@ Feature: Bind an application to a service using custom naming strategies
 
     @error-naming
     Scenario: Bind an application to a service with naming strategy error
-        * OLM Operator "backend" is running
-        * The Custom Resource is present
+        Given The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
