@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=@smoke"
       TEST_RUN: Acceptance_tests_Kubernetes_with_OLM
 
     steps:
@@ -104,7 +104,8 @@ jobs:
 
       - name: Publish tests results to Testspace
         run: |
-          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}
+          pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }} "PR-$pull_number?full#kubernetes-with-olm"
         if: always()
 
       - uses: actions/upload-artifact@v2
@@ -118,7 +119,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm --tags=@smoke"
       TEST_RUN: Acceptance_tests_Kubernetes_without_OLM
       UMOCI_VERSION: "0.4.5"
 
@@ -162,7 +163,8 @@ jobs:
 
       - name: Publish tests results to Testspace
         run: |
-          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}
+          pull_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }} "PR-$pull_number?full#kubernetes-with-olm"
         if: always()
 
       - uses: actions/upload-artifact@v2
