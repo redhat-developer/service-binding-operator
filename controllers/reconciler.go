@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"errors"
+
 	"github.com/redhat-developer/service-binding-operator/pkg/naming"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -192,32 +193,6 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 		// just bail out without re-queueing nor updating conditions.
 		logger.Error(err, "Building ServiceBinder")
 		return noRequeue(err)
-	}
-
-	if sbr.Spec.Application != nil {
-		gvr, err := r.ResourceForReferable(sbr.Spec.Application)
-		if err != nil {
-			logger.Error(err, "Error getting application GVR")
-		} else {
-			err = r.resourceWatcher.AddWatchForGVR(*gvr)
-			if err != nil {
-				logger.Error(err, "Error add watching application GVR")
-			}
-		}
-	}
-
-	if sbr.Spec.Services != nil {
-		for _, service := range sbr.Spec.Services {
-			gvr, err := r.ResourceForReferable(&service)
-			if err != nil {
-				logger.Error(err, "Error getting backing service GVR")
-			}
-
-			err = r.resourceWatcher.AddWatchForGVR(*gvr)
-			if err != nil {
-				logger.Error(err, "Error add watching backing service GVK")
-			}
-		}
 	}
 
 	if sbr.GetDeletionTimestamp() != nil && sbr.GetOwnerReferences() != nil {

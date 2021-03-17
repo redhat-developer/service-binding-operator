@@ -7,11 +7,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const (
-	// clusterServiceVersionKind the name of ClusterServiceVersion kind.
-	clusterServiceVersionKind = "ClusterServiceVersion"
-)
-
 // requeueOnNotFound inspect error, if not-found then returns Requeue, otherwise expose the error.
 func requeueOnNotFound(err error, requeueAfter int64) (reconcile.Result, error) {
 	if errors.IsNotFound(err) {

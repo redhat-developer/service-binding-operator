@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
@@ -235,68 +234,6 @@ func buildDescriptorsFromAnnotations(in map[string]string) (
 	}
 
 	return specDescriptors, statusDescriptors, nil
-}
-
-// extractGVKs loop owned objects and extract the GVK information from them.
-func (o *olm) extractGVKs(
-	crdDescriptions []unstructured.Unstructured,
-) ([]schema.GroupVersionKind, error) {
-	log := o.logger
-	gvks := []schema.GroupVersionKind{}
-	err := o.loopCRDDescriptions(crdDescriptions, func(crdDescription *olmv1alpha1.CRDDescription) {
-		log.Debug("Extracting GVK from CRDDescription", "CRDDescription.Name", crdDescription.Name)
-		_, gv := schema.ParseResourceArg(crdDescription.Name)
-		gvks = append(gvks, schema.GroupVersionKind{
-			Group:   gv.Group,
-			Version: crdDescription.Version,
-			Kind:    crdDescription.Kind,
-		})
-	})
-	if err != nil {
-		return []schema.GroupVersionKind{}, err
-	}
-	return gvks, nil
-}
-
-// listCSVOwnedCRDsAsGVKs return the list of owned CRDs from all CSV objects as a list of GVKs.
-func (o *olm) listCSVOwnedCRDsAsGVKs() ([]schema.GroupVersionKind, error) {
-	log := o.logger
-	ownedCRDs, err := o.ListCSVOwnedCRDs()
-	if err != nil {
-		log.Error(err, "on listting CSVs")
-		return nil, err
-	}
-	return o.extractGVKs(ownedCRDs)
-}
-
-// listGVKsFromCSVNamespacedName return the list of owned GVKs for a given CSV namespaced named.
-func (o *olm) listGVKsFromCSVNamespacedName(
-	namespacedName types.NamespacedName,
-) ([]schema.GroupVersionKind, error) {
-	log := o.logger.WithValues("CSV.NamespacedName", namespacedName)
-	log.Debug("Reading CSV to extract GVKs...")
-	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
-	resourceClient := o.client.Resource(gvr).Namespace(namespacedName.Namespace)
-	u, err := resourceClient.Get(context.TODO(), namespacedName.Name, metav1.GetOptions{})
-	if err != nil {
-		// the CSV might have disappeared between discovery and check, so not found is not an error
-		if errors.IsNotFound(err) {
-			return []schema.GroupVersionKind{}, nil
-		}
-		log.Error(err, "on reading CSV object")
-		return []schema.GroupVersionKind{}, err
-	}
-
-	unstructuredCSV := *u
-	csvs := []unstructured.Unstructured{unstructuredCSV}
-
-	ownedCRDs, err := o.extractOwnedCRDs(csvs)
-	if err != nil {
-		log.Error(err, "on extracting owned CRDs")
-		return []schema.GroupVersionKind{}, err
-	}
-
-	return o.extractGVKs(ownedCRDs)
 }
 
 // newOLM instantiate a new OLM.

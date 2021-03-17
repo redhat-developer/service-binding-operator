@@ -3,9 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"strings"
 	"testing"
+
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/test/mocks"
@@ -14,22 +15,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	k8stesting "k8s.io/client-go/testing"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func init() {
 	log.SetLogger(zap.New(zap.UseDevMode((true))))
-}
-
-func assertGVKs(t *testing.T, gvks []schema.GroupVersionKind) {
-	for _, gvk := range gvks {
-		t.Logf("Inspecting GVK: '%s'", gvk)
-		require.NotEmpty(t, gvk.Group)
-		require.NotEmpty(t, gvk.Version)
-		require.NotEmpty(t, gvk.Kind)
-	}
 }
 
 func TestOLMWithoutCSVCRD(t *testing.T) {
@@ -93,20 +84,5 @@ func TestOLMNew(t *testing.T) {
 		require.NotNil(t, crd)
 		expectedCRDName := strings.ToLower(fmt.Sprintf("%s.%s", mocks.CRDKind, mocks.CRDName))
 		require.Equal(t, expectedCRDName, crd.Name)
-	})
-
-	t.Run("ListCSVOwnedCRDsAsGVKs", func(t *testing.T) {
-		gvks, err := olm.listCSVOwnedCRDsAsGVKs()
-		require.NoError(t, err)
-		require.Len(t, gvks, 1)
-		assertGVKs(t, gvks)
-	})
-
-	t.Run("ListGVKsFromCSVNamespacedName", func(t *testing.T) {
-		namespacedName := types.NamespacedName{Namespace: ns, Name: csvName}
-		gvks, err := olm.listGVKsFromCSVNamespacedName(namespacedName)
-		require.NoError(t, err)
-		require.Len(t, gvks, 1)
-		assertGVKs(t, gvks)
 	})
 }

@@ -35,11 +35,10 @@ var reconcilerLog = log.NewLog("reconciler")
 // ServiceBindingReconciler reconciles a ServiceBinding object
 type ServiceBindingReconciler struct {
 	client.Client
-	Log             logr.Logger
-	Scheme          *runtime.Scheme
-	dynClient       dynamic.Interface // kubernetes dynamic api client
-	resourceWatcher ResourceWatcher   // ResourceWatcher to add watching for specific GVK/GVR
-	restMapper      meta.RESTMapper
+	Log        logr.Logger
+	Scheme     *runtime.Scheme
+	dynClient  dynamic.Interface // kubernetes dynamic api client
+	restMapper meta.RESTMapper
 }
 
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
@@ -85,6 +84,5 @@ func (r *ServiceBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		watchingGVKs: make(map[schema.GroupVersionKind]bool),
 		logger:       log.NewLog("sbrcontroller"),
 	}
-	r.resourceWatcher = sbr
 	return sbr.Watch()
 }
