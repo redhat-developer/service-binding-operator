@@ -140,10 +140,12 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 					metav1.Condition{
 						Type:   v1alpha1.InjectionReady,
 						Status: metav1.ConditionFalse,
+						Reason: v1alpha1.ServiceNotFoundReason,
 					},
 					metav1.Condition{
 						Type:   v1alpha1.BindingReady,
 						Status: metav1.ConditionFalse,
+						Reason: v1alpha1.ServiceNotFoundReason,
 					},
 				)
 				if err != nil {
