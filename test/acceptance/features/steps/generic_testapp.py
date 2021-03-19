@@ -49,6 +49,12 @@ def is_running(context, application_name, bindingRoot=None):
     context.latest_application_generation = application.get_generation()
 
 
+@step(u'Application "{application_name}" is deleted')
+def delete_application(context, application_name):
+    application = GenericTestApp(application_name, context.namespace.name)
+    application.delete()
+
+
 @step(u'The application env var "{name}" has value "{value}"')
 def check_env_var_value(context, name, value):
     found = polling2.poll(lambda: context.application.get_env_var_value(name) == value, step=5, timeout=400)

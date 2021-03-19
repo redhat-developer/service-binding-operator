@@ -224,7 +224,7 @@ def then_app_is_connected_to_db(context, db_name):
     polling2.poll(lambda: context.application.get_response_from_api(endpoint=db_endpoint) == db_name, step=5, timeout=600)
 
 
-@when(u'Service binding "{sb_name}" is deleted')
+@step(u'Service binding "{sb_name}" is deleted')
 def service_binding_is_deleted(context, sb_name):
     openshift = Openshift()
     openshift.delete_service_binding(sb_name, context.namespace.name)
@@ -413,8 +413,7 @@ def apply_yaml(context):
 
 
 # STEP
-@given(u'BackingService is deleted')
-@when(u'BackingService is deleted')
+@step(u'BackingService is deleted')
 def delete_yaml(context):
     openshift = Openshift()
     metadata = yaml.full_load(context.text)["metadata"]

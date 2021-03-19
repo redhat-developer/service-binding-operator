@@ -29,6 +29,11 @@ class App(object):
                                            check_success=lambda v: v != "", step=1, timeout=100)
         return running
 
+    def delete(self):
+        (output, exit_code) = self.cmd.run(
+            f"{ctx.cli} delete --wait=true --timeout=120s deployment/{self.name} -n {self.namespace}")
+        assert exit_code == 0, f"Unexpected exit code ({exit_code}) while deleting application '{self.name}': {output}"
+
     def install(self, bindingRoot=None):
         self.openshift.new_app(self.name, self.app_image, self.namespace, bindingRoot)
         self.openshift.expose_service_route(self.name, self.namespace, self.port)

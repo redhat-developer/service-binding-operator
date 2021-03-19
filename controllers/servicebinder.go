@@ -142,8 +142,11 @@ func (b *serviceBinder) unbind() (reconcile.Result, error) {
 	}
 
 	if err := b.binder.unbind(); err != nil {
-		logger.Error(err, "On unbinding related objects")
-		return requeueError(err)
+		if !errors.Is(err, errApplicationNotFound) {
+			logger.Error(err, "On unbinding related objects")
+			return requeueError(err)
+		}
+		b.logger.Info("Bound application has been deleted! Will not requeue the error and continue to remove the finalizer", "sbr.Namespace", b.binder.sbr.Namespace, "sbr.Name", b.binder.sbr.Name)
 	}
 
 	logger.Debug("Removing resource finalizers...")
