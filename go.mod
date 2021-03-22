@@ -5,6 +5,7 @@ go 1.15
 require (
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/go-cmp v0.5.2
 	github.com/imdario/mergo v0.3.10
 	github.com/mitchellh/copystructure v1.0.0
