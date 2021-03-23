@@ -1,14 +1,6 @@
 package controllers
 
 import (
-	"context"
-	"os"
-	"reflect"
-	"strings"
-
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -20,15 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/log"
 )
-
-// ResourceWatcher add watching for GroupVersionKind/GroupVersionResource
-type ResourceWatcher interface {
-	AddWatchForGVR(schema.GroupVersionResource) error
-	AddWatchForGVK(schema.GroupVersionKind) error
-}
 
 // sbrController hold the controller instance and methods for a ServiceBinding.
 type sbrController struct {
@@ -38,8 +23,6 @@ type sbrController struct {
 	watchingGVKs map[schema.GroupVersionKind]bool // cache to identify GVKs on watch
 	logger       *log.Log                         // logger instance
 }
-
-var _ ResourceWatcher = (*sbrController)(nil)
 
 // controllerName common name of this controller
 const controllerName = "servicebinding-controller"
@@ -83,155 +66,6 @@ func (s *sbrController) createUnstructuredWithGVK(gvk schema.GroupVersionKind) *
 	return u
 }
 
-// getWatchingGVKs return a list of GVKs that this controller is interested in watching.
-func (s *sbrController) getWatchingGVKs() ([]schema.GroupVersionKind, error) {
-	log := s.logger
-	// standard resources types
-	gvks := []schema.GroupVersionKind{
-		{Group: "", Version: "v1", Kind: "Secret"},
-		{Group: "", Version: "v1", Kind: "ConfigMap"},
-	}
-
-	olm := newOLM(s.Client, os.Getenv("WATCH_NAMESPACE"))
-	olmGVKs, err := olm.listCSVOwnedCRDsAsGVKs()
-	if err != nil {
-		log.Error(err, "On listing owned CSV as GVKs")
-		return nil, err
-	}
-	log.Debug("Amount of GVK founds in CSV objects.", "CSVOwnedGVK.Amount", len(olmGVKs))
-	return append(gvks, olmGVKs...), nil
-}
-
-// isOfKind evaluates whether the given object has a specific kind.
-func isOfKind(obj runtime.Object, kind string) bool {
-	return strings.EqualFold(obj.GetObjectKind().GroupVersionKind().Kind, kind)
-}
-
-// check whether annotations specify bindings
-func isAnnotationValid(ann map[string]string) bool {
-	for k := range ann {
-		if strings.HasPrefix(k, binding.AnnotationPrefix) {
-			return true
-		}
-	}
-	return false
-}
-
-// updateEvent returns a predicate handler function.
-func updateFunc(logger *log.Log) func(updateEvent event.UpdateEvent) bool {
-	return func(e event.UpdateEvent) bool {
-		isSecret := isOfKind(e.ObjectNew, "Secret")
-		isConfigMap := isOfKind(e.ObjectNew, "ConfigMap")
-
-		if isSecret || isConfigMap {
-			dataFieldsAreEqual, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "data")
-			if err != nil {
-				logger.Error(err, "error comparing object fields")
-				// an error is returned in the case one of the compared objects doesn't have the data
-				// field; this can happen when there's no data to be stored so update should be
-				// processed
-				return true
-			}
-			logger.Debug("Predicate evaluated for Secret/ConfigMap", "dataFieldsAreEqual", dataFieldsAreEqual.Success)
-			return !dataFieldsAreEqual.Success
-		}
-
-		var specsAreEqual bool
-		var statusAreEqual bool
-
-		if specComparison, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "spec"); err != nil {
-			logger.Error(err, "error comparing object's spec fields: %s", err.Error())
-			return false
-		} else {
-			specsAreEqual = specComparison.Success
-		}
-
-		if statusComparison, err := compareObjectFields(e.ObjectOld, e.ObjectNew, "status"); err != nil {
-			logger.Error(err, "error comparing object's status fields", err.Error())
-			statusAreEqual = false
-		} else {
-			statusAreEqual = statusComparison.Success
-		}
-		annotationsAreEqual := true
-		annOld := e.MetaOld.GetAnnotations()
-		annNew := e.MetaNew.GetAnnotations()
-		if isAnnotationValid(annOld) && isAnnotationValid(annNew) {
-			annotationsAreEqual = reflect.DeepEqual(annOld, annNew)
-		}
-		shouldReconcile := !specsAreEqual || !statusAreEqual || !annotationsAreEqual
-
-		logger.Debug("Resource update event received",
-			"GVK", e.ObjectNew.GetObjectKind().GroupVersionKind(),
-			"Name", e.MetaNew.GetName(),
-			"SpecsAreEqual", specsAreEqual,
-			"StatusAreEqual", statusAreEqual,
-			"ShouldReconcile", shouldReconcile,
-		)
-		return shouldReconcile
-	}
-}
-
-// buildGVKPredicate construct the predicates for all other GVKs, unless SBR.
-func buildGVKPredicate(logger *log.Log) predicate.Funcs {
-	logger = logger.WithName("buildGVKPredicate")
-	return predicate.Funcs{
-		UpdateFunc: updateFunc(logger),
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			// evaluates to false if the object has been confirmed deleted
-			return !e.DeleteStateUnknown
-		},
-	}
-}
-
-// AddWatchForGVK creates a watch on a given GVK, as long as it's not duplicated.
-func (s *sbrController) AddWatchForGVK(gvk schema.GroupVersionKind) error {
-	logger := s.logger.WithValues("GVK", gvk)
-	logger.Trace("Adding watch for GVK...")
-	if _, exists := s.watchingGVKs[gvk]; exists {
-		logger.Trace("Skipping watch on GVK twice, it's already under watch!")
-		return nil
-	}
-
-	// saving GVK in cache
-	s.watchingGVKs[gvk] = true
-
-	logger.Debug("Creating watch on GVK")
-	src := s.createSourceForGVK(gvk)
-	return s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), buildGVKPredicate(logger))
-}
-
-// AddWatchForGVR creates a watch on a given GVR
-func (s *sbrController) AddWatchForGVR(gvr schema.GroupVersionResource) error {
-	gvk, err := s.typeLookup.KindForResource(gvr)
-	if err != nil {
-		return err
-	}
-	return s.AddWatchForGVK(*gvk)
-}
-
-// addCSVWatch creates a watch on ClusterServiceVersion.
-func (s *sbrController) addCSVWatch() error {
-	log := s.logger
-	gvr := olmv1alpha1.SchemeGroupVersion.WithResource(csvResource)
-	resourceClient := s.Client.Resource(gvr).Namespace(os.Getenv("WATCH_NAMESPACE"))
-	_, err := resourceClient.List(context.TODO(), metav1.ListOptions{})
-	if err != nil && errors.IsNotFound(err) {
-		log.Warning("ClusterServiceVersions CRD is not installed, skip watching")
-		return nil
-	} else if err != nil {
-		return err
-	}
-	csvGVK := olmv1alpha1.SchemeGroupVersion.WithKind(clusterServiceVersionKind)
-	source := s.createSourceForGVK(csvGVK)
-	err = s.Controller.Watch(source, NewCreateWatchEventHandler(s))
-	if err != nil {
-		return err
-	}
-	log.Debug("Watch added for ClusterServiceVersion", "GVK", csvGVK)
-
-	return nil
-}
-
 // buildSBRPredicate construct the predicates for service-bindings.
 func buildSBRPredicate(logger *log.Log) predicate.Funcs {
 	logger = logger.WithName("buildSBRPredicate")
@@ -270,7 +104,7 @@ func buildSBRPredicate(logger *log.Log) predicate.Funcs {
 
 // addSBRWatch creates a watchon ServiceBinding GVK.
 func (s *sbrController) addSBRWatch() error {
-	l := s.logger.WithValues("GKV", v1alpha1.GroupVersionKind)
+	l := s.logger.WithValues("GVK", v1alpha1.GroupVersionKind)
 	src := s.createSourceForGVK(v1alpha1.GroupVersionKind)
 	err := s.Controller.Watch(src, s.newEnqueueRequestsForSBR(), buildSBRPredicate(l))
 	if err != nil {
@@ -282,46 +116,12 @@ func (s *sbrController) addSBRWatch() error {
 	return nil
 }
 
-// addWhitelistedGVKWatches create watch on GVKs employed on CSVs.
-func (s *sbrController) addWhitelistedGVKWatches() error {
-	log := s.logger
-	// list of interesting GVKs to watch
-	gvks, err := s.getWatchingGVKs()
-	if err != nil {
-		log.Error(err, "on retrieving list of GVKs to watch")
-		return err
-	}
-
-	for _, gvk := range gvks {
-		log.Debug("Adding watch for whitelisted GVK...", "GVK", gvk)
-		err = s.AddWatchForGVK(gvk)
-		if err != nil {
-			log.Error(err, "on creating watch for GVK")
-			return err
-		}
-	}
-
-	return nil
-}
-
 // Watch setup "watch" for all GVKs relevant for SBRController.
 func (s *sbrController) Watch() error {
 	log := s.logger
 	err := s.addSBRWatch()
 	if err != nil {
 		log.Error(err, "on adding watch for ServiceBinding")
-		return err
-	}
-
-	err = s.addWhitelistedGVKWatches()
-	if err != nil {
-		log.Error(err, "on adding watch for whitelisted GVKs")
-		return err
-	}
-
-	err = s.addCSVWatch()
-	if err != nil {
-		log.Error(err, "on adding watch for ClusterServiceVersion")
 		return err
 	}
 
