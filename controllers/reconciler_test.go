@@ -152,8 +152,8 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 
 		containers := d.Spec.Template.Spec.Containers
 		require.Equal(t, 1, len(containers))
-		require.Equal(t, 1, len(containers[0].EnvFrom))
-		require.NotNil(t, containers[0].EnvFrom[0].SecretRef)
+		require.Equal(t, 1, len(containers[0].VolumeMounts))
+		require.NotNil(t, containers[0].VolumeMounts[0].Name)
 
 		namespacedName = types.NamespacedName{Namespace: reconcilerNs, Name: reconcilerName}
 		sbrOutput, err := r.getServiceBinding(namespacedName)
@@ -163,15 +163,12 @@ func TestReconcilerReconcileUsingSecret(t *testing.T) {
 		requireConditionPresentAndTrue(t, v1alpha1.InjectionReady, sbrOutput.Status.Conditions)
 		requireConditionPresentAndTrue(t, v1alpha1.BindingReady, sbrOutput.Status.Conditions)
 
-		var envList []corev1.EnvFromSource
-		envList = append(envList, corev1.EnvFromSource{
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: sbrOutput.Status.Secret,
-				},
-			},
+		var volumeList []corev1.VolumeMount
+		volumeList = append(volumeList, corev1.VolumeMount{
+			Name:      sbrOutput.Name,
+			MountPath: "/bindings/" + sbrOutput.Name,
 		})
-		require.Contains(t, containers[0].EnvFrom, envList[0])
+		require.Contains(t, containers[0].VolumeMounts, volumeList[0])
 
 		require.Equal(t, 1, len(sbrOutput.Status.Applications))
 		expectedStatus := v1alpha1.Ref{
@@ -579,33 +576,25 @@ func TestBindTwoSbrsWithSingleApplication(t *testing.T) {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, dep)
 		require.NoError(t, err)
 
-		var envList []corev1.EnvFromSource
 		// Assert SBR name with secretRef object in containers env var
 		// Expected secretRef=binding-request1
 		bindingSecret1, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get(context.TODO(), sbrOutput1.Status.Secret, metav1.GetOptions{})
 		require.NoError(t, err)
 		require.Equal(t, sbrOutput1.Status.Secret, bindingSecret1.GetName())
-		envList = append(envList, corev1.EnvFromSource{
-			ConfigMapRef: nil,
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: bindingSecret1.GetName(),
-				},
-			},
+		var volumeList []corev1.VolumeMount
+		volumeList = append(volumeList, corev1.VolumeMount{
+			Name:      sbrOutput1.Name,
+			MountPath: "/bindings/" + sbrOutput1.Name,
 		})
 		// Expected secretRef=binding-request2
 		bindingSecret2, err := fakeDynClient.Resource(secretsGVR).Namespace(reconcilerNs).Get(context.TODO(), sbrOutput2.Status.Secret, metav1.GetOptions{})
 		require.NoError(t, err)
 		require.Equal(t, sbrOutput2.Status.Secret, bindingSecret2.GetName())
-		envList = append(envList, corev1.EnvFromSource{
-			ConfigMapRef: nil,
-			SecretRef: &corev1.SecretEnvSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: bindingSecret2.GetName(),
-				},
-			},
+		volumeList = append(volumeList, corev1.VolumeMount{
+			Name:      sbrOutput2.Name,
+			MountPath: "/bindings/" + sbrOutput2.Name,
 		})
-		require.Contains(t, dep.Spec.Template.Spec.Containers[0].EnvFrom, envList[0])
-		require.Contains(t, dep.Spec.Template.Spec.Containers[0].EnvFrom, envList[1])
+		require.Contains(t, dep.Spec.Template.Spec.Containers[0].VolumeMounts, volumeList[0])
+		require.Contains(t, dep.Spec.Template.Spec.Containers[0].VolumeMounts, volumeList[1])
 	})
 }

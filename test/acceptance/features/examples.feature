@@ -40,6 +40,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
             metadata:
                 name: sbr-to-bind-hello-app-to-route
             spec:
+                bindAsFiles: false
                 application:
                     group: apps
                     resource: deployments
@@ -74,6 +75,7 @@ Feature: Verify examples provided in Service Binding Operator github repository
             metadata:
                 name: service-binding-cross-ns-service
             spec:
+                bindAsFiles: false
                 application:
                     name: nodejs-app-cross-ns-service
                     group: apps

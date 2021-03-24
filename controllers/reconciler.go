@@ -23,6 +23,7 @@ import (
 func (r *ServiceBindingReconciler) getServiceBinding(
 	namespacedName types.NamespacedName,
 ) (*v1alpha1.ServiceBinding, error) {
+	falseBool := false
 	gr := v1alpha1.GroupVersionResource
 	resourceClient := r.dynClient.Resource(gr).Namespace(namespacedName.Namespace)
 	u, err := resourceClient.Get(context.TODO(), namespacedName.Name, metav1.GetOptions{})
@@ -36,8 +37,10 @@ func (r *ServiceBindingReconciler) getServiceBinding(
 		return nil, err
 	}
 	if sbr.Spec.DetectBindingResources == nil {
-		falseBool := false
 		sbr.Spec.DetectBindingResources = &falseBool
+	}
+	if sbr.Spec.BindAsFiles == nil {
+		sbr.Spec.BindAsFiles = &falseBool
 	}
 	return sbr, nil
 }
@@ -124,7 +127,7 @@ func (r *ServiceBindingReconciler) doReconcile(request reconcile.Request) (recon
 			sbr.GetNamespace(),
 			sbr.Spec.Services,
 			sbr.Spec.DetectBindingResources,
-			sbr.Spec.BindAsFiles,
+			*sbr.Spec.BindAsFiles,
 			r,
 			sbr.Spec.NamingTemplate(),
 		)

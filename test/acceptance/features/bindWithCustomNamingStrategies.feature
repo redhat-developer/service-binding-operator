@@ -28,6 +28,7 @@ Feature: Bind an application to a service using custom naming strategies
             metadata:
                 name: binding-request-no-naming
             spec:
+                bindAsFiles: false
                 application:
                     name: myapp-no-naming
                     group: apps
@@ -62,6 +63,7 @@ Feature: Bind an application to a service using custom naming strategies
             metadata:
                 name: binding-request-naming-none
             spec:
+                bindAsFiles: false
                 namingStrategy: none
                 application:
                     name: myapp-naming-none
@@ -97,6 +99,7 @@ Feature: Bind an application to a service using custom naming strategies
             metadata:
                 name: binding-request-custom-naming
             spec:
+                bindAsFiles: false
                 namingStrategy: "PREFIX_{{ .service.kind | upper }}_{{ .name | upper }}_SUFFIX"
                 application:
                     name: myapp-custom-naming
@@ -212,6 +215,7 @@ Feature: Bind an application to a service using custom naming strategies
             metadata:
                 name: binding-request-naming-error
             spec:
+                bindAsFiles: false
                 namingStrategy: "{{ .service.test.name | lower }}_incorrect"
                 application:
                     name: myapp-naming-error

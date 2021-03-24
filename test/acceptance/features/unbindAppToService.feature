@@ -30,6 +30,7 @@ Feature: Unbind an application from a service
             metadata:
                 name: binding-request-a-d-u
             spec:
+                bindAsFiles: false
                 application:
                     name: generic-app-a-d-u
                     group: apps
@@ -73,6 +74,7 @@ Feature: Unbind an application from a service
             metadata:
                 name: binding-request-a-d-u
             spec:
+                bindAsFiles: false
                 application:
                     name: generic-app-a-d-u
                     group: apps

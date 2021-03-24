@@ -62,6 +62,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: ssa-1
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -131,6 +132,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: ssa-2
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -242,6 +244,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: ssd-1
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -357,6 +360,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: ssd-2
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -431,6 +435,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: ssa-3
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -502,6 +507,7 @@ Feature: Bind values from a secret referred in backing service resource
           metadata:
               name: sb-inject-secret-data
           spec:
+              bindAsFiles: false
               services:
               - group: stable.example.com
                 version: v1

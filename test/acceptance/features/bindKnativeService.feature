@@ -24,6 +24,7 @@ Feature: Bind knative service to a service
             metadata:
               name: binding-request-knative
             spec:
+              bindAsFiles: false
               application:
                 group: serving.knative.dev
                 version: v1beta1
