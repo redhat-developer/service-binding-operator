@@ -1,15 +1,11 @@
 package binding
 
 import (
-	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
 )
 
 type objectType string
@@ -38,6 +34,8 @@ const (
 	// stringElementType indicates the value found at path is a string.
 	stringElementType elementType = "string"
 )
+
+//go:generate mockgen -destination=mocks/mocks.go -package=mocks . Definition,Value
 
 type Definition interface {
 	GetPath() []string
@@ -82,11 +80,11 @@ func (d *stringDefinition) Apply(u *unstructured.Unstructured) (Value, error) {
 }
 
 type stringFromDataFieldDefinition struct {
-	kubeClient dynamic.Interface
-	objectType objectType
-	outputName string
-	path       []string
-	sourceKey  string
+	secretConfigMapReader *secretConfigMapReader
+	objectType            objectType
+	outputName            string
+	path                  []string
+	sourceKey             string
 }
 
 var _ Definition = (*stringFromDataFieldDefinition)(nil)
@@ -94,15 +92,8 @@ var _ Definition = (*stringFromDataFieldDefinition)(nil)
 func (d *stringFromDataFieldDefinition) GetPath() []string { return d.path }
 
 func (d *stringFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Value, error) {
-	if d.kubeClient == nil {
+	if d.secretConfigMapReader == nil {
 		return nil, errors.New("kubeClient required for this functionality")
-	}
-
-	var resource schema.GroupVersionResource
-	if d.objectType == secretObjectType {
-		resource = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	} else if d.objectType == configMapObjectType {
-		resource = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
 	}
 
 	resourceName, ok, err := unstructured.NestedString(u.Object, d.path...)
@@ -113,7 +104,13 @@ func (d *stringFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Val
 		return nil, errors.New("not found")
 	}
 
-	otherObj, err := d.kubeClient.Resource(resource).Namespace(u.GetNamespace()).Get(context.TODO(), resourceName, v1.GetOptions{})
+	var otherObj *unstructured.Unstructured
+	if d.objectType == secretObjectType {
+		otherObj, err = d.secretConfigMapReader.secretReader(u.GetNamespace(), resourceName)
+	} else if d.objectType == configMapObjectType {
+		otherObj, err = d.secretConfigMapReader.configMapReader(u.GetNamespace(), resourceName)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -139,11 +136,11 @@ func (d *stringFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Val
 }
 
 type mapFromDataFieldDefinition struct {
-	kubeClient  dynamic.Interface
-	objectType  objectType
-	outputName  string
-	sourceValue string
-	path        []string
+	secretConfigMapReader *secretConfigMapReader
+	objectType            objectType
+	outputName            string
+	sourceValue           string
+	path                  []string
 }
 
 var _ Definition = (*mapFromDataFieldDefinition)(nil)
@@ -151,15 +148,8 @@ var _ Definition = (*mapFromDataFieldDefinition)(nil)
 func (d *mapFromDataFieldDefinition) GetPath() []string { return d.path }
 
 func (d *mapFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Value, error) {
-	if d.kubeClient == nil {
+	if d.secretConfigMapReader == nil {
 		return nil, errors.New("kubeClient required for this functionality")
-	}
-
-	var resource schema.GroupVersionResource
-	if d.objectType == secretObjectType {
-		resource = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}
-	} else if d.objectType == configMapObjectType {
-		resource = schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}
 	}
 
 	resourceName, ok, err := unstructured.NestedString(u.Object, d.path...)
@@ -170,8 +160,13 @@ func (d *mapFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Value,
 		return nil, errors.New("not found")
 	}
 
-	otherObj, err := d.kubeClient.Resource(resource).Namespace(u.GetNamespace()).
-		Get(context.TODO(), resourceName, v1.GetOptions{})
+	var otherObj *unstructured.Unstructured
+	if d.objectType == secretObjectType {
+		otherObj, err = d.secretConfigMapReader.secretReader(u.GetNamespace(), resourceName)
+	} else if d.objectType == configMapObjectType {
+		otherObj, err = d.secretConfigMapReader.configMapReader(u.GetNamespace(), resourceName)
+	}
+
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,10 @@
 package binding
 
 import (
+	"context"
 	"fmt"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"strings"
 
 	"github.com/mitchellh/copystructure"
@@ -55,12 +58,21 @@ type SpecHandler struct {
 	annotationValue string
 }
 
-func (s *SpecHandler) Handle() (result, error) {
-	builder := &annotationBackedDefinitionBuilder{
-		kubeClient: s.kubeClient,
-		name:       s.annotationKey,
-		value:      s.annotationValue,
+func configMapsReader(client dynamic.Interface) UnstructuredResourceReader {
+	return func(namespace string, name string) (*unstructured.Unstructured, error) {
+		return client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmaps"}).Namespace(namespace).Get(context.TODO(), name, v1.GetOptions{})
 	}
+}
+
+func secretsReader(client dynamic.Interface) UnstructuredResourceReader {
+	return func(namespace string, name string) (*unstructured.Unstructured, error) {
+		return client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).Namespace(namespace).Get(context.TODO(), name, v1.GetOptions{})
+	}
+}
+
+func (s *SpecHandler) Handle() (result, error) {
+	builder := NewDefinitionBuilder(s.annotationKey, s.annotationValue, configMapsReader(s.kubeClient), secretsReader(s.kubeClient))
+
 	d, err := builder.Build()
 	if err != nil {
 		return result{}, err

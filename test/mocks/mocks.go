@@ -388,43 +388,6 @@ func ConfigMapMock(ns, name string) *corev1.ConfigMap {
 	}
 }
 
-// MultiNamespaceServiceBindingMock return a binding-request mock of informed name and match labels.
-func MultiNamespaceServiceBindingMock(
-	ns string,
-	name string,
-	backingServiceResourceRef string,
-	backingServiceNamespace string,
-	applicationResourceRef string,
-	applicationGVR schema.GroupVersionResource,
-	matchLabels map[string]string,
-) *v1alpha1.ServiceBinding {
-	sbr := &v1alpha1.ServiceBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: ns,
-			Name:      name,
-		},
-		Spec: v1alpha1.ServiceBindingSpec{
-			Mappings: []v1alpha1.Mapping{},
-			Application: &v1alpha1.Application{
-				Ref:           v1alpha1.Ref{Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource, Name: applicationResourceRef},
-				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
-			},
-			DetectBindingResources: &falseBoolPtr,
-			Services: []v1alpha1.Service{
-				{
-					NamespacedRef: v1alpha1.NamespacedRef{
-						Ref: v1alpha1.Ref{
-							Group: CRDName, Version: CRDVersion, Kind: CRDKind, Name: backingServiceResourceRef,
-						},
-						Namespace: &backingServiceNamespace,
-					},
-				},
-			},
-		},
-	}
-	return sbr
-}
-
 // ServiceBindingMock return a binding-request mock of informed name and match labels.
 func ServiceBindingMock(
 	ns string,
@@ -467,7 +430,7 @@ func ServiceBindingMock(
 				},
 				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
-			DetectBindingResources: &falseBoolPtr,
+			DetectBindingResources: false,
 			BindAsFiles:            &falseBoolPtr,
 			Services:               services,
 		},

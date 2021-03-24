@@ -2,16 +2,23 @@ package binding
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"strings"
 
 	"github.com/pkg/errors"
-	"k8s.io/client-go/dynamic"
 )
 
+type UnstructuredResourceReader func(namespace string, name string) (*unstructured.Unstructured, error)
+
+type secretConfigMapReader struct {
+	configMapReader UnstructuredResourceReader
+	secretReader    UnstructuredResourceReader
+}
+
 type annotationBackedDefinitionBuilder struct {
-	kubeClient dynamic.Interface
-	name       string
-	value      string
+	*secretConfigMapReader
+	name  string
+	value string
 }
 
 var _ DefinitionBuilder = (*annotationBackedDefinitionBuilder)(nil)
@@ -26,6 +33,17 @@ const (
 	elementTypeModelKey modelKey = "elementType"
 	AnnotationPrefix             = "service.binding"
 )
+
+func NewDefinitionBuilder(annotationName string, annotationValue string, configMapReader UnstructuredResourceReader, secretReader UnstructuredResourceReader) *annotationBackedDefinitionBuilder {
+	return &annotationBackedDefinitionBuilder{
+		name:  annotationName,
+		value: annotationValue,
+		secretConfigMapReader: &secretConfigMapReader{
+			configMapReader: configMapReader,
+			secretReader:    secretReader,
+		},
+	}
+}
 
 func (m *annotationBackedDefinitionBuilder) outputName() (string, error) {
 	// bail out in the case the annotation name doesn't start with "service.binding"
@@ -65,20 +83,20 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 
 	case mod.isStringElementType() && mod.hasDataField():
 		return &stringFromDataFieldDefinition{
-			kubeClient: m.kubeClient,
-			objectType: mod.objectType,
-			outputName: outputName,
-			path:       mod.path,
-			sourceKey:  mod.sourceKey,
+			secretConfigMapReader: m.secretConfigMapReader,
+			objectType:            mod.objectType,
+			outputName:            outputName,
+			path:                  mod.path,
+			sourceKey:             mod.sourceKey,
 		}, nil
 
 	case mod.isMapElementType() && mod.hasDataField():
 		return &mapFromDataFieldDefinition{
-			kubeClient:  m.kubeClient,
-			objectType:  mod.objectType,
-			outputName:  outputName,
-			path:        mod.path,
-			sourceValue: mod.sourceValue,
+			secretConfigMapReader: m.secretConfigMapReader,
+			objectType:            mod.objectType,
+			outputName:            outputName,
+			path:                  mod.path,
+			sourceValue:           mod.sourceValue,
 		}, nil
 
 	case mod.isMapElementType() && mod.isStringObjectType():
