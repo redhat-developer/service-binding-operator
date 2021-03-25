@@ -151,7 +151,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.5.0
+                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.6.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
