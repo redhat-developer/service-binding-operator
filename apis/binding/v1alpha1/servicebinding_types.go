@@ -246,3 +246,7 @@ func (ref *Ref) GroupVersionKind() (*schema.GroupVersionKind, error) {
 		Kind:    ref.Kind,
 	}, nil
 }
+
+func (r *ServiceBinding) StatusConditions() []metav1.Condition {
+	return r.Status.Conditions
+}

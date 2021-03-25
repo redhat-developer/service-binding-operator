@@ -19,10 +19,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/controllers"
 	"github.com/redhat-developer/service-binding-operator/controllers/binding"
-	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -120,6 +121,15 @@ func main() {
 		mgr.GetScheme(),
 	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
+		os.Exit(1)
+	}
+
+	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ServiceBinding")
+		os.Exit(1)
+	}
+	if err = (&specv1alpha2.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

@@ -3,31 +3,5 @@ resources:
 - ../samples
 #- ../scorecard
 
-patches:
-  - target:
-      kind: Deployment
-    patch: |-
-      - op: replace
-        path: /metadata/name
-        value: service-binding-operator
-# use dedicated service-binding-operator service account
-# because the operator is usually installed by OLM
-# in a namespace shared with other operators
-  - target:
-      kind: ClusterRoleBinding
-    patch: |-
-      - op: replace
-        path: /subjects/0/name
-        value: service-binding-operator
-  - target:
-      kind: RoleBinding
-    patch: |-
-      - op: replace
-        path: /subjects/0/name
-        value: service-binding-operator
-  - target:
-      kind: Deployment
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/serviceAccountName
-        value: service-binding-operator
+patchesStrategicMerge:
+  - manager_watch_namespace_patch.yaml

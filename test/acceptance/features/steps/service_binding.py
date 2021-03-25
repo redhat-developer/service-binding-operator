@@ -68,6 +68,7 @@ def sbr_is_applied(context):
 
 
 @when(u'Invalid Service Binding is applied')
+@then(u'Service Binding is unable to be applied')
 def invalid_sbr_is_applied(context):
     sbr = ServiceBinding(context.text, context.namespace.name)
     # Get resource version of sbr if sbr is available

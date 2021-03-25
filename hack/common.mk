@@ -101,3 +101,7 @@ GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
+
+YQ = $(shell pwd)/bin/yq
+yq:
+	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@v4.9.8)

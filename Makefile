@@ -125,9 +125,14 @@ install: manifests kustomize
 uninstall: manifests kustomize
 	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
+.PHONY: deploy-cert-manager
+deploy-cert-manager:
+	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.1.0/cert-manager.yaml
+	kubectl rollout status -n cert-manager deploy/cert-manager-webhook -w --timeout=120s
+
 .PHONY: deploy
 ## Deploy controller in the configured Kubernetes cluster in ~/.kube/config
-deploy: manifests kustomize image
+deploy: manifests kustomize image deploy-cert-manager
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_IMAGE_REF)
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
@@ -303,9 +308,12 @@ test-acceptance-serve-report:
 
 .PHONY: release-manifests
 ## prepare a manifest file for releasing operator on vanilla k8s cluster
-release-manifests: setup-venv prepare-operatorhub-pr
-	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r hack/check-python/requirements.txt
-	$(Q)$(PYTHON_VENV_DIR)/bin/python3 ./hack/release-manifest.py  $(OUTPUT_DIR)/operatorhub-pr-files/service-binding-operator/$(VERSION)/manifests/
+release-manifests: REF=$(shell $(KUSTOMIZE) cfg grep "kind=ClusterServiceVersion" $(OUTPUT_DIR)/operatorhub-pr-files | $(YQ) e '.spec.install.spec.deployments[0].spec.template.spec.containers[0].image' -)
+release-manifests: prepare-operatorhub-pr kustomize yq
+	git worktree add $(OUTPUT_DIR)/foo $(GIT_COMMIT_ID)
+	cd $(OUTPUT_DIR)/foo/config/manager && $(KUSTOMIZE) edit set image controller=$(REF)
+	$(KUSTOMIZE) build $(OUTPUT_DIR)/foo/config/default > $(OUTPUT_DIR)/release.yaml
+	git worktree remove --force $(OUTPUT_DIR)/foo
 
 .PHONY: clean
 ## Removes temp directories
