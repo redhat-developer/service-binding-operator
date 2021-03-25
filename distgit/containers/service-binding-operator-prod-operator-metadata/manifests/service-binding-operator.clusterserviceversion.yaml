@@ -35,7 +35,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Red Hat
-  name: service-binding-operator.v0.5.0
+  name: service-binding-operator.v0.6.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -213,5 +213,6 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-    url: redhat.com
-  version: 0.5.0
+    url: https://redhat.com
+  version: 0.6.0
+  replaces: service-binding-operator.v0.5.0
