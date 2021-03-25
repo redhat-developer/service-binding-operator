@@ -61,6 +61,7 @@ Feature: Bind values from a config map referred in backing service resource
             metadata:
                 name: cmsa-1
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -130,6 +131,7 @@ Feature: Bind values from a config map referred in backing service resource
             metadata:
                 name: cmsa-2
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1

@@ -468,6 +468,7 @@ func ServiceBindingMock(
 				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: &falseBoolPtr,
+			BindAsFiles:            &falseBoolPtr,
 			Services:               services,
 		},
 	}

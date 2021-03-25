@@ -64,6 +64,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-a-b-s
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -135,6 +136,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-s-b-a
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -161,6 +163,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-b-a-s
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -210,6 +213,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-b-s-a
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -281,6 +285,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-missing-app
             spec:
+                bindAsFiles: false
                 application:
                     name: gen-missing-app
                     group: apps
@@ -321,6 +326,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-empty-app
             spec:
+                bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
@@ -358,6 +364,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-backend-new-spec
             spec:
+                bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
@@ -394,6 +401,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-c-e
             spec:
+                bindAsFiles: false
                 application:
                     name: gen-app-c-e
                     group: apps
@@ -503,6 +511,7 @@ Feature: Bind an application to a service
             metadata:
                 name: sbr-csv-secret-cm-descriptors
             spec:
+                bindAsFiles: false
                 services:
                 -   group: service.example.com
                     version: v1
@@ -581,6 +590,7 @@ Feature: Bind an application to a service
             metadata:
                 name: sbr-csv-attribute
             spec:
+                bindAsFiles: false
                 services:
                 -   group: service.example.com
                     version: v1
@@ -604,6 +614,7 @@ Feature: Bind an application to a service
             metadata:
               name: binding-request-etcd
             spec:
+              bindAsFiles: false
               namingStrategy: "ETCDCLUSTER_{{ .name | upper }}"
               application:
                 group: apps
@@ -664,6 +675,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-remove-service
             spec:
+                bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
@@ -730,6 +742,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-emptying-spec
             spec:
+                bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
@@ -771,6 +784,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-remove-spec
             spec:
+                bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
@@ -819,6 +833,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-cross-ns-service
             spec:
+                bindAsFiles: false
                 application:
                     name: myapp-in-sbr-ns
                     group: apps

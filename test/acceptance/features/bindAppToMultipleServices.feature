@@ -39,6 +39,7 @@ Feature: Bind a single application to multiple services
             metadata:
                 name: binding1-myapp-2-sbrs
             spec:
+                bindAsFiles: false
                 application:
                     name: myapp-2-sbrs
                     group: apps
@@ -61,6 +62,7 @@ Feature: Bind a single application to multiple services
             metadata:
                 name: binding2-myapp-2-sbrs
             spec:
+                bindAsFiles: false
                 application:
                     name: myapp-2-sbrs
                     group: apps
@@ -110,6 +112,7 @@ Feature: Bind a single application to multiple services
             metadata:
                 name: binding-request-1sbr
             spec:
+                bindAsFiles: false
                 application:
                     name: myapp-1sbr
                     group: apps

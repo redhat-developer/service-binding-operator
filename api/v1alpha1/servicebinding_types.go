@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -91,7 +92,7 @@ type ServiceBindingSpec struct {
 	// BindAsFiles makes available the binding values as files in the application's container
 	// See MountPath attribute description for more details.
 	// +optional
-	BindAsFiles bool `json:"bindAsFiles,omitempty"`
+	BindAsFiles *bool `json:"bindAsFiles,omitempty"`
 }
 
 // ServiceBindingMapping defines a new binding from set of existing bindings
@@ -230,7 +231,8 @@ func (sbr ServiceBinding) AsOwnerReference() metav1.OwnerReference {
 }
 
 func (spec *ServiceBindingSpec) NamingTemplate() string {
-	if spec.BindAsFiles && spec.NamingStrategy == "" {
+	var bindAsFiles bool = spec.BindAsFiles != nil && *spec.BindAsFiles
+	if bindAsFiles && spec.NamingStrategy == "" {
 		return templates["lowercase"]
 	} else if spec.NamingStrategy == "" {
 		return templates["uppercase"]

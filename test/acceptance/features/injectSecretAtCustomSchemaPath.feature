@@ -78,6 +78,7 @@ Feature: Insert service binding to a custom location in application resource
             metadata:
                 name: binding-request-csp
             spec:
+                bindAsFiles: false
                 application:
                     name: demo-appconfig-csp
                     group: stable.example.com
@@ -112,6 +113,7 @@ Feature: Insert service binding to a custom location in application resource
             metadata:
                 name: binding-request-ssp
             spec:
+                bindAsFiles: false
                 application:
                     name: demo-appconfig-ssp
                     group: stable.example.com

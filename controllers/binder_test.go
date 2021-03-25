@@ -267,45 +267,40 @@ func TestBinderNew(t *testing.T) {
 	})
 
 	t.Run("remove", func(t *testing.T) {
+		fakeMock := mocks.NewFake(t, ns)
+		sbr2 := fakeMock.AddMockedServiceBinding("ServiceBinding1", nil, "deployment1", "", deploymentsGVR, matchLabels)
+		ensureDefaults(sbr.Spec.Application)
+		fakeMock.AddMockedUnstructuredDeployment("deployment1", matchLabels)
 
-		binder := newBinder(
+		binder1 := newBinder(
 			context.TODO(),
-			f.FakeDynClient(),
-			sbr,
+			fakeMock.FakeDynClient(),
+			sbr2,
 			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
-
-		require.NotNil(t, binder)
-		list, err := binder.search()
+		require.NotNil(t, binder1)
+		list, err := binder1.search()
 		require.NoError(t, err)
 		require.Equal(t, 1, len(list.Items))
 
-		updatedObjects, err := binder.update(list)
-		require.NoError(t, err)
-		require.Len(t, updatedObjects, 1)
-
-		err = binder.remove(list)
+		// add extra volume
+		deployment1 := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[0].Object, &deployment1)
 		require.NoError(t, err)
 
-		containers, found, err := unstructured.NestedSlice(list.Items[0].Object, binder.getContainersPath()...)
-		require.NoError(t, err)
-		require.True(t, found)
-		require.Len(t, containers, 1)
+		var vols []corev1.Volume
+		vols = append(vols, corev1.Volume{Name: "randomVolume"})
 
-		// make sure SBR annonation is removed
-		deployment := appsv1.Deployment{}
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[0].Object, &deployment)
-		require.NoError(t, err)
+		deployment1.Spec.Template.Spec.Volumes = vols
 
-		c := corev1.Container{}
-		u := containers[0].(map[string]interface{})
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&deployment1)
+		require.NoError(t, err)
+		updated := unstructured.Unstructured{Object: obj}
+		_, err = fakeMock.FakeDynClient().Resource(deploymentsGVR).Namespace(deployment1.Namespace).Update(context.TODO(), &updated, metav1.UpdateOptions{})
 		require.NoError(t, err)
 
-		// making sure envFrom directive is removed
-		require.Empty(t, c.EnvFrom)
-		// making sure no volume mounts are present
-		require.Nil(t, c.VolumeMounts)
+		err = binder1.remove(list)
+		require.NoError(t, err)
 	})
 }
 

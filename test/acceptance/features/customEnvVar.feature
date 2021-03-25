@@ -30,6 +30,7 @@ Feature: Inject custom env variable into application
             metadata:
                 name: custom-env-var-from-sequence
             spec:
+                bindAsFiles: false
                 application:
                     name: foo
                     group: apps
@@ -69,6 +70,7 @@ Feature: Inject custom env variable into application
             metadata:
                 name: custom-env-var-from-map
             spec:
+                bindAsFiles: false
                 application:
                     name: foo2
                     group: apps
@@ -108,6 +110,7 @@ Feature: Inject custom env variable into application
             metadata:
                 name: custom-env-var-from-scalar
             spec:
+                bindAsFiles: false
                 application:
                     name: foo3
                     group: apps

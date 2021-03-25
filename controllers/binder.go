@@ -158,12 +158,20 @@ func (b *binder) updateSpecVolumes(obj *unstructured.Unstructured) error {
 func (b *binder) removeSpecVolumes(
 	obj *unstructured.Unstructured,
 ) (*unstructured.Unstructured, error) {
+	var volumesUnstructured []interface{}
 	volumes, err := b.extractSpecVolumes(obj)
 	if err != nil {
 		return nil, err
 	}
 	volumes = b.removeVolumes(volumes)
-	if err = unstructured.SetNestedField(obj.Object, volumes, b.getVolumesPath()...); err != nil {
+	for _, v := range volumes {
+		volume, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&v)
+		if err != nil {
+			return nil, err
+		}
+		volumesUnstructured = append(volumesUnstructured, volume)
+	}
+	if err = unstructured.SetNestedField(obj.Object, volumesUnstructured, b.getVolumesPath()...); err != nil {
 		return nil, err
 	}
 	return obj, nil
@@ -395,15 +403,12 @@ func (b *binder) containerFromUnstructured(container interface{}) (*corev1.Conta
 
 // updateContainer execute the update of a single container, adding binding items.
 func (b *binder) updateContainer(container interface{}) (map[string]interface{}, error) {
+	var bindAsFiles bool = b.sbr.Spec.BindAsFiles != nil && *b.sbr.Spec.BindAsFiles
 	c, err := b.containerFromUnstructured(container)
 	if err != nil {
 		return nil, err
 	}
-	if !b.sbr.Spec.BindAsFiles {
-		c.EnvFrom = b.updateEnvFromList(c.EnvFrom, b.sbr.Status.Secret)
-	}
-	// and adding volume mount entries
-	if b.sbr.Spec.BindAsFiles {
+	if bindAsFiles {
 		for _, e := range c.Env {
 			if e.Name == serviceBindingRootEnvVar {
 				b.bindingRoot = e.Value
@@ -415,25 +420,27 @@ func (b *binder) updateContainer(container interface{}) (map[string]interface{},
 		if !fixedMountPath {
 			c.Env = b.appendEnvVar(c.Env, serviceBindingRootEnvVar, bindingRoot)
 		}
+	} else {
+		c.EnvFrom = b.updateEnvFromList(c.EnvFrom, b.sbr.Status.Secret)
 	}
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(c)
 }
 
 // removeContainer execute the update of single container to remove binding items.
 func (b *binder) removeContainer(container interface{}) (map[string]interface{}, error) {
+	var bindAsFiles bool = b.sbr.Spec.BindAsFiles != nil && *b.sbr.Spec.BindAsFiles
 	c, err := b.containerFromUnstructured(container)
 	if err != nil {
 		return nil, err
 	}
 
-	if !b.sbr.Spec.BindAsFiles {
-		// removing intermediary secret, effectively unbinding the application
-		c.EnvFrom = b.removeEnvFrom(c.EnvFrom, b.sbr.Status.Secret)
-	}
+	if bindAsFiles {
 
-	if b.sbr.Spec.BindAsFiles {
 		// removing volume mount entries
 		c.VolumeMounts = b.removeVolumeMounts(c.VolumeMounts)
+	} else {
+		// removing intermediary secret, effectively unbinding the application
+		c.EnvFrom = b.removeEnvFrom(c.EnvFrom, b.sbr.Status.Secret)
 	}
 
 	return runtime.DefaultUnstructuredConverter.ToUnstructured(c)
@@ -531,6 +538,7 @@ func nestedMapComparison(a, b map[string]interface{}) *comparisonResult {
 // loops over each container to inspect "envFrom" and append the intermediary secret, having the same
 // name than original ServiceBinding.
 func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Unstructured, error) {
+	var bindAsFiles bool = b.sbr.Spec.BindAsFiles != nil && *b.sbr.Spec.BindAsFiles
 	updatedObjs := []*unstructured.Unstructured{}
 
 	for _, obj := range objs.Items {
@@ -555,7 +563,7 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 				}
 			}
 		}
-		if b.sbr.Spec.BindAsFiles {
+		if bindAsFiles {
 			if err = b.updateSpecVolumes(updatedObj); err != nil {
 				return nil, err
 			}
@@ -592,17 +600,19 @@ func (b *binder) update(objs *unstructured.UnstructuredList) ([]*unstructured.Un
 // remove attempts to update each given object without any service binding related information.
 func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 	for _, obj := range objs.Items {
+		var bindAsFiles bool = b.sbr.Spec.BindAsFiles != nil && *b.sbr.Spec.BindAsFiles
 		name := obj.GetName()
 		logger := b.logger.WithValues("Obj.Name", name, "Obj.Kind", obj.GetKind())
 		logger.Debug("Inspecting object...")
 		updatedObj := obj.DeepCopy()
-		err := b.removeSpecContainers(updatedObj)
-		if err != nil {
-			return err
-		}
 
-		if b.sbr.Spec.BindAsFiles {
-			if updatedObj, err = b.removeSpecVolumes(updatedObj); err != nil {
+		if bindAsFiles {
+			if _, err := b.removeSpecVolumes(updatedObj); err != nil {
+				return err
+			}
+		} else {
+			err := b.removeSpecContainers(updatedObj)
+			if err != nil {
 				return err
 			}
 		}

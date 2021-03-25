@@ -51,6 +51,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: binding-request-backend-a
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -119,6 +120,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: rsa-2
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -180,6 +182,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: slos-binding
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -244,6 +247,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: slom-to-slos-binding
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -308,6 +312,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: slom-binding
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -345,6 +350,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: binding-service-via-gvr
             spec:
+                bindAsFiles: false
                 application:
                     name: binding-service-via-gvr
                     group: apps
@@ -380,6 +386,7 @@ Feature: Bind an application to a service using annotations
             metadata:
                 name: binding-app-via-gvk
             spec:
+                bindAsFiles: false
                 application:
                     name: binding-app-via-gvk
                     group: apps
