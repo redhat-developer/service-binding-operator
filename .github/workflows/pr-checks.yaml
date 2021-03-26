@@ -15,7 +15,7 @@ env:
   MINIKUBE_VERSION: "1.15.1"
   TEST_ACCEPTANCE_CLI: "kubectl"
   CONTAINER_RUNTIME: "docker"
-  TEST_RESULTS: "out/acceptance-tests/TEST*.xml"
+  TEST_RESULTS: "out/acceptance-tests"
 
 jobs:
   lint:
@@ -96,6 +96,11 @@ jobs:
           eval $(minikube docker-env)
           make OPERATOR_REPO_REF=$(minikube ip):5000/sbo SKIP_REGISTRY_LOGIN=true release-operator -o registry-login test-acceptance-with-bundle
 
+      - name: Collect logs
+        run: |
+          kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n operators | tail -1) -n operators > ${TEST_RESULTS}/sbo.log
+        if: always()
+
       - name: Setup Testspace
         uses: testspace-com/setup-testspace@v1
         with:
@@ -104,7 +109,7 @@ jobs:
 
       - name: Publish tests results to Testspace
         run: |
-          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}
+          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
         if: always()
 
       - uses: actions/upload-artifact@v2
@@ -154,6 +159,11 @@ jobs:
           kubectl apply -f out/release.yaml
           make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
 
+      - name: Collect logs
+        run: |
+          kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n service-binding-operator | tail -1) -n service-binding-operator > ${TEST_RESULTS}/sbo.log
+        if: always()
+
       - name: Setup Testspace
         uses: testspace-com/setup-testspace@v1
         with:
@@ -162,7 +172,7 @@ jobs:
 
       - name: Publish tests results to Testspace
         run: |
-          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}
+          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
         if: always()
 
       - uses: actions/upload-artifact@v2
