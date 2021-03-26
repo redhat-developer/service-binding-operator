@@ -6,9 +6,8 @@ OPERATOR_PACKAGE=${OPERATOR_PACKAGE:-service-binding-operator}
 DOCKER_CFG=${DOCKER_CFG:-$HOME/.docker/config.json}
 CONTAINER_RUNTIME=${CONTAINER_RUNTIME:-docker}
 
-if [ "$(kubectl get crd clusterserviceversions.operators.coreos.com &>1 || echo false)" == "false" ]; then
+kubectl get crd clusterserviceversions.operators.coreos.com || \
   curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v${OLM_VERSION}/install.sh | bash -s v${OLM_VERSION}
-fi
 
 CATSRC_NAMESPACE="${CATSRC_NAMESPACE:-$(kubectl get catalogsources.operators.coreos.com --all-namespaces -o jsonpath='{.items[0].metadata.namespace}' --ignore-not-found=true)}"
 
