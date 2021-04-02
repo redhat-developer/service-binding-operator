@@ -90,7 +90,7 @@ func TestServiceBinder_Bind(t *testing.T) {
 				require.NoError(t, err)
 			}
 			if args.wantResult != nil {
-				require.Equal(t, &args.wantResult, res)
+				require.Equal(t, args.wantResult, &res)
 			}
 
 			// extract actions from the dynamic client, regardless of the bind status; it is expected
@@ -714,4 +714,191 @@ func TestEnsureDefaults(t *testing.T) {
 		require.Equal(t, expectedSecretPath, secretPath)
 	})
 
+}
+
+func TestServiceBinder_Unbind(t *testing.T) {
+	// wantedAction represents an action issued by the component that is required to exist after it
+	// finished the operation
+	// args are the test arguments
+	type args struct {
+		// options inform the test how to build the ServiceBinder.
+		options *serviceBinderOptions
+		// wantBuildErr informs the test an error is wanted at build phase.
+		wantBuildErr error
+		// wantErr informs the test an error is wanted at ServiceBinder's bind phase.
+		wantErr    error
+		wantResult *reconcile.Result
+	}
+
+	// assertUnBind exercises the bind functionality
+	assertUnBind := func(args args) func(*testing.T) {
+		return func(t *testing.T) {
+			ctx := context.TODO()
+			sb, err := buildServiceBinder(ctx, args.options)
+			if args.wantBuildErr != nil {
+				require.EqualError(t, err, args.wantBuildErr.Error())
+				return
+			} else {
+				require.NoError(t, err)
+			}
+			res, err := sb.unbind()
+
+			if args.wantErr != nil {
+				require.EqualError(t, err, args.wantErr.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			if args.wantResult != nil {
+				require.Equal(t, args.wantResult, &res)
+			}
+
+			// extract actions from the dynamic client, regardless of the bind status; it is expected
+			// that failures also issue updates for ServiceBinding objects
+			dynClient, ok := sb.dynClient.(*fake.FakeDynamicClient)
+			require.True(t, ok)
+			actions := dynClient.Actions()
+			require.NotNil(t, actions)
+		}
+	}
+
+	matchLabels := map[string]string{
+		"connects-to": "database",
+	}
+
+	reconcilerName := "service-binder"
+	f := mocks.NewFake(t, reconcilerName)
+	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(corev1.SchemeGroupVersion, &corev1.ConfigMap{})
+
+	d := f.AddMockedUnstructuredDeployment(reconcilerName, matchLabels)
+	f.AddMockedUnstructuredDatabaseCRD()
+	f.AddMockedUnstructuredConfigMap("db1")
+	f.AddMockedUnstructuredConfigMap("db2")
+
+	// create and munge a Database CR since there's no "Status" field in
+	// databases.postgresql.baiju.dev, requiring us to add the field directly in the unstructured
+	// object
+	db1 := f.AddMockedUnstructuredPostgresDatabaseCR("db1")
+	{
+		runtimeStatus := map[string]interface{}{
+			"dbConfigMap":   "db1",
+			"dbCredentials": "db1",
+			"dbName":        "db1",
+		}
+		err := unstructured.SetNestedMap(db1.Object, runtimeStatus, "status")
+		require.NoError(t, err)
+	}
+	f.AddMockedUnstructuredSecret("db1")
+
+	db2 := f.AddMockedUnstructuredPostgresDatabaseCR("db2")
+	{
+		runtimeStatus := map[string]interface{}{
+			"dbConfigMap":   "db2",
+			"dbCredentials": "db2",
+			"dbName":        "db2",
+		}
+		err := unstructured.SetNestedMap(db2.Object, runtimeStatus, "status")
+		require.NoError(t, err)
+	}
+	f.AddMockedUnstructuredSecret("db2")
+
+	sbrSingleServiceWithNonExistedAppForUnbind := &v1alpha1.ServiceBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1alpha1.GroupVersion.String(),
+			Kind:       "ServiceBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "single-sbr-with-non-existed-app-for-unbind",
+			Finalizers: []string{finalizer},
+		},
+		Spec: v1alpha1.ServiceBindingSpec{
+			Application: &v1alpha1.Application{
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: matchLabels,
+				},
+				Ref: v1alpha1.Ref{
+					Group:    d.GetObjectKind().GroupVersionKind().Group,
+					Version:  d.GetObjectKind().GroupVersionKind().Version,
+					Resource: "deployments",
+					Name:     "app-not-existed",
+				},
+			},
+			Services: []v1alpha1.Service{
+				{
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
+					},
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingStatus{},
+	}
+	f.AddMockResource(sbrSingleServiceWithNonExistedAppForUnbind)
+
+	sbrEmptyAppSelectorForUnbind := &v1alpha1.ServiceBinding{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: v1alpha1.GroupVersion.String(),
+			Kind:       "ServiceBinding",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       "empty-app-selector-for-unbind",
+			Finalizers: []string{finalizer},
+		},
+		Spec: v1alpha1.ServiceBindingSpec{
+			Application: &v1alpha1.Application{
+				LabelSelector: &metav1.LabelSelector{},
+			},
+			Services: []v1alpha1.Service{
+				{
+					NamespacedRef: v1alpha1.NamespacedRef{
+						Ref: v1alpha1.Ref{
+							Group:   db1.GetObjectKind().GroupVersionKind().Group,
+							Version: db1.GetObjectKind().GroupVersionKind().Version,
+							Kind:    db1.GetObjectKind().GroupVersionKind().Kind,
+							Name:    d.GetName(),
+						},
+					},
+				},
+			},
+		},
+		Status: v1alpha1.ServiceBindingStatus{},
+	}
+	f.AddMockResource(sbrEmptyAppSelectorForUnbind)
+
+	logger := log.NewLog("service-binder")
+
+	t.Run("unbind succeed withh application not found error", assertUnBind(args{
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: true,
+			sbr:                    sbrSingleServiceWithNonExistedAppForUnbind,
+			binding: &internalBinding{
+				envVars: map[string][]byte{},
+			},
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
+		},
+		wantResult: &reconcile.Result{},
+	}))
+
+	t.Run("unbind failed with other type of error, i.e. emptyApplication", assertUnBind(args{
+		options: &serviceBinderOptions{
+			logger:                 logger,
+			dynClient:              f.FakeDynClient(),
+			detectBindingResources: true,
+			sbr:                    sbrEmptyAppSelectorForUnbind,
+			binding: &internalBinding{
+				envVars: map[string][]byte{},
+			},
+			typeLookup: &ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
+		},
+		wantErr:    errEmptyApplication,
+		wantResult: &reconcile.Result{Requeue: true},
+	}))
 }
