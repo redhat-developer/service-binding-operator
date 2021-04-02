@@ -616,6 +616,12 @@ func (b *binder) remove(objs *unstructured.UnstructuredList) error {
 				return err
 			}
 		}
+		if b.modifier != nil {
+			err := b.modifier.ModifyExtraFields(updatedObj)
+			if err != nil {
+				return err
+			}
+		}
 
 		gvr, err := b.typeLookup.ResourceForKind(updatedObj.GroupVersionKind())
 		if err != nil {
@@ -681,7 +687,7 @@ func buildExtraFieldsModifier(typeLookup K8STypeLookup, logger *log.Log, sbr *v1
 		}
 		switch gvr.String() {
 		case knativeServiceGVR.String():
-			// TODO: why we need this?
+			//Necessary step when using knative service as an Application for SBR.  If the revision name `spec.template.metadata.name` exists,  any modification on the ksvc container spec will be rejected by knative validation webhook, then the sbr unbind() can't be succeed.
 			pathToRevisionName := "spec.template.metadata.name"
 			return extraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
 				revisionName, ok, err := unstructured.NestedString(u.Object, strings.Split(pathToRevisionName, ".")...)
