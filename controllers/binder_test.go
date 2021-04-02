@@ -242,6 +242,12 @@ func TestBinderNew(t *testing.T) {
 			sbr,
 			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
 		)
+
+		require.NotNil(t, binder)
+		list, err := binder.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
 		// test binder with extra modifier present
 		ch := make(chan struct{})
 		binder.modifier = extraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
@@ -249,21 +255,28 @@ func TestBinderNew(t *testing.T) {
 			return nil
 		})
 
-		list, err := binder.search()
-		require.NoError(t, err)
-		require.Equal(t, 1, len(list.Items))
-
 		updatedObjects, err := binder.update(list)
-		require.NoError(t, err)
-		require.Len(t, updatedObjects, 1)
+		//if the modifier is not called, the execution will be hang here.
 		<-ch
 
-		list, err = binder.search()
 		require.NoError(t, err)
-		// call another update as object is already updated, modifier func should not be called
-		updatedObjects, err = binder.update(list)
+		require.Len(t, updatedObjects, 1)
+
+		containers, found, err := unstructured.NestedSlice(updatedObjects[0].Object, binder.getContainersPath()...)
 		require.NoError(t, err)
-		require.Len(t, updatedObjects, 0)
+		require.True(t, found)
+		require.Len(t, containers, 1)
+
+		c := corev1.Container{}
+		u := containers[0].(map[string]interface{})
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u, &c)
+		require.NoError(t, err)
+
+		uSecret, err := fakeDynClient.Resource(secretsGVR).Namespace(ns).Get(context.TODO(), name, metav1.GetOptions{})
+		require.NoError(t, err)
+		s := corev1.Secret{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(uSecret.Object, &s)
+		require.NoError(t, err)
 	})
 
 	t.Run("remove", func(t *testing.T) {
@@ -300,6 +313,51 @@ func TestBinderNew(t *testing.T) {
 		require.NoError(t, err)
 
 		err = binder1.remove(list)
+		require.NoError(t, err)
+	})
+
+	t.Run("remove with modifier present", func(t *testing.T) {
+		fakeMock := mocks.NewFake(t, ns)
+		sbr2 := fakeMock.AddMockedServiceBinding("ServiceBinding1", nil, "deployment1", "", deploymentsGVR, matchLabels)
+		ensureDefaults(sbr.Spec.Application)
+		fakeMock.AddMockedUnstructuredDeployment("deployment1", matchLabels)
+
+		binder1 := newBinder(
+			context.TODO(),
+			fakeMock.FakeDynClient(),
+			sbr2,
+			&ServiceBindingReconciler{restMapper: testutils.BuildTestRESTMapper()},
+		)
+		require.NotNil(t, binder1)
+		list, err := binder1.search()
+		require.NoError(t, err)
+		require.Equal(t, 1, len(list.Items))
+
+		// add extra volume
+		deployment1 := appsv1.Deployment{}
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(list.Items[0].Object, &deployment1)
+		require.NoError(t, err)
+
+		var vols []corev1.Volume
+		vols = append(vols, corev1.Volume{Name: "randomVolume"})
+
+		deployment1.Spec.Template.Spec.Volumes = vols
+
+		obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&deployment1)
+		require.NoError(t, err)
+		updated := unstructured.Unstructured{Object: obj}
+		_, err = fakeMock.FakeDynClient().Resource(deploymentsGVR).Namespace(deployment1.Namespace).Update(context.TODO(), &updated, metav1.UpdateOptions{})
+		require.NoError(t, err)
+
+		// test binder with extra modifier present
+		ch := make(chan struct{})
+		binder1.modifier = extraFieldsModifierFunc(func(u *unstructured.Unstructured) error {
+			close(ch)
+			return nil
+		})
+		err = binder1.remove(list)
+		//if the modifier is not called, the execution will be hang here.
+		<-ch
 		require.NoError(t, err)
 	})
 }
