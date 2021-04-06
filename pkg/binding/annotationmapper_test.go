@@ -107,7 +107,6 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				value: "path={.status.dbCredential},objectType=Secret,sourceValue=username",
 			},
 			expectedValue: &mapFromDataFieldDefinition{
-				kubeClient:  nil,
 				objectType:  secretObjectType,
 				outputName:  "username",
 				path:        []string{"status", "dbCredential"},
@@ -122,7 +121,6 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				value: "path={.status.dbCredential},objectType=Secret,sourceValue=username",
 			},
 			expectedValue: &mapFromDataFieldDefinition{
-				kubeClient:  nil,
 				objectType:  secretObjectType,
 				outputName:  "anotherUsernameField",
 				path:        []string{"status", "dbCredential"},
@@ -137,7 +135,6 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				value: "path={.status.dbCredential},objectType=Secret",
 			},
 			expectedValue: &mapFromDataFieldDefinition{
-				kubeClient: nil,
 				objectType: secretObjectType,
 				outputName: "dbCredential",
 				path:       []string{"status", "dbCredential"},
@@ -151,7 +148,6 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				value: "path={.status.dbCredential},objectType=ConfigMap,sourceValue=username",
 			},
 			expectedValue: &mapFromDataFieldDefinition{
-				kubeClient:  nil,
 				objectType:  configMapObjectType,
 				outputName:  "username",
 				path:        []string{"status", "dbCredential"},
@@ -166,7 +162,6 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				value: "path={.status.dbCredential},objectType=ConfigMap,sourceValue=username",
 			},
 			expectedValue: &mapFromDataFieldDefinition{
-				kubeClient:  nil,
 				objectType:  configMapObjectType,
 				outputName:  "anotherUsernameField",
 				path:        []string{"status", "dbCredential"},
@@ -181,7 +176,6 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				value: "path={.status.dbCredential},objectType=ConfigMap,sourceValue=username",
 			},
 			expectedValue: &mapFromDataFieldDefinition{
-				kubeClient:  nil,
 				objectType:  configMapObjectType,
 				outputName:  "dbCredential",
 				path:        []string{"status", "dbCredential"},

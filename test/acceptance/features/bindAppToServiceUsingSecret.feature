@@ -152,6 +152,26 @@ Feature: Bind values from a secret referred in backing service resource
     Scenario: Inject into app a key from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-1" is running
+        * The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: backends.foo.example.com
+            spec:
+                group: foo.example.com
+                versions:
+                    - name: v1
+                      served: true
+                      storage: true
+                scope: Namespaced
+                names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                    - bs
+            """
         And The Custom Resource Definition is present
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -159,13 +179,13 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
               annotations:
                 capabilities: Basic Install
-              name: backend-operator.v0.1.0
+              name: backend-operator-foo.v0.1.0
             spec:
               customresourcedefinitions:
                 owned:
                 - description: Backend is the Schema for the backend API
                   kind: Backend
-                  name: backends.stable.example.com
+                  name: backends.foo.example.com
                   version: v1
                   specDescriptors:
                     - description: Host address
@@ -227,7 +247,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         And The Custom Resource is present
             """
-            apiVersion: stable.example.com/v1
+            apiVersion: foo.example.com/v1
             kind: Backend
             metadata:
                 name: ssd-1-service
@@ -246,7 +266,7 @@ Feature: Bind values from a secret referred in backing service resource
             spec:
                 bindAsFiles: false
                 services:
-                  - group: stable.example.com
+                  - group: foo.example.com
                     version: v1
                     kind: Backend
                     name: ssd-1-service
@@ -264,7 +284,26 @@ Feature: Bind values from a secret referred in backing service resource
     Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-2" is running
-        And CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: backends.bar.example.com
+            spec:
+                group: bar.example.com
+                versions:
+                    - name: v1
+                      served: true
+                      storage: true
+                scope: Namespaced
+                names:
+                    plural: backends
+                    singular: backend
+                    kind: Backend
+                    shortNames:
+                    - bs
+            """
         And The Custom Resource is present
             """
             apiVersion: operators.coreos.com/v1alpha1
@@ -272,20 +311,14 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
               annotations:
                 capabilities: Basic Install
-              name: backend-operator.v0.1.0
+              name: backend-operator-bar.v0.1.0
             spec:
               customresourcedefinitions:
                 owned:
                 - description: Backend is the Schema for the backend API
                   kind: Backend
-                  name: backends.stable.example.com
+                  name: backends.bar.example.com
                   version: v1
-                  specDescriptors:
-                    - description: Host address
-                      displayName: Host address
-                      path: host
-                      x-descriptors:
-                        - service.binding:host
                   statusDescriptors:
                       - description: db credentials
                         displayName: db credentials
@@ -341,7 +374,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         And The Custom Resource is present
             """
-            apiVersion: stable.example.com/v1
+            apiVersion: bar.example.com/v1
             kind: Backend
             metadata:
                 name: ssd-2-service
@@ -362,7 +395,7 @@ Feature: Bind values from a secret referred in backing service resource
             spec:
                 bindAsFiles: false
                 services:
-                  - group: stable.example.com
+                  - group: bar.example.com
                     version: v1
                     kind: Backend
                     name: ssd-2-service

@@ -44,8 +44,12 @@ const (
 
 	BindingInjectedReason = "BindingInjected"
 
+	DataCollectedReason = "DataCollected"
+
 	// NamingStrategyError is used when naming strategy/template used is incorrect
 	NamingStrategyError = "NamingStrategyError"
+
+	finalizerName = "finalizer.servicebinding.openshift.io"
 )
 
 var templates = map[string]string{
@@ -87,7 +91,7 @@ type ServiceBindingSpec struct {
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
 	// +optional
-	DetectBindingResources *bool `json:"detectBindingResources,omitempty"`
+	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
 
 	// BindAsFiles makes available the binding values as files in the application's container
 	// See MountPath attribute description for more details.
@@ -219,7 +223,7 @@ func init() {
 	SchemeBuilder.Register(&ServiceBinding{}, &ServiceBindingList{})
 }
 
-func (sbr ServiceBinding) AsOwnerReference() metav1.OwnerReference {
+func (sbr *ServiceBinding) AsOwnerReference() metav1.OwnerReference {
 	var ownerRefController bool = true
 	return metav1.OwnerReference{
 		Name:       sbr.Name,
@@ -268,4 +272,26 @@ func (ref *Ref) GroupVersionKind() (*schema.GroupVersionKind, error) {
 		Version: ref.Version,
 		Kind:    ref.Kind,
 	}, nil
+}
+
+func (sb *ServiceBinding) MaybeAddFinalizer() bool {
+	finalizers := sb.GetFinalizers()
+	for _, f := range finalizers {
+		if f == finalizerName {
+			return false
+		}
+	}
+	sb.SetFinalizers(append(finalizers, finalizerName))
+	return true
+}
+
+func (sb *ServiceBinding) MaybeRemoveFinalizer() bool {
+	finalizers := sb.GetFinalizers()
+	for i, f := range finalizers {
+		if f == finalizerName {
+			sb.SetFinalizers(append(finalizers[:i], finalizers[i+1:]...))
+			return true
+		}
+	}
+	return false
 }

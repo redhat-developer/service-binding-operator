@@ -2,7 +2,7 @@ from app import App
 import requests
 import json
 import polling2
-from behave import given, step
+from behave import step
 
 
 class GenericTestApp(App):
@@ -35,8 +35,8 @@ class GenericTestApp(App):
         return resp.text
 
 
-@given(u'Generic test application "{application_name}" is running')
-@given(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
+@step(u'Generic test application "{application_name}" is running')
+@step(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
 def is_running(context, application_name, bindingRoot=None):
     application = GenericTestApp(application_name, context.namespace.name)
     if not application.is_running():

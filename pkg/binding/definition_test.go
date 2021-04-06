@@ -194,7 +194,10 @@ func TestMapFromSecretDataField(t *testing.T) {
 	f := mocks.NewFake(t, "test-namespace")
 	f.AddMockedUnstructuredSecret("dbCredentials-secret")
 	d := &mapFromDataFieldDefinition{
-		kubeClient: f.FakeDynClient(),
+		secretConfigMapReader: &secretConfigMapReader{
+			secretReader:    secretsReader(f.FakeDynClient()),
+			configMapReader: configMapsReader(f.FakeDynClient()),
+		},
 		objectType: secretObjectType,
 		path:       []string{"status", "dbCredentials"},
 	}
@@ -220,7 +223,10 @@ func TestMapFromConfigMapDataField(t *testing.T) {
 	f := mocks.NewFake(t, "test-namespace")
 	f.AddMockedUnstructuredConfigMap("dbCredentials-configMap")
 	d := &mapFromDataFieldDefinition{
-		kubeClient: f.FakeDynClient(),
+		secretConfigMapReader: &secretConfigMapReader{
+			secretReader:    secretsReader(f.FakeDynClient()),
+			configMapReader: configMapsReader(f.FakeDynClient()),
+		},
 		objectType: configMapObjectType,
 		path:       []string{"status", "dbCredentials"},
 	}
@@ -246,7 +252,10 @@ func TestMapFromConfigMapDataFieldWithOutputNameAndSourceValue(t *testing.T) {
 	f := mocks.NewFake(t, "test-namespace")
 	f.AddMockedUnstructuredConfigMap("dbCredentials-configMap")
 	d := &mapFromDataFieldDefinition{
-		kubeClient:  f.FakeDynClient(),
+		secretConfigMapReader: &secretConfigMapReader{
+			secretReader:    secretsReader(f.FakeDynClient()),
+			configMapReader: configMapsReader(f.FakeDynClient()),
+		},
 		objectType:  configMapObjectType,
 		sourceValue: "username",
 		outputName:  "user",

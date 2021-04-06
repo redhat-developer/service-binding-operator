@@ -40,6 +40,7 @@ Feature: Bind an application to a service
             metadata:
                 name: service-binding-a-s-b
             spec:
+                bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
@@ -103,8 +104,6 @@ Feature: Bind an application to a service
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    # Currently disabled as not supported by SBO
-    @disabled
     Scenario: Bind an application to backend service in the following order: Service, Binding and Application
         Given CustomResourceDefinition backends.stable.example.com is available
         * The Secret is present
@@ -153,8 +152,6 @@ Feature: Bind an application to a service
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    # Currently disabled as not supported by SBO
-    @disabled
     Scenario: Bind an application to backend service in the following order: Binding, Application and Service
         Given Service Binding is applied
             """
@@ -203,8 +200,6 @@ Feature: Bind an application to a service
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    # Currently disabled as not supported by SBO
-    @disabled
     Scenario: Bind an application to backend service in the following order: Binding, Service and Application
         Given Service Binding is applied
             """
@@ -345,7 +340,7 @@ Feature: Bind an application to a service
         Given OLM Operator "backend-new-spec" is running
         * The Custom Resource is present
             """
-            apiVersion: "stable.example.com/v1"
+            apiVersion: "beta.example.com/v1"
             kind: Backend
             metadata:
                 name: backend-demo
@@ -366,7 +361,7 @@ Feature: Bind an application to a service
             spec:
                 bindAsFiles: false
                 services:
-                -   group: stable.example.com
+                -   group: beta.example.com
                     version: v1
                     kind: Backend
                     name: backend-demo
@@ -728,7 +723,8 @@ Feature: Bind an application to a service
     # This tests are also run on openshift and k8s with olm CI so no harm in skipping on non-olm CI run
     @olm
     Scenario: Emptying spec of existing service binding is not allowed
-        Given The Custom Resource is present
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
@@ -869,6 +865,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-configmap
             spec:
+                bindAsFiles: false
                 services:
                 -   group: ""
                     version: v1
@@ -904,6 +901,7 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-secret
             spec:
+                bindAsFiles: false
                 services:
                 -   group: ""
                     version: v1
