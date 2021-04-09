@@ -8,7 +8,7 @@ metadata:
     description: An operator to support binding capabilities between imported apps
       and operator backed services
     repository: https://github.com/redhat-developer/service-binding-operator
-    support: Red Hat
+    support: Service Binding Operator Community
   name: service-binding-operator.v0.0.0
   namespace: placeholder
 spec:
