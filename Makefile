@@ -70,7 +70,7 @@ GO ?= CGO_ENABLED=$(CGO_ENABLED) GOCACHE=$(GOCACHE) GOFLAGS="$(GOFLAGS)" GO111MO
 
 .PHONY: lint
 ## Runs linters
-lint: setup-venv lint-go-code lint-yaml lint-python-code lint-feature-files
+lint: setup-venv lint-go-code lint-yaml lint-python-code lint-feature-files lint-conflicts
 
 YAML_FILES := $(shell find . -path ./vendor -prune -o -path ./config -prune -o -type f -regex ".*\.y[a]ml" -print)
 .PHONY: lint-yaml
@@ -98,6 +98,11 @@ lint-python-code: setup-venv
 .PHONY: lint-feature-files
 lint-feature-files:
 	$(Q)./hack/check-feature-files.sh
+
+## Check for the presence of conflict notes in source file
+.PHONY: lint-conflicts
+lint-conflicts:
+	$(Q)./hack/check-conflicts.sh
 
 .PHONY: test
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
