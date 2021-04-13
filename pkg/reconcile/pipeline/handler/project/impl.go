@@ -237,6 +237,7 @@ func Unbind(ctx pipeline.Context) {
 		return
 	}
 	secretName := ctx.BindingSecretName()
+	bindingName := ctx.BindingName()
 	if secretName == "" {
 		ctx.StopProcessing()
 		return
@@ -254,7 +255,7 @@ func Unbind(ctx pipeline.Context) {
 		volumeResources, found, _ := resources(&corev1.Volume{}, podSpecMap, "volumes")
 		if found {
 			for i, vol := range volumeResources {
-				if val, found, err := unstructured.NestedString(vol, "name"); found && err == nil && val == secretName {
+				if val, found, err := unstructured.NestedString(vol, "name"); found && err == nil && val == bindingName {
 					s := append(volumeResources[:i], volumeResources[i+1:]...)
 					if len(s) == 0 {
 						delete(podSpecMap, "volumes")
@@ -288,7 +289,7 @@ func Unbind(ctx pipeline.Context) {
 			volumeMounts, found, _ := resources(&corev1.VolumeMount{}, container, "volumeMounts")
 			if found {
 				for i, vm := range volumeMounts {
-					if val, found, err := unstructured.NestedString(vm, "name"); found && err == nil && val == secretName {
+					if val, found, err := unstructured.NestedString(vm, "name"); found && err == nil && val == bindingName {
 						s := append(volumeMounts[:i], volumeMounts[i+1:]...)
 						if len(s) == 0 {
 							delete(container, "volumeMounts")
