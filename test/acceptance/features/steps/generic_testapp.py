@@ -34,6 +34,10 @@ class GenericTestApp(App):
         print(f'file endpoint response: {resp.text} code: {resp.status_code}')
         return resp.text
 
+    def assert_file_not_exist(self, file_path):
+        polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{file_path}"),
+                      check_success=lambda r: r.status_code == 404, step=5, timeout=400, ignore_exceptions=(requests.exceptions.ConnectionError,))
+
 
 @step(u'Generic test application "{application_name}" is running')
 @step(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
@@ -65,3 +69,8 @@ def check_env_var_existence(context, name):
 def check_file_value(context, file_path):
     value = context.text.strip()
     polling2.poll(lambda: context.application.get_file_value(file_path) == value, step=5, timeout=400)
+
+
+@step(u'File "{file_path}" is unavailable in application pod')
+def check_file_unavailable(context, file_path):
+    context.application.assert_file_not_exist(file_path)

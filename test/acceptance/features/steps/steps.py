@@ -532,10 +532,14 @@ def validate_secret_empty(context):
         assert False, "sbr_name not in context"
 
 
+def assert_generation(context, count):
+    context.latest_application_generation = context.application.get_generation()
+    return context.latest_application_generation - context.original_application_generation == int(count)
+
+
 @then(u'The application got redeployed {count} times so far')
 def check_generation(context, count):
-    context.latest_application_generation = context.application.get_generation()
-    assert context.latest_application_generation - context.original_application_generation == int(count), "Unexpected number of application redeployments"
+    polling2.poll(lambda: assert_generation(context, count), step=5, timeout=400)
 
 
 @then(u'The application does not get redeployed again with {time} minutes')

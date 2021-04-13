@@ -519,12 +519,15 @@ var _ = Describe("Unbind handler", func() {
 			deploymentsUnstructured    []*unstructured.Unstructured
 			deploymentsUnstructuredOld []*unstructured.Unstructured
 			secretName                 string
+			bindingName                string
 		)
 
 		BeforeEach(func() {
 			var apps []pipeline.Application
 			secretName = "secret1"
+			bindingName = "binding1"
 			ctx.EXPECT().BindingSecretName().Return(secretName)
+			ctx.EXPECT().BindingName().Return(bindingName)
 			d1 := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
@@ -570,7 +573,7 @@ var _ = Describe("Unbind handler", func() {
 					Image: "foo",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      secretName,
+							Name:      bindingName,
 							MountPath: "/bla",
 						},
 					},
@@ -581,7 +584,7 @@ var _ = Describe("Unbind handler", func() {
 					Image: "foo",
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      secretName,
+							Name:      bindingName,
 							MountPath: "/bla",
 						},
 						{
@@ -598,7 +601,7 @@ var _ = Describe("Unbind handler", func() {
 			})
 			d6.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
-					Name: secretName,
+					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: secretName,
@@ -613,7 +616,7 @@ var _ = Describe("Unbind handler", func() {
 			})
 			d7.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
-					Name: secretName,
+					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: secretName,
