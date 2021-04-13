@@ -62,15 +62,14 @@ var _ = Describe("Default Pipeline", func() {
 				Name:     appName,
 			},
 		}
-		boolFalse := false
 		sb := &v1alpha1.ServiceBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "sb1",
 				Namespace: ns,
-				UID: "uid1",
+				UID:       "uid1",
 			},
 			Spec: v1alpha1.ServiceBindingSpec{
-				BindAsFiles: &boolFalse,
+				BindAsFiles: false,
 				Services:    []v1alpha1.Service{serviceRef},
 				Application: &appRef,
 			},

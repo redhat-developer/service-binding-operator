@@ -167,10 +167,7 @@ func (i *impl) NamingTemplate() string {
 }
 
 func (i *impl) BindAsFiles() bool {
-	if i.serviceBinding.Spec.BindAsFiles == nil {
-		return true
-	}
-	return *i.serviceBinding.Spec.BindAsFiles
+	return i.serviceBinding.Spec.BindAsFiles
 }
 
 func (i *impl) RetryProcessing(reason error) {
@@ -210,8 +207,8 @@ func (i *impl) persistSecret() (string, error) {
 	name := i.BindingSecretName()
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace:       i.serviceBinding.Namespace,
-			Name:            name,
+			Namespace: i.serviceBinding.Namespace,
+			Name:      name,
 		},
 		StringData: i.bindingItems.AsMap(),
 	}

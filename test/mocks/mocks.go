@@ -27,7 +27,6 @@ const (
 )
 
 var (
-	falseBoolPtr = true
 	// DBNameSpecDesc default spec descriptor to inform the database name.
 	DBNameSpecDesc = olmv1alpha1.SpecDescriptor{
 		DisplayName:  "Database Name",
@@ -431,7 +430,7 @@ func ServiceBindingMock(
 				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
 			},
 			DetectBindingResources: false,
-			BindAsFiles:            &falseBoolPtr,
+			BindAsFiles:            false,
 			Services:               services,
 		},
 	}

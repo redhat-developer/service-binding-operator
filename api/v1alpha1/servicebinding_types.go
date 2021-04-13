@@ -96,7 +96,8 @@ type ServiceBindingSpec struct {
 	// BindAsFiles makes available the binding values as files in the application's container
 	// See MountPath attribute description for more details.
 	// +optional
-	BindAsFiles *bool `json:"bindAsFiles,omitempty"`
+	// +kubebuilder:default:=true
+	BindAsFiles bool `json:"bindAsFiles"`
 }
 
 // ServiceBindingMapping defines a new binding from set of existing bindings
@@ -235,19 +236,18 @@ func (sbr *ServiceBinding) AsOwnerReference() metav1.OwnerReference {
 }
 
 func (spec *ServiceBindingSpec) NamingTemplate() string {
-	var bindAsFiles bool = spec.BindAsFiles != nil && *spec.BindAsFiles
-	if bindAsFiles && spec.NamingStrategy == "" {
-		return templates["lowercase"]
-	} else if spec.NamingStrategy == "" {
-		return templates["uppercase"]
-	} else if spec.NamingStrategy != "" {
+	if spec.NamingStrategy != "" {
 		if v, ok := templates[spec.NamingStrategy]; ok {
 			return v
 		} else {
 			return spec.NamingStrategy
 		}
 	}
-	return templates["none"]
+	if spec.BindAsFiles {
+		return templates["none"]
+	} else {
+		return templates["uppercase"]
+	}
 }
 
 // Returns GVR of reference if available, otherwise error

@@ -90,7 +90,6 @@ Feature: Bindings get injected as files in application
             metadata:
                 name: binding-backend-vm-02
             spec:
-                bindAsFiles: true
                 services:
                 -   group: stable.example.com
                     version: v1
