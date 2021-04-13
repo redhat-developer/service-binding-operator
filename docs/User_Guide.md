@@ -316,7 +316,7 @@ bindings
 │   ├── COCKROACHDB_CONF_PORT
 ```
 
-Setting `spec.bindAsFiles` to `true` (default: `false`) enables injecting gathered bindings as files into the application/workload.
+Setting `spec.bindAsFiles` to `false` (default: `true`) enables injecting gathered bindings as env variables into the application/workload.
 
 For determining the folder where bindings should be injected, we can specify the destination using `spec.mountPath` or we can use `SERVICE_BINDING_ROOT` environment variable. If both are set then the `SERVICE_BINDING_ROOT` environment variable takes the higher precedence.
 

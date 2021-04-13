@@ -132,6 +132,7 @@ spec:
                 - version
                 type: object
               bindAsFiles:
+                default: true
                 description: BindAsFiles makes available the binding values as files
                   in the application's container See MountPath attribute description
                   for more details.

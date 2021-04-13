@@ -327,7 +327,7 @@ var _ = Describe("Context", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
-					UID: "uid1",
+					UID:       "uid1",
 				},
 			}
 			sb.SetGroupVersionKind(v1alpha1.GroupVersionKind)
@@ -503,7 +503,6 @@ var _ = Describe("Context", func() {
 
 			_, err = client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).To(HaveOccurred())
-
 
 			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Secret)
 			Expect(err).NotTo(HaveOccurred())
