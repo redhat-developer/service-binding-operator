@@ -118,16 +118,25 @@ Feature: Bind a single application to multiple services
                     group: apps
                     version: v1
                     resource: deployments
+                mappings:
+                - name: FOO
+                  value: '{{ .db1.metadata.name }}_{{ .db2.metadata.name }}'
+                - name: FOO2
+                  value: '{{ .db1.metadata.name }}_{{ .db2.kind }}'
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
                     name: internal-db-1sbr
+                    id: db1
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
                     name: external-db-1sbr
+                    id: db2
             """
         Then Service Binding "binding-request-1sbr" is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
         And The application env var "BACKEND_HOST_EXTERNAL_DB" has value "external.db.stable.example.com"
+        And The application env var "FOO" has value "internal-db-1sbr_external-db-1sbr"
+        And The application env var "FOO2" has value "internal-db-1sbr_Backend"

@@ -91,7 +91,9 @@ func (i *impl) Mappings() map[string]string {
 
 func (i *impl) Services() ([]pipeline.Service, error) {
 	if i.services == nil {
-		for _, serviceRef := range i.serviceBinding.Spec.Services {
+		serviceRefs := i.serviceBinding.Spec.Services
+		for idx := 0; idx<len(serviceRefs); idx++ {
+			serviceRef := serviceRefs[idx]
 			gvr, err := i.typeLookup.ResourceForReferable(&serviceRef)
 			if err != nil {
 				return nil, err
@@ -107,8 +109,8 @@ func (i *impl) Services() ([]pipeline.Service, error) {
 		}
 	}
 	services := make([]pipeline.Service, len(i.services))
-	for l, s := range i.services {
-		services[l] = s
+	for idx := 0; idx<len(i.services); idx++ {
+		services[idx] = i.services[idx]
 	}
 	return services, nil
 }

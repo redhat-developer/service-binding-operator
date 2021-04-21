@@ -22,8 +22,8 @@ var _ = Describe("Mapping Handler", func() {
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		ctx = mocks.NewMockContext(mockCtrl)
-		services = []*mocks.MockService{mocks.NewMockService(mockCtrl), mocks.NewMockService(mockCtrl)}
-		ctx.EXPECT().Services().Return([]pipeline.Service{services[0], services[1]}, nil)
+		services = []*mocks.MockService{mocks.NewMockService(mockCtrl), mocks.NewMockService(mockCtrl), mocks.NewMockService(mockCtrl)}
+		ctx.EXPECT().Services().Return([]pipeline.Service{services[0], services[1], services[2]}, nil)
 		bindingItems = []*pipeline.BindingItem{
 			{
 				Name:  "foo",
@@ -42,6 +42,16 @@ var _ = Describe("Mapping Handler", func() {
 		services[0].EXPECT().Id().Return(&srvId).MinTimes(1)
 		services[0].EXPECT().Resource().Return(u)
 
+		u2 := &unstructured.Unstructured{Object: map[string]interface{}{
+			"bar2": "bla2",
+		}}
+		u2.SetName("n1")
+		u2.SetNamespace("ns1")
+
+		srvId2 := "id2"
+		services[2].EXPECT().Id().Return(&srvId2).MinTimes(1)
+		services[2].EXPECT().Resource().Return(u2)
+
 		services[1].EXPECT().Id().Return(nil).MinTimes(1)
 	})
 
@@ -56,6 +66,7 @@ var _ = Describe("Mapping Handler", func() {
 		mapping.Handle(ctx)
 	},
 		Entry("property referred via service id", "{{ .id1.bar }}", "bla"),
+		Entry("property referred via service id", "{{ .id1.bar }}_{{ .id2.metadata.name }}", "bla_n1"),
 		Entry("use existing bindins", "{{ .foo }}_{{ .foo2 }}", "val1_val2"))
 
 	DescribeTable("failed processing", func(template string) {
@@ -70,4 +81,5 @@ var _ = Describe("Mapping Handler", func() {
 		mapping.Handle(ctx)
 	},
 		Entry("bad template", "{{ .id1.bar "))
+
 })

@@ -128,11 +128,13 @@ var _ = Describe("Context", func() {
 		var (
 			defServiceBinding = func(name string, namespace string, refs ...v1alpha1.Ref) *v1alpha1.ServiceBinding {
 				var services []v1alpha1.Service
-				for _, ref := range refs {
+				for idx, ref := range refs {
+					id := fmt.Sprintf("id%v", idx)
 					services = append(services, v1alpha1.Service{
 						NamespacedRef: v1alpha1.NamespacedRef{
 							Ref: ref,
 						},
+						Id: &id,
 					})
 				}
 				sb := &v1alpha1.ServiceBinding{
@@ -181,6 +183,8 @@ var _ = Describe("Context", func() {
 					}
 					Expect(serviceImpl.client).To(Equal(client))
 					Expect(serviceImpl.groupVersionResource).To(Equal(gvr))
+					Expect(serviceImpl.serviceRef.Name).To(Equal(tc.serviceRefs[i].Name))
+					Expect(*serviceImpl.serviceRef.Id).To(Equal(fmt.Sprintf("id%v", i)))
 				}
 			},
 			Entry("single service", &testCase{
