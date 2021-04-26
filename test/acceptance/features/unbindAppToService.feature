@@ -43,14 +43,13 @@ Feature: Unbind an application from a service
                     name: example-backend
                     id: backend
             """
+        * Service Binding "binding-request-a-d-u" is ready
         * The application env var "BACKEND_HOST" has value "example.com"
         * The application env var "BACKEND_USERNAME" has value "foo"
-
         When Service binding "binding-request-a-d-u" is deleted
-
         Then The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_USERNAME" is not available to the application
-
+        * The env var "BACKEND_USERNAME" is not available to the application
+        * Service Binding secret is not present
 
     Scenario: Unbind a generic test application from the backing service when the backing service has been deleted
         Given The Custom Resource is present
@@ -87,26 +86,26 @@ Feature: Unbind an application from a service
                     name: example-backend
                     id: backend
             """
+        * Service Binding "binding-request-a-d-u" is ready
         * The application env var "BACKEND_HOST" has value "example.com"
         * The application env var "BACKEND_USERNAME" has value "foo"
-
-        When BackingService is deleted
-          """
-          apiVersion: "stable.example.com/v1"
-          kind: Backend
-          metadata:
-              name: example-backend
-              annotations:
-                  service.binding/host: path={.spec.host}
-                  service.binding/username: path={.spec.username}
-          spec:
-              host: example.com
-              username: foo
-          """
+        * BackingService is deleted
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: example-backend
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.com
+                username: foo
+            """
         When Service binding "binding-request-a-d-u" is deleted
-
         Then The env var "BACKEND_HOST" is not available to the application
-        And The env var "BACKEND_USERNAME" is not available to the application
+        * The env var "BACKEND_USERNAME" is not available to the application
+        * Service Binding secret is not present
 
     Scenario: Remove bindings projected as files from generic test application
         Given Generic test application "remove-bindings-as-files-app" is running
@@ -143,7 +142,6 @@ Feature: Unbind an application from a service
                     resource: deployments
             """
         * Service Binding "remove-bindings-as-files-app-sb" is ready
-
         * Content of file "/bindings/remove-bindings-as-files-app-sb/host" in application pod is
             """
             example.common
@@ -156,3 +154,4 @@ Feature: Unbind an application from a service
         Then The application got redeployed 2 times so far
         * File "/bindings/remove-bindings-as-files-app-sb/host" is unavailable in application pod
         * File "/bindings/remove-bindings-as-files-app-sb/port" is unavailable in application pod
+        * Service Binding secret is not present
