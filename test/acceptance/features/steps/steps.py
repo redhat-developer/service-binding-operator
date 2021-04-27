@@ -227,6 +227,7 @@ def then_app_is_connected_to_db(context, db_name):
 @when(u'Service binding "{sb_name}" is deleted')
 def service_binding_is_deleted(context, sb_name):
     openshift = Openshift()
+    context.sb_secret = get_sbr_secret_name(context, sb_name)
     openshift.delete_service_binding(sb_name, context.namespace.name)
 
 
@@ -257,6 +258,14 @@ def sbo_is_ready(context, sbr_name):
     sbo_jq_is(context, '.status.conditions[] | select(.type=="CollectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="InjectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
+    context.sb_secret = get_sbr_secret_name(context, sbr_name)
+
+
+@step(u'Service Binding secret is not present')
+def sb_secret_is_not_present(context):
+    openshift = Openshift()
+    polling2.poll(lambda: openshift.search_resource_in_namespace("secrets", context.sb_secret, context.namespace.name),
+                  step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is None)
 
 
 @given(u'Openshift Serverless Operator is running')
@@ -304,9 +313,10 @@ def quarkus_app_is_imported_as_knative_service(context, application_name):
     context.application_type = "knative"
 
 
-def get_sbr_secret_name(context):
+def get_sbr_secret_name(context, sbr_name=None):
     openshift = Openshift()
-    output = openshift.get_resource_info_by_jsonpath("servicebindings", context.sbr_name, context.namespace.name, "{.status.secret}")
+    output = openshift.get_resource_info_by_jsonpath(
+        "servicebindings", context.sbr_name if sbr_name is None else sbr_name, context.namespace.name, "{.status.secret}")
     assert output is not None, "Failed to fetch secret name from ServiceBinding"
     return output
 
