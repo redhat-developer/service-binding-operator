@@ -6,7 +6,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	corev1 "k8s.io/api/core/v1"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"path"
@@ -224,15 +223,7 @@ func Unbind(ctx pipeline.Context) {
 		return
 	}
 	applications, err := ctx.Applications()
-	if err != nil {
-		if k8serrors.IsNotFound(err) {
-			ctx.StopProcessing()
-			return
-		}
-		ctx.RetryProcessing(err)
-		return
-	}
-	if len(applications) == 0 {
+	if err != nil || len(applications) == 0 {
 		ctx.StopProcessing()
 		return
 	}

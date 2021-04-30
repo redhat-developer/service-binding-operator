@@ -155,3 +155,40 @@ Feature: Unbind an application from a service
         * File "/bindings/remove-bindings-as-files-app-sb/host" is unavailable in application pod
         * File "/bindings/remove-bindings-as-files-app-sb/port" is unavailable in application pod
         * Service Binding secret is not present
+
+    Scenario: Remove not ready binding
+        Given The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: example-backend
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.com
+                username: foo
+            """
+        * Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: unready-binding
+            spec:
+                bindAsFiles: false
+                application:
+                    name: not-found-app
+                    group: apps
+                    version: v1
+                    resource: deployments
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: example-backend
+            """
+        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "unready-binding" should be changed to "False"
+        When Service binding "unready-binding" is deleted
+        Then Service Binding "unready-binding" is not persistent in the cluster

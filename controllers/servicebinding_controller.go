@@ -79,12 +79,16 @@ func (r *ServiceBindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, err
 		log.Error(err, "Failed to get ServiceBinding", "name", req.NamespacedName, "err", err)
 		return ctrl.Result{}, err
 	}
-	if serviceBinding.MaybeAddFinalizer() {
+	if serviceBinding.DeletionTimestamp.IsZero() && serviceBinding.MaybeAddFinalizer() {
 		if err = r.Update(ctx, serviceBinding); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
-	log.Info("Reconciling", "sb", serviceBinding)
+	if serviceBinding.DeletionTimestamp.IsZero() {
+		log.Info("Reconciling")
+	} else {
+		log.Info("Deleted, unbind the application")
+	}
 	retry, err := r.pipeline.Process(serviceBinding)
 	if !retry && err == nil {
 		if !serviceBinding.DeletionTimestamp.IsZero() {
