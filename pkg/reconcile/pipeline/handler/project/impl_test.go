@@ -507,13 +507,20 @@ var _ = Describe("Unbind handler", func() {
 		ctx = mocks.NewMockContext(mockCtrl)
 		ctx.EXPECT().UnbindRequested().Return(true)
 		ctx.EXPECT().StopProcessing()
-
 	})
 
 	AfterEach(func() {
 		mockCtrl.Finish()
 	})
 
+	It("should stop processing when there is error getting applications", func() {
+		ctx.EXPECT().Applications().Return(nil, errors.New("foo"))
+		project.Unbind(ctx)
+	})
+	It("should stop processing when there are no applications", func() {
+		ctx.EXPECT().Applications().Return([]pipeline.Application{}, nil)
+		project.Unbind(ctx)
+	})
 	Context("successful processing", func() {
 		var (
 			deploymentsUnstructured    []*unstructured.Unstructured

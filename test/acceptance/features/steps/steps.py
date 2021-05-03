@@ -501,8 +501,8 @@ def validate_error(context, err_msg=None):
 @then(u'Service Binding "{sb_name}" is not persistent in the cluster')
 def validate_absent_sb(context, sb_name):
     openshift = Openshift()
-    output = openshift.search_resource_in_namespace("servicebindings", sb_name, context.namespace.name)
-    assert output is None, f"Service Binding {sb_name} is present in namespace '{context.namespace.name}'"
+    polling2.poll(lambda: openshift.search_resource_in_namespace("servicebindings", sb_name, context.namespace.name),
+                  step=5, timeout=400, check_success=lambda v: v is None)
 
 
 @then(u'Service Binding "{sb_name}" is not updated')
