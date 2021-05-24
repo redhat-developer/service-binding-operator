@@ -1,0 +1,17 @@
+#!/bin/bash
+cmd="/usr/bin/podman"
+case "$1" in
+  push)
+    prefix=${2%/*}
+    img=${2#${prefix}}
+   "$cmd" push --tls-verify=false $2 docker://localhost:5000${img}
+   ;;
+  inspect)
+    prefix=${3%/*}
+    img=${3#${prefix}}
+    echo $prefix${img%:*}@$(skopeo inspect --tls-verify=false docker://localhost:5000${img} | jq -r .Digest)
+    ;;
+  *)
+    "$cmd" "$@"   
+    ;;
+esac

@@ -14,7 +14,6 @@ env:
   K8S_VERSION: "1.19.2"
   MINIKUBE_VERSION: "1.15.1"
   TEST_ACCEPTANCE_CLI: "kubectl"
-  CONTAINER_RUNTIME: "docker"
   TEST_RESULTS: "out/acceptance-tests"
 
 jobs:
@@ -76,11 +75,6 @@ jobs:
       - name: Checkout Git Repository
         uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "^1.15.6"
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -89,15 +83,34 @@ jobs:
 
       - name: Setup-cli
         uses: ./.github/actions/setup-cli
+        with:
+          start-minikube: true
+
+      - name: Wait for push
+        uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "Push operator images (PR)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 60
+
+      - name: Extract image references
+        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        with:
+          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests
         timeout-minutes: 60
         run: |
-          eval $(minikube docker-env)
-          make OPERATOR_REPO_REF=$(minikube ip):5000/sbo SKIP_REGISTRY_LOGIN=true release-operator -o registry-login test-acceptance-with-bundle
+          source ./operator.refs
+          export CATSRC_NAME=sbo-pr-checks
+
+          make SKIP_REGISTRY_LOGIN=true -o registry-login test-acceptance-with-bundle
 
       - name: Collect logs
+        continue-on-error: true
         run: |
+          mkdir -p ${TEST_RESULTS}
           kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n operators | tail -1) -n operators > ${TEST_RESULTS}/sbo.log
         if: always()
 
@@ -131,11 +144,6 @@ jobs:
       - name: Checkout Git Repository
         uses: actions/checkout@v2
 
-      - name: Set up Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "^1.15.6"
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -144,6 +152,8 @@ jobs:
 
       - name: Set up CLI
         uses: ./.github/actions/setup-cli
+        with:
+          start-minikube: true
 
       - name: Setup umoci cli
         run: |
@@ -151,17 +161,34 @@ jobs:
           chmod +x umoci
           mv -v umoci $GITHUB_WORKSPACE/bin/
 
+      - name: Wait for push
+        uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "Push operator images (PR)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 60
+
+      - name: Extract image references
+        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        with:
+          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+
       - name: Acceptance tests against vanilla k8s without OLM
         timeout-minutes: 60
         run: |
+          source ./operator.refs
+
           eval $(minikube docker-env)
-          make OPERATOR_REPO_REF=$(minikube ip):5000/sbo SKIP_REGISTRY_LOGIN=true release-operator -o registry-login release-manifests
+          make release-manifests
           kubectl apply -f out/release.yaml
           make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
 
       - name: Collect logs
+        continue-on-error: true
         run: |
-          kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n service-binding-operator | tail -1) -n service-binding-operator > ${TEST_RESULTS}/sbo.log
+          mkdir -p ${TEST_RESULTS}
+          kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n operators | tail -1) -n operators > ${TEST_RESULTS}/sbo.log
         if: always()
 
       - name: Setup Testspace

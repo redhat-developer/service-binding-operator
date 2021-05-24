@@ -1,16 +1,45 @@
 # action.yml
 name: 'Setup Tools'
 description: 'Setup CLI configuration with kubectl operator-sdk opm minikube, setup path, kubeconfig, minikube and docker info '
+inputs:
+  operator-sdk:
+    description: "Install Operator SDK"
+    required: false
+    default: false
+  opm:
+    description: "Install opm"
+    required: false
+    default: false
+  kubectl:
+    description: "Install kubectl"
+    required: false
+    default: false
+  minikube:
+    description: "Install minikube"
+    required: false
+    default: false
+  start-minikube:
+    description: "Start minikube cluster"
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
     - id: setup-path
       run: |
         mkdir -p $GITHUB_WORKSPACE/bin/
-        echo "PATH=$PATH:$GITHUB_WORKSPACE/bin/" >> $GITHUB_ENV
+        echo "PATH=$GITHUB_WORKSPACE/bin:$PATH" >> $GITHUB_ENV
       shell: bash
 
-    - run: $GITHUB_ACTION_PATH/setup_tools.sh
+    - id: setup-tools
+      env:
+        OPERATOR_SDK: ${{ inputs.operator-sdk }}
+        OPM: ${{ inputs.opm }}
+        KUBECTL: ${{ inputs.kubectl }}
+        MINIKUBE: ${{ inputs.minikube }}
+        START_MINIKUBE: ${{ inputs.start-minikube }}
+      run: |
+        $GITHUB_ACTION_PATH/setup_tools.sh
       shell: bash
 
     - id: set-kubeconfig
@@ -22,14 +51,17 @@ runs:
 
     - id: setup-minikube
       run: |
-        ./hack/start-minikube.sh start --kubernetes-version=v${K8S_VERSION} --driver=$CONTAINER_RUNTIME --cpus $(nproc) --memory 5g
+        if [ "${{ inputs.start-minikube }}" == "true" ]; then
+          ./hack/start-minikube.sh start --kubernetes-version=v${K8S_VERSION} --driver=$CONTAINER_RUNTIME --cpus $(nproc) --memory 5g
+        fi
       shell: bash
 
-    - id: docker-info
+    - id: podman-info
       run: |
-        eval $(minikube docker-env)
-        docker ps
-        kubectl get nodes -o yaml
-        kubectl cluster-info
-        docker info
+        if [ "${{ inputs.start-minikube }}" == "true" ]; then
+          kubectl get nodes -o yaml
+          kubectl cluster-info
+        fi
+        podman ps
+        podman info
       shell: bash
