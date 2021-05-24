@@ -1,0 +1,84 @@
+name: PR checks - Push operator images
+
+on:
+  workflow_run:
+    workflows: ["PR checks - Build operator images"]
+    types:
+      - completed
+
+env:
+  GO111MODULE: on
+  SDK_VERSION: "1.3.0"
+  OPM_VERSION: "1.15.2"
+  MINIKUBE_WANTUPDATENOTIFICATION: false
+  MINIKUBE_WANTREPORTERRORPROMPT: false
+  K8S_VERSION: "1.19.2"
+  MINIKUBE_VERSION: "1.15.1"
+  TEST_ACCEPTANCE_CLI: "kubectl"
+  CONTAINER_RUNTIME: "docker"
+  TEST_RESULTS: "out/acceptance-tests"
+
+jobs:
+  pr-dev-push:
+    name: Push PR bundle and index images
+    runs-on: ubuntu-20.04
+    if: >
+      ${{ github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' }}
+
+    env:
+      QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+      QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.15.6"
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Setup CLI
+        uses: ./.github/actions/setup-cli
+
+      - name: 'Download artifact'
+        uses: actions/github-script@v3.1.0
+        with:
+          script: |
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: ${{github.event.workflow_run.id }},
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "operator-images"
+            })[0];
+            var download = await github.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip',
+            });
+            var fs = require('fs');
+            fs.writeFileSync('${{github.workspace}}/operator-images.zip', Buffer.from(download.data));
+      - run: unzip operator-images.zip
+
+      - name: Release bundle and index images
+        run: |
+          TAG=pr-$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")-${GITHUB_SHA:0:8}
+          export OPERATOR_IMAGE_REF=quay.io/pmacik/sbo-pr-checks:${TAG}
+          export OPERATOR_BUNDLE_IMAGE_REF=${OPERATOR_IMAGE_REF}-bundle
+          export OPERATOR_INDEX_IMAGE_REF=${OPERATOR_IMAGE_REF}-index
+          
+          podman load -i images/operator-image.tar
+          podman load -i images/operator-bundle.tar
+
+          podman push ${OPERATOR_IMAGE_REF}
+          podman push ${OPERATOR_BUNDLE_IMAGE_REF}
+
+          opm index add -u podman -p podman --bundles ${OPERATOR_BUNDLE_IMAGE_REF} --tag ${OPERATOR_INDEX_IMAGE_REF}
+          podman push ${OPERATOR_INDEX_IMAGE_REF}
