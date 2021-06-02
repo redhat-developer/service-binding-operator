@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"sort"
+
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
@@ -13,9 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	"sort"
 )
 
 var _ pipeline.Context = &impl{}
@@ -92,7 +94,7 @@ func (i *impl) Mappings() map[string]string {
 func (i *impl) Services() ([]pipeline.Service, error) {
 	if i.services == nil {
 		serviceRefs := i.serviceBinding.Spec.Services
-		for idx := 0; idx<len(serviceRefs); idx++ {
+		for idx := 0; idx < len(serviceRefs); idx++ {
 			serviceRef := serviceRefs[idx]
 			gvr, err := i.typeLookup.ResourceForReferable(&serviceRef)
 			if err != nil {
@@ -109,7 +111,7 @@ func (i *impl) Services() ([]pipeline.Service, error) {
 		}
 	}
 	services := make([]pipeline.Service, len(i.services))
-	for idx := 0; idx<len(i.services); idx++ {
+	for idx := 0; idx < len(i.services); idx++ {
 		services[idx] = i.services[idx]
 	}
 	return services, nil
@@ -122,11 +124,33 @@ func (i *impl) Applications() ([]pipeline.Application, error) {
 			if err != nil {
 				return nil, err
 			}
-			u, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).Get(context.Background(), ref.Name, metav1.GetOptions{})
-			if err != nil {
-				return nil, err
+			if i.serviceBinding.Spec.Application.Name != "" {
+				u, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).Get(context.Background(), ref.Name, metav1.GetOptions{})
+				if err != nil {
+					return nil, err
+				}
+				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindingPath: i.serviceBinding.Spec.Application.BindingPath})
 			}
-			i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindingPath: i.serviceBinding.Spec.Application.BindingPath})
+			if i.serviceBinding.Spec.Application.LabelSelector != nil && i.serviceBinding.Spec.Application.LabelSelector.MatchLabels != nil {
+				matchLabels := i.serviceBinding.Spec.Application.LabelSelector.MatchLabels
+				opts := metav1.ListOptions{
+					LabelSelector: labels.Set(matchLabels).String(),
+				}
+
+				emptyResult := make([]pipeline.Application, 0)
+				objList, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).List(context.Background(), opts)
+				if err != nil {
+					return emptyResult, err
+				}
+
+				if len(objList.Items) == 0 {
+					return emptyResult, nil
+				}
+
+				for index := range objList.Items {
+					i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindingPath: i.serviceBinding.Spec.Application.BindingPath})
+				}
+			}
 		} else {
 			i.applications = make([]*application, 0)
 		}

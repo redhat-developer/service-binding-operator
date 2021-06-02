@@ -4,6 +4,7 @@ import (
 	"context"
 	e "errors"
 	"fmt"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -21,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/testing"
 )
 
 var _ = Describe("Context", func() {
@@ -91,7 +93,146 @@ var _ = Describe("Context", func() {
 			Entry("no binding path specified", nil, defaultContainerPath),
 			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
 		)
+		DescribeTable("should return slice of size 2 if 2 applications are specified through label seclector", func(bindingPath *v1alpha1.BindingPath, expectedContainerPath string) {
+			ls := &metav1.LabelSelector{
+				MatchLabels: map[string]string{"env": "prod"},
+			}
 
+			ref := v1alpha1.Application{
+				Ref: v1alpha1.Ref{
+					Group:   "app",
+					Version: "v1",
+					Kind:    "Foo",
+				},
+				LabelSelector: ls,
+				BindingPath:   bindingPath,
+			}
+
+			sb := v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: v1alpha1.ServiceBindingSpec{
+					Application: &ref,
+				},
+			}
+			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
+			typeLookup.EXPECT().ResourceForReferable(&ref).Return(gvr, nil)
+
+			u1 := &unstructured.Unstructured{}
+			u1.SetName("app1")
+			u1.SetNamespace(sb.Namespace)
+			u1.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			u1.SetLabels(map[string]string{"env": "prod"})
+
+			u2 := &unstructured.Unstructured{}
+			u2.SetName("app2")
+			u2.SetNamespace(sb.Namespace)
+			u2.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			u2.SetLabels(map[string]string{"env": "prod"})
+
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u1, u2)
+
+			ctx := &impl{client: client, serviceBinding: &sb, typeLookup: typeLookup}
+
+			applications, err := ctx.Applications()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(applications).To(HaveLen(2))
+
+			Expect(applications[0].Resource().GetName()).NotTo(Equal(applications[1].Resource().GetName()))
+			Expect(applications[0].Resource()).Should(BeElementOf(u1, u2))
+			Expect(applications[1].Resource()).Should(BeElementOf(u1, u2))
+			Expect(applications[0].ContainersPath()).To(Equal(expectedContainerPath))
+			Expect(applications[1].ContainersPath()).To(Equal(expectedContainerPath))
+		},
+			Entry("no binding path specified", nil, defaultContainerPath),
+			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+		)
+		DescribeTable("should return slice of size 0 if no application is matching through label seclector", func(bindingPath *v1alpha1.BindingPath, expectedContainerPath string) {
+			ls := &metav1.LabelSelector{
+				MatchLabels: map[string]string{"env": "prod"},
+			}
+
+			ref := v1alpha1.Application{
+				Ref: v1alpha1.Ref{
+					Group:   "app",
+					Version: "v1",
+					Kind:    "Foo",
+				},
+				LabelSelector: ls,
+				BindingPath:   bindingPath,
+			}
+
+			sb := v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: v1alpha1.ServiceBindingSpec{
+					Application: &ref,
+				},
+			}
+			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
+			typeLookup.EXPECT().ResourceForReferable(&ref).Return(gvr, nil)
+
+			u := &unstructured.Unstructured{}
+			u.SetName("app")
+			u.SetNamespace(sb.Namespace)
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			u.SetLabels(map[string]string{"env": "stage"})
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+
+			ctx := &impl{client: client, serviceBinding: &sb, typeLookup: typeLookup}
+
+			applications, err := ctx.Applications()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(applications).To(HaveLen(0))
+		},
+			Entry("no binding path specified", nil, defaultContainerPath),
+			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+		)
+
+		It("should return error if application list returns error", func() {
+			ls := &metav1.LabelSelector{
+				MatchLabels: map[string]string{"env": "prod"},
+			}
+
+			ref := v1alpha1.Application{
+				Ref: v1alpha1.Ref{
+					Group:   "app",
+					Version: "v1",
+					Kind:    "Foo",
+				},
+				LabelSelector: ls,
+			}
+
+			sb := v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: v1alpha1.ServiceBindingSpec{
+					Application: &ref,
+				},
+			}
+
+			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
+			typeLookup.EXPECT().ResourceForReferable(&ref).Return(gvr, nil)
+
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+			expectedError := "Error listing foo"
+			client.PrependReactor("list", "foos",
+				func(action testing.Action) (handled bool, ret runtime.Object, err error) {
+					return true, nil, e.New(expectedError)
+				})
+
+			ctx := &impl{client: client, serviceBinding: &sb, typeLookup: typeLookup}
+
+			_, err := ctx.Applications()
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal(expectedError))
+		})
 		It("should return error if application is not found", func() {
 			ref := v1alpha1.Application{
 				Ref: v1alpha1.Ref{
