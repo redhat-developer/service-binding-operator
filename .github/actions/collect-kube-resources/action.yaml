@@ -1,0 +1,53 @@
+# action.yml
+name: 'Collect Kube resources from Kubernetes cluster'
+description: 'Collects resources for later debugging from OLM operator testing.'
+inputs:
+  operator-namespace:
+    description: "Operator namespace"
+    required: false
+    default: ''
+  olm-namespace:
+    description: "OLM namespace"
+    required: false
+    default: ''
+  test-namespace-file:
+    description: "File with test namespace"
+    required: false
+    default: 'out/test-namespace'
+  output-path:
+    description: "A path to directory under which to store output files"
+    required: false
+    default: '.'
+runs:
+  using: "composite"
+  steps:
+    - id: collect-kube-resources
+      run: |
+        kubectl api-resources --verbs=list --namespaced -o name > resources.list
+
+        for ns in ${{inputs.operator-namespace}} ${{inputs.olm-namespace}}; do
+          OUTPUT=${{inputs.output-path}}/${ns}
+          mkdir -p ${OUTPUT}
+          for res in $(cat resources.list | grep -v secrets); do
+            kubectl get ${res} --ignore-not-found -n ${ns} -o yaml > ${OUTPUT}/${res}.yaml;
+          done
+          find ${OUTPUT} -size 0 -delete
+        done
+
+        if [ -f ${{ inputs.test-namespace-file }} ]; then
+          ns=$(cat ${{ inputs.test-namespace-file }})
+          OUTPUT=${{inputs.output-path}}/${ns}
+          mkdir -p ${OUTPUT}
+          for res in $(cat resources.list); do
+            kubectl get ${res} --ignore-not-found -n ${ns} -o yaml > ${OUTPUT}/${res}.yaml;
+          done
+          find ${OUTPUT} -size 0 -delete
+        fi
+      shell: bash
+
+    - id: collect-operator-logs
+      run: |
+        mkdir -p ${{inputs.output-path}}
+        operator_pod=$(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n ${{inputs.operator-namespace}} | tail -1)
+        kubectl logs ${operator_pod} -n ${{inputs.operator-namespace}} > ${{inputs.output-path}}/${operator_pod}.log
+      shell: bash
