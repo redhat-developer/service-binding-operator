@@ -8,6 +8,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+	"github.com/redhat-developer/service-binding-operator/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -22,14 +23,19 @@ const (
 	ErrorReadingCRD              = "ErrorReadingCRD"
 	ErrorReadingDescriptorReason = "ErrorReadingDescriptor"
 	ErrorReadingBindingReason    = "ErrorReadingBinding"
+	ErrorReadingSecret           = "ErrorReadingSecret"
 )
 
-func BindingDefinitions(ctx pipeline.Context) {
-	services, err := ctx.Services()
+func PreFlight(ctx pipeline.Context) {
+	_, err := ctx.Services()
 	if err != nil {
 		requestRetry(ctx, ErrorReadingServicesReason, err)
 		return
 	}
+}
+
+func BindingDefinitions(ctx pipeline.Context) {
+	services, _ := ctx.Services()
 
 	for _, service := range services {
 		anns := make(map[string]string)
@@ -45,12 +51,12 @@ func BindingDefinitions(ctx pipeline.Context) {
 				return
 			}
 			if descr != nil {
-				mergeMaps(anns, bindingAnnotations(descr))
+				util.MergeMaps(anns, bindingAnnotations(descr))
 			}
-			mergeMaps(anns, crd.Resource().GetAnnotations())
+			util.MergeMaps(anns, crd.Resource().GetAnnotations())
 		}
 
-		mergeMaps(anns, service.Resource().GetAnnotations())
+		util.MergeMaps(anns, service.Resource().GetAnnotations())
 
 		for k, v := range anns {
 			definition, err := makeBindingDefinition(k, v, ctx)
@@ -63,11 +69,7 @@ func BindingDefinitions(ctx pipeline.Context) {
 }
 
 func BindingItems(ctx pipeline.Context) {
-	services, err := ctx.Services()
-	if err != nil {
-		requestRetry(ctx, ErrorReadingServicesReason, err)
-		return
-	}
+	services, _ := ctx.Services()
 
 	for _, service := range services {
 		serviceResource := service.Resource()
@@ -85,6 +87,45 @@ func BindingItems(ctx pipeline.Context) {
 			}
 			for _, n := range v.MapKeys() {
 				collectItems("", ctx, service, n, v.MapIndex(n).Interface())
+			}
+		}
+	}
+}
+
+const ProvisionedServiceAnnotationKey = "service.binding/provisioned-service"
+
+func ProvisionedService(ctx pipeline.Context) {
+	services, _ := ctx.Services()
+
+	for _, service := range services {
+		res := service.Resource()
+		secretName, found, err := unstructured.NestedString(res.Object, "status", "binding", "name")
+		if err != nil {
+			requestRetry(ctx, ErrorReadingBindingReason, err)
+			return
+		}
+		if found {
+			if secretName != "" {
+				secret, err := ctx.ReadSecret(res.GetNamespace(), secretName)
+				if err != nil {
+					requestRetry(ctx, ErrorReadingSecret, err)
+					return
+				}
+				ctx.AddBindings(&pipeline.SecretBackedBindings{Service: service, Secret: secret})
+			}
+		} else {
+			crd, err := service.CustomResourceDefinition()
+			if err != nil {
+				requestRetry(ctx, ErrorReadingCRD, err)
+				return
+			}
+			if crd == nil {
+				continue
+			}
+			v, ok := crd.Resource().GetAnnotations()[ProvisionedServiceAnnotationKey]
+			if ok && v == "true" {
+				requestRetry(ctx, ErrorReadingBindingReason, fmt.Errorf("CRD of service %v/%v indicates provisioned service, but no secret name provided under .status.binding.name", res.GetNamespace(), res.GetName()))
+				return
 			}
 		}
 	}
@@ -211,12 +252,6 @@ func makeBindingDefinition(key string, value string, ctx pipeline.Context) (bind
 		func(namespace string, name string) (*unstructured.Unstructured, error) {
 			return ctx.ReadSecret(namespace, name)
 		}).Build()
-}
-func mergeMaps(dest map[string]string, src map[string]string) map[string]string {
-	for k, v := range src {
-		dest[k] = v
-	}
-	return dest
 }
 
 func bindingAnnotations(crdDescription *olmv1alpha1.CRDDescription) map[string]string {

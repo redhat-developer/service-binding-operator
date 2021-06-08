@@ -64,6 +64,8 @@ func Builder() *builder {
 
 var defaultFlow = []pipeline.Handler{
 	pipeline.HandlerFunc(project.Unbind),
+	pipeline.HandlerFunc(collect.PreFlight),
+	pipeline.HandlerFunc(collect.ProvisionedService),
 	pipeline.HandlerFunc(collect.BindingDefinitions),
 	pipeline.HandlerFunc(collect.BindingItems),
 	pipeline.HandlerFunc(collect.OwnedResources),

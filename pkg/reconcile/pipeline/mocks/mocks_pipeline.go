@@ -51,6 +51,18 @@ func (mr *MockContextMockRecorder) AddBindingItem(arg0 interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBindingItem", reflect.TypeOf((*MockContext)(nil).AddBindingItem), arg0)
 }
 
+// AddBindings mocks base method.
+func (m *MockContext) AddBindings(arg0 pipeline.Bindings) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "AddBindings", arg0)
+}
+
+// AddBindings indicates an expected call of AddBindings.
+func (mr *MockContextMockRecorder) AddBindings(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddBindings", reflect.TypeOf((*MockContext)(nil).AddBindings), arg0)
+}
+
 // Applications mocks base method.
 func (m *MockContext) Applications() ([]pipeline.Application, error) {
 	m.ctrl.T.Helper()
