@@ -1,0 +1,27 @@
+name: "PR checks - Clean operator images"
+
+on:
+  pull_request_target:
+    branches:
+      - master
+    types: [closed]
+
+env:
+  OPERATOR_REPO_REF: quay.io/redhat-developer/servicebinding-operator
+
+jobs:
+  clean-operator-images:
+    name: "Clean operator images (PR)"
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Clean PR images
+        uses: ./.github/actions/clean-images
+        with:
+          repository: ${{ env.OPERATOR_REPO_REF }}
+          tags: "pr-${{github.event.pull_request.number}}-.*"
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}

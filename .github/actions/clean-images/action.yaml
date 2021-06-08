@@ -1,0 +1,30 @@
+# action.yml
+name: 'Clean container images by tags.'
+description: 'Deletes images from remote repository by tags that match a regular expression.'
+inputs:
+  repository:
+    description: "Repository"
+    required: true
+  tags:
+    description: "Regular expression for tag names to remote"
+    required: true
+  username:
+    descriptino: "Repo username"
+    required: false
+    default: ""
+  password:
+    descriptino: "Repo password"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - id: clean-images
+      env:
+        REPO: ${{ inputs.repository }}
+        TAGS: ${{ inputs.tags }}
+        REPO_USERNAME: ${{ inputs.username }}
+        REPO_PASSWORD: ${{ inputs.password }}
+      run: |
+        $GITHUB_ACTION_PATH/clean-images.sh "${REPO}" "${TAGS}"
+      shell: bash

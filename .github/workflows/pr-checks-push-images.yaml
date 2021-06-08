@@ -1,0 +1,45 @@
+name: "PR checks - Push operator images"
+
+on:
+  pull_request_target:
+    branches:
+      - master
+
+env:
+  REGISTRY_PREFIX: quay.io/redhat-developer
+  REPO: servicebinding-operator
+
+jobs:
+  push-operator-images:
+    name: "Push operator images (PR)"
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Wait for build
+        uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "Build operator images (PR)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 60
+
+      - name: Download images
+        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        with:
+          names: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+
+      - name: Setup local registry
+        run: |
+          tar -xvf registry.tar.gz
+          .github/actions/setup-podman/setup-local-registry.sh
+
+      - name: Push operator, bundle and index images
+        run: |
+          set -x
+          for tag in $(skopeo list-tags --tls-verify=false docker://localhost:5000/${REPO} | jq -r '.Tags[] | select(startswith("pr-${{github.event.pull_request.number}}-"))'); do
+            sha=$(skopeo inspect --tls-verify=false docker://localhost:5000/${REPO}:${tag} | jq -r '.Digest')
+            skopeo copy --dest-creds ${{secrets.QUAY_USERNAME}}:${{secrets.QUAY_TOKEN}} --all --src-tls-verify=false docker://localhost:5000/${REPO}@${sha} docker://${REGISTRY_PREFIX}/${REPO}:${tag}
+          done
