@@ -63,7 +63,8 @@ func (s *service) OwnedResources() ([]*unstructured.Unstructured, error) {
 			}
 			return nil, err
 		}
-		for _, item := range list.Items {
+		for i := range list.Items {
+			item := list.Items[i]
 			for _, ownerRef := range item.GetOwnerReferences() {
 				if reflect.DeepEqual(ownerRef.UID, uid) {
 					result = append(result, &item)
