@@ -56,13 +56,6 @@ else
 TEST_ACCEPTANCE_TAGS_ARG ?= --tags="~@disabled" --tags="~@examples"
 endif
 
-# Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
-ifeq (,$(shell go env GOBIN))
-GOBIN=$(shell go env GOPATH)/bin
-else
-GOBIN=$(shell go env GOBIN)
-endif
-
 GO ?= CGO_ENABLED=$(CGO_ENABLED) GOCACHE=$(GOCACHE) GOFLAGS="$(GOFLAGS)" GO111MODULE=$(GO111MODULE) go
 
 
@@ -184,7 +177,7 @@ create-test-namespace:
 test-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds
 
 .PHONY: test-cleanup
-test-cleanup: manifests
+test-cleanup:
 	$(Q)-TEST_NAMESPACE=$(TEST_NAMESPACE) $(HACK_DIR)/test-cleanup.sh
 
 .PHONY: deploy-rbac
