@@ -478,3 +478,8 @@ spec:
             else:
                 (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app using following command line {cmd}\n: {output}"
+
+    def set_label(self, name, label, namespace):
+        cmd = f"{ctx.cli} label deployments {name} '{label}' -n {namespace}"
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting set label: {cmd}\n: {output}"
