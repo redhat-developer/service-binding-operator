@@ -1,21 +1,27 @@
 package context
 
 import (
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/dynamic/fake"
+	"k8s.io/client-go/testing"
+	"strings"
 )
 
 var _ = Describe("Service", func() {
 
 	var (
-		client dynamic.Interface
+		client *fake.FakeDynamicClient
 	)
 
 	DescribeTable("CRD exist", func(version string, gr schema.GroupResource) {
@@ -43,7 +49,117 @@ var _ = Describe("Service", func() {
 		Expect(res).To(BeNil())
 	})
 
+	Describe("OwnedResources", func() {
+		It("should return owned resources", func() {
+			id := uuid.NewUUID()
+			id2 := uuid.NewUUID()
+			ns := "ns1"
+			u := &unstructured.Unstructured{}
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "foo.bar", Version: "v1", Kind: "Foo"})
+			u.SetName("foo")
+			u.SetNamespace(ns)
+			u.SetUID(id)
+
+			var children []interface{}
+
+			client = fake.NewSimpleDynamicClient(runtime.NewScheme())
+
+			for i := range bindableResourceGVRs {
+				gvr := bindableResourceGVRs[i]
+
+				if gvr.Resource == "configmaps" {
+					client.PrependReactor("list", gvr.Resource, func(action testing.Action) (handled bool, ret runtime.Object, err error) {
+						return true, nil, k8serrors.NewNotFound(gvr.GroupResource(), "foo")
+					})
+					continue
+				}
+				ul := &unstructured.UnstructuredList{}
+				// compute kind
+				kind := strings.Title(gvr.Resource)[:len(gvr.Resource)-1]
+
+				gvk := gvr.GroupVersion().WithKind(kind)
+				ou := resource(gvk, "child1", ns, id)
+
+				ou2 := resource(gvk, "child2", ns, id2)
+
+				children = append(children, ou)
+				ul.Items = append(ul.Items, *ou, *ou2)
+
+				client.PrependReactor("list", gvr.Resource, func(action testing.Action) (handled bool, ret runtime.Object, err error) {
+					return true, ul, nil
+				})
+			}
+
+			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{ NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
+
+			ownedResources, err := impl.OwnedResources()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ownedResources).Should(HaveLen(len(bindableResourceGVRs)-1))
+			Expect(ownedResources).Should(ConsistOf(children...))
+		})
+
+		DescribeTable("return error if occurs at looking at owned resources", func(failingResourceName string) {
+			id := uuid.NewUUID()
+			id2 := uuid.NewUUID()
+			ns := "ns1"
+			u := &unstructured.Unstructured{}
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "foo.bar", Version: "v1", Kind: "Foo"})
+			u.SetName("foo")
+			u.SetNamespace(ns)
+			u.SetUID(id)
+
+			client = fake.NewSimpleDynamicClient(runtime.NewScheme())
+			expectedErr := errors.New("foo")
+
+			for _, gvr := range bindableResourceGVRs {
+				ul := &unstructured.UnstructuredList{}
+				// compute kind
+				kind := strings.Title(gvr.Resource)[:len(gvr.Resource)-1]
+				// fix for ConfigMap
+				if kind == "Configmap" {
+					kind = "ConfigMap"
+				}
+				gvk := gvr.GroupVersion().WithKind(kind)
+				ou := resource(gvk, "child1", ns, id)
+
+				ou2 := resource(gvk, "child2", ns, id2)
+
+				ul.Items = append(ul.Items, *ou, *ou2)
+
+				resourceName := gvr.Resource
+				client.PrependReactor("list", resourceName, func(action testing.Action) (handled bool, ret runtime.Object, err error) {
+					if failingResourceName == resourceName {
+						return true, nil, expectedErr
+					}
+					return true, ul, nil
+				})
+			}
+
+			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{ NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
+
+			ownedResources, err := impl.OwnedResources()
+			Expect(err).Should(Equal(expectedErr))
+			Expect(ownedResources).Should(BeNil())
+		},
+		Entry("fail listing configmap", "configmaps"),
+		Entry("fail listing services", "services"),
+		)
+	})
+
 })
+
+func resource(gvk schema.GroupVersionKind, name string, namespace string, owner types.UID) *unstructured.Unstructured {
+	u := &unstructured.Unstructured{}
+	u.SetGroupVersionKind(gvk)
+	u.SetName(name)
+	u.SetNamespace(namespace)
+	u.SetOwnerReferences([]v1.OwnerReference {
+		{
+			UID: owner,
+		},
+	})
+	return u
+}
 
 func crd(version string, gr schema.GroupResource) *unstructured.Unstructured {
 	u := &unstructured.Unstructured{}
