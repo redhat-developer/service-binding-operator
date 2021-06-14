@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	api "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
@@ -98,8 +99,7 @@ type Context interface {
 	Services() ([]Service, error)
 
 	// Applications referred by binding
-	// it can be empty slice
-	// if reading fails, return error
+	// if no application found, return an error
 	Applications() ([]Application, error)
 
 	// Returns true if binding is about to be removed

@@ -423,7 +423,7 @@ func ServiceBindingMock(
 		},
 		Spec: v1alpha1.ServiceBindingSpec{
 			Mappings: []v1alpha1.Mapping{},
-			Application: &v1alpha1.Application{
+			Application: v1alpha1.Application{
 				Ref: v1alpha1.Ref{
 					Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource, Name: applicationResourceRef,
 				},

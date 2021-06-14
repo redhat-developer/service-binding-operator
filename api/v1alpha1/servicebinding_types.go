@@ -85,8 +85,7 @@ type ServiceBindingSpec struct {
 
 	// Application is used to identify the application connecting to the
 	// backing service operator.
-	// +optional
-	Application *Application `json:"application,omitempty"`
+	Application Application `json:"application"`
 
 	// DetectBindingResources is flag used to bind all non-bindable variables from
 	// different subresources owned by backing operator CR.
