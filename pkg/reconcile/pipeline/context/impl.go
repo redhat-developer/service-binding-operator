@@ -10,6 +10,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+	"github.com/redhat-developer/service-binding-operator/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -34,6 +35,8 @@ type impl struct {
 	applications []*application
 
 	bindingItems pipeline.BindingItems
+
+	bindings []pipeline.Bindings
 
 	retry bool
 	stop  bool
@@ -167,14 +170,36 @@ func (i *impl) AddBindingItem(item *pipeline.BindingItem) {
 }
 
 func (i *impl) BindingItems() pipeline.BindingItems {
-	return i.bindingItems
+	var allItems pipeline.BindingItems
+	for _, b := range i.bindings {
+		items, err := b.Items()
+		if err != nil {
+			continue
+		}
+		allItems = append(allItems, items...)
+	}
+	if len(i.bindingItems) > 0 {
+		allItems = append(allItems, i.bindingItems...)
+	}
+	return allItems
 }
 
 func (i *impl) BindingSecretName() string {
+	name, _ := i.bindingSecretName()
+	return name
+}
+
+func (i *impl) bindingSecretName() (string, bool) {
 	if i.UnbindRequested() {
-		return i.serviceBinding.Status.Secret
+		return i.serviceBinding.Status.Secret, true
 	}
-	data := i.bindingItems.AsMap()
+	if i.bindingItems == nil && len(i.bindings) == 1 {
+		ref := i.bindings[0].Source()
+		if ref != nil && ref.Namespace == i.serviceBinding.GetNamespace() {
+			return ref.Name, true
+		}
+	}
+	data := i.bindingItemMap()
 	keys := make([]string, 0, len(data))
 	for k := range data {
 		keys = append(keys, k)
@@ -185,7 +210,22 @@ func (i *impl) BindingSecretName() string {
 		_, _ = hash.Write([]byte(k))
 		_, _ = hash.Write([]byte(data[k]))
 	}
-	return i.serviceBinding.Name + "-" + string(hex.EncodeToString(hash.Sum(nil))[:8])
+	return i.serviceBinding.Name + "-" + string(hex.EncodeToString(hash.Sum(nil))[:8]), false
+}
+
+func (i *impl) bindingItemMap() map[string]string {
+	data := make(map[string]string)
+	for _, b := range i.bindings {
+		items, err := b.Items()
+		if err != nil {
+			continue
+		}
+		util.MergeMaps(data, items.AsMap())
+	}
+	if len(i.bindingItems) > 0 {
+		util.MergeMaps(data, i.bindingItems.AsMap())
+	}
+	return data
 }
 
 func (i *impl) NamingTemplate() string {
@@ -227,16 +267,20 @@ func (i *impl) persistBinding() error {
 }
 
 func (i *impl) persistSecret() (string, error) {
-	if i.bindingItems == nil || len(i.bindingItems) == 0 {
+	name, secretExist := i.bindingSecretName()
+	if secretExist {
+		return name, nil
+	}
+	data := i.bindingItemMap()
+	if len(data) == 0 {
 		return "", nil
 	}
-	name := i.BindingSecretName()
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: i.serviceBinding.Namespace,
 			Name:      name,
 		},
-		StringData: i.bindingItems.AsMap(),
+		StringData: data,
 	}
 	if i.serviceBinding.UID != "" {
 		secret.OwnerReferences = []metav1.OwnerReference{i.serviceBinding.AsOwnerReference()}
@@ -298,6 +342,10 @@ func (i *impl) ReadConfigMap(namespace string, name string) (*unstructured.Unstr
 
 func (i *impl) ReadSecret(namespace string, name string) (*unstructured.Unstructured, error) {
 	return i.client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).Namespace(namespace).Get(context.Background(), name, metav1.GetOptions{})
+}
+
+func (i *impl) AddBindings(bindings pipeline.Bindings) {
+	i.bindings = append(i.bindings, bindings)
 }
 
 //go:generate mockgen -destination=mocks/mocks.go -package=mocks . K8STypeLookup

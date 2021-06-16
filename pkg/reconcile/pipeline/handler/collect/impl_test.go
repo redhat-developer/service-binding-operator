@@ -7,13 +7,12 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	bindingmocks "github.com/redhat-developer/service-binding-operator/pkg/binding/mocks"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -21,12 +20,42 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 )
 
-var _ = Describe("Collect Binding Definitions", func() {
+var (
+	mockCtrl    *gomock.Controller
+	ctx         *mocks.MockContext
+	shouldRetry = func(handler pipeline.Handler, reason string, err error) {
+		It("should indicate retry and set collection ready status to false", func() {
+			ctx.EXPECT().RetryProcessing(err)
+			ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(reason).Msg(err.Error()).Build())
+			handler.Handle(ctx)
+		})
+	}
+)
 
-	var (
-		mockCtrl *gomock.Controller
-		ctx      *mocks.MockContext
-	)
+var _ = Describe("Preflight check", func() {
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+		ctx = mocks.NewMockContext(mockCtrl)
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	Context("on error reading services", func() {
+		var (
+			errMsg = "foo"
+			err    = errors.New(errMsg)
+		)
+
+		BeforeEach(func() {
+			ctx.EXPECT().Services().Return([]pipeline.Service{}, err)
+		})
+		shouldRetry(pipeline.HandlerFunc(collect.PreFlight), collect.ErrorReadingServicesReason, err)
+	})
+})
+
+var _ = Describe("Collect Binding Definitions", func() {
 
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
@@ -42,22 +71,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 		var (
 			errMsg = "foo"
 			err    = errors.New(errMsg)
-
-			shouldRetry = func(reason string) {
-				It("should indicate retry and set collection ready status to false", func() {
-					ctx.EXPECT().RetryProcessing(err)
-					ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(reason).Msg(errMsg).Build())
-					collect.BindingDefinitions(ctx)
-				})
-			}
 		)
-		Context("on error reading services", func() {
-
-			BeforeEach(func() {
-				ctx.EXPECT().Services().Return([]pipeline.Service{}, err)
-			})
-			shouldRetry(collect.ErrorReadingServicesReason)
-		})
 
 		Context("on error reading CRD for at least one service", func() {
 
@@ -74,7 +88,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 				ctx.EXPECT().Services().Return([]pipeline.Service{service1, service2}, nil)
 			})
 
-			shouldRetry(collect.ErrorReadingCRD)
+			shouldRetry(pipeline.HandlerFunc(collect.BindingDefinitions), collect.ErrorReadingCRD, err)
 		})
 
 		Context("on error reading descriptor from at least one service", func() {
@@ -94,7 +108,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 				ctx.EXPECT().Services().Return([]pipeline.Service{service1, service2}, nil)
 			})
 
-			shouldRetry(collect.ErrorReadingDescriptorReason)
+			shouldRetry(pipeline.HandlerFunc(collect.BindingDefinitions), collect.ErrorReadingDescriptorReason, err)
 		})
 
 	})
@@ -138,9 +152,10 @@ var _ = Describe("Collect Binding Definitions", func() {
 			It("should extract binding definitions from service annotations", func() {
 
 				serviceContent.SetAnnotations(map[string]string{
-					"foo":                  "bar",
-					"service.binding/foo":  "path={.status.foo},objectType=Secret,sourceValue=username",
-					"service.binding/foo2": "path={.status.foo2},objectType=Secret,sourceValue=username",
+					"foo":                                   "bar",
+					collect.ProvisionedServiceAnnotationKey: "true",
+					"service.binding/foo":                   "path={.status.foo},objectType=Secret,sourceValue=username",
+					"service.binding/foo2":                  "path={.status.foo2},objectType=Secret,sourceValue=username",
 				})
 				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{}, nil)
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
@@ -336,11 +351,6 @@ var _ = Describe("Collect Binding Definitions", func() {
 
 var _ = Describe("Collect Binding Data", func() {
 
-	var (
-		mockCtrl *gomock.Controller
-		ctx      *mocks.MockContext
-	)
-
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		ctx = mocks.NewMockContext(mockCtrl)
@@ -354,26 +364,7 @@ var _ = Describe("Collect Binding Data", func() {
 		var (
 			errMsg = "foo"
 			err    = errors.New(errMsg)
-
-			shouldRetry = func(reason string, e ...error) {
-				It("should indicate retry and set collection ready status to false", func() {
-					var expectedErr = err
-					if len(e) > 0 {
-						expectedErr = e[0]
-					}
-					ctx.EXPECT().RetryProcessing(expectedErr)
-					ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(reason).Msg(expectedErr.Error()).Build())
-					collect.BindingItems(ctx)
-				})
-			}
 		)
-
-		Context("on error reading services", func() {
-			BeforeEach(func() {
-				ctx.EXPECT().Services().Return(nil, err)
-			})
-			shouldRetry(collect.ErrorReadingServicesReason)
-		})
 
 		Context("on error collecting data", func() {
 			var (
@@ -391,7 +382,7 @@ var _ = Describe("Collect Binding Data", func() {
 
 				ctx.EXPECT().Services().Return([]pipeline.Service{service}, nil)
 			})
-			shouldRetry(collect.ErrorReadingBindingReason)
+			shouldRetry(pipeline.HandlerFunc(collect.BindingItems), collect.ErrorReadingBindingReason, err)
 		})
 
 		Context("on returning unexpected data", func() {
@@ -412,7 +403,7 @@ var _ = Describe("Collect Binding Data", func() {
 
 				ctx.EXPECT().Services().Return([]pipeline.Service{service}, nil)
 			})
-			shouldRetry("DataNotMap", collect.DataNotMap)
+			shouldRetry(pipeline.HandlerFunc(collect.BindingItems), "DataNotMap", collect.DataNotMap)
 		})
 	})
 
@@ -635,6 +626,120 @@ var _ = Describe("Collect From Owned Resources", func() {
 
 				collect.OwnedResources(ctx)
 			})
+		})
+	})
+
+})
+
+var _ = Describe("Collect From Provisioned Service", func() {
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+		ctx = mocks.NewMockContext(mockCtrl)
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	Describe("successful processing", func() {
+		var (
+			services []pipeline.Service
+
+			defService = func() (*mocks.MockService, *unstructured.Unstructured) {
+				service := mocks.NewMockService(mockCtrl)
+				serviceContent := &unstructured.Unstructured{}
+				service.EXPECT().Resource().Return(serviceContent)
+				services = append(services, service)
+				return service, serviceContent
+			}
+		)
+
+		BeforeEach(func() {
+			services = []pipeline.Service{}
+			ctx.EXPECT().Services().DoAndReturn(func() ([]pipeline.Service, error) { return services, nil })
+		})
+
+		It("should collect secret names referred in services", func() {
+			secretName1 := "foo"
+			secretName2 := "bar"
+			ns1 := "ns1"
+			ns2 := "ns2"
+			svc1, content1 := defService()
+			content1.Object = map[string]interface{}{
+				"status": map[string]interface{}{
+					"binding": map[string]interface{}{
+						"name": secretName1,
+					},
+				},
+			}
+			content1.SetNamespace(ns1)
+			secret1 := &unstructured.Unstructured{}
+			secret1.SetName(secretName1)
+
+			svc2, content2 := defService()
+			content2.Object = map[string]interface{}{
+				"status": map[string]interface{}{
+					"binding": map[string]interface{}{
+						"name": secretName2,
+					},
+				},
+			}
+			content2.SetNamespace(ns2)
+			secret2 := &unstructured.Unstructured{}
+			secret2.SetName(secretName2)
+
+			ctx.EXPECT().ReadSecret(ns1, secretName1).Return(secret1, nil)
+			ctx.EXPECT().ReadSecret(ns2, secretName2).Return(secret2, nil)
+
+			ctx.EXPECT().AddBindings(&pipeline.SecretBackedBindings{Service: svc1, Secret: secret1})
+			ctx.EXPECT().AddBindings(&pipeline.SecretBackedBindings{Service: svc2, Secret: secret2})
+
+			collect.ProvisionedService(ctx)
+		})
+
+		It("do nothing if there is no secret reference and services is not CRD backed", func() {
+			service, _ := defService()
+			service.EXPECT().CustomResourceDefinition().Return(nil, nil)
+			collect.ProvisionedService(ctx)
+		})
+
+		It("do nothing if there is no secret reference and services CRD does not indicate provisioned service", func() {
+			service, _ := defService()
+			service.EXPECT().CustomResourceDefinition().Return(nil, nil)
+
+			collect.ProvisionedService(ctx)
+		})
+
+		It("should retry processing if secret reference is not present bu CRD indicates provisioned service", func() {
+			service, content := defService()
+			content.SetName("foo")
+			content.SetNamespace("ns1")
+			err := errors.New("CRD of service ns1/foo indicates provisioned service, but no secret name provided under .status.binding.name")
+			crd := mocks.NewMockCRD(mockCtrl)
+			u := &unstructured.Unstructured{}
+			u.SetAnnotations(map[string]string{collect.ProvisionedServiceAnnotationKey: "true"})
+
+			crd.EXPECT().Resource().Return(u)
+
+			service.EXPECT().CustomResourceDefinition().Return(crd, nil)
+
+			ctx.EXPECT().RetryProcessing(err)
+			ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(collect.ErrorReadingBindingReason).Msg(err.Error()).Build())
+
+			collect.ProvisionedService(ctx)
+		})
+
+		It("should retry processing if secret reference is not present bu CRD indicates provisioned service", func() {
+			service, _ := defService()
+
+			err := errors.New("foo")
+
+			service.EXPECT().CustomResourceDefinition().Return(nil, err)
+
+			ctx.EXPECT().RetryProcessing(err)
+			ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(collect.ErrorReadingCRD).Msg(err.Error()).Build())
+
+			collect.ProvisionedService(ctx)
 		})
 	})
 

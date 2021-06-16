@@ -90,11 +90,11 @@ var _ = Describe("Service", func() {
 				})
 			}
 
-			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{ NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
+			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
 
 			ownedResources, err := impl.OwnedResources()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(ownedResources).Should(HaveLen(len(bindableResourceGVRs)-1))
+			Expect(ownedResources).Should(HaveLen(len(bindableResourceGVRs) - 1))
 			Expect(ownedResources).Should(ConsistOf(children...))
 		})
 
@@ -135,14 +135,14 @@ var _ = Describe("Service", func() {
 				})
 			}
 
-			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{ NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
+			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
 
 			ownedResources, err := impl.OwnedResources()
 			Expect(err).Should(Equal(expectedErr))
 			Expect(ownedResources).Should(BeNil())
 		},
-		Entry("fail listing configmap", "configmaps"),
-		Entry("fail listing services", "services"),
+			Entry("fail listing configmap", "configmaps"),
+			Entry("fail listing services", "services"),
 		)
 	})
 
@@ -153,7 +153,7 @@ func resource(gvk schema.GroupVersionKind, name string, namespace string, owner 
 	u.SetGroupVersionKind(gvk)
 	u.SetName(name)
 	u.SetNamespace(namespace)
-	u.SetOwnerReferences([]v1.OwnerReference {
+	u.SetOwnerReferences([]v1.OwnerReference{
 		{
 			UID: owner,
 		},

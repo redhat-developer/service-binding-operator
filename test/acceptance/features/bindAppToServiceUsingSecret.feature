@@ -555,3 +555,209 @@ Feature: Bind values from a secret referred in backing service resource
         Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sb-inject-secret-data" should be changed to "True"
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
+
+    Scenario: Bind application to provisioned service
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: provisioned-secret-1
+            stringData:
+                username: foo
+                password: bar
+            """
+        * The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: provisionedbackends.stable.example.com
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: provisionedbackends
+                    singular: provisionedbackend
+                    kind: ProvisionedBackend
+                    shortNames:
+                      - pbk
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: ProvisionedBackend
+            metadata:
+                name: provisioned-service-1
+            spec:
+                foo: bar
+            status:
+                binding:
+                    name: provisioned-secret-1
+            """
+        * Generic test application "myaop-provision-srv" is running
+        When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: bind-provisioned-service-1
+          spec:
+              services:
+              - group: stable.example.com
+                version: v1
+                kind: ProvisionedBackend
+                name: provisioned-service-1
+              application:
+                name: myaop-provision-srv
+                group: apps
+                version: v1
+                resource: deployments
+          """
+        Then Service Binding "bind-provisioned-service-1" is ready
+        And jq ".status.secret" of Service Binding "bind-provisioned-service-1" should be changed to "provisioned-secret-1"
+        And Content of file "/bindings/bind-provisioned-service-1/username" in application pod is
+            """
+            foo
+            """
+        And Content of file "/bindings/bind-provisioned-service-1/password" in application pod is
+            """
+            bar
+            """
+
+    Scenario: Fail binding to provisioned service if secret name is not provided
+        Given The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: provisionedbackends.stable.example.com
+                annotations:
+                    "service.binding/provisioned-service": "true"
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: provisionedbackends
+                    singular: provisionedbackend
+                    kind: ProvisionedBackend
+                    shortNames:
+                      - pbk
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: ProvisionedBackend
+            metadata:
+                name: provisioned-service-2
+            spec:
+                foo: bar
+            """
+        * Generic test application "myaop-provision-srv2" is running
+        When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: bind-provisioned-service-2
+          spec:
+              services:
+              - group: stable.example.com
+                version: v1
+                kind: ProvisionedBackend
+                name: provisioned-service-2
+              application:
+                name: myaop-provision-srv2
+                group: apps
+                version: v1
+                resource: deployments
+          """
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "bind-provisioned-service-2" should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "bind-provisioned-service-2" should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding "bind-provisioned-service-2" should be changed to "ErrorReadingBinding"
+
+    Scenario: Bind application to provisioned service that has binding annotations as well
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: provisioned-secret-3
+            stringData:
+                username: foo
+                password: bar
+            """
+        * The Custom Resource Definition is present
+            """
+            apiVersion: apiextensions.k8s.io/v1beta1
+            kind: CustomResourceDefinition
+            metadata:
+                name: provisionedbackends.stable.example.com
+            spec:
+                group: stable.example.com
+                versions:
+                  - name: v1
+                    served: true
+                    storage: true
+                scope: Namespaced
+                names:
+                    plural: provisionedbackends
+                    singular: provisionedbackend
+                    kind: ProvisionedBackend
+                    shortNames:
+                      - pbk
+            """
+        * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: ProvisionedBackend
+            metadata:
+                name: provisioned-service-3
+                annotations:
+                    "service.binding": "path={.spec.foo}"
+            spec:
+                foo: bla
+            status:
+                binding:
+                    name: provisioned-secret-3
+            """
+        * Generic test application "myaop-provision-srv3" is running
+        When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: bind-provisioned-service-3
+          spec:
+              services:
+              - group: stable.example.com
+                version: v1
+                kind: ProvisionedBackend
+                name: provisioned-service-3
+              application:
+                name: myaop-provision-srv3
+                group: apps
+                version: v1
+                resource: deployments
+          """
+        Then Service Binding "bind-provisioned-service-3" is ready
+        And Content of file "/bindings/bind-provisioned-service-3/username" in application pod is
+            """
+            foo
+            """
+        And Content of file "/bindings/bind-provisioned-service-3/password" in application pod is
+            """
+            bar
+            """
+        And Content of file "/bindings/bind-provisioned-service-3/foo" in application pod is
+            """
+            bla
+            """

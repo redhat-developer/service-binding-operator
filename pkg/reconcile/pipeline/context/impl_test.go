@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"encoding/base64"
 	e "errors"
 	"fmt"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
+	mocks2 "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -459,6 +461,121 @@ var _ = Describe("Context", func() {
 
 			Expect(ctx.BindingSecretName()).To(Equal(ctx2.BindingSecretName()))
 		})
+
+		It("should be equal to existing secret if additional binding items exist", func() {
+			secretName := "foo"
+			namespace := "ns1"
+			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: namespace,
+				},
+			}}
+			secret := &unstructured.Unstructured{Object: map[string]interface{}{
+				"data": map[string]interface{}{
+					"foo1": base64.StdEncoding.EncodeToString([]byte("val1")),
+					"foo2": base64.StdEncoding.EncodeToString([]byte("val2")),
+				},
+			}}
+			secret.SetName(secretName)
+			secret.SetNamespace(namespace)
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+
+			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret})
+
+			Expect(ctx.BindingSecretName()).To(Equal(secretName))
+		})
+
+		It("should be generated if additional items are added", func() {
+			secretName := "foo"
+			namespace := "ns1"
+			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: namespace,
+				},
+			}}
+			secret := &unstructured.Unstructured{Object: map[string]interface{}{
+				"data": map[string]interface{}{
+					"foo1": base64.StdEncoding.EncodeToString([]byte("val1")),
+					"foo2": base64.StdEncoding.EncodeToString([]byte("val2")),
+				},
+			}}
+			secret.SetName(secretName)
+			secret.SetNamespace(namespace)
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+
+			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret})
+			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo", Value: "v1"})
+
+			bindingSecretName := ctx.BindingSecretName()
+			Expect(bindingSecretName).NotTo(BeEmpty())
+			Expect(bindingSecretName).NotTo(Equal(secretName))
+		})
+
+		It("should be generated if item key is modified", func() {
+			secretName := "foo"
+			namespace := "ns1"
+			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: namespace,
+				},
+			}}
+			secret := &unstructured.Unstructured{Object: map[string]interface{}{
+				"data": map[string]interface{}{
+					"foo1": base64.StdEncoding.EncodeToString([]byte("val1")),
+					"foo2": base64.StdEncoding.EncodeToString([]byte("val2")),
+				},
+			}}
+			secret.SetName(secretName)
+			secret.SetNamespace(namespace)
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+
+			service := mocks2.NewMockService(mockCtrl)
+			b := &pipeline.SecretBackedBindings{Secret: secret, Service: service}
+			ctx.AddBindings(b)
+			items, err := b.Items()
+			Expect(err).NotTo(HaveOccurred())
+			items[0].Name = "bla"
+
+			bindingSecretName := ctx.BindingSecretName()
+			Expect(bindingSecretName).NotTo(BeEmpty())
+			Expect(bindingSecretName).NotTo(Equal(secretName))
+		})
+
+		It("should be generated if two binding secrets are set", func() {
+			secretNames := []string{"foo", "bar"}
+			namespace := "ns1"
+			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: namespace,
+				},
+			}}
+			for _, sn := range secretNames {
+				secret := &unstructured.Unstructured{Object: map[string]interface{}{
+					"data": map[string]interface{}{
+						"foo1": base64.StdEncoding.EncodeToString([]byte("val1")),
+						"foo2": base64.StdEncoding.EncodeToString([]byte("val2")),
+					},
+				}}
+				secret.SetName(sn)
+				secret.SetNamespace(namespace)
+				secret.SetAPIVersion("v1")
+				secret.SetKind("Secret")
+
+				ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret})
+			}
+
+			bindingSecretName := ctx.BindingSecretName()
+			Expect(bindingSecretName).NotTo(BeEmpty())
+			Expect(bindingSecretName).NotTo(Equal(secretNames[0]))
+			Expect(bindingSecretName).NotTo(Equal(secretNames[1]))
+		})
 	})
 
 	Describe("Close", func() {
@@ -664,6 +781,79 @@ var _ = Describe("Context", func() {
 
 			Expect(u.Object["Spec"]).To(Equal(specData))
 
+		})
+
+		It("should reuse existing secret if no other bindings are added", func() {
+			secret := &unstructured.Unstructured{Object: map[string]interface{}{
+				"data": map[string]interface{}{
+					"foo1": base64.StdEncoding.EncodeToString([]byte("val1")),
+					"foo2": base64.StdEncoding.EncodeToString([]byte("val2")),
+				},
+			}}
+			secret.SetName("foo")
+			secret.SetNamespace("ns1")
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+			service := mocks2.NewMockService(mockCtrl)
+
+			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret, Service: service})
+
+			err := ctx.Close()
+			Expect(err).NotTo(HaveOccurred())
+
+			u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+
+			updatedSB := v1alpha1.ServiceBinding{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(updatedSB.Status.Secret).Should(Equal(secret.GetName()))
+
+			secretList, err := client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).List(context.Background(), metav1.ListOptions{})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(secretList.Items).Should(BeEmpty())
+		})
+
+		It("Should create intermediate secret if additional bindings are added", func() {
+			secret := &unstructured.Unstructured{Object: map[string]interface{}{
+				"data": map[string]interface{}{
+					"foo1": base64.StdEncoding.EncodeToString([]byte("val1")),
+					"foo2": base64.StdEncoding.EncodeToString([]byte("val2")),
+				},
+			}}
+			secret.SetName("foo")
+			secret.SetNamespace("ns1")
+			secret.SetAPIVersion("v1")
+			secret.SetKind("Secret")
+			service := mocks2.NewMockService(mockCtrl)
+
+			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret, Service: service})
+			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo3", Value: "val3"})
+
+			err := ctx.Close()
+			Expect(err).NotTo(HaveOccurred())
+
+			u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			Expect(err).NotTo(HaveOccurred())
+
+			updatedSB := v1alpha1.ServiceBinding{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(updatedSB.Status.Secret).ShouldNot(Equal(secret.GetName()))
+			Expect(updatedSB.Status.Secret).ShouldNot(BeEmpty())
+
+			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Secret)
+			Expect(err).NotTo(HaveOccurred())
+
+			intermediateSecret := &corev1.Secret{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, intermediateSecret)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(intermediateSecret.StringData).To(HaveLen(3))
+			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo1", "val1"))
+			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo2", "val2"))
+			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo3", "val3"))
 		})
 	})
 })

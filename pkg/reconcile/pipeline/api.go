@@ -6,6 +6,7 @@ import (
 	api "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -123,6 +124,9 @@ type Context interface {
 	// Add binding item to the context
 	AddBindingItem(item *BindingItem)
 
+	// Add bindings to the context
+	AddBindings(bindings Bindings)
+
 	// List binding items that should be projected into application containers
 	BindingItems() BindingItems
 
@@ -166,6 +170,15 @@ type BindingItem struct {
 	Name   string
 	Value  interface{}
 	Source Service
+}
+
+// a collection of bindings
+type Bindings interface {
+	// available bindgins
+	Items() (BindingItems, error)
+
+	// reference to resource holding the bindings, nil if not persisted in a resource
+	Source() *v1.ObjectReference
 }
 
 // Returns map representation of given list of binding items
