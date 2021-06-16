@@ -35,7 +35,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Service Binding Operator Community
-  name: service-binding-operator.v0.7.1
+  name: service-binding-operator.v0.8.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -151,7 +151,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.7.1
+                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.8.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -214,5 +214,5 @@ spec:
   provider:
     name: Red Hat
     url: https://redhat.com
-  version: 0.7.1
-  replaces: service-binding-operator.v0.7.0
+  version: 0.8.0
+  replaces: service-binding-operator.v0.7.1

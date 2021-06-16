@@ -1,7 +1,6 @@
 ARG BUILD_DIR=/tmp/github.com/redhat-developer/service-binding-operator
 
-#@follow_tag(rhel8/go-toolset:1.15)
-FROM rhel8/go-toolset:1.15 AS builder
+FROM registry.redhat.io/rhel8/go-toolset:1.15 AS builder
 
 USER root
 
@@ -21,7 +20,7 @@ RUN make build
 #--------------------------------------------------------------------
 
 #@follow_tag(ubi8-minimal:8-released)
-FROM ubi8-minimal:8.3
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.4
 
 ARG BUILD_DIR
 
