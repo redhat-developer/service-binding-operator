@@ -2,6 +2,7 @@ package pipeline_test
 
 import (
 	"encoding/base64"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

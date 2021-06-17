@@ -2,6 +2,8 @@ package context
 
 import (
 	"errors"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -15,7 +17,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/testing"
-	"strings"
 )
 
 var _ = Describe("Service", func() {

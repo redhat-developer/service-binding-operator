@@ -3,14 +3,15 @@ package project
 import (
 	"errors"
 	"fmt"
+	"path"
+	"reflect"
+	"strings"
+
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"path"
-	"reflect"
-	"strings"
 )
 
 func PreFlightCheck(ctx pipeline.Context) {

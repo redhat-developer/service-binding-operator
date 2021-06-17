@@ -3,9 +3,10 @@ package binding
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"strings"
 
 	"github.com/mitchellh/copystructure"
 	"github.com/redhat-developer/service-binding-operator/pkg/nested"

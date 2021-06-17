@@ -1,10 +1,11 @@
 package context
 
 import (
+	"reflect"
+
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"reflect"
 )
 
 const defaultContainerPath = "spec.template.spec.containers"

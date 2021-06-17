@@ -3,8 +3,9 @@ package mapping
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"text/template"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 )
 
 func Handle(ctx pipeline.Context) {
