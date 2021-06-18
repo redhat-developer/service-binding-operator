@@ -107,11 +107,14 @@ jobs:
 
           make SKIP_REGISTRY_LOGIN=true -o registry-login test-acceptance-with-bundle
 
-      - name: Collect logs
+      - name: Collect Kube resources
         continue-on-error: true
-        run: |
-          mkdir -p ${TEST_RESULTS}
-          kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n operators | tail -1) -n operators > ${TEST_RESULTS}/sbo.log
+        uses: ./.github/actions/collect-kube-resources
+        with:
+          operator-namespace: operators
+          olm-namespace: olm
+          test-namespace-file: out/test-namespace
+          output-path: ${{env.TEST_RESULTS}}
         if: always()
 
       - name: Setup Testspace
@@ -184,11 +187,13 @@ jobs:
           kubectl apply -f out/release.yaml
           make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
 
-      - name: Collect logs
+      - name: Collect Kube resources
         continue-on-error: true
-        run: |
-          mkdir -p ${TEST_RESULTS}
-          kubectl logs $(kubectl get pods --no-headers -o custom-columns=":metadata.name" -n operators | tail -1) -n operators > ${TEST_RESULTS}/sbo.log
+        uses: ./.github/actions/collect-kube-resources
+        with:
+          operator-namespace: service-binding-operator
+          test-namespace-file: out/test-namespace
+          output-path: ${{env.TEST_RESULTS}}
         if: always()
 
       - name: Setup Testspace
