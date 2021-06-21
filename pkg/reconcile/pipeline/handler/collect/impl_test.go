@@ -4,6 +4,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"reflect"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -15,7 +17,6 @@ import (
 	bindingmocks "github.com/redhat-developer/service-binding-operator/pkg/binding/mocks"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"reflect"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/handler/collect"
@@ -745,6 +746,105 @@ var _ = Describe("Collect From Provisioned Service", func() {
 		})
 	})
 
+})
+
+var _ = Describe("Collect From Direct Secret", func() {
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+		ctx = mocks.NewMockContext(mockCtrl)
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	Describe("successful processing", func() {
+		var (
+			services []pipeline.Service
+
+			defService = func() (*mocks.MockService, *unstructured.Unstructured) {
+				service := mocks.NewMockService(mockCtrl)
+				serviceContent := &unstructured.Unstructured{}
+				service.EXPECT().Resource().Return(serviceContent)
+				services = append(services, service)
+				return service, serviceContent
+			}
+			err = errors.New("e")
+		)
+
+		BeforeEach(func() {
+			services = []pipeline.Service{}
+			ctx.EXPECT().Services().DoAndReturn(func() ([]pipeline.Service, error) { return services, nil })
+		})
+
+		It("should collect from secret referred in services", func() {
+			secretName1 := "foo"
+			secretName2 := "bar"
+			ns1 := "ns1"
+			ns2 := "ns2"
+			svc1, content1 := defService()
+			content1.Object = map[string]interface{}{
+				"status": map[string]interface{}{
+					"binding": map[string]interface{}{
+						"name": secretName1,
+					},
+				},
+			}
+			content1.SetNamespace(ns1)
+			content1.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
+			content1.SetName(secretName1)
+
+			svc2, content2 := defService()
+			content2.Object = map[string]interface{}{
+				"status": map[string]interface{}{
+					"binding": map[string]interface{}{
+						"name": secretName2,
+					},
+				},
+			}
+			content2.SetNamespace(ns2)
+			content2.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
+			content2.SetName(secretName2)
+
+			ctx.EXPECT().ReadSecret(ns1, secretName1).Return(content1, nil)
+			ctx.EXPECT().ReadSecret(ns2, secretName2).Return(content2, nil)
+
+			ctx.EXPECT().AddBindings(&pipeline.SecretBackedBindings{Service: svc1, Secret: content1})
+			ctx.EXPECT().AddBindings(&pipeline.SecretBackedBindings{Service: svc2, Secret: content2})
+
+			collect.DirectSecretReference(ctx)
+		})
+
+		It("should retry processing if reading secret fails", func() {
+			_, content := defService()
+			secretName1 := "foo"
+			ns1 := "ns1"
+			content.SetName(secretName1)
+			content.SetNamespace(ns1)
+			content.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
+			content.SetName(secretName1)
+
+			ctx.EXPECT().ReadSecret(ns1, secretName1).Return(nil, err)
+
+			ctx.EXPECT().RetryProcessing(err)
+			ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(collect.ErrorReadingSecret).Msg(err.Error()).Build())
+			collect.DirectSecretReference(ctx)
+		})
+
+		It("ignore secret having a secret binding annotation", func() {
+			_, content := defService()
+			secretName1 := "foo"
+			ns1 := "ns1"
+			ann := map[string]string{"service.binding": "path={.data},elementType=map"}
+			content.SetAnnotations(ann)
+			content.SetName(secretName1)
+			content.SetNamespace(ns1)
+			content.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"})
+			content.SetName(secretName1)
+			collect.DirectSecretReference(ctx)
+		})
+
+	})
 })
 
 var _ = Describe("Integration Collect definitions + items", func() {

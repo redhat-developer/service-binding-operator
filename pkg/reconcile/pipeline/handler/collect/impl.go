@@ -4,6 +4,9 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
@@ -12,8 +15,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"reflect"
-	"strings"
 )
 
 var DataNotMap = errors.New("Returned data are not a map, skip collecting")
@@ -127,6 +128,31 @@ func ProvisionedService(ctx pipeline.Context) {
 				requestRetry(ctx, ErrorReadingBindingReason, fmt.Errorf("CRD of service %v/%v indicates provisioned service, but no secret name provided under .status.binding.name", res.GetNamespace(), res.GetName()))
 				return
 			}
+		}
+	}
+}
+
+func DirectSecretReference(ctx pipeline.Context) {
+	// Error is ignored as this check is there in the PreFlight stage.
+	// That stage was created to perform common checks for all followup stages.
+	services, _ := ctx.Services()
+
+	for _, service := range services {
+		res := service.Resource()
+		if res.GetKind() == "Secret" && res.GetAPIVersion() == "v1" && res.GroupVersionKind().Group == "" {
+			annotations := res.GetAnnotations()
+			for k := range annotations {
+				if strings.HasPrefix(k, binding.AnnotationPrefix) {
+					return
+				}
+			}
+			name := res.GetName()
+			secret, err := ctx.ReadSecret(res.GetNamespace(), name)
+			if err != nil {
+				requestRetry(ctx, ErrorReadingSecret, err)
+				return
+			}
+			ctx.AddBindings(&pipeline.SecretBackedBindings{Service: service, Secret: secret})
 		}
 	}
 }
