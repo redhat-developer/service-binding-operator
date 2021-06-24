@@ -9,7 +9,8 @@ Feature: Bind an application to a service using annotations
         Given Namespace [TEST_NAMESPACE] is used
         * Service Binding Operator is running
 
-    Scenario: Provide binding info through backing service CRD annotation
+    Scenario: Provide binding info through backing service CRD annotation and ensure app env vars reflect it
+        Given Generic test application "rsa-2-service" is running
         Given The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1beta1
@@ -58,13 +59,16 @@ Feature: Bind an application to a service using annotations
                     kind: Backend
                     name: backend-demo
                     id: SBR
+                application:
+                    name: rsa-2-service
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-a" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-backend-a" should be changed to "EmptyApplication"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-a" should be changed to "True"
-        And Secret contains "BACKEND_READY" key with value "true"
-        And Secret contains "BACKEND_HOST" key with value "example.common"
+
+        Then Service Binding "binding-request-backend-a" is ready
+        And The application env var "BACKEND_READY" has value "true"
+        And The application env var "BACKEND_HOST" has value "example.common"
 
     Scenario: Each value in referred map from service resource gets injected into app as separate env variable
         Given Generic test application "rsa-2-service" is running

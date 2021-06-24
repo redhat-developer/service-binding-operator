@@ -120,49 +120,59 @@ func (i *impl) Services() ([]pipeline.Service, error) {
 	return services, nil
 }
 
+// Application return a list of applications.
+// And if no application found, return an error
 func (i *impl) Applications() ([]pipeline.Application, error) {
 	if i.applications == nil {
-		if ref := i.serviceBinding.Spec.Application; ref != nil {
-			gvr, err := i.typeLookup.ResourceForReferable(ref)
+		ref := i.serviceBinding.Spec.Application
+		gvr, err := i.typeLookup.ResourceForReferable(&ref)
+		if err != nil {
+			return nil, err
+		}
+		if i.serviceBinding.Spec.Application.Name != "" {
+			u, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).Get(context.Background(), ref.Name, metav1.GetOptions{})
+			if err != nil {
+				return nil, emptyApplicationsErr{err}
+			}
+			i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindingPath: i.serviceBinding.Spec.Application.BindingPath})
+		}
+		if i.serviceBinding.Spec.Application.LabelSelector != nil && i.serviceBinding.Spec.Application.LabelSelector.MatchLabels != nil {
+			matchLabels := i.serviceBinding.Spec.Application.LabelSelector.MatchLabels
+			opts := metav1.ListOptions{
+				LabelSelector: labels.Set(matchLabels).String(),
+			}
+
+			objList, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).List(context.Background(), opts)
 			if err != nil {
 				return nil, err
 			}
-			if i.serviceBinding.Spec.Application.Name != "" {
-				u, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).Get(context.Background(), ref.Name, metav1.GetOptions{})
-				if err != nil {
-					return nil, err
-				}
-				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindingPath: i.serviceBinding.Spec.Application.BindingPath})
+
+			if len(objList.Items) == 0 {
+				return nil, emptyApplicationsErr{}
 			}
-			if i.serviceBinding.Spec.Application.LabelSelector != nil && i.serviceBinding.Spec.Application.LabelSelector.MatchLabels != nil {
-				matchLabels := i.serviceBinding.Spec.Application.LabelSelector.MatchLabels
-				opts := metav1.ListOptions{
-					LabelSelector: labels.Set(matchLabels).String(),
-				}
 
-				emptyResult := make([]pipeline.Application, 0)
-				objList, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).List(context.Background(), opts)
-				if err != nil {
-					return emptyResult, err
-				}
-
-				if len(objList.Items) == 0 {
-					return emptyResult, nil
-				}
-
-				for index := range objList.Items {
-					i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindingPath: i.serviceBinding.Spec.Application.BindingPath})
-				}
+			for index := range objList.Items {
+				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindingPath: i.serviceBinding.Spec.Application.BindingPath})
 			}
-		} else {
-			i.applications = make([]*application, 0)
 		}
 	}
+
 	result := make([]pipeline.Application, len(i.applications))
 	for l, a := range i.applications {
 		result[l] = a
 	}
 	return result, nil
+}
+
+type emptyApplicationsErr struct {
+	originalErr error
+}
+
+func (e emptyApplicationsErr) Error() string {
+	if e.originalErr != nil {
+		return "cannot find application resources for the given reference: " + e.originalErr.Error()
+	}
+	return "cannot find application resources for the given reference"
 }
 
 func (i *impl) AddBindingItem(item *pipeline.BindingItem) {

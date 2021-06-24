@@ -2,6 +2,8 @@ package builder_test
 
 import (
 	c "context"
+	"reflect"
+
 	"github.com/golang/mock/gomock"
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
@@ -16,7 +18,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic/fake"
-	"reflect"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -71,7 +72,7 @@ var _ = Describe("Default Pipeline", func() {
 			Spec: v1alpha1.ServiceBindingSpec{
 				BindAsFiles: false,
 				Services:    []v1alpha1.Service{serviceRef},
-				Application: &appRef,
+				Application: appRef,
 			},
 		}
 		sb.SetGroupVersionKind(v1alpha1.GroupVersionKind)

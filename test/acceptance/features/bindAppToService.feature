@@ -314,7 +314,7 @@ Feature: Bind an application to a service
                 host: example.common
                 username: foo
             """
-        When Service Binding is applied
+        When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
@@ -328,16 +328,13 @@ Feature: Bind an application to a service
                     kind: Backend
                     name: backend-demo-empty-app
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-empty-app" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-empty-app" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-empty-app" should be changed to "EmptyApplication"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-empty-app" should be changed to "True"
-        And Secret contains "BACKEND_HOST" key with value "example.common"
-        And Secret contains "BACKEND_USERNAME" key with value "foo"
+        Then Error message is thrown
+        And Service Binding "binding-request-empty-app" is not persistent in the cluster
 
     @olm
-    Scenario: Backend Service new spec status update gets propagated to the binding secret
+    Scenario: Bind service to application using binding definition available in x-descriptors
         Given OLM Operator "backend-new-spec" is running
+        * Generic test application "gen-app-a-s-c" is running
         * The Custom Resource is present
             """
             apiVersion: "beta.example.com/v1"
@@ -365,13 +362,16 @@ Feature: Bind an application to a service
                     version: v1
                     kind: Backend
                     name: backend-demo
+                application:
+                    name: gen-app-a-s-c
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-backend-new-spec" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-backend-new-spec" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-backend-new-spec" should be changed to "True"
-        And Secret contains "BACKEND_HOST" key with value "example.common"
-        And Secret contains "BACKEND_PORTS_FTP" key with value "22"
-        And Secret contains "BACKEND_PORTS_TCP" key with value "8080"
+        Then Service Binding "binding-request-backend-new-spec" is ready
+        And The application env var "BACKEND_HOST" has value "example.common"
+        And The application env var "BACKEND_PORTS_FTP" has value "22"
+        And The application env var "BACKEND_PORTS_TCP" has value "8080"
 
     Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
         Given Generic test application "gen-app-c-e" is running
@@ -414,113 +414,6 @@ Feature: Bind an application to a service
             """
         Then Service Binding "service-binding-c-e" is ready
         And The application env var "HOST_ADDR" has value "127.0.0.1:8080"
-
-    @olm
-    Scenario: Creating binding secret from the definitions managed in OLM operator descriptors
-        Given Backend service CSV is installed
-            """
-            apiVersion: operators.coreos.com/v1alpha1
-            kind: ClusterServiceVersion
-            metadata:
-                name: some-backend-service.v0.2.0
-            spec:
-                displayName: Some Backend Service
-                install:
-                    strategy: deployment
-                customresourcedefinitions:
-                    owned:
-                        - name: backservs.service.example.com
-                          version: v1
-                          kind: Backserv
-                          statusDescriptors:
-                            - description: Name of the Secret to hold the DB user and password
-                              displayName: DB Password Credentials
-                              path: secret
-                              x-descriptors:
-                              - urn:alm:descriptor:io.kubernetes:Secret
-                              - service.binding:username:sourceValue=username
-                              - service.binding:password:sourceValue=password
-                            - description: Name of the ConfigMap to hold the DB config
-                              displayName: DB Config Map
-                              path: configmap
-                              x-descriptors:
-                              - urn:alm:descriptor:io.kubernetes:ConfigMap
-                              - service.binding:db_host:sourceValue=db_host
-                              - service.binding:db_port:sourceValue=db_port
-            """
-        * The Custom Resource Definition is present
-            """
-            apiVersion: apiextensions.k8s.io/v1beta1
-            kind: CustomResourceDefinition
-            metadata:
-                name: backservs.service.example.com
-            spec:
-                group: service.example.com
-                versions:
-                    - name: v1
-                      served: true
-                      storage: true
-                scope: Namespaced
-                names:
-                    plural: backservs
-                    singular: backserv
-                    kind: Backserv
-                    shortNames:
-                    - bs
-            """
-        * The Custom Resource is present
-            """
-            apiVersion: service.example.com/v1
-            kind: Backserv
-            metadata:
-                name: demo-backserv-cr-2
-            status:
-                secret: csv-demo-secret
-                configmap: csv-demo-cm
-            """
-        * The ConfigMap is present
-            """
-            apiVersion: v1
-            kind: ConfigMap
-            metadata:
-                name: csv-demo-cm
-            data:
-                db_host: 172.72.2.0
-                db_port: "3306"
-            """
-        * The Secret is present
-            """
-            apiVersion: v1
-            kind: Secret
-            metadata:
-                name: csv-demo-secret
-            type: Opaque
-            stringData:
-                username: admin
-                password: secret123
-            """
-        When Service Binding is applied
-            """
-            apiVersion: binding.operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: sbr-csv-secret-cm-descriptors
-            spec:
-                bindAsFiles: false
-                services:
-                -   group: service.example.com
-                    version: v1
-                    kind: Backserv
-                    name: demo-backserv-cr-2
-            """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sbr-csv-secret-cm-descriptors" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "sbr-csv-secret-cm-descriptors" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "sbr-csv-secret-cm-descriptors" should be changed to "True"
-        And Secret contains "BACKSERV_DB_HOST" key with value "172.72.2.0"
-        And Secret contains "BACKSERV_DB_PORT" key with value "3306"
-        And Secret contains "BACKSERV_PASSWORD" key with value "secret123"
-        And Secret contains "BACKSERV_USERNAME" key with value "admin"
-
 
     # This test scenario is disabled until the issue is resolved: https://github.com/redhat-developer/service-binding-operator/issues/656
     @disabled
@@ -661,8 +554,9 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: demo-backserv-cr-2
+                name: demo-backserv-cr-3
             """
+        * Generic test application "gen-app-a-s-e" is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
@@ -675,12 +569,14 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: demo-backserv-cr-2
+                    name: demo-backserv-cr-3
+                application:
+                    name: gen-app-a-s-e
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
-        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-remove-service" should be changed to "True"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-remove-service" should be changed to "False"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-remove-service" should be changed to "EmptyApplication"
-        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-remove-service" should be changed to "True"
+        * Service Binding "binding-request-remove-service" is ready
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
@@ -689,6 +585,11 @@ Feature: Bind an application to a service
                 name: binding-request-remove-service
             spec:
                 services:
+                application:
+                    name: gen-app-a-s-e
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
         Then Error message is thrown
         And Service Binding "binding-request-remove-service" is not updated
@@ -729,8 +630,9 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: demo-backserv-cr-2
+                name: demo-backserv-cr-5
             """
+        * Generic test application "gen-app-a-s-g" is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
@@ -743,12 +645,14 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: demo-backserv-cr-2
+                    name: demo-backserv-cr-5
+                application:
+                    name: gen-app-a-s-g
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
-        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-emptying-spec" should be changed to "True"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-emptying-spec" should be changed to "False"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-emptying-spec" should be changed to "EmptyApplication"
-        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-emptying-spec" should be changed to "True"
+        * Service Binding "binding-request-emptying-spec" is ready
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
@@ -756,6 +660,11 @@ Feature: Bind an application to a service
             metadata:
                 name: binding-request-emptying-spec
             spec:
+                application:
+                    name: gen-app-a-s-g
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
         Then Error message is thrown
         And Service Binding "binding-request-emptying-spec" is not updated
@@ -771,8 +680,9 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: demo-backserv-cr-2
+                name: demo-backserv-cr-4
             """
+        * Generic test application "gen-app-a-s-h" is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
@@ -785,12 +695,14 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: demo-backserv-cr-2
+                    name: demo-backserv-cr-4
+                application:
+                    name: gen-app-a-s-h
+                    group: apps
+                    version: v1
+                    resource: deployments
             """
-        * jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-request-remove-spec" should be changed to "True"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-request-remove-spec" should be changed to "False"
-        * jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "binding-request-remove-spec" should be changed to "EmptyApplication"
-        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "binding-request-remove-spec" should be changed to "True"
+        * Service Binding "binding-request-remove-spec" is ready
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1

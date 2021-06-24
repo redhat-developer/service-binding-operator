@@ -16,7 +16,6 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
 	mocks2 "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -45,15 +44,6 @@ var _ = Describe("Context", func() {
 	})
 
 	Describe("Applications", func() {
-		It("Should return empty slice if not application declared in service binding", func() {
-			sb := v1alpha1.ServiceBinding{
-				Spec: v1alpha1.ServiceBindingSpec{},
-			}
-			ctx := &impl{serviceBinding: &sb}
-			applications, err := ctx.Applications()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(applications).To(BeEmpty())
-		})
 
 		DescribeTable("should return slice of size 1 if application is specified", func(bindingPath *v1alpha1.BindingPath, expectedContainerPath string) {
 			ref := v1alpha1.Application{
@@ -72,7 +62,7 @@ var _ = Describe("Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: v1alpha1.ServiceBindingSpec{
-					Application: &ref,
+					Application: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -116,7 +106,7 @@ var _ = Describe("Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: v1alpha1.ServiceBindingSpec{
-					Application: &ref,
+					Application: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -172,7 +162,7 @@ var _ = Describe("Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: v1alpha1.ServiceBindingSpec{
-					Application: &ref,
+					Application: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -187,9 +177,8 @@ var _ = Describe("Context", func() {
 
 			ctx := &impl{client: client, serviceBinding: &sb, typeLookup: typeLookup}
 
-			applications, err := ctx.Applications()
-			Expect(err).NotTo(HaveOccurred())
-			Expect(applications).To(HaveLen(0))
+			_, err := ctx.Applications()
+			Expect(err).To(HaveOccurred())
 		},
 			Entry("no binding path specified", nil, defaultContainerPath),
 			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
@@ -215,7 +204,7 @@ var _ = Describe("Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: v1alpha1.ServiceBindingSpec{
-					Application: &ref,
+					Application: ref,
 				},
 			}
 
@@ -251,7 +240,7 @@ var _ = Describe("Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: v1alpha1.ServiceBindingSpec{
-					Application: &ref,
+					Application: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -263,7 +252,6 @@ var _ = Describe("Context", func() {
 
 			_, err := ctx.Applications()
 			Expect(err).To(HaveOccurred())
-			Expect(errors.IsNotFound(err)).To(BeTrue())
 		})
 	})
 
@@ -668,7 +656,7 @@ var _ = Describe("Context", func() {
 		})
 
 		It("should update application if changed", func() {
-			sb.Spec.Application = &v1alpha1.Application{
+			sb.Spec.Application = v1alpha1.Application{
 				Ref: v1alpha1.Ref{
 					Group:   "app",
 					Version: "v1",
@@ -680,7 +668,7 @@ var _ = Describe("Context", func() {
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
 
 			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
-			typeLookup.EXPECT().ResourceForReferable(sb.Spec.Application).Return(&gvr, nil)
+			typeLookup.EXPECT().ResourceForReferable(&(sb.Spec.Application)).Return(&gvr, nil)
 
 			u := &unstructured.Unstructured{}
 			u.SetNamespace(sb.Namespace)
@@ -731,7 +719,7 @@ var _ = Describe("Context", func() {
 		It("should not update service binding if its uid is unset", func() {
 			sb.UID = ""
 			sb.Name = "sb2"
-			sb.Spec.Application = &v1alpha1.Application{
+			sb.Spec.Application = v1alpha1.Application{
 				Ref: v1alpha1.Ref{
 					Group:   "app",
 					Version: "v1",
@@ -743,7 +731,7 @@ var _ = Describe("Context", func() {
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
 
 			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
-			typeLookup.EXPECT().ResourceForReferable(sb.Spec.Application).Return(&gvr, nil)
+			typeLookup.EXPECT().ResourceForReferable(&(sb.Spec.Application)).Return(&gvr, nil)
 
 			u := &unstructured.Unstructured{}
 			u.SetNamespace(sb.Namespace)
