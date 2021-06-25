@@ -3,6 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/binding.operators.coreos.com_servicebindings.yaml
+- bases/service.binding_servicebindings.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

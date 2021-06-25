@@ -78,3 +78,29 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - service.binding
+  resources:
+  - servicebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - service.binding
+  resources:
+  - servicebindings/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - service.binding
+  resources:
+  - servicebindings/status
+  verbs:
+  - get
+  - patch
+  - update

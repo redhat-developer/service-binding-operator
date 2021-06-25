@@ -35,6 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	specv1alpha2 "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
+	speccontrollers "github.com/redhat-developer/service-binding-operator/controllers/spec"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -47,6 +49,7 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(specv1alpha2.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -106,6 +109,14 @@ func main() {
 	if err = (&binding.ServiceBindingReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
+		os.Exit(1)
+	}
+	if err = (&speccontrollers.ServiceBindingReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("spec").WithName("ServiceBinding"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
