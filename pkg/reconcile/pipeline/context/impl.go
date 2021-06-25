@@ -4,9 +4,9 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"sort"
 
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -24,7 +24,7 @@ import (
 var _ pipeline.Context = &impl{}
 
 type impl struct {
-	serviceBinding *v1alpha1.ServiceBinding
+	serviceBinding *v1alpha12.ServiceBinding
 
 	client dynamic.Interface
 
@@ -54,7 +54,7 @@ type provider struct {
 	typeLookup K8STypeLookup
 }
 
-func (p *provider) Get(sb *v1alpha1.ServiceBinding) (pipeline.Context, error) {
+func (p *provider) Get(sb *v1alpha12.ServiceBinding) (pipeline.Context, error) {
 	return &impl{
 		conditions:     make(map[string]*metav1.Condition),
 		client:         p.client,
@@ -271,7 +271,7 @@ func (i *impl) persistBinding() error {
 	if err != nil {
 		return err
 	}
-	client := i.client.Resource(v1alpha1.GroupVersionResource).Namespace(i.serviceBinding.Namespace)
+	client := i.client.Resource(v1alpha12.GroupVersionResource).Namespace(i.serviceBinding.Namespace)
 	_, err = client.UpdateStatus(context.Background(), u, metav1.UpdateOptions{})
 	return err
 }
@@ -316,12 +316,12 @@ func (i *impl) persistSecret() (string, error) {
 
 func (i *impl) Close() error {
 	if i.err != nil {
-		i.SetCondition(v1alpha1.Conditions().NotBindingReady().Reason("ProcessingError").Msg(i.err.Error()).Build())
+		i.SetCondition(v1alpha12.Conditions().NotBindingReady().Reason("ProcessingError").Msg(i.err.Error()).Build())
 		return i.persistBinding()
 	}
 	secretName, err := i.persistSecret()
 	if err != nil {
-		i.SetCondition(v1alpha1.Conditions().NotBindingReady().Reason("ErrorPersistingSecret").Msg(err.Error()).Build())
+		i.SetCondition(v1alpha12.Conditions().NotBindingReady().Reason("ErrorPersistingSecret").Msg(err.Error()).Build())
 		_ = i.persistBinding()
 		return err
 	}
@@ -332,13 +332,13 @@ func (i *impl) Close() error {
 		if app.IsUpdated() {
 			_, err = i.client.Resource(*app.gvr).Namespace(i.serviceBinding.Namespace).Update(context.Background(), app.Resource(), metav1.UpdateOptions{})
 			if err != nil {
-				i.SetCondition(v1alpha1.Conditions().NotBindingReady().Reason("ApplicationUpdateError").Msg(err.Error()).Build())
+				i.SetCondition(v1alpha12.Conditions().NotBindingReady().Reason("ApplicationUpdateError").Msg(err.Error()).Build())
 				_ = i.persistBinding()
 				return err
 			}
 		}
 	}
-	i.SetCondition(v1alpha1.Conditions().BindingReady().Reason("ApplicationsBound").Build())
+	i.SetCondition(v1alpha12.Conditions().BindingReady().Reason("ApplicationsBound").Build())
 	return i.persistBinding()
 }
 

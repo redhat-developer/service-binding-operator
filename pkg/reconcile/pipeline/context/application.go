@@ -1,7 +1,7 @@
 package context
 
 import (
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
@@ -13,7 +13,7 @@ type application struct {
 	gvr               *schema.GroupVersionResource
 	persistedResource *unstructured.Unstructured
 	resource          *unstructured.Unstructured
-	bindingPath       *v1alpha1.BindingPath
+	bindingPath       *v1alpha12.BindingPath
 }
 
 func (a *application) SecretPath() string {

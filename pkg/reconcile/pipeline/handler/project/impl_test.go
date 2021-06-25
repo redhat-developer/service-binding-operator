@@ -6,7 +6,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/handler/project"
 	appsv1 "k8s.io/api/apps/v1"
@@ -150,16 +150,16 @@ var _ = Describe("Injection Preflight checks", func() {
 		err := errors.New("foo")
 		ctx.EXPECT().Applications().Return(nil, err)
 		ctx.EXPECT().RetryProcessing(err)
-		ctx.EXPECT().SetCondition(v1alpha1.Conditions().CollectionReady().DataCollected().Build())
-		ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotInjectionReady().ApplicationNotFound().Msg(err.Error()).Build())
+		ctx.EXPECT().SetCondition(v1alpha12.Conditions().CollectionReady().DataCollected().Build())
+		ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotInjectionReady().ApplicationNotFound().Msg(err.Error()).Build())
 		project.PreFlightCheck(ctx)
 	})
 
 	It("should stop processing if no applications declared", func() {
 		ctx.EXPECT().Applications().Return([]pipeline.Application{}, nil)
 		ctx.EXPECT().StopProcessing()
-		ctx.EXPECT().SetCondition(v1alpha1.Conditions().CollectionReady().DataCollected().Build())
-		ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotInjectionReady().Reason(v1alpha1.EmptyApplicationReason).Build())
+		ctx.EXPECT().SetCondition(v1alpha12.Conditions().CollectionReady().DataCollected().Build())
+		ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotInjectionReady().Reason(v1alpha12.EmptyApplicationReason).Build())
 		project.PreFlightCheck(ctx)
 	})
 })

@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -29,7 +29,7 @@ var _ = Describe("Service", func() {
 		client = fake.NewSimpleDynamicClient(runtime.NewScheme(), crd)
 		gvr := gr.WithVersion(version)
 		ns := "n1"
-		service := &service{client: client, serviceRef: &v1alpha1.Service{NamespacedRef: v1alpha1.NamespacedRef{
+		service := &service{client: client, serviceRef: &v1alpha12.Service{NamespacedRef: v1alpha12.NamespacedRef{
 			Namespace: &ns,
 		}}, groupVersionResource: &gvr}
 
@@ -90,7 +90,7 @@ var _ = Describe("Service", func() {
 				})
 			}
 
-			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
+			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha12.Service{NamespacedRef: v1alpha12.NamespacedRef{Namespace: &ns}}}
 
 			ownedResources, err := impl.OwnedResources()
 			Expect(err).NotTo(HaveOccurred())
@@ -135,7 +135,7 @@ var _ = Describe("Service", func() {
 				})
 			}
 
-			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha1.Service{NamespacedRef: v1alpha1.NamespacedRef{Namespace: &ns}}}
+			impl := &service{client: client, resource: u, lookForOwnedResources: true, serviceRef: &v1alpha12.Service{NamespacedRef: v1alpha12.NamespacedRef{Namespace: &ns}}}
 
 			ownedResources, err := impl.OwnedResources()
 			Expect(err).Should(Equal(expectedErr))

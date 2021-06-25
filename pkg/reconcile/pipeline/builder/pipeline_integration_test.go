@@ -2,10 +2,10 @@ package builder_test
 
 import (
 	c "context"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"reflect"
 
 	"github.com/golang/mock/gomock"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
@@ -42,9 +42,9 @@ var _ = Describe("Default Pipeline", func() {
 		serviceName := "s1"
 		serviceGVR := schema.GroupVersionResource{Group: "services", Version: "v1", Resource: "databases"}
 		serviceGVK := serviceGVR.GroupVersion().WithKind("Database")
-		serviceRef := v1alpha1.Service{
-			NamespacedRef: v1alpha1.NamespacedRef{
-				Ref: v1alpha1.Ref{
+		serviceRef := v1alpha12.Service{
+			NamespacedRef: v1alpha12.NamespacedRef{
+				Ref: v1alpha12.Ref{
 					Group:    serviceGVR.Group,
 					Version:  serviceGVR.Version,
 					Resource: serviceGVR.Resource,
@@ -55,27 +55,27 @@ var _ = Describe("Default Pipeline", func() {
 		appGVR := schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}
 		appGVK := appGVR.GroupVersion().WithKind("Deployment")
 		appName := "app1"
-		appRef := v1alpha1.Application{
-			Ref: v1alpha1.Ref{
+		appRef := v1alpha12.Application{
+			Ref: v1alpha12.Ref{
 				Group:    appGVR.Group,
 				Version:  appGVR.Version,
 				Resource: appGVR.Resource,
 				Name:     appName,
 			},
 		}
-		sb := &v1alpha1.ServiceBinding{
+		sb := &v1alpha12.ServiceBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "sb1",
 				Namespace: ns,
 				UID:       "uid1",
 			},
-			Spec: v1alpha1.ServiceBindingSpec{
+			Spec: v1alpha12.ServiceBindingSpec{
 				BindAsFiles: false,
-				Services:    []v1alpha1.Service{serviceRef},
+				Services:    []v1alpha12.Service{serviceRef},
 				Application: appRef,
 			},
 		}
-		sb.SetGroupVersionKind(v1alpha1.GroupVersionKind)
+		sb.SetGroupVersionKind(v1alpha12.GroupVersionKind)
 
 		service := &unstructured.Unstructured{Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -124,18 +124,18 @@ var _ = Describe("Default Pipeline", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(retry).To(BeFalse())
 
-		u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(c.Background(), sb.Name, metav1.GetOptions{})
+		u, err := client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(c.Background(), sb.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
 
-		updatedSB := v1alpha1.ServiceBinding{}
+		updatedSB := v1alpha12.ServiceBinding{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 
 		Expect(err).NotTo(HaveOccurred())
 		Expect(updatedSB.Status.Secret).NotTo(BeEmpty())
 		Expect(updatedSB.Status.Conditions).To(HaveLen(3))
-		Expect(existCondition(updatedSB.Status.Conditions, v1alpha1.BindingReady, metav1.ConditionTrue)).To(BeTrue())
-		Expect(existCondition(updatedSB.Status.Conditions, v1alpha1.InjectionReady, metav1.ConditionTrue)).To(BeTrue())
-		Expect(existCondition(updatedSB.Status.Conditions, v1alpha1.CollectionReady, metav1.ConditionTrue)).To(BeTrue())
+		Expect(existCondition(updatedSB.Status.Conditions, v1alpha12.BindingReady, metav1.ConditionTrue)).To(BeTrue())
+		Expect(existCondition(updatedSB.Status.Conditions, v1alpha12.InjectionReady, metav1.ConditionTrue)).To(BeTrue())
+		Expect(existCondition(updatedSB.Status.Conditions, v1alpha12.CollectionReady, metav1.ConditionTrue)).To(BeTrue())
 
 		u, err = client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).Namespace(sb.Namespace).Get(c.Background(), updatedSB.Status.Secret, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())

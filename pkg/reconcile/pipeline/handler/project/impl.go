@@ -3,7 +3,7 @@ package project
 import (
 	"errors"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -14,21 +14,21 @@ import (
 )
 
 func PreFlightCheck(ctx pipeline.Context) {
-	ctx.SetCondition(v1alpha1.Conditions().CollectionReady().DataCollected().Build())
+	ctx.SetCondition(v1alpha12.Conditions().CollectionReady().DataCollected().Build())
 	applications, err := ctx.Applications()
 	if err != nil {
 		ctx.RetryProcessing(err)
-		ctx.SetCondition(v1alpha1.Conditions().NotInjectionReady().ApplicationNotFound().Msg(err.Error()).Build())
+		ctx.SetCondition(v1alpha12.Conditions().NotInjectionReady().ApplicationNotFound().Msg(err.Error()).Build())
 		return
 	}
 	if len(applications) == 0 {
-		ctx.SetCondition(v1alpha1.Conditions().NotInjectionReady().Reason(v1alpha1.EmptyApplicationReason).Build())
+		ctx.SetCondition(v1alpha12.Conditions().NotInjectionReady().Reason(v1alpha12.EmptyApplicationReason).Build())
 		ctx.StopProcessing()
 	}
 }
 
 func PostFlightCheck(ctx pipeline.Context) {
-	ctx.SetCondition(v1alpha1.Conditions().InjectionReady().Reason("ApplicationUpdated").Build())
+	ctx.SetCondition(v1alpha12.Conditions().InjectionReady().Reason("ApplicationUpdated").Build())
 }
 
 func InjectSecretRef(ctx pipeline.Context) {
@@ -343,7 +343,7 @@ func mountPath(container map[string]interface{}, ctx pipeline.Context) (string, 
 func stop(ctx pipeline.Context, err error) {
 	ctx.StopProcessing()
 	ctx.Error(err)
-	ctx.SetCondition(v1alpha1.Conditions().NotInjectionReady().Reason("Error").Msg(err.Error()).Build())
+	ctx.SetCondition(v1alpha12.Conditions().NotInjectionReady().Reason("Error").Msg(err.Error()).Build())
 }
 
 func resources(obj interface{}, resource map[string]interface{}, path ...string) ([]map[string]interface{}, bool, error) {

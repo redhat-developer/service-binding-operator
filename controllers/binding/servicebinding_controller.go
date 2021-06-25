@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package binding
 
 import (
 	ctx "context"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/controllers"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
@@ -64,7 +65,7 @@ type ServiceBindingReconciler struct {
 func (r *ServiceBindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("serviceBinding", req.NamespacedName)
 	var ctx = ctx.Background()
-	serviceBinding := &v1alpha1.ServiceBinding{}
+	serviceBinding := &v1alpha12.ServiceBinding{}
 
 	err := r.Get(ctx, req.NamespacedName, serviceBinding)
 	if err != nil {
@@ -119,8 +120,8 @@ func (r *ServiceBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.pipeline = builder.DefaultBuilder.WithContextProvider(context.Provider(r.dynClient, context.ResourceLookup(mgr.GetRESTMapper()))).Build()
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1alpha1.ServiceBinding{}).
+		For(&v1alpha12.ServiceBinding{}).
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
-		WithOptions(controller.Options{MaxConcurrentReconciles: maxConcurrentReconciles}).
+		WithOptions(controller.Options{MaxConcurrentReconciles: controllers.MaxConcurrentReconciles}).
 		Complete(r)
 }

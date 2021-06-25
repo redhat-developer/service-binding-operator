@@ -1,5 +1,6 @@
 domain: operators.coreos.com
 layout: go.kubebuilder.io/v3
+multigroup: true
 projectName: service-binding-operator
 repo: github.com/redhat-developer/service-binding-operator
 resources:

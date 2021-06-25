@@ -20,6 +20,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"github.com/redhat-developer/service-binding-operator/controllers"
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/controllers/binding"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -32,8 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	operatorsv1alpha1 "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/controllers"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -45,7 +46,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(operatorsv1alpha1.AddToScheme(scheme))
+	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -102,7 +103,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ServiceBindingReconciler{
+	if err = (&binding.ServiceBindingReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
 		Scheme: mgr.GetScheme(),

@@ -5,12 +5,12 @@ import (
 	"encoding/base64"
 	e "errors"
 	"fmt"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
@@ -45,9 +45,9 @@ var _ = Describe("Context", func() {
 
 	Describe("Applications", func() {
 
-		DescribeTable("should return slice of size 1 if application is specified", func(bindingPath *v1alpha1.BindingPath, expectedContainerPath string) {
-			ref := v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+		DescribeTable("should return slice of size 1 if application is specified", func(bindingPath *v1alpha12.BindingPath, expectedContainerPath string) {
+			ref := v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -56,12 +56,12 @@ var _ = Describe("Context", func() {
 				BindingPath: bindingPath,
 			}
 
-			sb := v1alpha1.ServiceBinding{
+			sb := v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
 				},
-				Spec: v1alpha1.ServiceBindingSpec{
+				Spec: v1alpha12.ServiceBindingSpec{
 					Application: ref,
 				},
 			}
@@ -83,15 +83,15 @@ var _ = Describe("Context", func() {
 			Expect(applications[0].ContainersPath()).To(Equal(expectedContainerPath))
 		},
 			Entry("no binding path specified", nil, defaultContainerPath),
-			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+			Entry("binding path specified", &v1alpha12.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
 		)
-		DescribeTable("should return slice of size 2 if 2 applications are specified through label seclector", func(bindingPath *v1alpha1.BindingPath, expectedContainerPath string) {
+		DescribeTable("should return slice of size 2 if 2 applications are specified through label seclector", func(bindingPath *v1alpha12.BindingPath, expectedContainerPath string) {
 			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
 
-			ref := v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+			ref := v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -100,12 +100,12 @@ var _ = Describe("Context", func() {
 				BindingPath:   bindingPath,
 			}
 
-			sb := v1alpha1.ServiceBinding{
+			sb := v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
 				},
-				Spec: v1alpha1.ServiceBindingSpec{
+				Spec: v1alpha12.ServiceBindingSpec{
 					Application: ref,
 				},
 			}
@@ -139,15 +139,15 @@ var _ = Describe("Context", func() {
 			Expect(applications[1].ContainersPath()).To(Equal(expectedContainerPath))
 		},
 			Entry("no binding path specified", nil, defaultContainerPath),
-			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+			Entry("binding path specified", &v1alpha12.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
 		)
-		DescribeTable("should return slice of size 0 if no application is matching through label seclector", func(bindingPath *v1alpha1.BindingPath, expectedContainerPath string) {
+		DescribeTable("should return slice of size 0 if no application is matching through label seclector", func(bindingPath *v1alpha12.BindingPath, expectedContainerPath string) {
 			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
 
-			ref := v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+			ref := v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -156,12 +156,12 @@ var _ = Describe("Context", func() {
 				BindingPath:   bindingPath,
 			}
 
-			sb := v1alpha1.ServiceBinding{
+			sb := v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
 				},
-				Spec: v1alpha1.ServiceBindingSpec{
+				Spec: v1alpha12.ServiceBindingSpec{
 					Application: ref,
 				},
 			}
@@ -181,7 +181,7 @@ var _ = Describe("Context", func() {
 			Expect(err).To(HaveOccurred())
 		},
 			Entry("no binding path specified", nil, defaultContainerPath),
-			Entry("binding path specified", &v1alpha1.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+			Entry("binding path specified", &v1alpha12.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
 		)
 
 		It("should return error if application list returns error", func() {
@@ -189,8 +189,8 @@ var _ = Describe("Context", func() {
 				MatchLabels: map[string]string{"env": "prod"},
 			}
 
-			ref := v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+			ref := v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -198,12 +198,12 @@ var _ = Describe("Context", func() {
 				LabelSelector: ls,
 			}
 
-			sb := v1alpha1.ServiceBinding{
+			sb := v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
 				},
-				Spec: v1alpha1.ServiceBindingSpec{
+				Spec: v1alpha12.ServiceBindingSpec{
 					Application: ref,
 				},
 			}
@@ -225,8 +225,8 @@ var _ = Describe("Context", func() {
 			Expect(err.Error()).To(Equal(expectedError))
 		})
 		It("should return error if application is not found", func() {
-			ref := v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+			ref := v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -234,12 +234,12 @@ var _ = Describe("Context", func() {
 				},
 			}
 
-			sb := v1alpha1.ServiceBinding{
+			sb := v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
 				},
-				Spec: v1alpha1.ServiceBindingSpec{
+				Spec: v1alpha12.ServiceBindingSpec{
 					Application: ref,
 				},
 			}
@@ -257,19 +257,19 @@ var _ = Describe("Context", func() {
 
 	Describe("Services", func() {
 		var (
-			defServiceBinding = func(name string, namespace string, refs ...v1alpha1.Ref) *v1alpha1.ServiceBinding {
-				var services []v1alpha1.Service
+			defServiceBinding = func(name string, namespace string, refs ...v1alpha12.Ref) *v1alpha12.ServiceBinding {
+				var services []v1alpha12.Service
 				for idx, ref := range refs {
 					id := fmt.Sprintf("id%v", idx)
-					services = append(services, v1alpha1.Service{
-						NamespacedRef: v1alpha1.NamespacedRef{
+					services = append(services, v1alpha12.Service{
+						NamespacedRef: v1alpha12.NamespacedRef{
 							Ref: ref,
 						},
 						Id: &id,
 					})
 				}
-				sb := &v1alpha1.ServiceBinding{
-					Spec: v1alpha1.ServiceBindingSpec{
+				sb := &v1alpha12.ServiceBinding{
+					Spec: v1alpha12.ServiceBindingSpec{
 						Services: services,
 					},
 				}
@@ -278,7 +278,7 @@ var _ = Describe("Context", func() {
 		)
 
 		type testCase struct {
-			serviceRefs []v1alpha1.Ref
+			serviceRefs []v1alpha12.Ref
 			serviceGVKs []schema.GroupVersionKind
 		}
 
@@ -319,7 +319,7 @@ var _ = Describe("Context", func() {
 				}
 			},
 			Entry("single service", &testCase{
-				serviceRefs: []v1alpha1.Ref{
+				serviceRefs: []v1alpha12.Ref{
 					{
 						Group:   "foo",
 						Version: "v1",
@@ -336,7 +336,7 @@ var _ = Describe("Context", func() {
 				},
 			}),
 			Entry("two services", &testCase{
-				serviceRefs: []v1alpha1.Ref{
+				serviceRefs: []v1alpha12.Ref{
 					{
 						Group:   "foo",
 						Version: "v1",
@@ -365,7 +365,7 @@ var _ = Describe("Context", func() {
 			}),
 		)
 		It("Should return error when service not found", func() {
-			sb := defServiceBinding("sb1", "ns1", v1alpha1.Ref{
+			sb := defServiceBinding("sb1", "ns1", v1alpha12.Ref{
 				Group:   "foo",
 				Version: "v1",
 				Kind:    "Bar",
@@ -386,13 +386,13 @@ var _ = Describe("Context", func() {
 		})
 
 		It("Should return error when one service not found", func() {
-			sb := defServiceBinding("sb1", "ns1", v1alpha1.Ref{
+			sb := defServiceBinding("sb1", "ns1", v1alpha12.Ref{
 				Group:   "foo",
 				Version: "v1",
 				Kind:    "Bar",
 				Name:    "bla",
 			},
-				v1alpha1.Ref{
+				v1alpha12.Ref{
 					Group:   "foo",
 					Version: "v1",
 					Kind:    "Bar",
@@ -420,7 +420,7 @@ var _ = Describe("Context", func() {
 
 	Describe("Binding Secret Name", func() {
 		It("should not be empty string", func() {
-			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "sb1",
 				},
@@ -431,7 +431,7 @@ var _ = Describe("Context", func() {
 		})
 
 		It("should not depend on binding item order", func() {
-			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "sb1",
 				},
@@ -439,7 +439,7 @@ var _ = Describe("Context", func() {
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo", Value: "v1"})
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
 
-			ctx2 := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx2 := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "sb1",
 				},
@@ -453,7 +453,7 @@ var _ = Describe("Context", func() {
 		It("should be equal to existing secret if additional binding items exist", func() {
 			secretName := "foo"
 			namespace := "ns1"
-			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: namespace,
@@ -478,7 +478,7 @@ var _ = Describe("Context", func() {
 		It("should be generated if additional items are added", func() {
 			secretName := "foo"
 			namespace := "ns1"
-			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: namespace,
@@ -506,7 +506,7 @@ var _ = Describe("Context", func() {
 		It("should be generated if item key is modified", func() {
 			secretName := "foo"
 			namespace := "ns1"
-			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: namespace,
@@ -538,7 +538,7 @@ var _ = Describe("Context", func() {
 		It("should be generated if two binding secrets are set", func() {
 			secretNames := []string{"foo", "bar"}
 			namespace := "ns1"
-			ctx := &impl{serviceBinding: &v1alpha1.ServiceBinding{
+			ctx := &impl{serviceBinding: &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: namespace,
@@ -568,19 +568,19 @@ var _ = Describe("Context", func() {
 
 	Describe("Close", func() {
 		var (
-			sb  *v1alpha1.ServiceBinding
+			sb  *v1alpha12.ServiceBinding
 			ctx pipeline.Context
 		)
 
 		BeforeEach(func() {
-			sb = &v1alpha1.ServiceBinding{
+			sb = &v1alpha12.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "sb1",
 					Namespace: "ns1",
 					UID:       "uid1",
 				},
 			}
-			sb.SetGroupVersionKind(v1alpha1.GroupVersionKind)
+			sb.SetGroupVersionKind(v1alpha12.GroupVersionKind)
 			u, _ := converter.ToUnstructured(&sb)
 			client = fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 
@@ -592,36 +592,36 @@ var _ = Describe("Context", func() {
 
 			err1 := "err1"
 			err2 := "err2"
-			ctx.SetCondition(v1alpha1.Conditions().NotInjectionReady().ServiceNotFound().Msg(err1).Build())
-			ctx.SetCondition(v1alpha1.Conditions().NotCollectionReady().ServiceNotFound().Msg(err2).Build())
+			ctx.SetCondition(v1alpha12.Conditions().NotInjectionReady().ServiceNotFound().Msg(err1).Build())
+			ctx.SetCondition(v1alpha12.Conditions().NotCollectionReady().ServiceNotFound().Msg(err2).Build())
 
 			ctx.Error(e.New(err1))
 
 			err := ctx.Close()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			u, err := client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedSB := v1alpha1.ServiceBinding{}
+			updatedSB := v1alpha12.ServiceBinding{}
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(updatedSB.Status.Secret).To(BeEmpty())
 			Expect(updatedSB.Status.Conditions).To(HaveLen(3))
 
-			cnd := meta.FindStatusCondition(updatedSB.Status.Conditions, v1alpha1.InjectionReady)
+			cnd := meta.FindStatusCondition(updatedSB.Status.Conditions, v1alpha12.InjectionReady)
 			Expect(cnd.Status).To(Equal(metav1.ConditionFalse))
-			Expect(cnd.Reason).To(Equal(v1alpha1.ServiceNotFoundReason))
+			Expect(cnd.Reason).To(Equal(v1alpha12.ServiceNotFoundReason))
 			Expect(cnd.Message).To(Equal(err1))
 
-			cnd = meta.FindStatusCondition(updatedSB.Status.Conditions, v1alpha1.CollectionReady)
+			cnd = meta.FindStatusCondition(updatedSB.Status.Conditions, v1alpha12.CollectionReady)
 			Expect(cnd.Status).To(Equal(metav1.ConditionFalse))
-			Expect(cnd.Reason).To(Equal(v1alpha1.ServiceNotFoundReason))
+			Expect(cnd.Reason).To(Equal(v1alpha12.ServiceNotFoundReason))
 			Expect(cnd.Message).To(Equal(err2))
 
-			cnd = meta.FindStatusCondition(updatedSB.Status.Conditions, v1alpha1.BindingReady)
-			Expect(cnd.Type).To(Equal(v1alpha1.BindingReady))
+			cnd = meta.FindStatusCondition(updatedSB.Status.Conditions, v1alpha12.BindingReady)
+			Expect(cnd.Type).To(Equal(v1alpha12.BindingReady))
 			Expect(cnd.Status).To(Equal(metav1.ConditionFalse))
 
 		})
@@ -633,16 +633,16 @@ var _ = Describe("Context", func() {
 			err := ctx.Close()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			u, err := client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedSB := v1alpha1.ServiceBinding{}
+			updatedSB := v1alpha12.ServiceBinding{}
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(updatedSB.Status.Secret).NotTo(BeEmpty())
 			Expect(updatedSB.Status.Conditions).To(HaveLen(1))
-			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(v1alpha1.BindingReady))
+			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(v1alpha12.BindingReady))
 			Expect(updatedSB.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
 
 			u, err = ctx.ReadSecret(sb.Namespace, updatedSB.Status.Secret)
@@ -656,8 +656,8 @@ var _ = Describe("Context", func() {
 		})
 
 		It("should update application if changed", func() {
-			sb.Spec.Application = v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+			sb.Spec.Application = v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -688,16 +688,16 @@ var _ = Describe("Context", func() {
 			err = ctx.Close()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err = client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			u, err = client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedSB := v1alpha1.ServiceBinding{}
+			updatedSB := v1alpha12.ServiceBinding{}
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(updatedSB.Status.Secret).NotTo(BeEmpty())
 			Expect(updatedSB.Status.Conditions).To(HaveLen(1))
-			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(v1alpha1.BindingReady))
+			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(v1alpha12.BindingReady))
 			Expect(updatedSB.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
 
 			u, err = ctx.ReadSecret(sb.Namespace, updatedSB.Status.Secret)
@@ -719,8 +719,8 @@ var _ = Describe("Context", func() {
 		It("should not update service binding if its uid is unset", func() {
 			sb.UID = ""
 			sb.Name = "sb2"
-			sb.Spec.Application = v1alpha1.Application{
-				Ref: v1alpha1.Ref{
+			sb.Spec.Application = v1alpha12.Application{
+				Ref: v1alpha12.Ref{
 					Group:   "app",
 					Version: "v1",
 					Kind:    "Foo",
@@ -751,7 +751,7 @@ var _ = Describe("Context", func() {
 			err = ctx.Close()
 			Expect(err).NotTo(HaveOccurred())
 
-			_, err = client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			_, err = client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 
 			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Secret)
@@ -789,10 +789,10 @@ var _ = Describe("Context", func() {
 			err := ctx.Close()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			u, err := client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedSB := v1alpha1.ServiceBinding{}
+			updatedSB := v1alpha12.ServiceBinding{}
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -822,10 +822,10 @@ var _ = Describe("Context", func() {
 			err := ctx.Close()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			u, err := client.Resource(v1alpha12.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
-			updatedSB := v1alpha1.ServiceBinding{}
+			updatedSB := v1alpha12.ServiceBinding{}
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 

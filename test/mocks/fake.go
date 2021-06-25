@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"testing"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -12,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 )
 
 // Fake defines all the elements to fake a kubernetes api client.
@@ -32,8 +31,8 @@ func (f *Fake) AddMockedServiceBinding(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha1.ServiceBinding {
-	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
+) *v1alpha12.ServiceBinding {
+	f.S.AddKnownTypes(v1alpha12.GroupVersion, &v1alpha12.ServiceBinding{})
 	sbr := ServiceBindingMock(f.ns, name, backingServiceNamespace, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -46,8 +45,8 @@ func (f *Fake) AddMockedServiceBindingWithUnannotated(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha1.ServiceBinding {
-	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
+) *v1alpha12.ServiceBinding {
+	f.S.AddKnownTypes(v1alpha12.GroupVersion, &v1alpha12.ServiceBinding{})
 	sbr := ServiceBindingMock(f.ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	f.objs = append(f.objs, sbr)
 	return sbr
@@ -58,7 +57,7 @@ func (f *Fake) AddMockedUnstructuredServiceBindingWithoutApplication(
 	name string,
 	backingServiceResourceRef string,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha12.GroupVersion, &v1alpha12.ServiceBinding{})
 	var emptyGVR = schema.GroupVersionResource{}
 	sbr, err := UnstructuredServiceBindingMock(f.ns, name, backingServiceResourceRef, "", emptyGVR, nil)
 	require.NoError(f.t, err)
@@ -72,7 +71,7 @@ func (f *Fake) AddMockedUnstructuredServiceBindingWithoutService(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha12.GroupVersion, &v1alpha12.ServiceBinding{})
 	sbr, err := UnstructuredServiceBindingMock(f.ns, name, "", applicationResourceRef, applicationGVR, nil)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)
@@ -87,7 +86,7 @@ func (f *Fake) AddMockedUnstructuredServiceBinding(
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
 ) *unstructured.Unstructured {
-	f.S.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.ServiceBinding{})
+	f.S.AddKnownTypes(v1alpha12.GroupVersion, &v1alpha12.ServiceBinding{})
 	sbr, err := UnstructuredServiceBindingMock(f.ns, name, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
 	require.NoError(f.t, err)
 	f.objs = append(f.objs, sbr)

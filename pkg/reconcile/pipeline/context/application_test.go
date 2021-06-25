@@ -3,7 +3,7 @@ package context
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -18,7 +18,7 @@ var _ = Describe("Application", func() {
 	})
 
 	It("should return secret path by provided binding path", func() {
-		app = &application{bindingPath: &v1alpha1.BindingPath{SecretPath: "foo"}}
+		app = &application{bindingPath: &v1alpha12.BindingPath{SecretPath: "foo"}}
 		Expect(app.SecretPath()).To(Equal("foo"))
 	})
 
@@ -28,12 +28,12 @@ var _ = Describe("Application", func() {
 	})
 
 	It("should return default container path if binding path container path is set to empty", func() {
-		app = &application{bindingPath: &v1alpha1.BindingPath{}}
+		app = &application{bindingPath: &v1alpha12.BindingPath{}}
 		Expect(app.ContainersPath()).To(Equal(defaultContainerPath))
 	})
 
 	It("should return container path set through binding path", func() {
-		app = &application{bindingPath: &v1alpha1.BindingPath{ContainersPath: "foo"}}
+		app = &application{bindingPath: &v1alpha12.BindingPath{ContainersPath: "foo"}}
 		Expect(app.ContainersPath()).To(Equal("foo"))
 	})
 
