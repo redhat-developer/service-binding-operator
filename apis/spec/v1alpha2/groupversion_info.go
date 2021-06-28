@@ -28,6 +28,10 @@ var (
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "service.binding", Version: "v1alpha2"}
 
+	GroupVersionResource = GroupVersion.WithResource("servicebindings")
+
+	GroupVersionKind = GroupVersion.WithKind("ServiceBinding")
+
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 

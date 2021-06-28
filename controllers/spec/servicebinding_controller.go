@@ -18,18 +18,20 @@ package spec
 
 import (
 	"github.com/go-logr/logr"
+	"github.com/redhat-developer/service-binding-operator/apis"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
+	"github.com/redhat-developer/service-binding-operator/controllers"
+	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
+	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
 	"k8s.io/apimachinery/pkg/runtime"
-	ctrl "sigs.k8s.io/controller-runtime"
+	"k8s.io/client-go/dynamic"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	specv1alpha2 "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
 )
 
 // ServiceBindingReconciler reconciles a ServiceBinding object
 type ServiceBindingReconciler struct {
-	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
+	controllers.BindingReconciler
 }
 
 // +kubebuilder:rbac:groups=service.binding,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
@@ -41,26 +43,18 @@ type ServiceBindingReconciler struct {
 // +kubebuilder:rbac:groups=*,resources=*,verbs=get;list;watch;update
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 
-// Reconcile is part of the main kubernetes reconciliation loop which aims to
-// move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the ServiceBinding object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
-func (r *ServiceBindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = r.Log.WithValues("servicebinding", req.NamespacedName)
+func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *ServiceBindingReconciler {
+	r := &ServiceBindingReconciler{
+		BindingReconciler: controllers.BindingReconciler{
+			Client: client,
+			Log:    log,
+			Scheme: scheme,
+			PipelineProvider: func(client dynamic.Interface, lookup context.K8STypeLookup) pipeline.Pipeline {
+				return builder.SpecBuilder.WithContextProvider(context.SpecProvider(client, lookup)).Build()
+			},
+			ReconcilingObject: func() apis.Object { return &v1alpha2.ServiceBinding{} },
+		},
+	}
 
-	// your logic here
-
-	return ctrl.Result{}, nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *ServiceBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&specv1alpha2.ServiceBinding{}).
-		Complete(r)
+	return r
 }

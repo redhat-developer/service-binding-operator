@@ -2,8 +2,6 @@ package pipeline
 
 import (
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
-
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
@@ -21,7 +19,7 @@ type Pipeline interface {
 	// Returns true if processing should be repeated
 	// and optional error if occurred
 	// important: even if error occurred it might not be needed to retry processing
-	Process(binding *v1alpha1.ServiceBinding) (bool, error)
+	Process(binding interface{}) (bool, error)
 }
 
 // A pipeline stage
@@ -78,6 +76,8 @@ type Application interface {
 	// optional dot-separated path inside the application resource locating field where intermediate binding secret ref should be injected
 	// the returns value follows foo.bar.bla convention, but it can be empty
 	SecretPath() string
+
+	BindableContainers() ([]map[string]interface{}, error)
 }
 
 // Custom Resource Definition
@@ -130,6 +130,10 @@ type Context interface {
 	// List binding items that should be projected into application containers
 	BindingItems() BindingItems
 
+	// EnvBindings returns list of (env variable name, binding name) pairs
+	// describing what binding should be injected as env var as well
+	EnvBindings() []*EnvBinding
+
 	// Indicates that the binding should be retried at some later time
 	// The current processing stops and context gets closed
 	RetryProcessing(reason error)
@@ -155,7 +159,7 @@ type Context interface {
 
 // Provides context for a given service binding
 type ContextProvider interface {
-	Get(binding *v1alpha1.ServiceBinding) (Context, error)
+	Get(binding interface{}) (Context, error)
 }
 
 type HandlerFunc func(ctx Context)
@@ -170,6 +174,11 @@ type BindingItem struct {
 	Name   string
 	Value  interface{}
 	Source Service
+}
+
+type EnvBinding struct {
+	Var  string
+	Name string
 }
 
 // a collection of bindings

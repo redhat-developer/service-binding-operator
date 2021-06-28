@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ServiceBindingApplicationReference defines a subset of corev1.ObjectReference with extensions
@@ -34,7 +35,7 @@ type ServiceBindingApplicationReference struct {
 	// Selector is a query that selects the application or applications to bind the service to
 	Selector metav1.LabelSelector `json:"selector,omitempty"`
 	// Containers describes which containers in a Pod should be bound to
-	Containers []intstr.IntOrString `json:"containers,omitempty"`
+	Containers []string `json:"containers,omitempty"`
 }
 
 // ServiceBindingServiceReference defines a subset of corev1.ObjectReference
@@ -67,6 +68,8 @@ type EnvMapping struct {
 // ServiceBindingSpec defines the desired state of ServiceBinding
 type ServiceBindingSpec struct {
 	// Name is the name of the service as projected into the application container.  Defaults to .metadata.name.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9\-\.]*$`
+	// +kubebuilder:validation:MaxLength=253
 	Name string `json:"name,omitempty"`
 	// Type is the type of the service as projected into the application container
 	Type string `json:"type,omitempty"`
@@ -79,14 +82,6 @@ type ServiceBindingSpec struct {
 	// Env is the collection of mappings from Secret entries to environment variables
 	Env []EnvMapping `json:"env,omitempty"`
 }
-
-// These are valid conditions of ServiceBinding.
-const (
-	// ServiceBindingReady means the ServiceBinding has projected the ProvisionedService
-	// secret and the Application is ready to start. It does not indicate the condition
-	// of either the Service or the Application resources referenced.
-	ServiceBindingConditionReady = "Ready"
-)
 
 // ServiceBindingStatus defines the observed state of ServiceBinding
 type ServiceBindingStatus struct {
@@ -101,6 +96,7 @@ type ServiceBindingStatus struct {
 	Binding *ServiceBindingSecretReference `json:"binding,omitempty"`
 }
 
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding (spec API)"
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status
@@ -128,4 +124,39 @@ type ServiceBindingList struct {
 
 func init() {
 	SchemeBuilder.Register(&ServiceBinding{}, &ServiceBindingList{})
+}
+
+func (ref *ServiceBindingServiceReference) GroupVersionResource() (*schema.GroupVersionResource, error) {
+	return nil, errors.New("Resource undefined")
+}
+
+func (ref *ServiceBindingServiceReference) GroupVersionKind() (*schema.GroupVersionKind, error) {
+	typeMeta := &metav1.TypeMeta{Kind: ref.Kind, APIVersion: ref.APIVersion}
+	gvk := typeMeta.GroupVersionKind()
+	return &gvk, nil
+}
+
+func (ref *ServiceBindingApplicationReference) GroupVersionResource() (*schema.GroupVersionResource, error) {
+	return nil, errors.New("Resource undefined")
+}
+
+func (ref *ServiceBindingApplicationReference) GroupVersionKind() (*schema.GroupVersionKind, error) {
+	typeMeta := &metav1.TypeMeta{Kind: ref.Kind, APIVersion: ref.APIVersion}
+	gvk := typeMeta.GroupVersionKind()
+	return &gvk, nil
+}
+
+func (sb *ServiceBinding) AsOwnerReference() metav1.OwnerReference {
+	var ownerRefController bool = true
+	return metav1.OwnerReference{
+		Name:       sb.Name,
+		UID:        sb.UID,
+		Kind:       sb.Kind,
+		APIVersion: sb.APIVersion,
+		Controller: &ownerRefController,
+	}
+}
+
+func (sb *ServiceBinding) HasDeletionTimestamp() bool {
+	return !sb.DeletionTimestamp.IsZero()
 }

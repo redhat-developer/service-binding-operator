@@ -6,7 +6,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/handler/project"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"strings"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 )
@@ -27,7 +29,6 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		ctx = mocks.NewMockContext(mockCtrl)
-		ctx.EXPECT().BindAsFiles().Return(false)
 	})
 
 	AfterEach(func() {
@@ -44,6 +45,7 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 		BeforeEach(func() {
 			var apps []pipeline.Application
 			secretName = "secret1"
+			ctx.EXPECT().BindAsFiles().Return(false).MinTimes(1)
 			ctx.EXPECT().BindingSecretName().Return(secretName)
 			d1 := deployment("d1", []corev1.Container{
 				{
@@ -74,13 +76,14 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 				deploymentsUnstructured = append(deploymentsUnstructured, res)
 				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
 				app := mocks.NewMockApplication(mockCtrl)
-				app.EXPECT().Resource().Return(res)
 				app.EXPECT().SecretPath().Return("")
-				app.EXPECT().ContainersPath().Return("spec.template.spec.containers").MinTimes(1)
+				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
+				app.EXPECT().BindableContainers().Return(containers, nil)
 				apps = append(apps, app)
 			}
 
 			ctx.EXPECT().Applications().Return(apps, nil)
+			ctx.EXPECT().EnvBindings().Return([]*pipeline.EnvBinding{})
 		})
 
 		It("should inject secret ref in envFrom block", func() {
@@ -129,6 +132,138 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 			Expect(deploymentsUnstructured[1]).To(Equal(&unstructured.Unstructured{Object: u}))
 		})
 	})
+
+	Context("emv bindings are set", func() {
+		var (
+			deploymentsUnstructured    []*unstructured.Unstructured
+			deploymentsUnstructuredOld []*unstructured.Unstructured
+			secretName                 string
+		)
+
+		BeforeEach(func() {
+			var apps []pipeline.Application
+			secretName = "secret1"
+			ctx.EXPECT().BindAsFiles().Return(true).MinTimes(1)
+			ctx.EXPECT().BindingSecretName().Return(secretName)
+			ctx.EXPECT().EnvBindings().Return([]*pipeline.EnvBinding{
+				{
+					Var:  "e1",
+					Name: "b1",
+				},
+				{
+					Var:  "e2",
+					Name: "b2",
+				},
+			})
+			d1 := deployment("d1", []corev1.Container{
+				{
+					Image: "foo",
+				},
+			})
+			d2 := deployment("d2", []corev1.Container{
+				{
+					Image: "foo2",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "foo",
+							Value: "bla",
+						},
+					},
+				},
+			})
+
+			for _, d := range []*appsv1.Deployment{d1, d2} {
+				u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(d)
+				if err != nil {
+					Fail(err.Error())
+				}
+				res := &unstructured.Unstructured{Object: u}
+				deploymentsUnstructured = append(deploymentsUnstructured, res)
+				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
+				app := mocks.NewMockApplication(mockCtrl)
+				app.EXPECT().SecretPath().Return("")
+				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
+				app.EXPECT().BindableContainers().Return(containers, nil)
+				apps = append(apps, app)
+			}
+
+			ctx.EXPECT().Applications().Return(apps, nil)
+		})
+
+		It("should inject secret ref in env block", func() {
+			project.BindingsAsEnv(ctx)
+			for i, old := range deploymentsUnstructuredOld {
+				Expect(deploymentsUnstructured[i]).NotTo(Equal(old))
+			}
+			expected := deployment("d1", []corev1.Container{
+				{
+					Image: "foo",
+					Env: []corev1.EnvVar{
+						{
+							Name: "e1",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: secretName,
+									},
+									Key: "b1",
+								},
+							},
+						},
+						{
+							Name: "e2",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: secretName,
+									},
+									Key: "b2",
+								},
+							},
+						},
+					},
+				},
+			})
+			u, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&expected)
+			Expect(deploymentsUnstructured[0]).To(Equal(&unstructured.Unstructured{Object: u}))
+			expected = deployment("d2", []corev1.Container{
+				{
+					Image: "foo2",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "foo",
+							Value: "bla",
+						},
+						{
+							Name: "e1",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: secretName,
+									},
+									Key: "b1",
+								},
+							},
+						},
+						{
+							Name: "e2",
+							ValueFrom: &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: secretName,
+									},
+									Key: "b2",
+								},
+							},
+						},
+					},
+				},
+			})
+			u, _ = runtime.DefaultUnstructuredConverter.ToUnstructured(&expected)
+			Expect(deploymentsUnstructured[1]).To(Equal(&unstructured.Unstructured{Object: u}))
+		})
+	})
+
 })
 
 var _ = Describe("Injection Preflight checks", func() {
@@ -150,17 +285,35 @@ var _ = Describe("Injection Preflight checks", func() {
 		err := errors.New("foo")
 		ctx.EXPECT().Applications().Return(nil, err)
 		ctx.EXPECT().RetryProcessing(err)
-		ctx.EXPECT().SetCondition(v1alpha12.Conditions().CollectionReady().DataCollected().Build())
-		ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotInjectionReady().ApplicationNotFound().Msg(err.Error()).Build())
-		project.PreFlightCheck(ctx)
+		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
+		ctx.EXPECT().SetCondition(apis.Conditions().NotInjectionReady().ApplicationNotFound().Msg(err.Error()).Build())
+		project.PreFlightCheck()(ctx)
 	})
 
 	It("should stop processing if no applications declared", func() {
 		ctx.EXPECT().Applications().Return([]pipeline.Application{}, nil)
 		ctx.EXPECT().StopProcessing()
-		ctx.EXPECT().SetCondition(v1alpha12.Conditions().CollectionReady().DataCollected().Build())
-		ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotInjectionReady().Reason(v1alpha12.EmptyApplicationReason).Build())
-		project.PreFlightCheck(ctx)
+		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
+		ctx.EXPECT().SetCondition(apis.Conditions().NotInjectionReady().Reason(apis.EmptyApplicationReason).Build())
+		project.PreFlightCheck()(ctx)
+	})
+
+	It("should stop processing if mandatory bindings are missing", func() {
+		err := errors.New("Mandatory binding 'type' not found")
+		ctx.EXPECT().Applications().Return([]pipeline.Application{mocks.NewMockApplication(mockCtrl)}, nil)
+		ctx.EXPECT().BindingItems().Return(pipeline.BindingItems{&pipeline.BindingItem{Name: "foo", Value: "val1"}, &pipeline.BindingItem{Name: "bar", Value: "val2"}})
+		ctx.EXPECT().StopProcessing()
+		ctx.EXPECT().Error(err)
+		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
+		ctx.EXPECT().SetCondition(apis.Conditions().NotInjectionReady().Reason(apis.RequiredBindingNotFound).Msg(err.Error()).Build())
+		project.PreFlightCheck("foo", "type")(ctx)
+	})
+
+	It("successful if all mandatory bindings are present", func() {
+		ctx.EXPECT().Applications().Return([]pipeline.Application{mocks.NewMockApplication(mockCtrl)}, nil)
+		ctx.EXPECT().BindingItems().Return(pipeline.BindingItems{&pipeline.BindingItem{Name: "foo", Value: "val1"}, &pipeline.BindingItem{Name: "bar", Value: "val2"}})
+		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
+		project.PreFlightCheck("foo", "bar")(ctx)
 	})
 })
 
@@ -315,7 +468,8 @@ var _ = Describe("Inject bindings as files", func() {
 				app := mocks.NewMockApplication(mockCtrl)
 				app.EXPECT().Resource().Return(res)
 				app.EXPECT().SecretPath().Return("")
-				app.EXPECT().ContainersPath().Return("spec.template.spec.containers").MinTimes(1)
+				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
+				app.EXPECT().BindableContainers().Return(containers, nil)
 				apps = append(apps, app)
 			}
 
@@ -649,7 +803,8 @@ var _ = Describe("Unbind handler", func() {
 				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
 				app := mocks.NewMockApplication(mockCtrl)
 				app.EXPECT().Resource().Return(res)
-				app.EXPECT().ContainersPath().Return("spec.template.spec.containers").MinTimes(1)
+				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
+				app.EXPECT().BindableContainers().Return(containers, nil)
 				apps = append(apps, app)
 			}
 

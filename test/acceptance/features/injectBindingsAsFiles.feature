@@ -358,3 +358,52 @@ Feature: Bindings get injected as files in application
             """
             8080
             """
+
+    @spec
+    Scenario: SPEC Inject bindings gathered through annotations into application at default location
+        Given Generic test application "spec-generic-app-a-d-u-2" is running
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-02
+                annotations:
+                    "service.binding/host": "path={.spec.host}"
+                    "service.binding/port": "path={.spec.port}"
+            spec:
+                host: example.common
+                port: 8080
+            """
+        When Service Binding is applied
+            """
+            apiVersion: service.binding/v1alpha2
+            kind: ServiceBinding
+            metadata:
+                name: spec-binding-backend-vm-02
+            spec:
+                type: mysql
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: backend-demo-02
+
+                application:
+                    name: spec-generic-app-a-d-u-2
+                    apiVersion: apps/v1
+                    kind: Deployment
+            """
+        Then Service Binding "spec-binding-backend-vm-02" is ready
+        And The application env var "SERVICE_BINDING_ROOT" has value "/bindings"
+        And Content of file "/bindings/spec-binding-backend-vm-02/host" in application pod is
+            """
+            example.common
+            """
+        And Content of file "/bindings/spec-binding-backend-vm-02/port" in application pod is
+            """
+            8080
+            """
+        And Content of file "/bindings/spec-binding-backend-vm-02/type" in application pod is
+            """
+            mysql
+            """

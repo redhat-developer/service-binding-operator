@@ -2,7 +2,7 @@ package mocks
 
 import (
 	"fmt"
-	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -396,15 +396,15 @@ func ServiceBindingMock(
 	applicationResourceRef string,
 	applicationGVR schema.GroupVersionResource,
 	matchLabels map[string]string,
-) *v1alpha12.ServiceBinding {
-	var services []v1alpha12.Service
+) *v1alpha1.ServiceBinding {
+	var services []v1alpha1.Service
 	if backingServiceResourceRef == "" {
-		services = []v1alpha12.Service{}
+		services = []v1alpha1.Service{}
 	} else {
-		services = []v1alpha12.Service{
+		services = []v1alpha1.Service{
 			{
-				NamespacedRef: v1alpha12.NamespacedRef{
-					Ref: v1alpha12.Ref{
+				NamespacedRef: v1alpha1.NamespacedRef{
+					Ref: v1alpha1.Ref{
 						Group: CRDName, Version: CRDVersion, Kind: CRDKind, Name: backingServiceResourceRef,
 					},
 					Namespace: backingServiceNamespace,
@@ -412,19 +412,19 @@ func ServiceBindingMock(
 			},
 		}
 	}
-	sbr := &v1alpha12.ServiceBinding{
+	sbr := &v1alpha1.ServiceBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: ns,
 			Name:      name,
 		},
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "ServiceBinding",
-			APIVersion: v1alpha12.GroupVersion.String(),
+			APIVersion: v1alpha1.GroupVersion.String(),
 		},
-		Spec: v1alpha12.ServiceBindingSpec{
-			Mappings: []v1alpha12.Mapping{},
-			Application: v1alpha12.Application{
-				Ref: v1alpha12.Ref{
+		Spec: v1alpha1.ServiceBindingSpec{
+			Mappings: []v1alpha1.Mapping{},
+			Application: v1alpha1.Application{
+				Ref: v1alpha1.Ref{
 					Group: applicationGVR.Group, Version: applicationGVR.Version, Resource: applicationGVR.Resource, Name: applicationResourceRef,
 				},
 				LabelSelector: &metav1.LabelSelector{MatchLabels: matchLabels},
@@ -447,7 +447,7 @@ func UnstructuredServiceBindingMock(
 	matchLabels map[string]string,
 ) (*unstructured.Unstructured, error) {
 	sbr := ServiceBindingMock(ns, name, nil, backingServiceResourceRef, applicationResourceRef, applicationGVR, matchLabels)
-	return converter.ToUnstructuredAsGVK(&sbr, v1alpha12.GroupVersionKind)
+	return converter.ToUnstructuredAsGVK(&sbr, v1alpha1.GroupVersionKind)
 }
 
 // UnstructuredDeploymentConfigMock converts the DeploymentMock to unstructured.

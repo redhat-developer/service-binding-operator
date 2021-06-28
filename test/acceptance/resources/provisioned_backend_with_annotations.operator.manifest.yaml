@@ -1,0 +1,19 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: provisionedbackends.stable.example.com
+  annotations:
+    "service.binding/provisioned-service": "true"
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+  scope: Namespaced
+  names:
+    plural: provisionedbackends
+    singular: provisionedbackend
+    kind: ProvisionedBackend
+    shortNames:
+      - pbk

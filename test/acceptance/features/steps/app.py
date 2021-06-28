@@ -1,7 +1,9 @@
 from openshift import Openshift
 from command import Command
 from environment import ctx
+from behave import step
 import polling2
+import json
 
 
 class App(object):
@@ -36,3 +38,12 @@ class App(object):
 
     def base_url(self):
         return self.openshift.get_route_host(self.name, self.namespace)
+
+
+@step(u'jsonpath "{json_path}" on "{res_name}" should return "{json_value}"')
+@step(u'jsonpath "{json_path}" on "{res_name}" should return no value')
+def resource_jsonpath_value(context, json_path, res_name, json_value=""):
+    openshift = Openshift()
+    (crdName, name) = res_name.split("/")
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crdName, name, context.namespace.name, json_path) == json_value,
+                  step=5, timeout=800, ignore_exceptions=(json.JSONDecodeError,))

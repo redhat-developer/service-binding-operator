@@ -459,10 +459,6 @@ spec:
                 print(f"No deployment that matches {deployment_name_pattern} found.\n")
         return None
 
-    def delete_service_binding(self, sb_name, namespace):
-        (output, exit_code) = self.cmd.run(f"{ctx.cli} delete --wait=true --timeout=120s ServiceBinding {sb_name} -n {namespace}")
-        assert exit_code == 0, f"Unexpected exit code ({exit_code}) while deleting service binding '{sb_name}': {output}"
-
     def new_app(self, name, image_name, namespace, bindingRoot=None):
         if ctx.cli == "oc":
             cmd = f"{ctx.cli} new-app --docker-image={image_name} --name={name} -n {namespace}"

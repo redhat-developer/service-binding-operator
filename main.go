@@ -19,10 +19,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
-	"github.com/redhat-developer/service-binding-operator/controllers"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/controllers"
 	"github.com/redhat-developer/service-binding-operator/controllers/binding"
+	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -106,20 +106,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&binding.ServiceBindingReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	if err = binding.New(
+		mgr.GetClient(),
+		ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
+		mgr.GetScheme(),
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
 		os.Exit(1)
 	}
-	if err = (&speccontrollers.ServiceBindingReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("spec").WithName("ServiceBinding"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
+	if err = speccontrollers.New(
+		mgr.GetClient(),
+		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
+		mgr.GetScheme(),
+	).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder

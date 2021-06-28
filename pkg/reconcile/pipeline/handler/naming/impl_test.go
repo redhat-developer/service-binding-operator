@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/handler/naming"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
@@ -107,7 +107,7 @@ var _ = Describe("Naming handler", func() {
 			ctx.EXPECT().Error(gomock.Any()).Do(func(e error) { err = e })
 
 			ctx.EXPECT().SetCondition(gomock.Any()).Do(func(condition *v1.Condition) {
-				Expect(condition).To(Equal(v1alpha12.Conditions().NotCollectionReady().Reason(naming.StrategyError).Msg(err.Error()).Build()))
+				Expect(condition).To(Equal(apis.Conditions().NotCollectionReady().Reason(naming.StrategyError).Msg(err.Error()).Build()))
 			})
 			naming.Handle(ctx)
 		},

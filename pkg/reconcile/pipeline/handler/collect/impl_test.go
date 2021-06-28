@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	v1alpha12 "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	bindingmocks "github.com/redhat-developer/service-binding-operator/pkg/binding/mocks"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -29,7 +29,7 @@ var (
 	shouldRetry = func(handler pipeline.Handler, reason string, err error) {
 		It("should indicate retry and set collection ready status to false", func() {
 			ctx.EXPECT().RetryProcessing(err)
-			ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotCollectionReady().Reason(reason).Msg(err.Error()).Build())
+			ctx.EXPECT().SetCondition(apis.Conditions().NotCollectionReady().Reason(reason).Msg(err.Error()).Build())
 			handler.Handle(ctx)
 		})
 	}
@@ -727,7 +727,7 @@ var _ = Describe("Collect From Provisioned Service", func() {
 			service.EXPECT().CustomResourceDefinition().Return(crd, nil)
 
 			ctx.EXPECT().RetryProcessing(err)
-			ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotCollectionReady().Reason(collect.ErrorReadingBindingReason).Msg(err.Error()).Build())
+			ctx.EXPECT().SetCondition(apis.Conditions().NotCollectionReady().Reason(collect.ErrorReadingBindingReason).Msg(err.Error()).Build())
 
 			collect.ProvisionedService(ctx)
 		})
@@ -740,7 +740,7 @@ var _ = Describe("Collect From Provisioned Service", func() {
 			service.EXPECT().CustomResourceDefinition().Return(nil, err)
 
 			ctx.EXPECT().RetryProcessing(err)
-			ctx.EXPECT().SetCondition(v1alpha12.Conditions().NotCollectionReady().Reason(collect.ErrorReadingCRD).Msg(err.Error()).Build())
+			ctx.EXPECT().SetCondition(apis.Conditions().NotCollectionReady().Reason(collect.ErrorReadingCRD).Msg(err.Error()).Build())
 
 			collect.ProvisionedService(ctx)
 		})
@@ -827,7 +827,7 @@ var _ = Describe("Collect From Direct Secret", func() {
 			ctx.EXPECT().ReadSecret(ns1, secretName1).Return(nil, err)
 
 			ctx.EXPECT().RetryProcessing(err)
-			ctx.EXPECT().SetCondition(v1alpha1.Conditions().NotCollectionReady().Reason(collect.ErrorReadingSecret).Msg(err.Error()).Build())
+			ctx.EXPECT().SetCondition(apis.Conditions().NotCollectionReady().Reason(collect.ErrorReadingSecret).Msg(err.Error()).Build())
 			collect.DirectSecretReference(ctx)
 		})
 
