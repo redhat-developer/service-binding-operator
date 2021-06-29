@@ -790,7 +790,7 @@ Feature: Bind an application to a service
                     resource: deployments
             """
         Then Service Binding "binding-request-configmap" is ready
-        And The application env var "CONFIGMAP_DATA_WORD" has value "hello"
+        And The application env var "CONFIGMAP_WORD" has value "hello"
 
 
     Scenario: Inject all secret keys into application
@@ -826,4 +826,4 @@ Feature: Bind an application to a service
                     resource: deployments
             """
         Then Service Binding "binding-request-secret" is ready
-        And The application env var "SECRET_DATA_WORD" has value "aGVsbG8="
+        And The application env var "SECRET_WORD" has value "aGVsbG8="

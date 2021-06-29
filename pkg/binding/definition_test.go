@@ -12,7 +12,7 @@ func TestStringDefinition(t *testing.T) {
 	type args struct {
 		description   string
 		outputName    string
-		path          []string
+		path          string
 		expectedValue interface{}
 	}
 
@@ -20,7 +20,7 @@ func TestStringDefinition(t *testing.T) {
 		{
 			description: "outputName informed",
 			outputName:  "username",
-			path:        []string{"status", "dbCredentials", "username"},
+			path:        "{.status.dbCredentials.username}",
 			expectedValue: map[string]interface{}{
 				"username": "AzureDiamond",
 			},
@@ -28,16 +28,9 @@ func TestStringDefinition(t *testing.T) {
 		{
 			description: "outputName informed - alias",
 			outputName:  "anotherName",
-			path:        []string{"status", "dbCredentials", "username"},
+			path:        "{.status.dbCredentials.username}",
 			expectedValue: map[string]interface{}{
 				"anotherName": "AzureDiamond",
-			},
-		},
-		{
-			description: "outputName empty",
-			path:        []string{"status", "dbCredentials", "username"},
-			expectedValue: map[string]interface{}{
-				"username": "AzureDiamond",
 			},
 		},
 	}
@@ -56,7 +49,9 @@ func TestStringDefinition(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			d := &stringDefinition{
 				outputName: tc.outputName,
-				path:       tc.path,
+				definition: definition{
+					path: tc.path,
+				},
 			}
 			val, err := d.Apply(u)
 			require.NoError(t, err)
@@ -69,7 +64,7 @@ func TestStringOfMap(t *testing.T) {
 	type args struct {
 		description   string
 		outputName    string
-		path          []string
+		path          string
 		expectedValue interface{}
 		object        *unstructured.Unstructured
 	}
@@ -98,14 +93,16 @@ func TestStringOfMap(t *testing.T) {
 			expectedValue: expectedValue,
 			object:        u,
 			outputName:    "dbCredentials",
-			path:          []string{"status", "dbCredentials"},
+			path:          "{.status.dbCredentials}",
 		},
 		{
-			description:   "outputName empty",
-			expectedValue: expectedValue,
-			object:        u,
-			outputName:    "",
-			path:          []string{"status", "dbCredentials"},
+			description: "outputName empty",
+			expectedValue: map[string]interface{}{
+				"username": "AzureDiamond",
+				"password": "hunter2",
+			},
+			object: u,
+			path:   "{.status.dbCredentials}",
 		},
 	}
 
@@ -113,7 +110,9 @@ func TestStringOfMap(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			d := &stringOfMapDefinition{
 				outputName: tc.outputName,
-				path:       tc.path,
+				definition: definition{
+					path: tc.path,
+				},
 			}
 			val, err := d.Apply(tc.object)
 			require.NoError(t, err)
@@ -125,8 +124,10 @@ func TestStringOfMap(t *testing.T) {
 func TestSliceOfStringsFromPath(t *testing.T) {
 	d := &sliceOfStringsFromPathDefinition{
 		sourceValue: "url",
-		path:        []string{"status", "bootstrap"},
-		outputName:  "bootstrap",
+		definition: definition{
+			path: "{.status.bootstrap}",
+		},
+		outputName: "bootstrap",
 	}
 	val, err := d.Apply(&unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -159,7 +160,9 @@ func TestSliceOfMapsFromPath(t *testing.T) {
 		sourceKey:   "type",
 		sourceValue: "url",
 		outputName:  "bootstrap",
-		path:        []string{"status", "bootstrap"},
+		definition: definition{
+			path: "{.status.bootstrap}",
+		},
 	}
 	val, err := d.Apply(&unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -199,7 +202,9 @@ func TestMapFromSecretDataField(t *testing.T) {
 			configMapReader: configMapsReader(f.FakeDynClient()),
 		},
 		objectType: secretObjectType,
-		path:       []string{"status", "dbCredentials"},
+		definition: definition{
+			path: "{.status.dbCredentials}",
+		},
 	}
 	val, err := d.Apply(&unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -228,7 +233,9 @@ func TestMapFromConfigMapDataField(t *testing.T) {
 			configMapReader: configMapsReader(f.FakeDynClient()),
 		},
 		objectType: configMapObjectType,
-		path:       []string{"status", "dbCredentials"},
+		definition: definition{
+			path: "{.status.dbCredentials}",
+		},
 	}
 	val, err := d.Apply(&unstructured.Unstructured{
 		Object: map[string]interface{}{
@@ -259,7 +266,9 @@ func TestMapFromConfigMapDataFieldWithOutputNameAndSourceValue(t *testing.T) {
 		objectType:  configMapObjectType,
 		sourceValue: "username",
 		outputName:  "user",
-		path:        []string{"status", "dbCredentials"},
+		definition: definition{
+			path: "{.status.dbCredentials}",
+		},
 	}
 	val, err := d.Apply(&unstructured.Unstructured{
 		Object: map[string]interface{}{

@@ -51,10 +51,10 @@ func (mr *MockDefinitionMockRecorder) Apply(arg0 interface{}) *gomock.Call {
 }
 
 // GetPath mocks base method.
-func (m *MockDefinition) GetPath() []string {
+func (m *MockDefinition) GetPath() string {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetPath")
-	ret0, _ := ret[0].([]string)
+	ret0, _ := ret[0].(string)
 	return ret0
 }
 

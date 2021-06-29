@@ -80,7 +80,7 @@ var _ = Describe("Default Pipeline", func() {
 		service := &unstructured.Unstructured{Object: map[string]interface{}{
 			"metadata": map[string]interface{}{
 				"annotations": map[string]interface{}{
-					"service.binding":      "path={.status.foo}",
+					"service.binding/bar":  "path={.status.foo}",
 					"service.binding/bar2": "path={.status.foo2}",
 				},
 			},
@@ -144,7 +144,7 @@ var _ = Describe("Default Pipeline", func() {
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(secret.StringData).To(Equal(map[string]string{
-			"DATABASE_FOO":  "val1",
+			"DATABASE_BAR":  "val1",
 			"DATABASE_BAR2": "val2",
 		}))
 

@@ -485,9 +485,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    # Remove this disable tag once this issue is closed: https://github.com/redhat-developer/service-binding-operator/issues/808
-    @disabled
-    Scenario: Inject data from secret referred at .spec.containers.envFrom.secretRef.name
+    Scenario: Inject data from secret referred in field belonging to list
         Given The Secret is present
             """
             apiVersion: v1
@@ -552,7 +550,7 @@ Feature: Bind values from a secret referred in backing service resource
                 version: v1
                 resource: deployments
           """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "sb-inject-secret-data" should be changed to "True"
+        Then Service Binding "sb-inject-secret-data" is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -722,7 +720,7 @@ Feature: Bind values from a secret referred in backing service resource
             metadata:
                 name: provisioned-service-3
                 annotations:
-                    "service.binding": "path={.spec.foo}"
+                    "service.binding/foo": "path={.spec.foo}"
             spec:
                 foo: bla
             status:

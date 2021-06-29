@@ -40,7 +40,6 @@ func TestSpecHandler(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, got)
 			require.Equal(t, args.expectedData, got.Data, "Data does not match expected")
-			require.Equal(t, args.expectedRawData, got.RawData, "RawData does not match expected")
 		}
 	}
 
@@ -245,7 +244,7 @@ func TestSpecHandler(t *testing.T) {
 	}))
 
 	t.Run("should a map with type as key and url as value", assertHandler(args{
-		name:  "service.binding",
+		name:  "service.binding/bootstrap",
 		value: "path={.status.bootstrap},elementType=sliceOfMaps,sourceKey=type,sourceValue=url",
 		service: map[string]interface{}{
 			"metadata": map[string]interface{}{
@@ -335,7 +334,7 @@ func TestSpecHandler(t *testing.T) {
 	}))
 
 	t.Run("should return a slice of strings with all urls", assertHandler(args{
-		name:  "service.binding",
+		name:  "service.binding/bootstrap",
 		value: "path={.status.bootstrap},elementType=sliceOfStrings,sourceKey=url",
 		service: map[string]interface{}{
 			"metadata": map[string]interface{}{

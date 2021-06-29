@@ -7,6 +7,8 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
+	"strings"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
@@ -807,7 +809,7 @@ var _ = Describe("Integration Collect definitions + items", func() {
 			serviceContent: map[string]interface{}{
 				"metadata": map[string]interface{}{
 					"annotations": map[string]interface{}{
-						"service.binding":      "path={.status.foo}",
+						"service.binding/bar":  "path={.status.foo}",
 						"service.binding/bar2": "path={.status.foo2}",
 					},
 				},
@@ -819,7 +821,7 @@ var _ = Describe("Integration Collect definitions + items", func() {
 			},
 			expectedItems: []*pipeline.BindingItem{
 				{
-					Name:  "foo",
+					Name:  "bar",
 					Value: "val1",
 				},
 				{
@@ -935,7 +937,7 @@ type bindingDefMatcher struct {
 func (m bindingDefMatcher) Matches(x interface{}) bool {
 	bd, ok := x.(binding.Definition)
 	if ok {
-		return reflect.DeepEqual(bd.GetPath(), m.path)
+		return reflect.DeepEqual(bd.GetPath(), fmt.Sprintf("{.%v}", strings.Join(m.path, ".")))
 	}
 	return false
 }
