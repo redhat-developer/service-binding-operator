@@ -253,6 +253,15 @@ def sbo_jq_is(context, jq_expression, sbr_name, json_value):
                   ignore_exceptions=(json.JSONDecodeError,))
 
 
+@step(u'Service Binding "{sbr_name}" has the binding secret name set in the status')
+def sbo_secret_name_has_been_set(context, sbr_name):
+    openshift = Openshift()
+    polling2.poll(lambda: json.loads(
+        openshift.get_resource_info_by_jq("servicebinding", sbr_name, context.namespace.name, ".status.secret",
+                                          wait=False)) != "", step=5, timeout=800,
+                  ignore_exceptions=(json.JSONDecodeError,))
+
+
 @step(u'Service Binding "{sbr_name}" is ready')
 def sbo_is_ready(context, sbr_name):
     sbo_jq_is(context, '.status.conditions[] | select(.type=="CollectionReady").status', sbr_name, 'True')
