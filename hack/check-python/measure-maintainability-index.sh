@@ -6,6 +6,8 @@
 
 SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
-pushd "${SCRIPT_DIR}/.."
-$PYTHON_VENV_DIR/bin/radon mi -s -i "$PYTHON_VENV_DIR" .
-popd
+for directory in ${SCRIPT_DIR}/.. $directories; do
+    pushd "$directory"
+    $PYTHON_VENV_DIR/bin/radon mi -s -i "$PYTHON_VENV_DIR" .
+    popd
+done
