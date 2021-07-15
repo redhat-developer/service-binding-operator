@@ -185,7 +185,7 @@ jobs:
           eval $(minikube docker-env)
           make release-manifests
           kubectl apply -f out/release.yaml
-          make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
+          make test-acceptance
 
       - name: Collect Kube resources
         continue-on-error: true

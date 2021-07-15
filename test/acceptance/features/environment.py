@@ -32,22 +32,13 @@ def before_all(_context):
         output, code = cmd.run(f"oc project {namespace}")
         assert code == 0, f"Cannot set default namespace to {namespace}, reason: {output}"
 
-    start_sbo = os.getenv("TEST_ACCEPTANCE_START_SBO")
-    assert start_sbo is not None, "TEST_ACCEPTANCE_START_SBO is not set. It should be one of local, remote or operator-hub"
-    assert start_sbo in {"local", "remote", "operator-hub"}, "TEST_ACCEPTANCE_START_SBO should be one of local, remote or operator-hub"
-
-    if start_sbo == "local":
-        assert not os.getenv("TEST_ACCEPTANCE_SBO_STARTED").startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
-    elif start_sbo == "remote":
-        output, code = cmd.run(
-            f"{ctx.cli} get deployment --all-namespaces -o json"
-            + " | jq -rc '.items[] | select(.metadata.name == \"service-binding-operator\").metadata.namespace'")
-        assert code == 0, f"Non-zero return code while trying to detect namespace for SBO: {output}"
-        output = str(output).strip()
-        assert output != "", "Unable to find SBO's deployment in any namespace."
-        _context.sbo_namespace = output
-    else:
-        assert False, f"TEST_ACCEPTANCE_START_SBO={start_sbo} is currently unsupported."
+    output, code = cmd.run(
+        f"{ctx.cli} get deployment --all-namespaces -o json"
+        + " | jq -rc '.items[] | select(.metadata.name == \"service-binding-operator\").metadata.namespace'")
+    assert code == 0, f"Non-zero return code while trying to detect namespace for SBO: {output}"
+    output = str(output).strip()
+    assert output != "", "Unable to find SBO's deployment in any namespace."
+    _context.sbo_namespace = output
 
 
 def before_scenario(_context, _scenario):

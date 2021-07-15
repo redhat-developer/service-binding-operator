@@ -2,9 +2,13 @@
 
 ## Pre-requisities
 
-### OpenShift Client (`oc`) v4.5+
+### OpenShift Client (`oc`) v4.5+ or Kubernetes CLI (`kubectl`)
 
 Get the `oc` binary from [here](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/), ideally the matching version to your OpenShift or CRC version.
+
+or,
+
+get the `kubectl` binary from [here](https://kubernetes.io/docs/tasks/tools/)
 
 ### OpenShift or CRC v4.5+
 
@@ -13,6 +17,7 @@ If you have an OpenShift 4.5+ cluster available, you can use it or get the CodeR
 Let the version of CRC is `4.6.15`.
 
 Setup CRC:
+
 ```bash
 crc setup
 
@@ -23,6 +28,7 @@ Setup is complete, you can now run 'crc start' to start the OpenShift cluster
 ```
 
 Start local CRC instance:
+
 ```bash
 crc start
 
@@ -42,6 +48,7 @@ INFO You can now run 'crc console' and use these credentials to access the OpenS
 ```
 
 You can also figure out those credentials by running:
+
 ```bash
 crc console --credentials
 
@@ -50,9 +57,9 @@ To login as an admin, run 'oc login -u kubeadmin -p ****-*****-*****-***** https
 
 ```
 
-
 ## Set environment
-`KUBECONFIG` env variable needs to be set for the `oc` to be able to communicate with the cluster
+
+`KUBECONFIG` env variable needs to be set for the CLI to be able to communicate with the cluster.
 
 ### OpenShift
 
@@ -61,11 +68,13 @@ export KUBECONFIG=<path-to-kubeconfig>
 ```
 
 ### CRC
+
 ```bash
 export KUBECONFIG=$HOME/.crc/cache/crc_libvirt_4.6.15/kubeconfig
 ```
 
 ### Verify `oc` is working with your cluster
+
 ```bash
 oc status
 
@@ -88,12 +97,13 @@ The acceptance test scenarios are defined in a [Gherkin Syntax](https://cucumber
 
 There are couple of `Makefile` targets that runs acceptance tests:
 
-* `test-acceptance-smoke` - Execute `smoke` sub-set of acceptance tests
-* `test-acceptance` - Execute all the acceptance tests
+- `test-acceptance-smoke` - Execute `smoke` sub-set of acceptance tests
+- `test-acceptance` - Execute all the acceptance tests (assuming SBO is already installed)
+- `test-acceptance-with-bundle` - Ensure SBO is installed from a given index image and execute all the acceptance tests
 
 Let's take a look each of them.
 
-### Run all acceptance tests with local instance of SBO
+### Run all acceptance tests
 
 ```bash
 make test-acceptance
@@ -103,13 +113,14 @@ make test-acceptance
 ```
 
 This command will prepare the environment so that:
-* Deletes the old namespace from any previous run,
-* Creates a new namespace with generated name like `test-namespace-xxxxxxxx`,
-* Installs all the dependencies such as CRD, role, role-binding, service-account, etc. all for the service binding operator to be able to run,
+
+- Deletes the old namespace from any previous run,
+- Creates a new namespace with generated name like `test-namespace-xxxxxxxx`,
 
 and:
-* Builds and start a local instance of the operator,
-* Finally, executes the acceptance tests [features and scenarios](https://github.com/redhat-developer/service-binding-operator/tree/master/test/acceptance/features).
+
+- Assumes SBO is already installed on the cluster set in the `$KUBECONFIG`
+- Executes the acceptance tests [features and scenarios](https://github.com/redhat-developer/service-binding-operator/tree/master/test/acceptance/features).
 
 At the end of the acceptance tests execution there's a summary printed out:
 
@@ -124,11 +135,11 @@ At the end of the acceptance tests execution there's a summary printed out:
 Took 24m13.854s
 ```
 
-### Run acceptance smoke tests with local instance of SBO
+### Run acceptance smoke tests
 
 There is possibility to run a smaller sub-set of selected acceptance test scenarios as smoke test.
 
-To run acceptance smoke tests with local instance of SBO:
+To run acceptance smoke tests:
 
 ```bash
 make test-acceptance-smoke
@@ -138,48 +149,18 @@ make test-acceptance-smoke
 ```
 
 This command will prepare the environment similarly to the previous one and:
-* Builds and start a local instance of the operator
-* Executes the `smoke` sub-set of acceptance tests [features and scenarios](https://github.com/redhat-developer/service-binding-operator/tree/master/test/acceptance/features) - marked with `@smoke` tag.
 
-### Run acceptance tests with remote instance of SBO
-
-It is possible to run the acceptance tests with SBO already running, that is without building and starting the local instance and without installing the dependent resources (such as CRD, role, role-binding, service-account, etc.) required when the local instance is used. That is particularly useful for testing SBO installed on a remote cluster or running the acceptance tests with various versions of the SBO.
-
-For that there is `TEST_ACCEPTANCE_START_SBO` environment variable that needs to be set to `remote`.
-
-The remote cluster where the SBO should be running is determined by the `KUBECONFIG`.
-
-To run acceptance tests with remote instance of SBO:
-
-```bash
-TEST_ACCEPTANCE_START_SBO=remote make test-acceptance
-```
-
-Compared with the defaults this command only:
-* Deletes the old namespace from any previous run,
-* Creates a new namespace with generated name like `test-namespace-xxxxxxxx`,
-* Executes the acceptance tests.
-
+- Assumes SBO is already installed on the cluster set in the `$KUBECONFIG`
+- Executes the `smoke` sub-set of acceptance tests [features and scenarios](https://github.com/redhat-developer/service-binding-operator/tree/master/test/acceptance/features) - marked with `@smoke` tag.
 
 ### Run acceptance tests with SBO installed from a given index image
 
-This is similar to the running the acceptance tests with a remote instance of the SBO, however in this case the SBO is being installed from a given index image before the acceptance tests are executed.
+By default SBO is installed from the latest master's index image: `quay.io/redhat-developer/servicebinding-operator:index`. To use a different index image to install SBO from, there is `OPERATOR_INDEX_IMAGE_REF` environment variable that can be used to specify that index image.
 
-
-For that there is `OPERATOR_INDEX_IMAGE_REF` environment variable that can be used to specify the given index image.
-
-The remote cluster where the SBO should be installed is determined by the `KUBECONFIG`.
-
-To run acceptance tests with the remote instance of SBO installed from [OperatorHub.io](https://operatorhub.io/operator/service-binding-operator)'s index image:
+To run acceptance tests with SBO installed from [OperatorHub.io](https://operatorhub.io/operator/service-binding-operator)'s index image:
 
 ```bash
-OPERATOR_INDEX_IMAGE_REF=quay.io/operatorhubio/catalog:latest make test-acceptance-with-bundle 
-```
-
-To run acceptance tests with the remote instance of SBO installed from the latest master's index image (`OPERATOR_INDEX_IMAGE_REF` variable is set to `quay.io/redhat-developer/servicebinding-operator:index` by default):
-
-```bash
-make test-acceptance-with-bundle 
+OPERATOR_INDEX_IMAGE_REF=quay.io/operatorhubio/catalog:latest make test-acceptance-with-bundle
 ```
 
 ### Run a sub-set of features or scenarios
