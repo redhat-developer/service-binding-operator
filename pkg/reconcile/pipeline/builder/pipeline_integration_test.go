@@ -2,10 +2,11 @@ package builder_test
 
 import (
 	c "context"
+	"github.com/redhat-developer/service-binding-operator/apis"
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"reflect"
 
 	"github.com/golang/mock/gomock"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
@@ -133,9 +134,9 @@ var _ = Describe("Default Pipeline", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(updatedSB.Status.Secret).NotTo(BeEmpty())
 		Expect(updatedSB.Status.Conditions).To(HaveLen(3))
-		Expect(existCondition(updatedSB.Status.Conditions, v1alpha1.BindingReady, metav1.ConditionTrue)).To(BeTrue())
-		Expect(existCondition(updatedSB.Status.Conditions, v1alpha1.InjectionReady, metav1.ConditionTrue)).To(BeTrue())
-		Expect(existCondition(updatedSB.Status.Conditions, v1alpha1.CollectionReady, metav1.ConditionTrue)).To(BeTrue())
+		Expect(existCondition(updatedSB.Status.Conditions, apis.BindingReady, metav1.ConditionTrue)).To(BeTrue())
+		Expect(existCondition(updatedSB.Status.Conditions, apis.InjectionReady, metav1.ConditionTrue)).To(BeTrue())
+		Expect(existCondition(updatedSB.Status.Conditions, apis.CollectionReady, metav1.ConditionTrue)).To(BeTrue())
 
 		u, err = client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).Namespace(sb.Namespace).Get(c.Background(), updatedSB.Status.Secret, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())

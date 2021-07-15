@@ -45,5 +45,4 @@ Feature: Bind knative service to a service
                   value: "{{ .knav.status.dbCredentials.password }}"
             """
         Then Service Binding "binding-request-knative" is ready
-        And deployment must contain reference to binding secret
         And application should be connected to the DB "db-demo-knative"

@@ -52,7 +52,6 @@ Feature: Bind a single application to multiple services
                     name: myapp-2-sbrs-service-1
             """
         Then Service Binding "binding1-myapp-2-sbrs" is ready
-        And "myapp-2-sbrs" deployment must contain reference to secret existing in service binding
         And The application env var "BACKEND_HOST" has value "foo"
 
         When Service Binding is applied
@@ -75,7 +74,6 @@ Feature: Bind a single application to multiple services
                     name: myapp-2-sbrs-service-2
             """
         Then Service Binding "binding2-myapp-2-sbrs" is ready
-        And "myapp-2-sbrs" deployment must contain reference to secret existing in service binding
         And The application env var "BACKEND_HOST" has value "foo"
         And The application env var "BACKEND_PORT" has value "bar"
         And The application got redeployed 2 times so far

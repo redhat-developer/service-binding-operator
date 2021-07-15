@@ -3,7 +3,7 @@ package builder_test
 import (
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
@@ -122,6 +122,6 @@ type ctxProvider struct {
 	ctx pipeline.Context
 }
 
-func (c *ctxProvider) Get(binding *v1alpha1.ServiceBinding) (pipeline.Context, error) {
+func (c *ctxProvider) Get(binding interface{}) (pipeline.Context, error) {
 	return c.ctx, nil
 }

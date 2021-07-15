@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"testing"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -12,8 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	fakedynamic "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/scheme"
-
-	v1alpha1 "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 )
 
 // Fake defines all the elements to fake a kubernetes api client.

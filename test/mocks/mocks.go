@@ -2,6 +2,7 @@ package mocks
 
 import (
 	"fmt"
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
@@ -13,7 +14,6 @@ import (
 	ustrv1 "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 )
 

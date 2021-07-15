@@ -3,10 +3,8 @@
 # STEPS:
 # ----------------------------------------------------------------------------
 import ipaddress
-import json
 import os
 import re
-import time
 import polling2
 import parse
 import binascii
@@ -23,7 +21,6 @@ from openshift import Openshift
 from postgres_db import PostgresDB
 from quarkus_application import QuarkusApplication
 from serverless_operator import ServerlessOperator
-from service_binding import ServiceBinding
 from servicebindingoperator import Servicebindingoperator
 from app import App
 
@@ -174,35 +171,6 @@ def db_instance_is_running(context, db_name, namespace=None):
 
 
 # STEP
-sbr_is_applied_step = u'Service Binding is applied'
-
-
-@given(sbr_is_applied_step)
-@when(sbr_is_applied_step)
-@then(sbr_is_applied_step)
-def sbr_is_applied(context):
-    sbr_yaml = context.text
-    metadata_name = re.sub(r'.*: ', '', re.search(r'name: .*', sbr_yaml).group(0))
-    context.sbr_name = metadata_name
-    sbr = ServiceBinding()
-    if "application" in context and "application_type" in context:
-        application = context.application
-        if context.application_type == "nodejs":
-            context.application_original_generation = application.get_observed_generation()
-            context.application_original_pod_name = application.get_running_pod_name()
-        elif context.application_type == "knative":
-            context.application_original_generation = context.application.get_generation()
-        else:
-            assert False, f"Invalid application type in context.application_type={context.application_type}, valid are 'nodejs', 'knative'"
-    if "namespace" in context:
-        ns = context.namespace.name
-    else:
-        ns = None
-    assert sbr.create(sbr_yaml, ns) is not None, "Service binding not created"
-    context.sb_secret = ""
-
-
-# STEP
 @then(u'application should be re-deployed')
 def then_application_redeployed(context):
     application = context.application
@@ -222,52 +190,6 @@ def then_application_redeployed(context):
 def then_app_is_connected_to_db(context, db_name):
     db_endpoint = "/api/status/dbNameCM"
     polling2.poll(lambda: context.application.get_response_from_api(endpoint=db_endpoint) == db_name, step=5, timeout=600)
-
-
-@when(u'Service binding "{sb_name}" is deleted')
-def service_binding_is_deleted(context, sb_name):
-    openshift = Openshift()
-    context.sb_secret = get_sbr_secret_name(context, sb_name)
-    openshift.delete_service_binding(sb_name, context.namespace.name)
-
-
-# STEP
-@given(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
-@then(u'jsonpath "{json_path}" of Service Binding "{sbr_name}" should be changed to "{json_value_regex}"')
-def then_sbo_jsonpath_is(context, json_path, sbr_name, json_value_regex):
-    openshift = Openshift()
-    assert openshift.search_resource_in_namespace(
-        "servicebindings", sbr_name, context.namespace.name) is not None, f"Service Binding '{sbr_name}' does not exist in namespace '{context.namespace.name}'"
-    result = openshift.get_resource_info_by_jsonpath("sbr", sbr_name, context.namespace.name, json_path)
-    assert result is not None, f"Invalid result for SBO jsonpath: {result}."
-    assert re.fullmatch(json_value_regex, result) is not None, f"SBO jsonpath result \"{result}\" does not match \"{json_value_regex}\""
-
-
-# STEP
-@step(u'jq "{jq_expression}" of Service Binding "{sbr_name}" should be changed to "{json_value}"')
-def sbo_jq_is(context, jq_expression, sbr_name, json_value):
-    openshift = Openshift()
-    polling2.poll(lambda: json.loads(
-        openshift.get_resource_info_by_jq("servicebinding", sbr_name, context.namespace.name, jq_expression,
-                                          wait=False)) == json_value, step=5, timeout=800,
-                  ignore_exceptions=(json.JSONDecodeError,))
-
-
-@step(u'Service Binding "{sbr_name}" has the binding secret name set in the status')
-def sbo_secret_name_has_been_set(context, sbr_name):
-    openshift = Openshift()
-    polling2.poll(lambda: json.loads(
-        openshift.get_resource_info_by_jq("servicebinding", sbr_name, context.namespace.name, ".status.secret",
-                                          wait=False)) != "", step=5, timeout=800,
-                  ignore_exceptions=(json.JSONDecodeError,))
-
-
-@step(u'Service Binding "{sbr_name}" is ready')
-def sbo_is_ready(context, sbr_name):
-    sbo_jq_is(context, '.status.conditions[] | select(.type=="CollectionReady").status', sbr_name, 'True')
-    sbo_jq_is(context, '.status.conditions[] | select(.type=="InjectionReady").status', sbr_name, 'True')
-    sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
-    context.sb_secret = get_sbr_secret_name(context, sbr_name)
 
 
 @step(u'Service Binding secret is not present')
@@ -322,43 +244,6 @@ def quarkus_app_is_imported_as_knative_service(context, application_name):
     context.application_type = "knative"
 
 
-def get_sbr_secret_name(context, sbr_name=None):
-    openshift = Openshift()
-    output = openshift.get_resource_info_by_jsonpath(
-        "servicebindings", context.sbr_name if sbr_name is None else sbr_name, context.namespace.name, "{.status.secret}")
-    assert output is not None, "Failed to fetch secret name from ServiceBinding"
-    return output
-
-
-@step(u'Secret name should be updated in Service Binding status')
-def then_secret_should_be_updated(context):
-    context.sb_secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,),
-                                      check_success=lambda v: v is not None and context.sb_secret != v)
-
-
-# STEP
-@then(u'"{app_name}" deployment must contain reference to secret existing in service binding')
-def then_envFrom_contains(context, app_name):
-    time.sleep(60)
-    openshift = Openshift()
-    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
-    result = openshift.get_deployment_envFrom_info(app_name, context.namespace.name)
-    # Expected result from 'oc' (openshift client) v4.5
-    expected_result_oc_45 = f'secretRef:map[name:{secret}]'
-    # Expected result from 'oc' (openshift client) v4.6+
-    expected_result_oc_46 = f'{{"secretRef":{{"name":"{secret}"}}}}'
-    assert re.search(re.escape(expected_result_oc_45), result) is not None or re.search(re.escape(expected_result_oc_46), result) is not None, \
-        f'\n{app_name} deployment should contain secretRef: {secret} \nActual secretRef: {result}'
-
-
-# STEP
-@then(u'deployment must contain reference to binding secret')
-def envFrom_contains_intermediate_secret_name(context):
-    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
-    assert context.application.get_deployment_with_intermediate_secret(
-        secret) is not None, f"There is no deployment with intermediate secret {secret}"
-
-
 # STEP
 @given(u'CustomResourceDefinition backends.stable.example.com is available')
 @given(u'OLM Operator "{backend_service}" is running')
@@ -386,8 +271,9 @@ register_type(NullableString=parse_nullable_string)
 # STEP
 @step(u'Secret contains "{secret_key}" key with value "{secret_value:NullableString}"')
 def check_secret_key_value(context, secret_key, secret_value):
+    sb = list(context.bindings.values())[0]
     openshift = Openshift()
-    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
+    secret = polling2.poll(lambda: sb.get_secret_name(), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     json_path = f'{{.data.{secret_key}}}'
     polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name,
                                                                   json_path) == secret_value,
@@ -397,8 +283,9 @@ def check_secret_key_value(context, secret_key, secret_value):
 # STEP
 @then(u'Secret contains "{secret_key}" key with dynamic IP addess as the value')
 def check_secret_key_with_ip_value(context, secret_key):
+    sb = list(context.bindings.values())[0]
     openshift = Openshift()
-    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
+    secret = polling2.poll(lambda: sb.get_secret_name(), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     json_path = f'{{.data.{secret_key}}}'
     polling2.poll(lambda: ipaddress.ip_address(
         openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name, json_path)),
@@ -452,8 +339,9 @@ def delete_yaml(context):
 
 @then(u'Secret has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
 def verify_injected_secretRef(context, cr_name, crd_name, json_path):
+    sb = list(context.bindings.values())[0]
     openshift = Openshift()
-    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
+    secret = polling2.poll(lambda: sb.get_secret_name(), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path) == secret,
                   step=5, timeout=400)
 
@@ -486,17 +374,6 @@ def etc_cluster_is_running(context, etcd_name):
         assert etcd_cluster.is_present() is True, "etcd cluster is not present"
 
 
-@when(u'Invalid Service Binding is applied')
-def invalid_sbr_is_applied(context):
-    sbr = ServiceBinding()
-    # Get resource version of sbr if sbr is available
-    if "sbr_name" in context:
-        json_path = "{.metadata.resourceVersion}"
-        rv = sbr.get_servicebinding_info_by_jsonpath(context.sbr_name, context.namespace.name, json_path)
-        context.resource_version = rv
-    context.expected_error = sbr.attempt_to_create_invalid(context.text, context.namespace.name)
-
-
 @then(u'Error message is thrown')
 @then(u'Error message "{err_msg}" is thrown')
 def validate_error(context, err_msg=None):
@@ -514,41 +391,15 @@ def validate_absent_sb(context, sb_name):
                   step=5, timeout=400, check_success=lambda v: v is None)
 
 
-@then(u'Service Binding "{sb_name}" is not updated')
-def validate_persistent_sb(context, sb_name):
-    openshift = Openshift()
-    json_path = "{.metadata.resourceVersion}"
-    output = openshift.get_resource_info_by_jsonpath("servicebindings", sb_name, context.namespace.name, json_path)
-    if output == context.resource_version:
-        assert True
-    else:
-        assert False, "Service Binding got updated"
-
-
 @then(u'Secret does not contain "{key}"')
 def check_secret_key(context, key):
+    sb = list(context.bindings.values())[0]
     openshift = Openshift()
-    secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
+    secret = polling2.poll(lambda: sb.get_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     json_path = f'{{.data.{key}}}'
     polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name,
                                                                   json_path) == "",
                   step=5, timeout=120, ignore_exceptions=(binascii.Error,))
-
-
-@step(u'Secret is empty')
-def validate_secret_empty(context):
-    openshift = Openshift()
-    if "sbr_name" in context:
-        secret = polling2.poll(lambda: get_sbr_secret_name(context), step=100, timeout=1000, ignore_exceptions=(ValueError,),
-                               check_success=lambda v: v is not None)
-        try:
-            polling2.poll(lambda: json.loads(
-                openshift.get_resource_info_by_jq("secrets", secret, context.namespace.name, ".data", wait=False)) == "null",
-                          step=5, timeout=20, ignore_exceptions=(json.JSONDecodeError,))
-        except polling2.TimeoutException:
-            pass
-    else:
-        assert False, "sbr_name not in context"
 
 
 def assert_generation(context, count):

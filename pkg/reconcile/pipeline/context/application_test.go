@@ -3,9 +3,14 @@ package context
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/api/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var _ = Describe("Application", func() {
@@ -52,4 +57,58 @@ var _ = Describe("Application", func() {
 		_ = app.Resource()
 		Expect(app.IsUpdated()).To(BeFalse())
 	})
+
+	It("should return all containers if bindable position are not specified", func() {
+		c1 := corev1.Container{
+			Image: "foo",
+		}
+		c2 := corev1.Container{
+			Image: "foo2",
+		}
+		d1 := deployment("d1", []corev1.Container{c1, c2})
+		u, _ := converter.ToUnstructured(&d1)
+		cu1, _ := converter.ToUnstructured(&c1)
+		cu2, _ := converter.ToUnstructured(&c2)
+		app := &application{persistedResource: u}
+		containers, err := app.BindableContainers()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(containers).To(ConsistOf(cu1.Object, cu2.Object))
+	})
+
+	It("should return only containers which names are specified in bindable names", func() {
+		c1 := corev1.Container{
+			Image: "foo",
+		}
+		c2 := corev1.Container{
+			Name:  "c2",
+			Image: "foo2",
+		}
+		c3 := corev1.Container{
+			Name:  "c3",
+			Image: "foo3",
+		}
+		d1 := deployment("d1", []corev1.Container{c1, c2, c3})
+		u, _ := converter.ToUnstructured(&d1)
+		cu2, _ := converter.ToUnstructured(&c2)
+		cu3, _ := converter.ToUnstructured(&c3)
+		app := &application{persistedResource: u, bindableContainerNames: sets.NewString("c2", "c3", "c1")}
+		containers, err := app.BindableContainers()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(containers).To(ConsistOf(cu2.Object, cu3.Object))
+	})
 })
+
+func deployment(name string, containers []corev1.Container) *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: containers,
+				},
+			},
+		},
+	}
+}

@@ -9,7 +9,6 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	v1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	v1alpha10 "github.com/redhat-developer/service-binding-operator/api/v1alpha1"
 	binding "github.com/redhat-developer/service-binding-operator/pkg/binding"
 	pipeline "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -146,6 +145,20 @@ func (m *MockContext) Close() error {
 func (mr *MockContextMockRecorder) Close() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockContext)(nil).Close))
+}
+
+// EnvBindings mocks base method.
+func (m *MockContext) EnvBindings() []*pipeline.EnvBinding {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EnvBindings")
+	ret0, _ := ret[0].([]*pipeline.EnvBinding)
+	return ret0
+}
+
+// EnvBindings indicates an expected call of EnvBindings.
+func (mr *MockContextMockRecorder) EnvBindings() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnvBindings", reflect.TypeOf((*MockContext)(nil).EnvBindings))
 }
 
 // Error mocks base method.
@@ -493,6 +506,21 @@ func (m *MockApplication) EXPECT() *MockApplicationMockRecorder {
 	return m.recorder
 }
 
+// BindableContainers mocks base method.
+func (m *MockApplication) BindableContainers() ([]map[string]interface{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BindableContainers")
+	ret0, _ := ret[0].([]map[string]interface{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BindableContainers indicates an expected call of BindableContainers.
+func (mr *MockApplicationMockRecorder) BindableContainers() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindableContainers", reflect.TypeOf((*MockApplication)(nil).BindableContainers))
+}
+
 // ContainersPath mocks base method.
 func (m *MockApplication) ContainersPath() string {
 	m.ctrl.T.Helper()
@@ -559,7 +587,7 @@ func (m *MockContextProvider) EXPECT() *MockContextProviderMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockContextProvider) Get(arg0 *v1alpha10.ServiceBinding) (pipeline.Context, error) {
+func (m *MockContextProvider) Get(arg0 interface{}) (pipeline.Context, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", arg0)
 	ret0, _ := ret[0].(pipeline.Context)

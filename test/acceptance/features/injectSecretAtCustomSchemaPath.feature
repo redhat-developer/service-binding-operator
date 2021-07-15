@@ -30,26 +30,7 @@ Feature: Insert service binding to a custom location in application resource
                 data:
                     dbCredentials: backend-secret
             """
-        * The Custom Resource Definition is present
-            """
-            apiVersion: apiextensions.k8s.io/v1beta1
-            kind: CustomResourceDefinition
-            metadata:
-                name: appconfigs.stable.example.com
-            spec:
-                group: stable.example.com
-                versions:
-                  - name: v1
-                    served: true
-                    storage: true
-                scope: Namespaced
-                names:
-                    plural: appconfigs
-                    singular: appconfig
-                    kind: AppConfig
-                    shortNames:
-                    - ac
-            """
+        * OLM Operator "custom_app" is running
 
     # https://github.com/redhat-developer/service-binding-operator/tree/master/examples/pod_spec_path
     Scenario: Specify container's path in Service Binding
