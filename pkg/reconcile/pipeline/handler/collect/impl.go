@@ -223,7 +223,15 @@ func collectItems(prefix string, ctx pipeline.Context, service pipeline.Service,
 			p = ""
 		}
 		for _, n := range v.MapKeys() {
-			collectItems(p, ctx, service, n, v.MapIndex(n).Interface())
+			if mapVal := v.MapIndex(n).Interface(); mapVal != nil {
+				collectItems(p, ctx, service, n, mapVal)
+			} else {
+				condition := v1alpha1.Conditions().NotCollectionReady().
+					Msg(fmt.Sprintf("Value for key %v_%v not found", prefix+k.String(), n.String())).
+					Reason("ValueNotFound").Build()
+				ctx.SetCondition(condition)
+				return
+			}
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {
