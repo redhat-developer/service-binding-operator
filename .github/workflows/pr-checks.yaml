@@ -183,8 +183,9 @@ jobs:
           source ./operator.refs
 
           eval $(minikube docker-env)
-          make release-manifests
+          make release-manifests deploy-cert-manager
           kubectl apply -f out/release.yaml
+          kubectl rollout status -n service-binding-operator deploy/service-binding-operator -w --timeout=120s
           make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
 
       - name: Collect Kube resources

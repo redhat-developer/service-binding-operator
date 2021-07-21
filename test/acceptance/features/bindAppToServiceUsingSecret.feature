@@ -572,7 +572,7 @@ Feature: Bind values from a secret referred in backing service resource
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-1
+              name: bind-direct-secret-1
           spec:
               services:
               - group: ""
@@ -585,13 +585,13 @@ Feature: Bind values from a secret referred in backing service resource
                 version: v1
                 resource: deployments
           """
-        Then Service Binding "bind-provisioned-service-1" is ready
-        And jq ".status.secret" of Service Binding "bind-provisioned-service-1" should be changed to "provisioned-secret-1"
-        And Content of file "/bindings/bind-provisioned-service-1/username" in application pod is
+        Then Service Binding "bind-direct-secret-1" is ready
+        And jq ".status.secret" of Service Binding "bind-direct-secret-1" should be changed to "provisioned-secret-1"
+        And Content of file "/bindings/bind-direct-secret-1/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-provisioned-service-1/password" in application pod is
+        And Content of file "/bindings/bind-direct-secret-1/password" in application pod is
             """
             bar
             """
@@ -613,7 +613,7 @@ Feature: Bind values from a secret referred in backing service resource
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-2
+              name: bind-direct-secret-mapping
           spec:
               bindAsFiles: true
               services:
@@ -631,17 +631,17 @@ Feature: Bind values from a secret referred in backing service resource
                 - name: username_with_password
                   value: '{{ .username }}:{{ .password }}'
           """
-        Then Service Binding "bind-provisioned-service-2" is ready
-        And Service Binding "bind-provisioned-service-2" has the binding secret name set in the status
-        And Content of file "/bindings/bind-provisioned-service-2/username" in application pod is
+        Then Service Binding "bind-direct-secret-mapping" is ready
+        And Service Binding "bind-direct-secret-mapping" has the binding secret name set in the status
+        And Content of file "/bindings/bind-direct-secret-mapping/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-provisioned-service-2/password" in application pod is
+        And Content of file "/bindings/bind-direct-secret-mapping/password" in application pod is
             """
             bar
             """
-        And Content of file "/bindings/bind-provisioned-service-2/username_with_password" in application pod is
+        And Content of file "/bindings/bind-direct-secret-mapping/username_with_password" in application pod is
             """
             foo:bar
             """
@@ -715,7 +715,7 @@ Feature: Bind values from a secret referred in backing service resource
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-3
+              name: bind-direct-secret-2
           spec:
               services:
               - group: ""
@@ -732,21 +732,20 @@ Feature: Bind values from a secret referred in backing service resource
                 version: v1
                 resource: deployments
           """
-        Then Service Binding "bind-provisioned-service-3" is ready
-        And Service Binding "bind-provisioned-service-3" has the binding secret name set in the status
-        And Content of file "/bindings/bind-provisioned-service-3/username" in application pod is
+        Then Service Binding "bind-direct-secret-2" is ready
+        And Content of file "/bindings/bind-direct-secret-2/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-provisioned-service-3/password" in application pod is
+        And Content of file "/bindings/bind-direct-secret-2/password" in application pod is
             """
             bar
             """
-        And Content of file "/bindings/bind-provisioned-service-3/username2" in application pod is
+        And Content of file "/bindings/bind-direct-secret-2/username2" in application pod is
             """
             foo2
             """
-        And Content of file "/bindings/bind-provisioned-service-3/password2" in application pod is
+        And Content of file "/bindings/bind-direct-secret-2/password2" in application pod is
             """
             bar2
 
@@ -770,7 +769,7 @@ Feature: Bind values from a secret referred in backing service resource
           apiVersion: service.binding/v1alpha2
           kind: ServiceBinding
           metadata:
-              name: spec-bind-provisioned-service-2
+              name: spec-direct-secret-1
           spec:
               service:
                 apiVersion: v1
@@ -781,17 +780,17 @@ Feature: Bind values from a secret referred in backing service resource
                 apiVersion: apps/v1
                 kind: Deployment
           """
-        Then Service Binding "spec-bind-provisioned-service-2" is ready
-        And jq ".status.binding.name" of Service Binding "spec-bind-provisioned-service-2" should be changed to "provisioned-secret-1"
-        And Content of file "/bindings/spec-bind-provisioned-service-2/username" in application pod is
+        Then Service Binding "spec-direct-secret-1" is ready
+        And jq ".status.binding.name" of Service Binding "spec-direct-secret-1" should be changed to "provisioned-secret-1"
+        And Content of file "/bindings/spec-direct-secret-1/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/spec-bind-provisioned-service-2/password" in application pod is
+        And Content of file "/bindings/spec-direct-secret-1/password" in application pod is
             """
             bar
             """
-        And Content of file "/bindings/spec-bind-provisioned-service-2/type" in application pod is
+        And Content of file "/bindings/spec-direct-secret-1/type" in application pod is
             """
             db
             """

@@ -1,0 +1,46 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-binding-operators-coreos-com-v1alpha1-servicebinding
+  failurePolicy: Fail
+  name: vservicebinding.kb.io
+  rules:
+  - apiGroups:
+    - binding.operators.coreos.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-service-binding-v1alpha2-servicebinding
+  failurePolicy: Fail
+  name: vspecservicebinding.kb.io
+  rules:
+  - apiGroups:
+    - service.binding
+    apiVersions:
+    - v1alpha2
+    operations:
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None

@@ -7,6 +7,7 @@
 # Usage:
 # prepare-operatorhu-pr.sh <version> <bundle-image-ref>
 
+mkdir -p out
 TMP_OCI_PATH=$(mktemp -d out/sbo-bundle-oci.XXX)
 
 skopeo copy --src-tls-verify=false --src-no-creds docker://$2 oci:$TMP_OCI_PATH:bundle

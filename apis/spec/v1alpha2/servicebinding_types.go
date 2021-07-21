@@ -160,3 +160,7 @@ func (sb *ServiceBinding) AsOwnerReference() metav1.OwnerReference {
 func (sb *ServiceBinding) HasDeletionTimestamp() bool {
 	return !sb.DeletionTimestamp.IsZero()
 }
+
+func (r *ServiceBinding) StatusConditions() []metav1.Condition {
+	return r.Status.Conditions
+}
