@@ -14,4 +14,4 @@ data:
       resourceName: 8fa65150.coreos.com
 kind: ConfigMap
 metadata:
-  name: service-binding-operator-manager-config
+  name: service-binding-manager-config

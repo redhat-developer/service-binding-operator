@@ -2,26 +2,32 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    cert-manager.io/inject-ca-from: service-binding-operator/service-binding-service-cert
     controller-gen.kubebuilder.io/version: v0.4.1
   creationTimestamp: null
-  name: servicebindings.binding.operators.coreos.com
+  name: servicebindings.service.binding
 spec:
-  group: binding.operators.coreos.com
+  group: service.binding
   names:
     kind: ServiceBinding
     listKind: ServiceBindingList
     plural: servicebindings
-    shortNames:
-    - sbr
-    - sbrs
     singular: servicebinding
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=="Ready")].status
+      name: Ready
+      type: string
+    - jsonPath: .status.conditions[?(@.type=="Ready")].reason
+      name: Reason
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: Age
+      type: date
+    name: v1alpha2
     schema:
       openAPIV3Schema:
-        description: ServiceBinding expresses intent to bind an operator-backed service with an application workload.
+        description: ServiceBinding is the Schema for the servicebindings API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -35,26 +41,24 @@ spec:
             description: ServiceBindingSpec defines the desired state of ServiceBinding
             properties:
               application:
-                description: Application is used to identify the application connecting to the backing service operator.
+                description: Application is a reference to an object
                 properties:
-                  bindingPath:
-                    description: 'BindingPath refers to the paths in the application workload''s schema where the binding workload would be referenced. If BindingPath is not specified the default path locations is going to be used.  The default location for ContainersPath is going to be: "spec.template.spec.containers" and if SecretPath is not specified, the name of the secret object is not going to be specified.'
-                    properties:
-                      containersPath:
-                        description: 'ContainersPath defines the path to the corev1.Containers reference If BindingPath is not specified, the default location is going to be: "spec.template.spec.containers"'
-                        type: string
-                      secretPath:
-                        description: 'SecretPath defines the path to a string field where the name of the secret object is going to be assigned. Note: The name of the secret object is same as that of the name of SBR CR (metadata.name)'
-                        type: string
-                    type: object
-                  group:
-                    description: Group of the referent.
+                  apiVersion:
+                    description: API version of the referent.
                     type: string
+                  containers:
+                    description: Containers describes which containers in a Pod should be bound to
+                    items:
+                      type: string
+                    type: array
                   kind:
-                    description: Kind of the referent.
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
-                  labelSelector:
-                    description: A label selector is a label query over a set of resources. The result of matchLabels and matchExpressions are ANDed. An empty label selector matches all objects. A null label selector matches no objects.
+                  name:
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                  selector:
+                    description: Selector is a query that selects the application or applications to bind the service to
                     properties:
                       matchExpressions:
                         description: matchExpressions is a list of label selector requirements. The requirements are ANDed.
@@ -83,113 +87,72 @@ spec:
                         description: matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is "key", the operator is "In", and the values array contains only "value". The requirements are ANDed.
                         type: object
                     type: object
+                required:
+                - apiVersion
+                - kind
+                type: object
+              env:
+                description: Env is the collection of mappings from Secret entries to environment variables
+                items:
+                  description: EnvMapping defines a mapping from the value of a Secret entry to an environment variable
+                  properties:
+                    key:
+                      description: Key is the key in the Secret that will be exposed
+                      type: string
+                    name:
+                      description: Name is the name of the environment variable
+                      type: string
+                  required:
+                  - key
+                  - name
+                  type: object
+                type: array
+              name:
+                description: Name is the name of the service as projected into the application container.  Defaults to .metadata.name.
+                maxLength: 253
+                pattern: ^[a-z0-9\-\.]*$
+                type: string
+              provider:
+                description: Provider is the provider of the service as projected into the application container
+                type: string
+              service:
+                description: Service is a reference to an object that fulfills the ProvisionedService duck type
+                properties:
+                  apiVersion:
+                    description: API version of the referent.
+                    type: string
+                  kind:
+                    description: 'Kind of the referent. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+                    type: string
                   name:
-                    description: Name of the referent.
-                    type: string
-                  resource:
-                    description: Resource of the referent.
-                    type: string
-                  version:
-                    description: Version of the referent.
+                    description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                     type: string
                 required:
-                - group
-                - version
+                - apiVersion
+                - kind
+                - name
                 type: object
-              bindAsFiles:
-                default: true
-                description: BindAsFiles makes available the binding values as files in the application's container See MountPath attribute description for more details.
-                type: boolean
-              detectBindingResources:
-                description: DetectBindingResources is flag used to bind all non-bindable variables from different subresources owned by backing operator CR.
-                type: boolean
-              mappings:
-                description: Custom mappings
-                items:
-                  description: ServiceBindingMapping defines a new binding from set of existing bindings
-                  properties:
-                    name:
-                      description: Name is the name of new binding
-                      type: string
-                    value:
-                      description: Value is a template which will be rendered and ibjected into the application
-                      type: string
-                  required:
-                  - name
-                  - value
-                  type: object
-                type: array
-              mountPath:
-                description: MountPath is the path inside app container where bindings will be mounted If `SERVICE_BINDING_ROOT` env var is present, mountPath is ignored. If `SERVICE_BINDING_ROOT` is absent and mountPath is present, set `SERVICE_BINDING_ROOT` as mountPath value If `SERVICE_BINDING_ROOT` is absent but mounthPath is absent, set   SERVICE_BINDING_ROOT as `/bindings` When mountPath is used, the file will be mounted directly under that directory Otherwise it will be under `SERVICE_BINDING_ROOT`/<SERVICE-BINDING-NAME>
+              type:
+                description: Type is the type of the service as projected into the application container
                 type: string
-              namingStrategy:
-                description: NamingStrategy defines custom string template for preparing binding names. It can be pre-defined strategies(i.e none,uppercase), in case strategy provided in this field isn't defined we are going to treat the value as a custom template and prepare binding names accordingly.
-                type: string
-              services:
-                description: Services is used to identify multiple backing services.
-                items:
-                  description: Service defines the selector based on resource name, version, and resource kind
-                  properties:
-                    group:
-                      description: Group of the referent.
-                      type: string
-                    id:
-                      type: string
-                    kind:
-                      description: Kind of the referent.
-                      type: string
-                    name:
-                      description: Name of the referent.
-                      type: string
-                    namespace:
-                      description: Namespace of the referent. if empty assumes the same namespace as ServiceBinding
-                      type: string
-                    resource:
-                      description: Resource of the referent.
-                      type: string
-                    version:
-                      description: Version of the referent.
-                      type: string
-                  required:
-                  - group
-                  - version
-                  type: object
-                minItems: 1
-                type: array
             required:
             - application
-            - services
+            - service
             type: object
           status:
             description: ServiceBindingStatus defines the observed state of ServiceBinding
             properties:
-              applications:
-                description: Application defines the application workloads to which the binding secret has injected
-                items:
-                  description: Object reference in the same namespace
-                  properties:
-                    group:
-                      description: Group of the referent.
-                      type: string
-                    kind:
-                      description: Kind of the referent.
-                      type: string
-                    name:
-                      description: Name of the referent.
-                      type: string
-                    resource:
-                      description: Resource of the referent.
-                      type: string
-                    version:
-                      description: Version of the referent.
-                      type: string
-                  required:
-                  - group
-                  - version
-                  type: object
-                type: array
+              binding:
+                description: Binding exposes the projected secret for this ServiceBinding
+                properties:
+                  name:
+                    description: 'Name of the referent secret. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
+                    type: string
+                required:
+                - name
+                type: object
               conditions:
-                description: Conditions describes the state of the operator's reconciliation functionality.
+                description: Conditions are the conditions of this ServiceBinding
                 items:
                   description: "Condition contains details for one aspect of the current state of this API Resource. --- This struct is intended for direct use as an array at the field path .status.conditions.  For example, type FooStatus struct{     // Represents the observations of a foo's current state.     // Known .status.conditions.type are: \"Available\", \"Progressing\", and \"Degraded\"     // +patchMergeKey=type     // +patchStrategy=merge     // +listType=map     // +listMapKey=type     Conditions []metav1.Condition `json:\"conditions,omitempty\" patchStrategy:\"merge\" patchMergeKey:\"type\" protobuf:\"bytes,1,rep,name=conditions\"` \n     // other fields }"
                   properties:
@@ -232,17 +195,11 @@ spec:
                   - type
                   type: object
                 type: array
-                x-kubernetes-list-map-keys:
-                - type
-                x-kubernetes-list-type: map
-              secret:
-                description: Secret is the name of the intermediate secret
-                type: string
-            required:
-            - secret
+              observedGeneration:
+                description: ObservedGeneration is the 'Generation' of the ServiceBinding that was last processed by the controller.
+                format: int64
+                type: integer
             type: object
-        required:
-        - spec
         type: object
     served: true
     storage: true

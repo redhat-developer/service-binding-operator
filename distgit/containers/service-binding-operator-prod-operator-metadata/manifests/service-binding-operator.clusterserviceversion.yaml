@@ -26,6 +26,25 @@ metadata:
               }
             ]
           }
+        },
+        {
+          "apiVersion": "service.binding/v1alpha2",
+          "kind": "ServiceBinding",
+          "metadata": {
+            "name": "servicebinding-sample"
+          },
+          "spec": {
+            "application": {
+              "Kind": "Ddeployment",
+              "apiVersion": "apps/v1",
+              "name": "nodejs-rest-http-crud"
+            },
+            "service": {
+              "apiVersion": "postgresql.example.dev/v1alpha1",
+              "kind": "Database",
+              "name": "pg-instance"
+            }
+          }
         }
       ]
     capabilities: Basic Install
@@ -35,7 +54,11 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Service Binding Operator Community
-  name: service-binding-operator.v0.8.0
+  labels:
+    "operatorframework.io/arch.amd64": supported
+    "operatorframework.io/arch.ppc64le": supported
+    "operatorframework.io/arch.s390x": supported
+  name: service-binding-operator.v0.9.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -46,6 +69,9 @@ spec:
       kind: ServiceBinding
       name: servicebindings.binding.operators.coreos.com
       version: v1alpha1
+    - kind: ServiceBinding
+      name: servicebindings.service.binding
+      version: v1alpha2
   description: " The Service Binding Operator enables application developers to more easily bind applications together with operator managed backing services such as databases, without having to perform manual configuration of secrets, configmaps, etc. The Service Binding Operator accomplishes this through automatically collecting binding information and sharing with an application to bind it with operator managed backing services. The binding is performed through a new custom resource called a ServiceBindingRequest.\n### Example\nA set of examples, each of which illustrates a usage scenario for the Service Binding Operator, is being developed in parallel with the Operator. Each example includes documentation and can be run either through the OpenShift web console or command line client. The examples are available [here](https://github.com/redhat-developer/service-binding-operator/blob/master/README.md#example-scenarios)\n### Documentation\nRefer to the [documentation](https://github.com/redhat-developer/service-binding-operator/blob/master/README.md)\n###  Help\nRaise a ticket for bugs, features and enhancement [here](https://github.com/redhat-developer/service-binding-operator/)\n### Licence\nService Binding Operator is licensed under [Apache License 2.0](https://github.com/redhat-developer/service-binding-operator/blob/master/LICENSE) "
   displayName: Service Binding Operator
   icon:
@@ -127,6 +153,32 @@ spec:
           - get
           - list
           - watch
+        - apiGroups:
+          - service.binding
+          resources:
+          - servicebindings
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - service.binding
+          resources:
+          - servicebindings/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - service.binding
+          resources:
+          - servicebindings/status
+          verbs:
+          - get
+          - patch
+          - update
         serviceAccountName: service-binding-operator
       deployments:
       - name: service-binding-operator
@@ -151,7 +203,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.annotations['olm.targetNamespaces']
-                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.8.0
+                image: registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-tech-preview-service-binding-rhel8-operator:v0.9.0
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -159,6 +211,10 @@ spec:
                   initialDelaySeconds: 15
                   periodSeconds: 20
                 name: manager
+                ports:
+                - containerPort: 9443
+                  name: webhook-server
+                  protocol: TCP
                 readinessProbe:
                   httpGet:
                     path: /readyz
@@ -166,8 +222,17 @@ spec:
                   initialDelaySeconds: 5
                   periodSeconds: 10
                 resources: {}
+                volumeMounts:
+                - mountPath: /tmp/k8s-webhook-server/serving-certs
+                  name: cert
+                  readOnly: true
               serviceAccountName: service-binding-operator
               terminationGracePeriodSeconds: 10
+              volumes:
+              - name: cert
+                secret:
+                  defaultMode: 420
+                  secretName: service-binding-operator-service-cert
       permissions:
       - rules:
         - apiGroups:
@@ -213,6 +278,45 @@ spec:
   maturity: alpha
   provider:
     name: Red Hat
-    url: https://redhat.com
-  version: 0.8.0
-  replaces: service-binding-operator.v0.7.1
+    url: redhat.com
+  version: 0.9.0
+  replaces: service-binding-operator.v0.8.0
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1beta1
+    containerPort: 443
+    deploymentName: service-binding-operator
+    failurePolicy: Fail
+    generateName: vservicebinding.kb.io
+    rules:
+    - apiGroups:
+      - binding.operators.coreos.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - UPDATE
+      resources:
+      - servicebindings
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-binding-operators-coreos-com-v1alpha1-servicebinding
+  - admissionReviewVersions:
+    - v1beta1
+    containerPort: 443
+    deploymentName: service-binding-operator
+    failurePolicy: Fail
+    generateName: vspecservicebinding.kb.io
+    rules:
+    - apiGroups:
+      - service.binding
+      apiVersions:
+      - v1alpha2
+      operations:
+      - UPDATE
+      resources:
+      - servicebindings
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-service-binding-v1alpha2-servicebinding
