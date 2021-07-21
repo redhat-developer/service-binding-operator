@@ -388,6 +388,38 @@ var _ = Describe("Collect Binding Data", func() {
 			shouldRetry(pipeline.HandlerFunc(collect.BindingItems), collect.ErrorReadingBindingReason, err)
 		})
 
+		Context("on nil value in collected bindings", func() {
+			It("should set an error condition and stop processing the pipeline",
+				func() {
+					serviceResource := &unstructured.Unstructured{}
+
+					ctx := mocks.NewMockContext(mockCtrl)
+					service := mocks.NewMockService(mockCtrl)
+					definition := bindingmocks.NewMockDefinition(mockCtrl)
+					value := bindingmocks.NewMockValue(mockCtrl)
+
+					ctx.EXPECT().Services().Return([]pipeline.Service{service}, nil)
+
+					bindingDefs := []binding.Definition{definition}
+					service.EXPECT().BindingDefs().Return(bindingDefs)
+					service.EXPECT().Resource().Return(serviceResource)
+
+					definition.EXPECT().Apply(serviceResource).Return(value, nil)
+					value.EXPECT().Get().Return(map[string]map[string]interface{}{"java-maven_port": {"foo": nil}})
+
+					ctx.EXPECT().SetCondition(
+						apis.Conditions().NotCollectionReady().
+							Reason(collect.ValueNotFound).
+							Msg("Value for key java-maven_port_foo not found").
+							Build())
+					ctx.EXPECT().Error(collect.ErrorValueNotFound)
+					ctx.EXPECT().StopProcessing()
+
+					collect.BindingItems(ctx)
+				},
+			)
+		})
+
 		Context("on returning unexpected data", func() {
 			var (
 				service *mocks.MockService
