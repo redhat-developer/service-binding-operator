@@ -928,6 +928,74 @@ var _ = Describe("Integration Collect definitions + items", func() {
 
 })
 
+// TODO: spec title should be rephrased: should we have one spec for regression tests?
+var _ = Describe("Issue 943", func() {
+	var (
+		mockCtrl *gomock.Controller
+	)
+
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	type testCase struct {
+		serviceContent map[string]interface{}
+		expectedItems  []*pipeline.BindingItem
+		secrets        map[string]*unstructured.Unstructured
+		configMaps     map[string]*unstructured.Unstructured
+	}
+
+	It("retrieve binding data",
+		func() {
+			tc := testCase{
+				serviceContent: map[string]interface{}{
+					"metadata": map[string]interface{}{
+						"annotations": map[string]interface{}{
+							"service.binding/java-maven_port": "path={.status.ports},elementType=sliceOfMaps,sourceKey=name,sourceValue=asdf",
+						},
+					},
+					"status": map[string]interface{}{
+						"ports": []interface{}{
+							map[string]interface{}{"name": "foo", "value": "bar"},
+						},
+					},
+				},
+			}
+
+			ctx := mocks.NewMockContext(mockCtrl)
+			service := mocks.NewMockService(mockCtrl)
+			serviceResource := &unstructured.Unstructured{Object: tc.serviceContent}
+
+			ctx.EXPECT().Services().Return([]pipeline.Service{service}, nil).MinTimes(1)
+
+			var bindingDefs []binding.Definition
+			service.EXPECT().AddBindingDef(gomock.Any()).DoAndReturn(func(bd binding.Definition) { bindingDefs = append(bindingDefs, bd) }).Times(len(serviceResource.GetAnnotations()))
+			service.EXPECT().BindingDefs().DoAndReturn(func() []binding.Definition { return bindingDefs })
+			service.EXPECT().Resource().Return(serviceResource).Times(2)
+
+			crd := mocks.NewMockCRD(mockCtrl)
+			crd.EXPECT().Descriptor().Return(nil, nil)
+			crd.EXPECT().Resource().Return(&unstructured.Unstructured{})
+			service.EXPECT().CustomResourceDefinition().Return(crd, nil)
+
+			// TODO: msg must be rephrased.
+			ctx.EXPECT().SetCondition(
+				v1alpha1.Conditions().NotCollectionReady().
+					Reason("ValueNotFound").
+					Msg("Value for key java-maven_port_foo not found").
+					Build())
+
+			collect.BindingDefinitions(ctx)
+			collect.BindingItems(ctx)
+		},
+	)
+
+})
+
 type bindingDefMatcher struct {
 	path []string
 }
