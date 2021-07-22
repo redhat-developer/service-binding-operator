@@ -3,20 +3,23 @@ package context
 import (
 	"context"
 	"fmt"
+	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+	"k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/dynamic"
+	authv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
 )
 
 var _ pipeline.Context = &specImpl{}
 
-var SpecProvider = func(client dynamic.Interface, typeLookup K8STypeLookup) pipeline.ContextProvider {
+var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient authv1.SubjectAccessReviewInterface, typeLookup K8STypeLookup) pipeline.ContextProvider {
 	return &provider{
 		client:     client,
 		typeLookup: typeLookup,
@@ -28,10 +31,11 @@ var SpecProvider = func(client dynamic.Interface, typeLookup K8STypeLookup) pipe
 				}
 				ctx := &specImpl{
 					impl: impl{
-						conditions:  make(map[string]*metav1.Condition),
-						client:      client,
-						typeLookup:  typeLookup,
-						bindingMeta: &sb.ObjectMeta,
+						conditions:                make(map[string]*metav1.Condition),
+						client:                    client,
+						subjectAccessReviewClient: subjectAccessReviewClient,
+						typeLookup:                typeLookup,
+						bindingMeta:               &sb.ObjectMeta,
 						statusSecretName: func() string {
 							if sb.Status.Binding == nil {
 								return ""
@@ -52,6 +56,9 @@ var SpecProvider = func(client dynamic.Interface, typeLookup K8STypeLookup) pipe
 						},
 						groupVersionResource: func() schema.GroupVersionResource {
 							return v1alpha2.GroupVersionResource
+						},
+						requester: func() *v1.UserInfo {
+							return apis.Requester(sb.ObjectMeta)
 						},
 					},
 					serviceBinding: sb,
@@ -100,6 +107,9 @@ func (i *specImpl) Services() ([]pipeline.Service, error) {
 		if err != nil {
 			return nil, err
 		}
+		if !i.canPerform(gvr, serviceRef.Name, i.serviceBinding.Namespace, "get") {
+			return nil, fmt.Errorf("cannot read service %s in namespace %s", serviceRef.Name, i.serviceBinding.Namespace)
+		}
 		u, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).Get(context.Background(), serviceRef.Name, metav1.GetOptions{})
 		if err != nil {
 			return nil, err
@@ -122,6 +132,12 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 			return nil, err
 		}
 		if i.serviceBinding.Spec.Application.Name != "" {
+			if !i.canPerform(gvr, ref.Name, i.serviceBinding.Namespace, "get") {
+				return nil, fmt.Errorf("cannot read application %s in namespace %s", ref.Name, i.serviceBinding.Namespace)
+			}
+			if !i.canPerform(gvr, ref.Name, i.serviceBinding.Namespace, "update") {
+				return nil, fmt.Errorf("cannot update application resource %s in namespace %s", ref.Name, i.serviceBinding.Namespace)
+			}
 			u, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).Get(context.Background(), ref.Name, metav1.GetOptions{})
 			if err != nil {
 				return nil, emptyApplicationsErr{err}
@@ -132,6 +148,9 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 			matchLabels := i.serviceBinding.Spec.Application.Selector.MatchLabels
 			opts := metav1.ListOptions{
 				LabelSelector: labels.Set(matchLabels).String(),
+			}
+			if !i.canPerform(gvr, "", i.serviceBinding.Namespace, "list") {
+				return nil, fmt.Errorf("cannot read application in namespace %s", i.serviceBinding.Namespace)
 			}
 
 			objList, err := i.client.Resource(*gvr).Namespace(i.serviceBinding.Namespace).List(context.Background(), opts)
@@ -144,6 +163,11 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 			}
 
 			for index := range objList.Items {
+				name := objList.Items[index].GetName()
+				if !i.canPerform(gvr, name, i.serviceBinding.Namespace, "update") {
+					return nil, fmt.Errorf("cannot update application resource %s in namespace %s", name, i.serviceBinding.Namespace)
+				}
+
 				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Application.Containers...)})
 			}
 		}

@@ -10,7 +10,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -35,34 +35,33 @@ func RegisterFlags(flags *flag.FlagSet) {
 
 type BindingReconciler struct {
 	client.Client
-	Log       logr.Logger
-	Scheme    *runtime.Scheme
-	dynClient dynamic.Interface // kubernetes dynamic api client
+	Log    logr.Logger
+	Scheme *runtime.Scheme
 
 	pipeline pipeline.Pipeline
 
-	PipelineProvider func(dynamic.Interface, context.K8STypeLookup) pipeline.Pipeline
+	PipelineProvider func(*rest.Config, context.K8STypeLookup) (pipeline.Pipeline, error)
 
 	ReconcilingObject func() apis.Object
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	client, err := dynamic.NewForConfig(mgr.GetConfig())
+	pipeline, err := r.PipelineProvider(mgr.GetConfig(), context.ResourceLookup(mgr.GetRESTMapper()))
 	if err != nil {
 		return err
 	}
-
-	r.dynClient = client
-
-	r.pipeline = r.PipelineProvider(r.dynClient, context.ResourceLookup(mgr.GetRESTMapper()))
-
+	r.pipeline = pipeline
 	return ctrl.NewControllerManagedBy(mgr).
 		For(r.ReconcilingObject()).
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		WithOptions(controller.Options{MaxConcurrentReconciles: MaxConcurrentReconciles}).
 		Complete(r)
 }
+
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
+// +kubebuilder:rbac:groups=authorization.k8s.io,resources=selfsubjectaccessreviews,verbs=create
+// +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.

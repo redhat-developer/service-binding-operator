@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"os"
 
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -107,6 +108,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	serviceAccountName, err := kubernetes.WhoAmI(mgr.GetConfig())
+	if err != nil {
+		setupLog.Error(err, "cannot detect service account name")
+		os.Exit(1)
+	}
+	setupLog.Info("Service account", "name", serviceAccountName)
+
 	if err = binding.New(
 		mgr.GetClient(),
 		ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
@@ -124,7 +132,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr, serviceAccountName); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "ServiceBinding")
 		os.Exit(1)
 	}

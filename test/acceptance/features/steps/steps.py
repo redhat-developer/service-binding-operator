@@ -10,6 +10,7 @@ import parse
 import binascii
 import yaml
 
+from string import Template
 from behave import given, register_type, then, when, step
 from dboperator import DbOperator
 from etcdcluster import EtcdCluster
@@ -23,17 +24,23 @@ from quarkus_application import QuarkusApplication
 from serverless_operator import ServerlessOperator
 from servicebindingoperator import Servicebindingoperator
 from app import App
+from util import scenario_id
 
 
 # STEP
-@given(u'Namespace "{namespace_name}" is used')
-def given_namespace_is_used(context, namespace_name):
+@given(u'Namespace "{namespace_name}" exists')
+def namespace_maybe_create(context, namespace_name):
     namespace = Namespace(namespace_name)
     if not namespace.is_present():
         print("Namespace is not present, creating namespace: {}...".format(namespace_name))
         assert namespace.create(), f"Unable to create namespace '{namespace_name}'"
     print("Namespace {} is created!!!".format(namespace_name))
-    context.namespace = namespace
+    return namespace
+
+
+@given(u'Namespace "{namespace_name}" is used')
+def namespace_is_used(context, namespace_name):
+    context.namespace = namespace_maybe_create(context, namespace_name)
 
 
 # STEP
@@ -42,7 +49,7 @@ def given_namespace_from_env_is_used(context, namespace_env):
     env = os.getenv(namespace_env)
     assert env is not None, f"{namespace_env} environment variable needs to be set"
     print(f"{namespace_env} = {env}")
-    given_namespace_is_used(context, env)
+    namespace_is_used(context, env)
 
 
 # STEP
@@ -302,9 +309,10 @@ def check_secret_key_with_ip_value(context, secret_key):
 @given(u'The ConfigMap is present')
 @given(u'The Secret is present')
 @when(u'The Secret is present')
-def apply_yaml(context):
+def apply_yaml(context, user=None):
     openshift = Openshift()
-    metadata = yaml.full_load(context.text)["metadata"]
+    resource = Template(context.text).substitute(scenario_id=scenario_id(context))
+    metadata = yaml.full_load(resource)["metadata"]
     metadata_name = metadata["name"]
     if "namespace" in metadata:
         ns = metadata["namespace"]
@@ -313,9 +321,10 @@ def apply_yaml(context):
             ns = context.namespace.name
         else:
             ns = None
-    output = openshift.apply(context.text, ns)
+    output = openshift.apply(resource, ns, user)
     result = re.search(rf'.*{metadata_name}.*(created|unchanged|configured)', output)
     assert result is not None, f"Unable to apply YAML for CR '{metadata_name}': {output}"
+    return metadata
 
 
 # STEP
@@ -428,14 +437,31 @@ def create_deployment(context, app_name, image_ref):
         assert app.install() is True, "Failed to create deployment."
 
 
-@given(u'Binding secret is updated')
-def update_binding_secret(context):
+@step(u'User {user} cannot read resource {resource} in namespace {namespace}')
+@step(u'User {user} cannot read resource {resource} in test namespace')
+def check_resource_unreadable(context, user, resource, namespace=None):
     openshift = Openshift()
-    secret_yaml = yaml.full_load(context.text)
-    secret_yaml["metadata"]["name"] = context.sb_secret
-    output = openshift.apply(yaml.dump(secret_yaml), context.namespace.name)
-    result = re.search(rf'.*{context.sb_secret}.*(created|unchanged|configured)', output)
-    assert result is not None, f"Unable to apply YAML for binding secret '{context.sb_secret}': {output}"
+    data = resource.split("/")
+    res_type = data[0]
+    res_name = Template(data[1]).substitute(scenario_id=scenario_id(context))
+    ns = namespace if namespace is not None else context.namespace.name
+    res = openshift.get_resource_info_by_jsonpath(resource_type=res_type, name=res_name, namespace=ns, user=user)
+    assert res is None, f"User {user} should not be able to read {resource} in {namespace} namespace"
+
+
+@step(u"User {user} has '{role_name}' role in test namespace")
+def user_role_maybe_create(context, user, role_name):
+    openshift = Openshift()
+    openshift.cli(f"create rolebinding {user}-{role_name} --clusterrole={role_name} --user={user}", context.namespace.name)
+
+
+@step(u'No user has access to the namespace')
+def remove_user_rolebindings(context):
+    openshift = Openshift()
+    rbs = openshift.get_resource_lst("rolebindings", context.namespace.name)
+    for rb in rbs:
+        if rb != "service-binding-operator":
+            openshift.cli(f"delete rolebinding {rb}", context.namespace.name)
 
 
 @then(u'cluster role "{cluster_role_name}" is available in the cluster')

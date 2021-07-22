@@ -52,6 +52,8 @@ spec:
                   properties:
                     dbCredentials:
                       type: string
+                bindings:
+                  type: string
             data:
               type: object
               properties:
@@ -70,10 +72,14 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: admin-to-backend-stable
+  name: backends-view
   labels:
     service.binding/controller: "true"
 rules:
-  - apiGroups: ["stable.example.com"]
-    resources: ["backends"]
-    verbs: ["get", "list"]
+  - apiGroups:
+      - stable.example.com
+    resources:
+      - backends
+    verbs:
+      - get
+      - list
