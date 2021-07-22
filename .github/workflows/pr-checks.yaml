@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=@rbactest"
       TEST_RUN: Acceptance_tests_Kubernetes_with_OLM
 
     steps:
@@ -139,7 +139,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm --tags=@rbactest"
       TEST_RUN: Acceptance_tests_Kubernetes_without_OLM
       UMOCI_VERSION: "0.4.5"
 
