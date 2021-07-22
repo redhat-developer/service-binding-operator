@@ -1,3 +1,4 @@
+@rbactest
 Feature: Making Service Biniding Operator RBAC pluggable so that other controllers/admins can add additional rules for the service binding operator.
     Scenario: Service Binding Operator installation should contain aggregating cluster role and are bound with Namespace.
         Given Namespace [TEST_NAMESPACE] is used
