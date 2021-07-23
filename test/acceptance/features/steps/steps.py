@@ -436,3 +436,30 @@ def update_binding_secret(context):
     output = openshift.apply(yaml.dump(secret_yaml), context.namespace.name)
     result = re.search(rf'.*{context.sb_secret}.*(created|unchanged|configured)', output)
     assert result is not None, f"Unable to apply YAML for binding secret '{context.sb_secret}': {output}"
+
+
+@then(u'cluster role "{cluster_role_name}" is available in the cluster')
+def check_cluster_role_exists(context, cluster_role_name):
+    openshift = Openshift()
+    assert openshift.is_resource_in("clusterroles", cluster_role_name), f"Could not find the cluster role : '{cluster_role_name}' in the cluster"
+
+
+@then(u'operator service account is bound to "{cluster_role_name}" in "{cluster_rolebinding_name}"')
+def check_service_account_bound(context, cluster_role_name, cluster_rolebinding_name):
+    openshift = Openshift()
+    sbr = Servicebindingoperator()
+    operator_namespace = openshift.lookup_namespace_for_resource("deployments", sbr.name)
+    sa_name = openshift.get_resource_info_by_jsonpath("deployments", sbr.name, operator_namespace, "{.spec.template.spec.serviceAccount}")
+
+    rolebinding_json = openshift.get_json_resource("clusterrolebinding", cluster_rolebinding_name, operator_namespace)
+    assert rolebinding_json["roleRef"]["name"] == cluster_role_name, f"Could not find rolebinding for the role '{cluster_role_name}'"
+
+    subjects_list = rolebinding_json["subjects"]
+    subject_found = False
+    for subject in subjects_list:
+        if subject["kind"] == "ServiceAccount" and subject["name"] == sa_name:
+            subject_found = True
+        else:
+            continue
+
+    assert subject_found, f"Could not find rolebinding for the role '{cluster_role_name}'"
