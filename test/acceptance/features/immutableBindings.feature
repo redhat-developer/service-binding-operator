@@ -59,6 +59,50 @@ Feature: Successful Service Binding are Immutable
                     name: service-immutable
             """
 
+    Scenario: Can update metadata on a ready Service Binding
+        Given Generic test application "app-immutable-3" is running
+        And Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-immutable-3
+            spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-immutable
+                application:
+                    name: app-immutable-3
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        When Service Binding "binding-immutable-3" is ready
+        Then Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-immutable-3
+                annotations:
+                    foo: bar
+                labels:
+                    foo: bar
+            spec:
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: service-immutable
+                application:
+                    name: app-immutable-3
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+
     Scenario: Allow modifying a not-ready Service Binding
         Given Service Binding is applied
             """
@@ -135,6 +179,48 @@ Feature: Successful Service Binding are Immutable
                   name: service-immutable
                 application:
                     name: spec-app-immutable2
+                    apiVersion: apps/v1
+                    kind: Deployment
+            """
+    @spec
+    Scenario: SPEC Can update metadata on a ready Service Binding
+        Given Generic test application "spec-app-immutable-2" is running
+        And Service Binding is applied
+            """
+            apiVersion: service.binding/v1alpha2
+            kind: ServiceBinding
+            metadata:
+                name: spec-binding-immutable-2
+            spec:
+                type: foo
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: service-immutable
+                application:
+                    name: spec-app-immutable-2
+                    apiVersion: apps/v1
+                    kind: Deployment
+            """
+        When Service Binding "spec-binding-immutable-2" is ready
+        Then Service Binding is applied
+            """
+            apiVersion: service.binding/v1alpha2
+            kind: ServiceBinding
+            metadata:
+                name: spec-binding-immutable-2
+                annotations:
+                    foo: bar
+                labels:
+                    foo: bar
+            spec:
+                type: foo
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: service-immutable
+                application:
+                    name: spec-app-immutable-2
                     apiVersion: apps/v1
                     kind: Deployment
             """

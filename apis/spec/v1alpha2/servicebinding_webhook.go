@@ -18,6 +18,7 @@ limitations under the License.
 package v1alpha2
 
 import (
+	"errors"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,8 +48,12 @@ func (r *ServiceBinding) ValidateCreate() error {
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (r *ServiceBinding) ValidateUpdate(old runtime.Object) error {
-	err := apis.CanUpdateBinding(r)
+func (sb *ServiceBinding) ValidateUpdate(old runtime.Object) error {
+	oldSb, ok := old.(*ServiceBinding)
+	if !ok {
+		return errors.New("Old object is not service binding")
+	}
+	err := apis.CanUpdateBinding(sb, oldSb)
 	if err != nil {
 		log.Error(err, "Update failed")
 	}

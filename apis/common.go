@@ -5,6 +5,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 )
 
 const finalizerName = "finalizer.servicebinding.openshift.io"
@@ -37,13 +38,11 @@ type Object interface {
 	SetFinalizers([]string)
 	HasDeletionTimestamp() bool
 	StatusConditions() []metav1.Condition
+	GetSpec() interface{}
 }
 
-func CanUpdateBinding(obj Object) error {
-	if obj.HasDeletionTimestamp() {
-		return nil
-	}
-	if meta.IsStatusConditionTrue(obj.StatusConditions(), BindingReady) {
+func CanUpdateBinding(obj Object, oldObj Object) error {
+	if meta.IsStatusConditionTrue(obj.StatusConditions(), BindingReady) && !reflect.DeepEqual(obj.GetSpec(), oldObj.GetSpec()) {
 		return errors.New("cannot update Service Binding if 'Ready' condition is True. If you want to rebind to another service/application, remove this binding and create a new one.")
 	}
 

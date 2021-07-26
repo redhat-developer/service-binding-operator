@@ -11,6 +11,7 @@ var _ = Describe("Validation Webhook", func() {
 
 	It("should allow updates on non-ready bindings", func() {
 		sb := &ServiceBinding{
+			Spec: ServiceBindingSpec{},
 			Status: ServiceBindingStatus{
 				Conditions: []v1.Condition{*apis.Conditions().NotBindingReady().Build()},
 			},
@@ -18,12 +19,29 @@ var _ = Describe("Validation Webhook", func() {
 		Expect(sb.ValidateUpdate(sb)).ShouldNot(HaveOccurred())
 	})
 
-	It("should not allow updates on ready bindings", func() {
-		sb := &ServiceBinding{
+	It("should not allow spec updates on ready bindings", func() {
+		old := &ServiceBinding{
+			Spec: ServiceBindingSpec{},
 			Status: ServiceBindingStatus{
 				Conditions: []v1.Condition{*apis.Conditions().BindingReady().Build()},
 			},
 		}
-		Expect(sb.ValidateUpdate(sb)).Should(HaveOccurred())
+		sb := old.DeepCopy()
+		sb.Spec.BindAsFiles = true
+		Expect(sb.ValidateUpdate(old)).Should(HaveOccurred())
+	})
+
+	It("should allow metadata updates on ready bindings", func() {
+		old := &ServiceBinding{
+			Spec: ServiceBindingSpec{},
+			Status: ServiceBindingStatus{
+				Conditions: []v1.Condition{*apis.Conditions().BindingReady().Build()},
+			},
+		}
+		sb := old.DeepCopy()
+		sb.Annotations = map[string]string{
+			"foo": "bar",
+		}
+		Expect(sb.ValidateUpdate(old)).ShouldNot(HaveOccurred())
 	})
 })

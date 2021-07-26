@@ -164,3 +164,7 @@ func (sb *ServiceBinding) HasDeletionTimestamp() bool {
 func (r *ServiceBinding) StatusConditions() []metav1.Condition {
 	return r.Status.Conditions
 }
+
+func (sb *ServiceBinding) GetSpec() interface{} {
+	return &sb.Spec
+}
