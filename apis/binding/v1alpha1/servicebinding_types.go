@@ -223,6 +223,10 @@ func (sb *ServiceBinding) HasDeletionTimestamp() bool {
 	return !sb.DeletionTimestamp.IsZero()
 }
 
+func (sb *ServiceBinding) GetSpec() interface{} {
+	return &sb.Spec
+}
+
 // Returns GVR of reference if available, otherwise error
 func (ref *Ref) GroupVersionResource() (*schema.GroupVersionResource, error) {
 	if ref.Resource == "" {
