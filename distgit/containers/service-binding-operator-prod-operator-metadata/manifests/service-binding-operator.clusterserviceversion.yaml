@@ -281,8 +281,8 @@ spec:
   provider:
     name: Red Hat
     url: redhat.com
-  version: 0.9.0
-  replaces: service-binding-operator.v0.9.1
+  version: 0.9.1
+  replaces: service-binding-operator.v0.9.0
   webhookdefinitions:
   - admissionReviewVersions:
     - v1beta1
