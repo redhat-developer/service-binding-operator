@@ -20,6 +20,11 @@ spec:
       kind: ServiceBinding
       name: servicebindings.binding.operators.coreos.com
       version: v1alpha1
+    - description: Service Binding for Kubernetes. Describes the connection between a Provisioned Service and an Application Projection. Implements Service Binding Specifcation for Kubernetes (https://github.com/k8s-service-bindings/spec).
+      displayName: Service Binding
+      kind: ServiceBinding
+      name: servicebindings.service.binding
+      version: v1alpha2
   description: " The Service Binding Operator enables application developers to more
                    easily bind applications together with operator managed backing services such
                    as databases, without having to perform manual configuration of secrets, configmaps,
