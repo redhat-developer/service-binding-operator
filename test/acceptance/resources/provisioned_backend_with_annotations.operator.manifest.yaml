@@ -40,3 +40,14 @@ spec:
     kind: ProvisionedBackend
     shortNames:
       - pbk
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admin-to-provisionedbackends-stable
+  labels:
+    service.binding/controller: "true"
+rules:
+  - apiGroups: ["stable.example.com"]
+    resources: ["provisionedbackends"]
+    verbs: ["get", "list"]

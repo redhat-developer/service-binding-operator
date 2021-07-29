@@ -107,3 +107,14 @@ spec:
     kind: AppConfig
     shortNames:
       - ac
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admin-to-backend-appconfigs
+  labels:
+    service.binding/controller: "true"
+rules:
+  - apiGroups: ["stable.example.com"]
+    resources: ["appconfigs"]
+    verbs: ["get", "list", "update"]

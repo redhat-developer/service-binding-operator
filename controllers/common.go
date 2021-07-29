@@ -3,6 +3,7 @@ package controllers
 import (
 	ctx "context"
 	"flag"
+
 	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -15,6 +16,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
+
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
+// +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list
+// +kubebuilder:rbac:groups="operators.coreos.com",resources=clusterserviceversions,verbs=get;list
+// +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=get;list;update;patch
+// +kubebuilder:rbac:groups="",resources=pods;secrets;services;endpoints;configmaps,verbs=get;list
+// +kubebuilder:rbac:groups="",resources=pods;secrets,verbs=update;patch
+// +kubebuilder:rbac:groups="",resources=secrets,verbs=create
 
 var (
 	MaxConcurrentReconciles int

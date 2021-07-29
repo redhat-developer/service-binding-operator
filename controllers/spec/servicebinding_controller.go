@@ -37,11 +37,6 @@ type ServiceBindingReconciler struct {
 // +kubebuilder:rbac:groups=service.binding,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=service.binding,resources=servicebindings/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=service.binding,resources=servicebindings/finalizers,verbs=update
-// +kubebuilder:rbac:groups="",resources=pods;services;endpoints;persistentvolumeclaims;events;configmaps;secrets,verbs=*
-// +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=*
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
-// +kubebuilder:rbac:groups=*,resources=*,verbs=get;list;watch;update
-// +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 
 func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *ServiceBindingReconciler {
 	r := &ServiceBindingReconciler{

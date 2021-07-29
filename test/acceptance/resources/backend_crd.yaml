@@ -66,3 +66,14 @@ spec:
     kind: Backend
     shortNames:
       - bk
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admin-to-backend-stable
+  labels:
+    service.binding/controller: "true"
+rules:
+  - apiGroups: ["stable.example.com"]
+    resources: ["backends"]
+    verbs: ["get", "list"]
