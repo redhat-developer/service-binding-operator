@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 	"fmt"
+
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
@@ -151,7 +152,7 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 			}
 			i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Workload.Containers...)})
 		}
-		if i.serviceBinding.Spec.Workload.Selector != nil {
+		if i.serviceBinding.Spec.Workload.Selector != nil && i.serviceBinding.Spec.Workload.Selector.MatchLabels != nil {
 			matchLabels := i.serviceBinding.Spec.Workload.Selector.MatchLabels
 			opts := metav1.ListOptions{
 				LabelSelector: labels.Set(matchLabels).String(),
