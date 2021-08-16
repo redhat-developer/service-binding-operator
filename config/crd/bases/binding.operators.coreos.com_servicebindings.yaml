@@ -22,8 +22,8 @@ spec:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: ServiceBinding expresses intent to bind an operator-backed service
-          with an application workload.
+        description: ServiceBinding expresses intent to bind a service with an application
+          workload.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -38,31 +38,30 @@ spec:
           metadata:
             type: object
           spec:
-            description: ServiceBindingSpec defines the desired state of ServiceBinding
+            description: ServiceBindingSpec defines the desired state of ServiceBinding.
             properties:
               application:
-                description: Application is used to identify the application connecting
-                  to the backing service operator.
+                description: Application identifies the application connecting to
+                  the backing service.
                 properties:
                   bindingPath:
-                    description: 'BindingPath refers to the paths in the application
-                      workload''s schema where the binding workload would be referenced.
-                      If BindingPath is not specified the default path locations is
-                      going to be used.  The default location for ContainersPath is
-                      going to be: "spec.template.spec.containers" and if SecretPath
-                      is not specified, the name of the secret object is not going
-                      to be specified.'
+                    description: BindingPath refers to the paths in the application
+                      workload's schema where the binding workload would be referenced.  If
+                      BindingPath is not specified, then the default path locations
+                      are used.  The default location for ContainersPath is "spec.template.spec.containers".  If
+                      SecretPath is not specified, then the name of the secret object
+                      does not need to be specified.
                     properties:
                       containersPath:
-                        description: 'ContainersPath defines the path to the corev1.Containers
-                          reference If BindingPath is not specified, the default location
-                          is going to be: "spec.template.spec.containers"'
+                        description: ContainersPath defines the path to the corev1.Containers
+                          reference. If BindingPath is not specified, the default
+                          location is "spec.template.spec.containers".
                         type: string
                       secretPath:
                         description: 'SecretPath defines the path to a string field
-                          where the name of the secret object is going to be assigned.
-                          Note: The name of the secret object is same as that of the
-                          name of SBR CR (metadata.name)'
+                          where the name of the secret object is going to be assigned.  Note:
+                          The name of the secret object is same as that of the name
+                          of service binding custom resource (metadata.name).'
                         type: string
                     type: object
                   group:
@@ -133,27 +132,28 @@ spec:
                 type: object
               bindAsFiles:
                 default: true
-                description: BindAsFiles makes available the binding values as files
-                  in the application's container See MountPath attribute description
+                description: BindAsFiles makes the binding values available as files
+                  in the application's container.  See the MountPath attribute description
                   for more details.
                 type: boolean
               detectBindingResources:
-                description: DetectBindingResources is flag used to bind all non-bindable
-                  variables from different subresources owned by backing operator
-                  CR.
+                description: DetectBindingResources is a flag that, when set to true,
+                  will cause SBO to search for binding information in the owned resources
+                  of the specified services.  If this binding information exists,
+                  then the application is bound to these subresources.
                 type: boolean
               mappings:
-                description: Custom mappings
+                description: Mappings specifies custom mappings.
                 items:
-                  description: ServiceBindingMapping defines a new binding from set
-                    of existing bindings
+                  description: ServiceBindingMapping defines a new binding from a
+                    set of existing bindings.
                   properties:
                     name:
-                      description: Name is the name of new binding
+                      description: Name is the name of new binding.
                       type: string
                     value:
-                      description: Value is a template which will be rendered and
-                        ibjected into the application
+                      description: Value specificies a go template that will be rendered
+                        and injected into the application.
                       type: string
                   required:
                   - name
@@ -161,26 +161,28 @@ spec:
                   type: object
                 type: array
               mountPath:
-                description: MountPath is the path inside app container where bindings
-                  will be mounted If `SERVICE_BINDING_ROOT` env var is present, mountPath
-                  is ignored. If `SERVICE_BINDING_ROOT` is absent and mountPath is
-                  present, set `SERVICE_BINDING_ROOT` as mountPath value If `SERVICE_BINDING_ROOT`
-                  is absent but mounthPath is absent, set   SERVICE_BINDING_ROOT as
-                  `/bindings` When mountPath is used, the file will be mounted directly
-                  under that directory Otherwise it will be under `SERVICE_BINDING_ROOT`/<SERVICE-BINDING-NAME>
+                description: MountPath specifies the path inside the app container
+                  where bindings will be mounted.  The environment variable `SERVICE_BINDING_ROOT`
+                  has higher precedence than this option, and setting it within an
+                  application to be bound will cause MountPath to be ignored and will
+                  always mount resources as files.  If it isn't set, then it is automatically
+                  set to the value of MountPath.  If neither MountPath nor `SERVICE_BINDING_ROOT`
+                  are set, this field defaults to `/bindings`, and `SERVICE_BINDING_ROOT`
+                  is also set.  This results in the file being mounted under the directory
+                  specified.
                 type: string
               namingStrategy:
-                description: NamingStrategy defines custom string template for preparing
-                  binding names. It can be pre-defined strategies(i.e none,uppercase),
-                  in case strategy provided in this field isn't defined we are going
-                  to treat the value as a custom template and prepare binding names
-                  accordingly.
+                description: 'NamingStrategy defines custom string template for preparing
+                  binding names.  It can be set to pre-defined strategies: `none`,
+                  `lowercase`, or `uppercase`.  Otherwise, it is treated as a custom
+                  go template, and it is handled accordingly.'
                 type: string
               services:
-                description: Services is used to identify multiple backing services.
+                description: Services indicates the backing services to be connected
+                  to by an application.  At least one service must be specified.
                 items:
                   description: Service defines the selector based on resource name,
-                    version, and resource kind
+                    version, and resource kind.
                   properties:
                     group:
                       description: Group of the referent.
@@ -194,8 +196,8 @@ spec:
                       description: Name of the referent.
                       type: string
                     namespace:
-                      description: Namespace of the referent. if empty assumes the
-                        same namespace as ServiceBinding
+                      description: Namespace of the referent.  If unspecified, assumes
+                        the same namespace as ServiceBinding.
                       type: string
                     resource:
                       description: Resource of the referent.
@@ -214,13 +216,13 @@ spec:
             - services
             type: object
           status:
-            description: ServiceBindingStatus defines the observed state of ServiceBinding
+            description: ServiceBindingStatus defines the observed state of ServiceBinding.
             properties:
               applications:
-                description: Application defines the application workloads to which
-                  the binding secret has injected
+                description: Applications defines the application workloads to which
+                  the binding secret has been injected.
                 items:
-                  description: Object reference in the same namespace
+                  description: Ref identifies an object reference in the same namespace.
                   properties:
                     group:
                       description: Group of the referent.
@@ -317,7 +319,7 @@ spec:
                 - type
                 x-kubernetes-list-type: map
               secret:
-                description: Secret is the name of the intermediate secret
+                description: Secret indicates the name of the binding secret.
                 type: string
             required:
             - secret
