@@ -15,13 +15,13 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: ServiceBinding expresses intent to bind an operator-backed service with an application workload.
+    - description: Service Binding expresses intent to bind a backing service with an application workload. 
       displayName: Service Binding
       kind: ServiceBinding
       name: servicebindings.binding.operators.coreos.com
       version: v1alpha1
-    - description: Service Binding for Kubernetes. Describes the connection between a Provisioned Service and an Application Projection. Implements Service Binding Specifcation for Kubernetes (https://github.com/k8s-service-bindings/spec).
-      displayName: Service Binding
+    - description: (Tech Preview) Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload. Available as tech preview but subjected to change in near future.
+      displayName: Service Binding (Spec API Tech Preview)
       kind: ServiceBinding
       name: servicebindings.service.binding
       version: v1alpha2
