@@ -11,7 +11,7 @@ Feature: Bind values from a config map referred in backing service resource
         Given Generic test application "cmsa-1" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -23,6 +23,33 @@ Feature: Bind values from a config map referred in backing service resource
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        image:
+                                            type: string
+                                        imageName:
+                                            type: string
+                                        dbName:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbConfiguration:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -80,7 +107,7 @@ Feature: Bind values from a config map referred in backing service resource
         Given Generic test application "cmsa-2" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -92,6 +119,33 @@ Feature: Bind values from a config map referred in backing service resource
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        image:
+                                            type: string
+                                        imageName:
+                                            type: string
+                                        dbName:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbConfiguration:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends

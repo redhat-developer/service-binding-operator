@@ -13,7 +13,7 @@ Feature: Bind an application to a service using annotations
         Given Generic test application "rsa-2-service" is running
         Given The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -26,6 +26,26 @@ Feature: Bind an application to a service using annotations
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        host:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        ready:
+                                            type: boolean
                 scope: Namespaced
                 names:
                     plural: backends
@@ -74,7 +94,7 @@ Feature: Bind an application to a service using annotations
         Given Generic test application "rsa-2-service" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -86,6 +106,48 @@ Feature: Bind an application to a service using annotations
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        image:
+                                            type: string
+                                        imageName:
+                                            type: string
+                                        dbName:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        bootstrap:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    type:
+                                                        type: string
+                                                    url:
+                                                        type: string
+                                                    name:
+                                                        type: string
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbConfiguration:
+                                                    type: string
+                                                dbCredentials:
+                                                    type: string
+                                                url:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -145,7 +207,7 @@ Feature: Bind an application to a service using annotations
         Given Generic test application "slos-app" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -157,6 +219,28 @@ Feature: Bind an application to a service using annotations
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        tags:
+                                            type: array
+                                            items:
+                                                type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        somestatus:
+                                            type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -207,7 +291,7 @@ Feature: Bind an application to a service using annotations
         Given Generic test application "slom-to-slos-app" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -219,6 +303,33 @@ Feature: Bind an application to a service using annotations
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        connections:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    type:
+                                                        type: string
+                                                    url:
+                                                        type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        somestatus:
+                                            type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -272,7 +383,7 @@ Feature: Bind an application to a service using annotations
         Given Generic test application "slom-app" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -284,6 +395,33 @@ Feature: Bind an application to a service using annotations
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        connections:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    type:
+                                                        type: string
+                                                    url:
+                                                        type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        somestatus:
+                                            type: string
                 scope: Namespaced
                 names:
                     plural: backends

@@ -37,7 +37,7 @@ def before_all(_context):
     assert start_sbo in {"local", "remote", "operator-hub"}, "TEST_ACCEPTANCE_START_SBO should be one of local, remote or operator-hub"
 
     if start_sbo == "local":
-        assert not os.getenv("TEST_ACCEPTANCE_SBO_STARTED").startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
+        assert not str(os.getenv("TEST_ACCEPTANCE_SBO_STARTED")).startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
     elif start_sbo == "remote":
         output, code = cmd.run(
             f"{ctx.cli} get deployment --all-namespaces -o json"

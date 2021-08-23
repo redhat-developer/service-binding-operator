@@ -120,7 +120,7 @@ Feature: Unbind an application from a service
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         * Service Binding is applied
             """
@@ -207,7 +207,7 @@ Feature: Unbind an application from a service
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         * Service Binding is applied
             """
