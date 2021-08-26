@@ -179,12 +179,12 @@ spec:
             return output
         return None
 
-    def apply(self, yaml, namespace=None):
+    def apply(self, yaml, namespace=None, validate=False):
         if namespace is not None:
             ns_arg = f"-n {namespace}"
         else:
             ns_arg = ""
-        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} -f -", yaml)
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} --validate={validate} -f -", yaml)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) while applying a YAML: {output}"
         return output
 
@@ -420,12 +420,12 @@ spec:
         else:
             return None
 
-    def apply_yaml_file(self, yaml, namespace=None):
+    def apply_yaml_file(self, yaml, namespace=None, validate=False):
         if namespace is not None:
             ns_arg = f"-n {namespace}"
         else:
             ns_arg = ""
-        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} -f " + yaml)
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} --validate={validate} -f " + yaml)
         assert exit_code == 0, "Applying yaml file failed as the exit code is not 0"
         return output
 

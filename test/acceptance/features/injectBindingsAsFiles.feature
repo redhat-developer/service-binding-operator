@@ -22,7 +22,7 @@ Feature: Bindings get injected as files in application
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         When Service Binding is applied
             """
@@ -81,7 +81,7 @@ Feature: Bindings get injected as files in application
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         When Service Binding is applied
             """
@@ -129,7 +129,7 @@ Feature: Bindings get injected as files in application
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         When Service Binding is applied
             """
@@ -179,7 +179,7 @@ Feature: Bindings get injected as files in application
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         When Service Binding is applied
             """
@@ -238,7 +238,7 @@ Feature: Bindings get injected as files in application
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         When Service Binding is applied
             """
@@ -289,7 +289,7 @@ Feature: Bindings get injected as files in application
                     "service.binding/port": "path={.spec.port}"
             spec:
                 host: example.common
-                port: 8080
+                port: "8080"
             """
         When Service Binding is applied
             """

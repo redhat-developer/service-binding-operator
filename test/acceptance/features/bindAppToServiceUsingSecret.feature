@@ -12,7 +12,7 @@ Feature: Bind values from a secret referred in backing service resource
         Given Generic test application "ssa-1" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -24,6 +24,33 @@ Feature: Bind values from a secret referred in backing service resource
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        image:
+                                            type: string
+                                        imageName:
+                                            type: string
+                                        dbName:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbCredentials:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -81,7 +108,7 @@ Feature: Bind values from a secret referred in backing service resource
         Given Generic test application "ssa-2" is running
         And The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -93,6 +120,33 @@ Feature: Bind values from a secret referred in backing service resource
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        image:
+                                            type: string
+                                        imageName:
+                                            type: string
+                                        dbName:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbCredentials:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -154,7 +208,7 @@ Feature: Bind values from a secret referred in backing service resource
         Given Generic test application "ssd-1" is running
         * The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.foo.example.com
@@ -164,6 +218,29 @@ Feature: Bind values from a secret referred in backing service resource
                     - name: v1
                       served: true
                       storage: true
+                      schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        host:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbCredentials:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -286,7 +363,7 @@ Feature: Bind values from a secret referred in backing service resource
         Given Generic test application "ssd-2" is running
         * The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.bar.example.com
@@ -296,6 +373,33 @@ Feature: Bind values from a secret referred in backing service resource
                     - name: v1
                       served: true
                       storage: true
+                      schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        image:
+                                            type: string
+                                        imageName:
+                                            type: string
+                                        dbName:
+                                            type: string
+                                status:
+                                    type: object
+                                    properties:
+                                        data:
+                                            type: object
+                                            properties:
+                                                dbCredentials:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -412,7 +516,7 @@ Feature: Bind values from a secret referred in backing service resource
     Scenario: Inject into app all keys from a secret existing in a same namespace with service and different from the service binding
         Given The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -424,6 +528,21 @@ Feature: Bind values from a secret referred in backing service resource
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                status:
+                                    type: object
+                                    properties:
+                                        credentials:
+                                            type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -498,7 +617,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
         * The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backends.stable.example.com
@@ -510,6 +629,34 @@ Feature: Bind values from a secret referred in backing service resource
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        containers:
+                                            type: array
+                                            items:
+                                                type: object
+                                                properties:
+                                                    envFrom:
+                                                        type: array
+                                                        items:
+                                                            type: object
+                                                            properties:
+                                                                secretRef:
+                                                                    type: object
+                                                                    properties:
+                                                                        name:
+                                                                            type: string
                 scope: Namespaced
                 names:
                     plural: backends

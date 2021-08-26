@@ -87,7 +87,7 @@ Feature: Bind application to provisioned service
   Scenario: Fail binding to provisioned service if secret name is not provided
     Given The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: provisionedbackends.stable.example.com
@@ -99,6 +99,21 @@ Feature: Bind application to provisioned service
                   - name: v1
                     served: true
                     storage: true
+                    schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        foo:
+                                            type: string
                 scope: Namespaced
                 names:
                     plural: provisionedbackends

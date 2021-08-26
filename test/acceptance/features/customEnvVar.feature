@@ -20,7 +20,7 @@ Feature: Inject custom env variable into application
                 host: example.common
                 tags:
                     - "centos7-12.3"
-                    - 123
+                    - "123"
             """
         * Generic test application "foo" is running
         When Service Binding is applied

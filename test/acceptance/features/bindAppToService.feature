@@ -444,7 +444,7 @@ Feature: Bind an application to a service
             """
         * The Custom Resource Definition is present
             """
-            apiVersion: apiextensions.k8s.io/v1beta1
+            apiVersion: apiextensions.k8s.io/v1
             kind: CustomResourceDefinition
             metadata:
                 name: backservs.service.example.com
@@ -454,6 +454,21 @@ Feature: Bind an application to a service
                     - name: v1
                       served: true
                       storage: true
+                      schema:
+                        openAPIV3Schema:
+                            type: object
+                            properties:
+                                apiVersion:
+                                    type: string
+                                kind:
+                                    type: string
+                                metadata:
+                                    type: object
+                                spec:
+                                    type: object
+                                    properties:
+                                        svcName:
+                                            type: string
                 scope: Namespaced
                 names:
                     plural: backservs
