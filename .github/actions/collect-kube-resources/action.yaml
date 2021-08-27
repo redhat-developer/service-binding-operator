@@ -23,12 +23,13 @@ runs:
   steps:
     - id: collect-kube-resources
       run: |
-        kubectl api-resources --verbs=list --namespaced -o name > resources.list
+        kubectl api-resources --verbs=list --namespaced -o name > resources.namespaced.list
+        kubectl api-resources --verbs=list --namespaced=false -o name > resources.cluster-wide.list
 
         for ns in ${{inputs.operator-namespace}} ${{inputs.olm-namespace}}; do
           OUTPUT=${{inputs.output-path}}/${ns}
           mkdir -p ${OUTPUT}
-          for res in $(cat resources.list | grep -v secrets); do
+          for res in $(cat resources.namespaced.list | grep -v secrets); do
             kubectl get ${res} --ignore-not-found -n ${ns} -o yaml > ${OUTPUT}/${res}.yaml;
           done
           find ${OUTPUT} -size 0 -delete
@@ -38,11 +39,16 @@ runs:
           ns=$(cat ${{ inputs.test-namespace-file }})
           OUTPUT=${{inputs.output-path}}/${ns}
           mkdir -p ${OUTPUT}
-          for res in $(cat resources.list); do
+          for res in $(cat resources.namespaced.list); do
             kubectl get ${res} --ignore-not-found -n ${ns} -o yaml > ${OUTPUT}/${res}.yaml;
           done
           find ${OUTPUT} -size 0 -delete
         fi
+
+        OUTPUT=${{inputs.output-path}}
+        for res in $(cat resources.cluster-wide.list); do
+          kubectl get ${res} --ignore-not-found -o yaml > ${OUTPUT}/${res}.yaml;
+        done
       shell: bash
 
     - id: collect-operator-logs
