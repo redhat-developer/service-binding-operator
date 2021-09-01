@@ -350,7 +350,8 @@ ServiceBinding request.
 3. Application access this information through binding names.
 
 
-###How ?
+### How?
+
 Following fields are part of `ServiceBinding` request.
 - Application
 ```yaml
