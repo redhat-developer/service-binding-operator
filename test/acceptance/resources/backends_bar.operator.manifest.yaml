@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: backends.beta.example.com
+  name: backends.bar.example.com
 spec:
-  group: beta.example.com
+  group: bar.example.com
   versions:
     - name: v1
       served: true
@@ -21,24 +21,11 @@ spec:
             spec:
               type: object
               properties:
-                host:
+                image:
                   type: string
-                port:
+                imageName:
                   type: string
-                ports:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      protocol:
-                        type: string
-                      port:
-                        type: integer
-                username:
-                  type: string
-                host_internal_db:
-                  type: string
-                host_external_db:
+                dbName:
                   type: string
             status:
               type: object
@@ -54,33 +41,29 @@ spec:
     singular: backend
     kind: Backend
     shortNames:
-      - bk
+    - bs
+
 ---
 apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
     capabilities: Basic Install
-  name: backend-operator.v0.1.0
+  name: backend-operator-bar.v0.1.0
 spec:
-  apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: Backend is the Schema for the backend API
       kind: Backend
-      name: backends.beta.example.com
+      name: backends.bar.example.com
       version: v1
-      specDescriptors:
-        - description: Host address
-          displayName: Host address
-          path: host
-          x-descriptors:
-            - service.binding:host
-        - description: Exposed ports
-          displayName: Exposed ports
-          path: ports
-          x-descriptors:
-            - service.binding:ports:elementType=sliceOfMaps,sourceKey=protocol,sourceValue=port
+      statusDescriptors:
+      - description: db credentials
+        displayName: db credentials
+        path: data.dbCredentials
+        x-descriptors:
+          - urn:alm:descriptor:io.kubernetes:Secret
+          - service.binding:elementType=map
   displayName: Backend Operator
   install:
     spec:
@@ -120,10 +103,10 @@ spec:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: admin-to-backend-beta
+  name: admin-to-provisionedbackends-stable
   labels:
     service.binding/controller: "true"
 rules:
-  - apiGroups: ["beta.example.com"]
-    resources: ["backends"]
+  - apiGroups: ["bar.example.com"]
+    resources: ["*"]
     verbs: ["get", "list"]

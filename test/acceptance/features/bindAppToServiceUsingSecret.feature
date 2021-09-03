@@ -206,6 +206,7 @@ Feature: Bind values from a secret referred in backing service resource
     Scenario: Inject into app a key from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-1" is running
+        * OLM Operator "backends_foo" is running
         * The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -361,6 +362,7 @@ Feature: Bind values from a secret referred in backing service resource
     Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application "ssd-2" is running
+        * OLM Operator "backends_bar" is running
         * The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
