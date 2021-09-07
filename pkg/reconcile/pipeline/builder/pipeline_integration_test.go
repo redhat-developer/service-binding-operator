@@ -4,6 +4,7 @@ import (
 	c "context"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	fakeauth "k8s.io/client-go/kubernetes/typed/authorization/v1/fake"
 	"reflect"
 
 	"github.com/golang/mock/gomock"
@@ -119,7 +120,9 @@ var _ = Describe("Default Pipeline", func() {
 			}
 		}).MinTimes(1)
 
-		p := builder.DefaultBuilder.WithContextProvider(context.Provider(client, typeLookup)).Build()
+		authClient := &fakeauth.FakeAuthorizationV1{}
+
+		p := builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), typeLookup)).Build()
 
 		retry, err := p.Process(sb)
 		Expect(err).NotTo(HaveOccurred())

@@ -3,6 +3,8 @@ import polling2
 import json
 from behave import step, when, then
 from openshift import Openshift
+from string import Template
+from util import scenario_id
 
 
 class ServiceBinding(object):
@@ -25,8 +27,8 @@ class ServiceBinding(object):
         else:
             self.secretPath = '{.status.secret}'
 
-    def create(self):
-        return self.openshift.apply(self.yamlContent, self.namespace)
+    def create(self, user):
+        return self.openshift.apply(self.yamlContent, self.namespace, user)
 
     def attempt_to_create_invalid(self):
         return self.openshift.apply_invalid(self.yamlContent, self.namespace)
@@ -47,7 +49,8 @@ class ServiceBinding(object):
 
 
 @step(u'Service Binding is applied')
-def sbr_is_applied(context):
+@step(u'user {user} applies Service Binding')
+def sbr_is_applied(context, user=None):
     if "application" in context and "application_type" in context:
         application = context.application
         if context.application_type == "nodejs":
@@ -61,8 +64,9 @@ def sbr_is_applied(context):
         ns = context.namespace.name
     else:
         ns = None
-    binding = ServiceBinding(context.text, ns)
-    assert binding.create() is not None, "Service binding not created"
+    resource = Template(context.text).substitute(scenario_id=scenario_id(context))
+    binding = ServiceBinding(resource, ns)
+    assert binding.create(user) is not None, "Service binding not created"
     context.bindings[binding.name] = binding
     context.sb_secret = ""
 
@@ -114,3 +118,9 @@ def validate_persistent_sb(context, sb_name):
 def sbo_secret_name_has_been_set(context, sbr_name):
     polling2.poll(lambda: context.bindings[sbr_name].get_info_by_jsonpath(".status.secret") != "",
                   step=5, timeout=800,  ignore_exceptions=(json.JSONDecodeError,))
+
+
+@step(u'Service Binding {condition}.{field} is "{field_value}"')
+def check_sb_condition_field_value(context, condition, field, field_value):
+    sb = list(context.bindings.values())[0]
+    sbo_jq_is(context, f'.status.conditions[] | select(.type=="{condition}").{field}', sb.name, field_value)

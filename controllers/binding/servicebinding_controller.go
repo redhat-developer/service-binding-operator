@@ -26,6 +26,8 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
+	authv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,8 +46,16 @@ func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *Service
 			Client: client,
 			Log:    log,
 			Scheme: scheme,
-			PipelineProvider: func(client dynamic.Interface, lookup context.K8STypeLookup) pipeline.Pipeline {
-				return builder.DefaultBuilder.WithContextProvider(context.Provider(client, lookup)).Build()
+			PipelineProvider: func(conf *rest.Config, lookup context.K8STypeLookup) (pipeline.Pipeline, error) {
+				client, err := dynamic.NewForConfig(conf)
+				if err != nil {
+					return nil, err
+				}
+				authClient, err := authv1.NewForConfig(conf)
+				if err != nil {
+					return nil, err
+				}
+				return builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), lookup)).Build(), nil
 			},
 			ReconcilingObject: func() apis.Object { return &v1alpha1.ServiceBinding{} },
 		},

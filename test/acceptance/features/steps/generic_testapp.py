@@ -3,6 +3,7 @@ import requests
 import json
 import polling2
 from behave import step
+from util import scenario_id
 
 
 class GenericTestApp(App):
@@ -44,7 +45,10 @@ class GenericTestApp(App):
 
 @step(u'Generic test application "{application_name}" is running')
 @step(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
-def is_running(context, application_name, bindingRoot=None):
+@step(u'Generic test application is running')
+def is_running(context, application_name=None, bindingRoot=None):
+    if application_name is None:
+        application_name = scenario_id(context)
     application = GenericTestApp(application_name, context.namespace.name)
     if not application.is_running():
         print("application is not running, trying to import it")

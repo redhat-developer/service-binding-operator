@@ -121,7 +121,10 @@ spec:
     def get_resource_lst(self, resource_plural, namespace):
         output, exit_code = self.cmd.run(f'{ctx.cli} get {resource_plural} -n {namespace} -o "jsonpath={{.items[*].metadata.name}}"')
         assert exit_code == 0, f"Getting resource list failed as the exit code is not 0 with output - {output}"
-        return output.split(" ")
+        if len(output.strip()) == 0:
+            return list()
+        else:
+            return output.split(" ")
 
     def search_item_in_lst(self, lst, search_pattern):
         for item in lst:
@@ -179,12 +182,16 @@ spec:
             return output
         return None
 
-    def apply(self, yaml, namespace=None, validate=False):
+    def apply(self, yaml, namespace=None, user=None):
         if namespace is not None:
             ns_arg = f"-n {namespace}"
         else:
             ns_arg = ""
-        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} --validate={validate} -f -", yaml)
+        if user is not None:
+            user_arg = f"--user={user}"
+        else:
+            user_arg = ""
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} {user_arg} --validate=false -f -", yaml)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) while applying a YAML: {output}"
         return output
 
@@ -292,8 +299,10 @@ spec:
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned while getting deployment's envFrom: {env_from}"
         return env_from
 
-    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path):
+    def get_resource_info_by_jsonpath(self, resource_type, name, namespace, json_path="{.*}", user=None):
         oc_cmd = f'{ctx.cli} get {resource_type} {name} -n {namespace} -o "jsonpath={json_path}"'
+        if user:
+            oc_cmd += f" --user={user}"
         output, exit_code = self.cmd.run(oc_cmd)
         if exit_code == 0:
             if resource_type == "secrets":
@@ -491,3 +500,8 @@ spec:
         cmd = f"{ctx.cli} label deployments {name} '{label}' -n {namespace}"
         (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting set label: {cmd}\n: {output}"
+
+    def cli(self, cmd, namespace):
+        output, exit_status = self.cmd.run(f'{ctx.cli} {cmd} -n {namespace}')
+        assert exit_status == 0, "Exit should be zero"
+        return output

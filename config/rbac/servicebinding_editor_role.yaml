@@ -2,10 +2,13 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-edit: "true"
   name: editor-role
 rules:
 - apiGroups:
   - binding.operators.coreos.com
+  - service.binding
   resources:
   - servicebindings
   verbs:
@@ -18,6 +21,7 @@ rules:
   - watch
 - apiGroups:
   - binding.operators.coreos.com
+  - service.binding
   resources:
   - servicebindings/status
   verbs:

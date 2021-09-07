@@ -22,6 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/dynamic/fake"
+	fakeauth "k8s.io/client-go/kubernetes/typed/authorization/v1/fake"
 	"k8s.io/client-go/testing"
 )
 
@@ -69,7 +70,9 @@ var _ = Describe("Spec API Context", func() {
 			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 
-			ctx, err := SpecProvider(client, typeLookup).Get(&sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -114,8 +117,9 @@ var _ = Describe("Spec API Context", func() {
 			u2.SetLabels(map[string]string{"env": "prod"})
 
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u1, u2)
+			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := SpecProvider(client, typeLookup).Get(&sb)
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -158,7 +162,9 @@ var _ = Describe("Spec API Context", func() {
 			u.SetLabels(map[string]string{"env": "stage"})
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 
-			ctx, err := SpecProvider(client, typeLookup).Get(&sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -194,7 +200,8 @@ var _ = Describe("Spec API Context", func() {
 				func(action testing.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, e.New(expectedError)
 				})
-			ctx, err := SpecProvider(client, typeLookup).Get(&sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -222,7 +229,9 @@ var _ = Describe("Spec API Context", func() {
 
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme())
 
-			ctx, err := Provider(client, typeLookup).Get(&sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -269,7 +278,9 @@ var _ = Describe("Spec API Context", func() {
 			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 
-			ctx, err := SpecProvider(client, typeLookup).Get(&sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -318,7 +329,9 @@ var _ = Describe("Spec API Context", func() {
 			gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil)
 
-			ctx, err := Provider(client, typeLookup).Get(sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			services, err := ctx.Services()
@@ -346,7 +359,9 @@ var _ = Describe("Spec API Context", func() {
 			gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil)
 
-			ctx, err := Provider(client, typeLookup).Get(sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Services()
@@ -356,7 +371,7 @@ var _ = Describe("Spec API Context", func() {
 	})
 
 	Describe("Binding Name", func() {
-		var testProvider = Provider(nil, nil)
+		var testProvider = Provider(nil, nil, nil)
 		It("should be equal on .spec.name if specified", func() {
 			ctx, _ := testProvider.Get(&specapi.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -381,7 +396,7 @@ var _ = Describe("Spec API Context", func() {
 		})
 	})
 	Describe("Binding Secret Name", func() {
-		var testProvider = Provider(nil, nil)
+		var testProvider = Provider(nil, nil, nil)
 
 		It("should not be empty string", func() {
 			ctx, _ := testProvider.Get(&specapi.ServiceBinding{
@@ -592,7 +607,9 @@ var _ = Describe("Spec API Context", func() {
 			u, _ := converter.ToUnstructured(&sb)
 			client = fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 
-			ctx, _ = Provider(client, typeLookup).Get(sb)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 
 		})
 
@@ -841,7 +858,7 @@ var _ = Describe("Spec API Context", func() {
 					},
 				},
 			}
-			ctx, _ = Provider(nil, nil).Get(sb)
+			ctx, _ = Provider(nil, nil, nil).Get(sb)
 
 			Expect(ctx.EnvBindings()).To(ConsistOf(&pipeline.EnvBinding{Var: "e1", Name: "b1"}, &pipeline.EnvBinding{Var: "e2", Name: "b2"}))
 		})
