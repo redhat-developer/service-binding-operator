@@ -11,6 +11,6 @@ configMapGenerator:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- digest: latest
-  name: controller
+- name: controller
   newName: quay.io/redhat-developer/servicebinding-operator
+  newTag: e4860168
