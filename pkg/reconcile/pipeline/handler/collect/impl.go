@@ -18,6 +18,7 @@ import (
 )
 
 var DataNotMap = errors.New("Returned data are not a map, skip collecting")
+var ErrorValueNotFound = errors.New("Value not found in map")
 
 const (
 	ErrorReadingServicesReason   = "ErrorReadingServices"
@@ -25,6 +26,8 @@ const (
 	ErrorReadingDescriptorReason = "ErrorReadingDescriptor"
 	ErrorReadingBindingReason    = "ErrorReadingBinding"
 	ErrorReadingSecret           = "ErrorReadingSecret"
+
+	ValueNotFound = "ValueNotFound"
 )
 
 func PreFlight(ctx pipeline.Context) {
@@ -249,7 +252,17 @@ func collectItems(prefix string, ctx pipeline.Context, service pipeline.Service,
 			p = ""
 		}
 		for _, n := range v.MapKeys() {
-			collectItems(p, ctx, service, n, v.MapIndex(n).Interface())
+			if mapVal := v.MapIndex(n).Interface(); mapVal != nil {
+				collectItems(p, ctx, service, n, mapVal)
+			} else {
+				condition := apis.Conditions().NotCollectionReady().
+					Msg(fmt.Sprintf("Value for key %v_%v not found", prefix+k.String(), n.String())).
+					Reason(ValueNotFound).Build()
+				ctx.SetCondition(condition)
+				ctx.Error(ErrorValueNotFound)
+				ctx.StopProcessing()
+				return
+			}
 		}
 	case reflect.Slice:
 		for i := 0; i < v.Len(); i++ {

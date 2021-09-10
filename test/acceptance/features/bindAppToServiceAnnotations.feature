@@ -542,3 +542,45 @@ Feature: Bind an application to a service using annotations
             """
         Then Service Binding "binding-app-via-gvk" is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
+
+    Scenario: Application cannot be bound to service containing annotation with an invalid sourceValue value
+        Given Generic test application is running
+        And CustomResourceDefinition backends.stable.example.com is available
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: $scenario_id
+                annotations:
+                    service.binding/webarrows: path={.spec.connections},elementType=sliceOfMaps,sourceKey=type,sourceValue=asdf
+            spec:
+                connections:
+                  - type: primary
+                    url: primary.example.com
+            status:
+                somestatus: good
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                bindAsFiles: false
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: $scenario_id
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding CollectionReady.status is "False"
+        And Service Binding CollectionReady.reason is "ValueNotFound"
+        And Service Binding CollectionReady.message is "Value for key webarrows_primary not found"
+
