@@ -157,10 +157,12 @@ vet:
 
 .PHONY: bundle
 # Generate bundle manifests and metadata, then validate generated files.
-bundle: manifests kustomize push-image
+bundle: manifests kustomize yq push-image
 #	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(YQ) e -i '.metadata.annotations.containerImage="$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)"' bundle/manifests/service-binding-operator.clusterserviceversion.yaml
+	rm bundle/manifests/service-binding-operator_v1_serviceaccount.yaml
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 
 .PHONY: setup-venv
