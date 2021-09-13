@@ -1,0 +1,3 @@
+* Getting Started
+** xref:installing-service-binding.adoc[]
+** xref:quick-start.adoc[]

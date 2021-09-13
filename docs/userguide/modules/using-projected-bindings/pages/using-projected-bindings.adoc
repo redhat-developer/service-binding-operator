@@ -1,0 +1,130 @@
+= General Concept
+
+When using the Service Binding operator, a set of binding data are
+projected into your application using the following methods:
+
+* By default, as files.
+* As environment variables, if the value for the `.spec.bindAsFiles`
+parameter is set to `false` in the `ServiceBinding` resource.
+
+== Understanding the consumption of binding data
+
+The primary mechanism of projection is through files mounted at a
+specific directory. The binding data directory path can be discovered
+through `SERVICE_BINDING_ROOT` environment variable injected in your
+application.
+
+Within this service binding root directory, there can be multiple
+binding metadata projected through different ServiceBinding resource
+reconciliations. For example, an application requires a connection to a database and a cache
+server.  In that case, one Service Binding could provide the database, and the
+other Service Binding could provide binding data to the cache server.
+
+Let’s take a look at the example:
+
+....
+$SERVICE_BINDING_ROOT
+├── account-database
+│   ├── type
+│   ├── provider
+│   ├── uri
+│   ├── username
+│   └── password
+└── transaction-event-stream
+    ├── type
+    ├── connection-count
+    ├── uri
+    ├── certificates
+    └── private-key
+....
+
+In the previous example, there are two binding data directories under
+the `SERVICE_BINDING_ROOT` directory. The `account-database` and
+`transaction-event-stream` are the names of the binding data. Files
+within each binding data directory has a special file named `type`, and
+you can rely on the value of that file to identify the type of the
+binding projected into that directory. In certain directories, you can
+also see another file named `provider`. The provider is an additional
+identifier to narrow down the type further. Retrieving the binding data
+through the binding data directory name is not a good practice – it
+makes your application less portable. Always use the `type` field and,
+if necessary, `provider` to look up the binding data.
+
+The Service Binding Operators uses `ServiceBinding` resource name
+(`.metadata.name`) as the binding data directory name, but the spec also
+provides a way to override that name through the `.spec.name` field. So,
+there is a chance for binding data name collision. However, due to the
+nature of the volume mount in Kubernetes, the binding data directory
+will contain values from only one of the Secret resources. This is a
+caveat of using the binding data directory name to look up the binding
+data.
+
+== Using Binding data projected as files
+
+For determining the folder where binding data are projected, you can set
+the `SERVICE_BINDING_ROOT` environment variable in the application
+resource.
+
+== Table: Summary of the final path computation
+
+The following table summarizes how the final bind path is computed:
+
+[cols=",",options="header",]
+|==
+|SERVICE_BINDING_ROOT |Final Path
+|non-existent |/bindings/ServiceBinding_Name
+|/some/path/root |/some/path/root/
+|==
+
+You can use the built-in language feature of your programming language
+of choice to read environment variables.
+
+For accessing binding data within `SERVICE_BINDING_ROOT`, there are
+language or framework specific programs:
+
+[arabic]
+. Python: https://github.com/baijum/pyservicebinding
+. Go: https://github.com/baijum/servicebinding
+. Java/Spring: https://github.com/spring-cloud/spring-cloud-bindings
+. Quarkus:
+https://quarkus.io/guides/deploying-to-kubernetes#service-binding
+. JS/Node: https://github.com/nodeshift/kube-service-bindings
+. .NET: https://github.com/donschenck/dotnetservicebinding
+
+Note: All these libraries expect `SERVICE_BINDING_ROOT` to be set.
+
+== Example: Python client usage
+
+....
+from pyservicebinding import binding
+try:
+    sb = binding.ServiceBinding()
+except binding.ServiceBindingRootMissingError as msg:
+    # log the error message and retry/exit
+    print("SERVICE_BINDING_ROOT env var not set")
+
+sb = binding.ServiceBinding()
+
+bindings_list = sb.bindings("postgresql")
+....
+
+In the previous example, the `bindings_list` parameter contains the
+binding metadata for the `postgresql` type. For full API, see the
+https://github.com/baijum/pyservicebinding[documentation].
+
+== Environment Variables
+
+Service Binding operator supports projecting environment variables. You
+can use the built-in language feature of your programming language of
+choice to read environment variables. The container must restart to
+update the values of environment variables if there is a change in the
+Secret resource.
+
+Here is example Python client usage:
+
+....
+import os
+
+username = os.getenv("USERNAME")
+password = os.getenv("PASSWORD")
+....

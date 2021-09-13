@@ -1,0 +1,5 @@
+* Creating Service Binding
+** xref:creating-service-binding.adoc[]
+** xref:binding-options.adoc[]
+** xref:custom-path-injection.adoc[]
+** xref:unbind-application.adoc[]

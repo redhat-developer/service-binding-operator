@@ -1,0 +1,340 @@
+= Quick Start Guide
+
+The goal of this quick start guide is to:
+
+* Provide an overview of Service Binding Operator.
+* Provide a list of prerequisites to be configured on your Kubernetes
+cluster.
+* Create a PostgreSQL database instance
+* Deploy the application
+* Connect the application to the database with Service Binding
+
+For this quick start, we are using a PostgreSQL database and a simple
+application using the
+https://github.com/spring-petclinic/spring-petclinic-rest[Spring Boot
+REST API server] sample. This will allow you to understand how Service
+Binding Operator can be used to simplify the connection between a
+service, like a database and the application.
+
+To illustrate what we are going to do, here is a visual representation
+of the application we are going to setup.
+
+image:postgresql-spring-boot.png[postgresql-spring-boot]
+
+In this configuration, we leverage the service binding operator, to
+collect the binding data from the PostgreSQL database and project them
+into the sample application.
+
+Before starting, we invite you to refer to the
+link:#prerequisites[Prerequisites] section to make sure you have all the
+needed components configured on your K8s cluster.
+
+The quick start will then consist into three main steps:
+
+[arabic]
+. link:#create-a-postgresql-database-instance[Create a PostgreSQL
+database instance]
+. link:#deploy-the-sample-application[Deploy the application]
+. link:#connect-the-application-to-the-database[Connect the application
+to the database with Service Binding]
+
+== Prerequisites
+
+In order to follow the quick start, you’ll need the following tools
+installed and configured:
+
+* Kubernetes cluster (*Note:* You can use
+https://minikube.sigs.k8s.io/[minikube] or
+https://kind.sigs.k8s.io/[kind], locally)
+* https://kubernetes.io/docs/tasks/tools/#kubectl[kubectl]
+* PostgreSQL client (`psql` CLI tool)
+* xref:installing-service-binding.adoc[]
+
+== Create a PostgreSQL database instance
+
+The application is going to use to a PostgreSQL database backend which
+can be setup using the `v5` channel of
+https://operatorhub.io/operator/postgresql[Crunchy PostgreSQL operator
+from OperatorHub.io]. We just need to make sure that the operator is
+availabe in our `my-postgresql` namespace.
+
+The installation of the operator doesn’t create a database instance
+itself, so we need to create one.
+
+[arabic]
+. To create a database instance, you need to create custom resource
+`PostgresCluster` and that will trigger the operator reconciliation. For
+convenience, run this command to create `PostgresCluster` custom
+resource:
+
+[source,bash,subs="attributes,macros"]
+----
+kubectl apply -f link:{attachmentsdir}/pgcluster.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/pgcluster.yaml]]
+----
+
+[arabic, start=2]
+. Once the database is created, we need to ensure all the pods in
+`my-postgresql` namespace are running (it will take few minutes):
+
+[source,bash]
+----
+kubectl get pod -n my-postgresql
+----
+
+You should see output something like this:
+
+....
+NAME                                     READY   STATUS      RESTARTS   AGE
+hippo-backup-6th6--1-28849               0/1     Completed   0          1m
+hippo-instance1-sl4r-0                   2/2     Running     0          2m
+hippo-pgbouncer-8454474bc7-lhcn9         2/2     Running     0          2m
+pgo-84b9679484-79c6m                     1/1     Running     0          3m
+....
+
+The database has been created and is empty at this stage. We now need to
+set its schema and we will also project a sample data set, so we can
+play around with the application.
+
+[arabic, start=3]
+. You can initialize the database with the schema and sample data using
+this command:
+
+[source,bash,subs="attributes,macros"]
+----
+curl -sL link:{attachmentsdir}/init-database.sh[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/init-database.sh]] | bash
+----
+
+We have now finished to configured the database for the application. We
+are ready to deploy the sample application and connect it to the
+database.
+
+== Deploy the sample application
+
+In this section, we are going to deploy the application on our
+kubernetes cluster. For that, we will use a deployment configuration and
+do the configuration of our local environment to be able to test the
+application.
+
+[arabic]
+. Deploy the `spring-petclinic-rest` app with this `Deployment`
+configuration:
+
+[source,bash,subs="attributes,macros"]
+----
+kubectl apply -f link:{attachmentsdir}/app-deployment.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/app-deployment.yaml]]
+----
+
+[arabic, start=2]
+. Let’s now setup the port forwarding from the application port so we
+can access it from our local environment
+
+....
+kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql
+....
+
+[arabic, start=3]
+. You should be able to open http://localhost:9966/petclinic and see a
+https://swagger.io[Swagger UI] where you can play with the API.
+
+At this stage, the application is not yet connected to the database. So,
+if you try to play around the APIs, you’ll see errors returned by the
+application.
+
+For example, if you try to access the list of all pets, you can see an
+error like this:
+
+....
+curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
+
+{"className":"org.springframework.transaction.CannotCreateTransactionException","exMessage":"Could
+not open JPA EntityManager for transaction; nested exception is
+org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC
+Connection"}
+....
+
+Now, we are going to see how you can use Service Binding to easily
+connect the application to the database.
+
+== Connect the application to the database
+
+Suppose the Service Binding operator is not present. In that case, the
+application’s admin needs to extract all the configuration details and
+create a Secret resource and expose it to the application through volume
+mount in Kubernetes. The steps would be something like this:
+
+[arabic]
+. Identify the required values for connecting the application to the
+database
+. Locate the resources where the values are present
+. Take the values from different resources and create a Secret resource
+. Mount the Secret resource into the application
+. Depending on the application requirement the values should be exposed
+as env var or file.
+
+In this quick start, we are going to leverage Service Binding as a way
+to easily and safely connect the application to the database service. In
+order to do that, we’ll need to create a Service Binding resource which
+will trigger the Service Binding Operator to project the binding datas
+into the application.
+
+[arabic]
+. Create the ServiceBinding resource to project the binding data:
+
+The `.spec` has two sections. The first is a list of service
+resources (`.spec.services`), and the second one is the application
+(`.spec.application`). The services resources points to the database’s
+service resources. How the values are exposed from service resources are
+explained xref:exposing-binding-data:intro-expose-binding.adoc[]
+section. The application points to a `Deployment`
+or any resource that is PodSpec compatible.
+
+[source,yaml]
+----
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: spring-petclinic-rest
+  namespace: my-postgresql
+spec:
+  services:
+    - group: postgres-operator.crunchydata.com
+      version: v1beta1
+      kind: PostgresCluster
+      name: hippo
+  application:
+    name: spring-petclinic-rest
+    group: apps
+    version: v1
+    resource: deployments
+----
+
+For simplicity, you can copy/paste the following command to create the
+resource:
+
+[source,bash,subs="attributes,macros"]
+----
+kubectl apply -f link:{attachmentsdir}/service-binding.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/service-binding.yaml]]
+----
+
+To check if the binding was successful you can check the binding
+resource status conditions by the following command:
+
+[source,bash]
+----
+kubectl get servicebindings spring-petclinic-rest -n my-postgresql -o jsonpath-as-json='{.status.conditions}'
+----
+
+You should see output something like:
+
+[source,yaml]
+----
+[
+  [
+    {
+      "lastTransitionTime": "2021-09-06T13:42:28Z",
+      "message": "",
+      "reason": "DataCollected",
+      "status": "True",
+      "type": "CollectionReady",
+    },
+    {
+      "lastTransitionTime": "2021-09-06T13:42:28Z",
+      "message": "",
+      "reason": "ApplicationUpdated",
+      "status": "True",
+      "type": "InjectionReady",
+    },
+    {
+      "lastTransitionTime": "2021-09-06T13:42:28Z",
+      "message": "",
+      "reason": "ApplicationsBound",
+      "status": "True",
+      "type": "Ready",
+    },
+  ],
+]
+----
+
+To learn more about creating service bindings, you can find more
+information on the following xref:creating-service-bindings:creating-service-binding.adoc[document]
+
+By creating this `Service Binding` resource, we now have values from the
+database’s binding data projected into the application container as
+files (that’s the default behavior, but you can also project environment
+variables if you prefer). If you check under
+`/bindings/spring-petclinic-rest` directory you’ll see all the values
+from the secret resource projected there. In the above example, you’ll
+find `username` and `password`. And the values pointed out through the
+annotation are also projected which includes `database`, `host`, and
+`port`. Finally `type` is also projected which is required for
+connectity.. The application looks for `SERVICE_BINDING_ROOT` env var to
+find the location of `/bindings` directory. The Spring Boot application
+used here is built using
+https://github.com/spring-cloud/spring-cloud-bindings[Spring Cloud
+Bindings] and it looks for `SERVICE_BINDING_ROOT` to get the projected
+binding data. See the using projected binding data section about how the
+values can be used from the application.
+
+To verify that binding was successful and that the files in the
+application contain the expected content, you can use the following script to
+inspect the deployment:
+
+[source,bash]
+----
+for i in username password host port type; do
+  kubectl exec -it deploy/spring-petclinic-rest -n my-postgresql -- /bin/bash -c 'find /bindings/*/'$i' -exec echo -n {}:" " \; -exec cat {} \;';
+  echo
+done
+----
+
+You should see output something like:
+
+....
+/bindings/spring-petclinic-rest/username: hippo
+/bindings/spring-petclinic-rest/password: w0ZB<0j1W|K;+4*TlK7-w^z/
+/bindings/spring-petclinic-rest/host: hippo-pgbouncer
+/bindings/spring-petclinic-rest/port: 5432
+/bindings/spring-petclinic-rest/type: postgresql
+....
+
+[arabic, start=2]
+. Let’s now check how the application is behaving and setup the port
+forwarding of the application port to access it from our local
+environment
+
+....
+kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql
+....
+
+[arabic, start=3]
+. Open http://localhost:9966/petclinic, you should see a
+https://swagger.io[Swagger UI] where you can play with the API.
+
+If you try to access list of all pets, you can see the application is
+now connected to the database and see the sample data initially
+configured:
+
+....
+$ curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
+[{"id":1,"name":"Leo","birthDate":"2000/09/07","type":{"id":1,"name":"cat"},
+"owner":{"id":1,"firstName":"George","lastName":"Franklin","address":"110...
+....
+
+== Next Steps
+
+In this sample, we setup a database and connected it to an application
+using the Service Binding operator to collect the connection metadata
+and expose them to the application.
+
+By using service bindings, developers are able to more easily leverage
+the services available to them on a Kubernetes cluster. This method
+provides consistency accross different services and is repeatable for
+the developers. By remove the usual manual and error prone
+configuration, they benefit from a unified way to do
+application-to-service linkage.
+
+You can continue to learn more about Service Binding by:
+
+* xref:creating-service-bindings:creating-service-binding.adoc[]
+* Using Projected Bindings
+* xref:exposing-binding-data:intro-expose-binding.adoc[]
