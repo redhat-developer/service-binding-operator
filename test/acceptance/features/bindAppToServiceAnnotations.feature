@@ -584,3 +584,126 @@ Feature: Bind an application to a service using annotations
         And Service Binding CollectionReady.reason is "ValueNotFound"
         And Service Binding CollectionReady.message is "Value for key webarrows_primary not found"
 
+    Scenario: Application cannot be bound to service containing invalid elementType annotation
+        Given Generic test application is running
+        And CustomResourceDefinition backends.stable.example.com is available
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: $scenario_id
+                annotations:
+                    service.binding/credentials: path={.spec.connections.dbCredentials},elementType=asdf
+            spec:
+                connections:
+                  - type: primary
+                    url: primary.example.com
+            status:
+                somestatus: good
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                bindAsFiles: false
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: $scenario_id
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding CollectionReady.status is "False"
+        And Service Binding CollectionReady.reason is "InvalidAnnotation"
+        And Service Binding Ready.message is "Annotation service.binding/credentials: path={.spec.connections.dbCredentials},elementType=asdf not implemented!"
+
+    Scenario: Application cannot be bound to service containing invalid objectType annotation
+        Given Generic test application is running
+        And CustomResourceDefinition backends.stable.example.com is available
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: $scenario_id
+                annotations:
+                    service.binding/credentials: path={.spec.connections.dbCredentials},objectType=asdf,sourceKey=username
+            spec:
+                connections:
+                  - type: primary
+                    url: primary.example.com
+            status:
+                somestatus: good
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                bindAsFiles: false
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: $scenario_id
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding CollectionReady.status is "False"
+        And Service Binding CollectionReady.reason is "InvalidAnnotation"
+        And Service Binding Ready.message is "Annotation service.binding/credentials: path={.spec.connections.dbCredentials},objectType=asdf,sourceKey=username not implemented!"
+
+    Scenario: Application cannot be bound to service containing invalid path annotation
+        Given Generic test application is running
+        And CustomResourceDefinition backends.stable.example.com is available
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: $scenario_id
+                annotations:
+                    service.binding/credentials: path=asdf
+            spec:
+                connections:
+                  - type: primary
+                    url: primary.example.com
+            status:
+                somestatus: good
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                bindAsFiles: false
+                services:
+                  - group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: $scenario_id
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding CollectionReady.status is "False"
+        And Service Binding CollectionReady.reason is "InvalidAnnotation"
+        And Service Binding CollectionReady.message is "Failed to create binding definition from "service.binding/credentials: path=asdf": could not create binding model for annotation key service.binding/credentials and value path=asdf: path has invalid syntax: "asdf""
+        And Service Binding Ready.message is "could not create binding model for annotation key service.binding/credentials and value path=asdf: path has invalid syntax: "asdf""

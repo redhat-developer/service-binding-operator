@@ -41,9 +41,17 @@ func TestAnnotationBackedBuilderInvalidAnnotation(t *testing.T) {
 			},
 		},
 		{
-			description: "other prefix supplied",
+			description: "invalid element type",
 			builder: &annotationBackedDefinitionBuilder{
-				name: "other.prefix",
+				name:  "service.binding/databaseField",
+				value: "path={.status.dbCredential},elementType=asdf",
+			},
+		},
+		{
+			description: "invalid object type",
+			builder: &annotationBackedDefinitionBuilder{
+				name:  "service.binding/username",
+				value: "path={.status.dbCredential},objectType=asdf,valueKey=username",
 			},
 		},
 	}
@@ -77,7 +85,22 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 				},
 			},
 		},
-
+		{
+			description: "Ignore non-service binding annotations",
+			builder: &annotationBackedDefinitionBuilder{
+				name:  "foo",
+				value: "bar",
+			},
+			expectedValue: nil,
+		},
+		{
+			description: "Ignore provisioned service binding annotations",
+			builder: &annotationBackedDefinitionBuilder{
+				name:  ProvisionedServiceAnnotationKey,
+				value: "true",
+			},
+			expectedValue: nil,
+		},
 		{
 			description: "string definition",
 			builder: &annotationBackedDefinitionBuilder{
