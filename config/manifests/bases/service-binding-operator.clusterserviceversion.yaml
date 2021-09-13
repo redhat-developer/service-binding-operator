@@ -9,6 +9,8 @@ metadata:
       and operator backed services
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Service Binding Operator Community
+    containerImage: ""
+    operators.openshift.io/infrastructure-features: '["disconnected"]'
   name: service-binding-operator.v0.0.0
   namespace: placeholder
 spec:
@@ -63,7 +65,8 @@ spec:
   maintainers:
     - email: service-binding-support@redhat.com
       name: Openshift Application Services
-  maturity: alpha
+  maturity: candidate
+  minKubeVersion: 1.16.0
   provider:
     name: Red Hat
     url: redhat.com
