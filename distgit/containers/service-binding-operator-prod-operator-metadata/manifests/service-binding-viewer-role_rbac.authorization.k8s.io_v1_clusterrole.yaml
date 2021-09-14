@@ -2,10 +2,13 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
   name: service-binding-viewer-role
 rules:
 - apiGroups:
   - binding.operators.coreos.com
+  - service.binding
   resources:
   - servicebindings
   verbs:
@@ -14,6 +17,7 @@ rules:
   - watch
 - apiGroups:
   - binding.operators.coreos.com
+  - service.binding
   resources:
   - servicebindings/status
   verbs:
