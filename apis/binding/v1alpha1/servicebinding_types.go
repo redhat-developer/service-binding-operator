@@ -100,10 +100,6 @@ type ServiceBindingStatus struct {
 
 	// Secret indicates the name of the binding secret.
 	Secret string `json:"secret"`
-
-	// Applications defines the application workloads to which the binding
-	// secret has been injected.
-	Applications []Ref `json:"applications,omitempty"`
 }
 
 // Ref identifies an object reference in the same namespace.
