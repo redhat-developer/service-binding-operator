@@ -105,7 +105,7 @@ kind: ClusterRole
 metadata:
   name: admin-to-provisionedbackends-stable
   labels:
-    service.binding/controller: "true"
+    servicebinding.io/controller: "true"
 rules:
   - apiGroups: ["bar.example.com"]
     resources: ["*"]

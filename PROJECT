@@ -12,7 +12,7 @@ resources:
 - crdVersion: v1
   group: spec
   kind: ServiceBinding
-  version: v1alpha2
+  version: v1alpha3
   webhookVersion: v1
 version: 3-alpha
 plugins:

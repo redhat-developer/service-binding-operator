@@ -92,7 +92,7 @@ Feature: Bind application to provisioned service
             metadata:
                 name: provisionedbackends.stable.example.com
                 annotations:
-                    "service.binding/provisioned-service": "true"
+                    "servicebinding.io/provisioned-service": "true"
             spec:
                 group: stable.example.com
                 versions:
@@ -209,7 +209,7 @@ Feature: Bind application to provisioned service
     Given Generic test application "spec-myapp-provision-srv" is running
     When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: spec-bind-provisioned-service-1
@@ -218,7 +218,7 @@ Feature: Bind application to provisioned service
                 apiVersion: stable.example.com/v1
                 kind: ProvisionedBackend
                 name: provisioned-service-2
-              application:
+              workload:
                 name: spec-myapp-provision-srv
                 apiVersion: apps/v1
                 kind: Deployment
@@ -243,7 +243,7 @@ Feature: Bind application to provisioned service
     Given Generic test application "spec-myapp-provision-srv4" is running
     When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: spec-bind-provisioned-service-4
@@ -254,7 +254,7 @@ Feature: Bind application to provisioned service
                 apiVersion: stable.example.com/v1
                 kind: ProvisionedBackend
                 name: provisioned-service-1
-              application:
+              workload:
                 name: spec-myapp-provision-srv4
                 apiVersion: apps/v1
                 kind: Deployment
@@ -282,7 +282,7 @@ Feature: Bind application to provisioned service
     Given Generic test application "spec-myapp-provision-srv3" is running
     When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: spec-bind-provisioned-service-3
@@ -292,7 +292,7 @@ Feature: Bind application to provisioned service
                 apiVersion: stable.example.com/v1
                 kind: ProvisionedBackend
                 name: provisioned-service-2
-              application:
+              workload:
                 name: spec-myapp-provision-srv3
                 apiVersion: apps/v1
                 kind: Deployment
@@ -319,7 +319,7 @@ Feature: Bind application to provisioned service
     Given Generic test application "spec-myapp-provision-srv8" is running
     When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: spec-bind-provisioned-service-8
@@ -333,7 +333,7 @@ Feature: Bind application to provisioned service
                 apiVersion: stable.example.com/v1
                 kind: ProvisionedBackend
                 name: provisioned-service-2
-              application:
+              workload:
                 name: spec-myapp-provision-srv8
                 apiVersion: apps/v1
                 kind: Deployment

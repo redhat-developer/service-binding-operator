@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/redhat-developer/service-binding-operator/apis"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"k8s.io/api/authentication/v1"
@@ -25,7 +25,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 		typeLookup: typeLookup,
 		get: func(binding interface{}) (pipeline.Context, error) {
 			switch sb := binding.(type) {
-			case *v1alpha2.ServiceBinding:
+			case *v1alpha3.ServiceBinding:
 				if sb.Generation != 0 {
 					sb.Status.ObservedGeneration = sb.Generation
 				}
@@ -43,7 +43,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 							return sb.Status.Binding.Name
 						},
 						setStatusSecretName: func(name string) {
-							sb.Status.Binding = &v1alpha2.ServiceBindingSecretReference{Name: name}
+							sb.Status.Binding = &v1alpha3.ServiceBindingSecretReference{Name: name}
 						},
 						unstructuredBinding: func() (*unstructured.Unstructured, error) {
 							return converter.ToUnstructured(sb)
@@ -55,7 +55,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 							return sb.AsOwnerReference()
 						},
 						groupVersionResource: func() schema.GroupVersionResource {
-							return v1alpha2.GroupVersionResource
+							return v1alpha3.GroupVersionResource
 						},
 						requester: func() *v1.UserInfo {
 							return apis.Requester(sb.ObjectMeta)
@@ -78,7 +78,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 
 type specImpl struct {
 	impl
-	serviceBinding *v1alpha2.ServiceBinding
+	serviceBinding *v1alpha3.ServiceBinding
 }
 
 func (i *specImpl) BindingName() string {
@@ -126,12 +126,12 @@ func (i *specImpl) Services() ([]pipeline.Service, error) {
 
 func (i *specImpl) Applications() ([]pipeline.Application, error) {
 	if i.applications == nil {
-		ref := i.serviceBinding.Spec.Application
+		ref := i.serviceBinding.Spec.Workload
 		gvr, err := i.typeLookup.ResourceForReferable(&ref)
 		if err != nil {
 			return nil, err
 		}
-		if i.serviceBinding.Spec.Application.Name != "" {
+		if i.serviceBinding.Spec.Workload.Name != "" {
 			if !i.canPerform(gvr, ref.Name, i.serviceBinding.Namespace, "get") {
 				return nil, fmt.Errorf("cannot read application %s in namespace %s", ref.Name, i.serviceBinding.Namespace)
 			}
@@ -142,10 +142,10 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 			if err != nil {
 				return nil, emptyApplicationsErr{err}
 			}
-			i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Application.Containers...)})
+			i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Workload.Containers...)})
 		}
-		if i.serviceBinding.Spec.Application.Selector.MatchLabels != nil {
-			matchLabels := i.serviceBinding.Spec.Application.Selector.MatchLabels
+		if i.serviceBinding.Spec.Workload.Selector != nil {
+			matchLabels := i.serviceBinding.Spec.Workload.Selector.MatchLabels
 			opts := metav1.ListOptions{
 				LabelSelector: labels.Set(matchLabels).String(),
 			}
@@ -168,7 +168,7 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 					return nil, fmt.Errorf("cannot update application resource %s in namespace %s", name, i.serviceBinding.Namespace)
 				}
 
-				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Application.Containers...)})
+				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Workload.Containers...)})
 			}
 		}
 	}

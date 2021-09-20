@@ -293,7 +293,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: spec-binding-backend-vm-02
@@ -304,7 +304,7 @@ Feature: Bindings get injected as files in application
                   kind: Backend
                   name: backend-demo-02
 
-                application:
+                workload:
                     name: spec-generic-app-a-d-u-2
                     apiVersion: apps/v1
                     kind: Deployment

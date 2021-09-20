@@ -109,7 +109,7 @@ rules:
   - get
   - list
 - apiGroups:
-  - service.binding
+  - servicebinding.io
   resources:
   - servicebindings
   verbs:
@@ -121,13 +121,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - service.binding
+  - servicebinding.io
   resources:
   - servicebindings/finalizers
   verbs:
   - update
 - apiGroups:
-  - service.binding
+  - servicebinding.io
   resources:
   - servicebindings/status
   verbs:

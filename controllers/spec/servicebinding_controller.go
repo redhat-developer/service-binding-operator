@@ -19,7 +19,7 @@ package spec
 import (
 	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/apis"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/controllers"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
@@ -36,9 +36,9 @@ type ServiceBindingReconciler struct {
 	controllers.BindingReconciler
 }
 
-// +kubebuilder:rbac:groups=service.binding,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=service.binding,resources=servicebindings/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=service.binding,resources=servicebindings/finalizers,verbs=update
+// +kubebuilder:rbac:groups=servicebinding.io,resources=servicebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=servicebinding.io,resources=servicebindings/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=servicebinding.io,resources=servicebindings/finalizers,verbs=update
 
 func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *ServiceBindingReconciler {
 	r := &ServiceBindingReconciler{
@@ -57,7 +57,7 @@ func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *Service
 				}
 				return builder.SpecBuilder.WithContextProvider(context.SpecProvider(client, authClient.SubjectAccessReviews(), lookup)).Build(), nil
 			},
-			ReconcilingObject: func() apis.Object { return &v1alpha2.ServiceBinding{} },
+			ReconcilingObject: func() apis.Object { return &v1alpha3.ServiceBinding{} },
 		},
 	}
 

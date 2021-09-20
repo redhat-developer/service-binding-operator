@@ -122,7 +122,7 @@ kind: ClusterRole
 metadata:
   name: admin-to-backend-beta
   labels:
-    service.binding/controller: "true"
+    servicebinding.io/controller: "true"
 rules:
   - apiGroups: ["beta.example.com"]
     resources: ["backends"]

@@ -3,7 +3,7 @@ kind: CustomResourceDefinition
 metadata:
   name: provisionedbackends.stable.example.com
   annotations:
-    "service.binding/provisioned-service": "true"
+    "servicebinding.io/provisioned-service": "true"
 spec:
   group: stable.example.com
   versions:
@@ -46,7 +46,7 @@ kind: ClusterRole
 metadata:
   name: admin-to-provisionedbackends-stable
   labels:
-    service.binding/controller: "true"
+    servicebinding.io/controller: "true"
 rules:
   - apiGroups: ["stable.example.com"]
     resources: ["provisionedbackends"]

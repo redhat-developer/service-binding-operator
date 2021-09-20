@@ -71,7 +71,7 @@ kind: ClusterRole
 metadata:
   name: admin-to-backend
   labels:
-    service.binding/controller: "true"
+    servicebinding.io/controller: "true"
 rules:
   - apiGroups: ["example.com"]
     resources: ["backends"]

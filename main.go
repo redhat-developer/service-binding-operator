@@ -37,7 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	specv1alpha2 "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
+	specv1alpha2 "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	speccontrollers "github.com/redhat-developer/service-binding-operator/controllers/spec"
 	// +kubebuilder:scaffold:imports
 )

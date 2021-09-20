@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis"
-	specapi "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha2"
+	specapi "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
@@ -46,7 +46,7 @@ var _ = Describe("Spec API Context", func() {
 	Describe("Applications", func() {
 
 		It("should return slice of size 1", func() {
-			ref := specapi.ServiceBindingApplicationReference{
+			ref := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Name:       "app1",
@@ -58,7 +58,7 @@ var _ = Describe("Spec API Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: specapi.ServiceBindingSpec{
-					Application: ref,
+					Workload: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -82,11 +82,11 @@ var _ = Describe("Spec API Context", func() {
 			Expect(applications[0].ContainersPath()).To(Equal(defaultContainerPath))
 		})
 		It("should return slice of size 2 if 2 applications are specified through label selector", func() {
-			ls := metav1.LabelSelector{
+			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
 
-			ref := specapi.ServiceBindingApplicationReference{
+			ref := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Selector:   ls,
@@ -98,7 +98,7 @@ var _ = Describe("Spec API Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: specapi.ServiceBindingSpec{
-					Application: ref,
+					Workload: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -133,11 +133,11 @@ var _ = Describe("Spec API Context", func() {
 			Expect(applications[1].ContainersPath()).To(Equal(defaultContainerPath))
 		})
 		It("should return error if no application is matching through label selector", func() {
-			ls := metav1.LabelSelector{
+			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
 
-			ref := specapi.ServiceBindingApplicationReference{
+			ref := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Selector:   ls,
@@ -149,7 +149,7 @@ var _ = Describe("Spec API Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: specapi.ServiceBindingSpec{
-					Application: ref,
+					Workload: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -171,11 +171,11 @@ var _ = Describe("Spec API Context", func() {
 			Expect(err).To(HaveOccurred())
 		})
 		It("should return error if application list returns error", func() {
-			ls := metav1.LabelSelector{
+			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
 
-			ref := specapi.ServiceBindingApplicationReference{
+			ref := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Selector:   ls,
@@ -187,7 +187,7 @@ var _ = Describe("Spec API Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: specapi.ServiceBindingSpec{
-					Application: ref,
+					Workload: ref,
 				},
 			}
 
@@ -209,7 +209,7 @@ var _ = Describe("Spec API Context", func() {
 			Expect(err.Error()).To(Equal(expectedError))
 		})
 		It("should return error if application is not found", func() {
-			ref := specapi.ServiceBindingApplicationReference{
+			ref := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Name:       "app1",
@@ -221,7 +221,7 @@ var _ = Describe("Spec API Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: specapi.ServiceBindingSpec{
-					Application: ref,
+					Workload: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -238,7 +238,7 @@ var _ = Describe("Spec API Context", func() {
 			Expect(err).To(HaveOccurred())
 		})
 		It("should return application with bindable containers", func() {
-			ref := specapi.ServiceBindingApplicationReference{
+			ref := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Name:       "app1",
@@ -251,7 +251,7 @@ var _ = Describe("Spec API Context", func() {
 					Namespace: "ns1",
 				},
 				Spec: specapi.ServiceBindingSpec{
-					Application: ref,
+					Workload: ref,
 				},
 			}
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
@@ -652,7 +652,7 @@ var _ = Describe("Spec API Context", func() {
 		})
 
 		It("should update application if changed", func() {
-			sb.Spec.Application = specapi.ServiceBindingApplicationReference{
+			sb.Spec.Workload = specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Name:       "app1",
@@ -661,7 +661,7 @@ var _ = Describe("Spec API Context", func() {
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
 
 			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
-			ref := sb.Spec.Application
+			ref := sb.Spec.Workload
 			typeLookup.EXPECT().ResourceForReferable(&ref).Return(&gvr, nil)
 
 			u := &unstructured.Unstructured{}
@@ -713,12 +713,12 @@ var _ = Describe("Spec API Context", func() {
 		It("should not update service binding if its uid is unset", func() {
 			sb.UID = ""
 			sb.Name = "sb2"
-			app := specapi.ServiceBindingApplicationReference{
+			app := specapi.ServiceBindingWorkloadReference{
 				APIVersion: "app/v1",
 				Kind:       "Foo",
 				Name:       "app1",
 			}
-			sb.Spec.Application = app
+			sb.Spec.Workload = app
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo", Value: "v1"})
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
 

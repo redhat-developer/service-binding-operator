@@ -16,7 +16,7 @@ class Servicebindingoperator():
 
     def check_crd(self):
         crd_type = "crd"
-        crd_name = "servicebindings.service.binding"
+        crd_name = "servicebindings.servicebinding.io"
         assert self.openshift.is_resource_in(crd_type, crd_name), f"CRD '{crd_name}' does not exist"
         return True
 

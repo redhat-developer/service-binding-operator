@@ -247,13 +247,13 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev cannot read resource backends/$scenario_id in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: $scenario_id
             spec:
                 type: foo
-                application:
+                workload:
                     name: $scenario_id
                     apiVersion: apps/v1
                     kind: Deployment
@@ -294,13 +294,13 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev cannot read resource secrets/$scenario_id in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: $scenario_id
             spec:
                 type: foo
-                application:
+                workload:
                     name: $scenario_id
                     apiVersion: apps/v1
                     kind: Deployment
@@ -341,13 +341,13 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev cannot read resource configmaps/$scenario_id in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: $scenario_id
             spec:
                 type: foo
-                application:
+                workload:
                     name: $scenario_id
                     apiVersion: apps/v1
                     kind: Deployment
@@ -377,13 +377,13 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev has 'backends-view' role in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: $scenario_id
             spec:
                 type: foo
-                application:
+                workload:
                     name: $scenario_id
                     apiVersion: apps/v1
                     kind: Deployment
