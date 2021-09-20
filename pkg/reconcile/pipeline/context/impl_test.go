@@ -11,11 +11,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
-	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
 	pipelinemocks "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 	corev1 "k8s.io/api/core/v1"
+	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -289,11 +290,13 @@ var _ = Describe("Context", func() {
 		type testCase struct {
 			serviceRefs []bindingapi.Ref
 			serviceGVKs []schema.GroupVersionKind
+			hasCrd      bool
 		}
 
 		DescribeTable("return successfully",
 			func(tc *testCase) {
 				sb := defServiceBinding("sb1", "ns1", tc.serviceRefs...)
+				gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 				var objs []runtime.Object
 				for i, gvk := range tc.serviceGVKs {
 					u := &unstructured.Unstructured{}
@@ -301,12 +304,18 @@ var _ = Describe("Context", func() {
 					u.SetName(fmt.Sprintf("s%d", i))
 					u.SetNamespace(sb.Namespace)
 					objs = append(objs, u)
+					if tc.hasCrd {
+						crd := &unstructured.Unstructured{}
+						crd.SetGroupVersionKind(v1apiextensions.SchemeGroupVersion.WithKind("CustomResourceDefinition"))
+						crd.SetName(gvr.GroupResource().String())
+						objs = append(objs, crd)
+					}
 				}
 				client := fake.NewSimpleDynamicClient(runtime.NewScheme(), objs...)
 				authClient := &fakeauth.FakeAuthorizationV1{}
 
-				gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 				typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil).Times(len(tc.serviceGVKs))
+				typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(gvr, nil).Times(len(tc.serviceGVKs))
 
 				ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 				Expect(err).NotTo(HaveOccurred())
@@ -316,14 +325,13 @@ var _ = Describe("Context", func() {
 				Expect(len(services)).To(Equal(len(tc.serviceGVKs)))
 				for i, s := range services {
 					Expect(s.Resource()).To(Equal(objs[i]))
-					serviceImpl, ok := s.(*service)
-					if !ok {
-						Fail("not service impl")
+					Expect(*s.Id()).To(Equal(fmt.Sprintf("id%v", i)))
+					if tc.hasCrd {
+						crd, err := s.CustomResourceDefinition()
+						Expect(err).NotTo(HaveOccurred())
+						Expect(crd).NotTo(BeNil())
+						Expect(crd.Resource().GetName()).To(Equal(gvr.GroupResource().String()))
 					}
-					Expect(serviceImpl.client).To(Equal(client))
-					Expect(serviceImpl.groupVersionResource).To(Equal(gvr))
-					Expect(serviceImpl.namespace).To(Equal(sb.Namespace))
-					Expect(*serviceImpl.id).To(Equal(fmt.Sprintf("id%v", i)))
 				}
 			},
 			Entry("single service", &testCase{
@@ -342,6 +350,24 @@ var _ = Describe("Context", func() {
 						Kind:    "Bar",
 					},
 				},
+			}),
+			Entry("single service + crd", &testCase{
+				serviceRefs: []bindingapi.Ref{
+					{
+						Group:   "foo",
+						Version: "v1",
+						Kind:    "Bar",
+						Name:    "s0",
+					},
+				},
+				serviceGVKs: []schema.GroupVersionKind{
+					{
+						Group:   "foo",
+						Version: "v1",
+						Kind:    "Bar",
+					},
+				},
+				hasCrd: true,
 			}),
 			Entry("two services", &testCase{
 				serviceRefs: []bindingapi.Ref{
@@ -415,6 +441,7 @@ var _ = Describe("Context", func() {
 
 			gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil).Times(2)
+			typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(gvr, nil).Times(1)
 
 			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 			Expect(err).NotTo(HaveOccurred())

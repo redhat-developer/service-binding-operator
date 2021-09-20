@@ -38,6 +38,7 @@ rules:
   verbs:
   - get
   - list
+  - watch
 - apiGroups:
   - apps
   resources:
@@ -77,6 +78,32 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - bindablekinds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - bindablekinds/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - bindablekinds/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - binding.operators.coreos.com
   resources:

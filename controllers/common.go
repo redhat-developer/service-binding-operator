@@ -3,11 +3,11 @@ package controllers
 import (
 	ctx "context"
 	"flag"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 
 	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
-	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -41,14 +41,14 @@ type BindingReconciler struct {
 
 	pipeline pipeline.Pipeline
 
-	PipelineProvider func(*rest.Config, context.K8STypeLookup) (pipeline.Pipeline, error)
+	PipelineProvider func(*rest.Config, kubernetes.K8STypeLookup) (pipeline.Pipeline, error)
 
 	ReconcilingObject func() apis.Object
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	pipeline, err := r.PipelineProvider(mgr.GetConfig(), context.ResourceLookup(mgr.GetRESTMapper()))
+	pipeline, err := r.PipelineProvider(mgr.GetConfig(), kubernetes.ResourceLookup(mgr.GetRESTMapper()))
 	if err != nil {
 		return err
 	}

@@ -1,10 +1,12 @@
-package context
+package service
 
 import (
 	"errors"
+	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,15 +22,29 @@ import (
 var _ = Describe("Service", func() {
 
 	var (
-		client *fake.FakeDynamicClient
+		client     *fake.FakeDynamicClient
+		mockCtrl   *gomock.Controller
+		typeLookup *mocks.MockK8STypeLookup
 	)
+
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+		typeLookup = mocks.NewMockK8STypeLookup(mockCtrl)
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
 
 	DescribeTable("CRD exist", func(version string, gr schema.GroupResource) {
 		crd := crd(version, gr)
 		client = fake.NewSimpleDynamicClient(runtime.NewScheme(), crd)
 		gvr := gr.WithVersion(version)
-		ns := "n1"
-		service := &service{client: client, namespace: ns, groupVersionResource: &gvr}
+		typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(&gvr, nil)
+
+		builer := NewBuilder(typeLookup).WithClient(client)
+		service, err := builer.Build(&unstructured.Unstructured{})
+		Expect(err).NotTo(HaveOccurred())
 
 		res, err := service.CustomResourceDefinition()
 		Expect(err).NotTo(HaveOccurred())
@@ -39,8 +55,11 @@ var _ = Describe("Service", func() {
 	)
 	It("should return nil when no crd exist", func() {
 		client = fake.NewSimpleDynamicClient(runtime.NewScheme())
+		typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(&schema.GroupVersionResource{Group: "app", Resource: "deployments", Version: "v1"}, nil)
+		builer := NewBuilder(typeLookup).WithClient(client)
+		service, err := builer.Build(&unstructured.Unstructured{})
+		Expect(err).NotTo(HaveOccurred())
 
-		service := &service{client: client, groupVersionResource: &schema.GroupVersionResource{Group: "app", Resource: "deployments", Version: "v1"}}
 		res, err := service.CustomResourceDefinition()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(res).To(BeNil())
@@ -164,3 +183,62 @@ func crd(version string, gr schema.GroupResource) *unstructured.Unstructured {
 	u.SetName(gr.String())
 	return u
 }
+
+var _ = Describe("Builder", func() {
+	var (
+		mockCtrl   *gomock.Controller
+		typeLookup *mocks.MockK8STypeLookup
+	)
+
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+		typeLookup = mocks.NewMockK8STypeLookup(mockCtrl)
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	It("should use custom CRD reader set on builder", func() {
+		gvk := schema.GroupVersionKind{Kind: "Foo"}
+		gvr := schema.GroupVersionResource{Resource: "foo"}
+		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
+		crdResource := &unstructured.Unstructured{}
+		crdResource.SetName("crdfoo1")
+		u := &unstructured.Unstructured{}
+		u.SetName("foo1")
+		u.SetGroupVersionKind(gvk)
+		builder := NewBuilder(typeLookup).WithCrdReader(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
+			return crdResource, nil
+		})
+		s, err := builder.Build(u)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(s.Resource()).To(Equal(u))
+		crd, err := s.CustomResourceDefinition()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(crd.Resource()).To(Equal(crdResource))
+	})
+
+	It("should use custom CRD reader set on buil", func() {
+		gvk := schema.GroupVersionKind{Kind: "Foo"}
+		gvr := schema.GroupVersionResource{Resource: "foo"}
+		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
+		crdResource := &unstructured.Unstructured{}
+		crdResource.SetName("crdfoo1")
+		u := &unstructured.Unstructured{}
+		u.SetName("foo1")
+		u.SetGroupVersionKind(gvk)
+		builder := NewBuilder(typeLookup)
+
+		s, err := builder.Build(u, CrdReaderOption(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
+			return crdResource, nil
+		}))
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(s.Resource()).To(Equal(u))
+		crd, err := s.CustomResourceDefinition()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(crd.Resource()).To(Equal(crdResource))
+	})
+})

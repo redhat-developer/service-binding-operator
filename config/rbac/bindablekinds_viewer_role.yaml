@@ -1,0 +1,16 @@
+# permissions for end users to view bindablekinds.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+  name: bindablekinds-viewer-role
+rules:
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - bindablekinds
+  verbs:
+  - get
+  - list
+  - watch

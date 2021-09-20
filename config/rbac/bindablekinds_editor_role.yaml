@@ -1,0 +1,18 @@
+# permissions for end users to edit bindablekinds.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bindablekinds-editor-role
+rules:
+- apiGroups:
+  - binding.operators.coreos.com
+  resources:
+  - bindablekinds
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch

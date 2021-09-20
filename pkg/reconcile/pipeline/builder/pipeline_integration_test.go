@@ -9,10 +9,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
-	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -119,6 +119,7 @@ var _ = Describe("Default Pipeline", func() {
 				return &serviceGVR, nil
 			}
 		}).MinTimes(1)
+		typeLookup.EXPECT().ResourceForKind(serviceGVK).Return(&serviceGVR, nil)
 
 		authClient := &fakeauth.FakeAuthorizationV1{}
 

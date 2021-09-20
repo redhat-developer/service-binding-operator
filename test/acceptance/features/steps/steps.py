@@ -9,6 +9,7 @@ import polling2
 import parse
 import binascii
 import yaml
+import json
 
 from string import Template
 from behave import given, register_type, then, when, step
@@ -450,6 +451,31 @@ def check_resource_unreadable(context, user, resource, namespace=None):
     assert res is None, f"User {user} should not be able to read {resource} in {namespace} namespace"
 
 
+@step(u'User {user} can read resource {resource}')
+def check_resource_readable(context, user, resource, namespace=None):
+    openshift = Openshift()
+    data = resource.split("/")
+    res_type = data[0]
+    res_name = Template(data[1]).substitute(scenario_id=scenario_id(context))
+    ns = namespace if namespace is not None else context.namespace.name
+    res = openshift.get_resource_info_by_jsonpath(resource_type=res_type, name=res_name, namespace=ns, user=user)
+    assert res is not None, f"User {user} should be able to read {resource} in {ns} namespace"
+
+
+@step(u'Kind {kind} with apiVersion {group}/{version} is listed in bindable kinds')
+def assert_bindable_kind(context, kind, group, version):
+    polling2.poll(lambda: exist_bindable_kind(kind, group, version), step=5, timeout=400)
+
+
+def exist_bindable_kind(kind, group, version):
+    openshift = Openshift()
+    res = openshift.get_resource_info_by_jsonpath(resource_type="bindablekinds", name="bindable-kinds", json_path="{.status}")
+    for gvk in json.loads(res):
+        if gvk["group"] == group and gvk["version"] == version and gvk["kind"] == kind:
+            return True
+    return False
+
+
 @step(u"User {user} has '{role_name}' role in test namespace")
 def user_role_maybe_create(context, user, role_name):
     openshift = Openshift()
@@ -469,6 +495,12 @@ def remove_user_rolebindings(context):
 def check_cluster_role_exists(context, cluster_role_name):
     openshift = Openshift()
     assert openshift.is_resource_in("clusterroles", cluster_role_name), f"Could not find the cluster role : '{cluster_role_name}' in the cluster"
+
+
+@then(u'{type}/{resource_name} is available in the cluster')
+def check_resource_exists(context, type, resource_name):
+    openshift = Openshift()
+    assert openshift.is_resource_in(type, resource_name), f"Could not find the resource: '{type}/{resource_name}' in the cluster"
 
 
 @then(u'operator service account is bound to "{cluster_role_name}" in "{cluster_rolebinding_name}"')

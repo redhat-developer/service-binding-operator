@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
 	"k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,7 +21,7 @@ import (
 
 var _ pipeline.Context = &specImpl{}
 
-var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient authv1.SubjectAccessReviewInterface, typeLookup K8STypeLookup) pipeline.ContextProvider {
+var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient authv1.SubjectAccessReviewInterface, typeLookup kubernetes.K8STypeLookup) pipeline.ContextProvider {
 	return &provider{
 		client:     client,
 		typeLookup: typeLookup,
@@ -60,6 +62,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 						requester: func() *v1.UserInfo {
 							return apis.Requester(sb.ObjectMeta)
 						},
+						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client),
 					},
 					serviceBinding: sb,
 				}
@@ -114,7 +117,11 @@ func (i *specImpl) Services() ([]pipeline.Service, error) {
 		if err != nil {
 			return nil, err
 		}
-		i.services = append(i.services, &service{client: i.client, resource: u, groupVersionResource: gvr, namespace: i.serviceBinding.Namespace})
+		s, err := i.serviceBuilder.Build(u)
+		if err != nil {
+			return nil, err
+		}
+		i.services = append(i.services, s)
 	}
 	services := make([]pipeline.Service, len(i.services))
 	for idx := 0; idx < len(i.services); idx++ {

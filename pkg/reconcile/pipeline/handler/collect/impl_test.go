@@ -160,7 +160,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 					"service.binding/foo":                   "path={.status.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2":                  "path={.status.foo2},objectType=Secret,sourceValue=username",
 				})
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{}, nil)
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{}, nil)
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo2"}))
 				collect.BindingDefinitions(ctx)
@@ -172,14 +172,14 @@ var _ = Describe("Collect Binding Definitions", func() {
 					"service.binding/foo":  "path={.status.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2": "path={.status.foo2},objectType=Secret,sourceValue=username",
 				})
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{}, nil)
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{}, nil)
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo2"}))
 				collect.BindingDefinitions(ctx)
 			})
 
 			It("should extract binding definitions from status descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
 					StatusDescriptors: []olmv1alpha1.StatusDescriptor{
 						{
 							Path:         "foo",
@@ -201,7 +201,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 			})
 
 			It("should extract binding definitions from spec descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
 					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
 						{
 							Path:         "foo",
@@ -223,7 +223,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 			})
 
 			It("should extract binding definitions both from spec and status descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
 					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
 						{
 							Path:         "foo",
@@ -243,7 +243,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 			})
 
 			It("binding definitions on CRD take precedence over those from descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
 					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
 						{
 							Path:         "foo",
@@ -266,7 +266,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 			})
 
 			It("binding definitions on service take precedence over those from descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
 					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
 						{
 							Path:         "foo",
@@ -289,7 +289,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 			})
 
 			It("binding definitions on service take precedence over those from CRD", func() {
-				crd.EXPECT().Descriptor().Return(&olmv1alpha1.CRDDescription{}, nil)
+				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{}, nil)
 				crdContent.SetAnnotations(map[string]string{
 					"service.binding/foo":  "path={.spec.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2": "path={.spec.foo2},objectType=Secret,sourceValue=username",

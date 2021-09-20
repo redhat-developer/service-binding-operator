@@ -21,6 +21,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/controllers"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
@@ -46,7 +47,7 @@ func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *Service
 			Client: client,
 			Log:    log,
 			Scheme: scheme,
-			PipelineProvider: func(conf *rest.Config, lookup context.K8STypeLookup) (pipeline.Pipeline, error) {
+			PipelineProvider: func(conf *rest.Config, lookup kubernetes.K8STypeLookup) (pipeline.Pipeline, error) {
 				client, err := dynamic.NewForConfig(conf)
 				if err != nil {
 					return nil, err

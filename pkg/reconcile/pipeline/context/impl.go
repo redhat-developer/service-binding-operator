@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
+	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
 	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/authorization/v1"
 	clientauthzv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
@@ -32,10 +34,10 @@ type impl struct {
 
 	subjectAccessReviewClient clientauthzv1.SubjectAccessReviewInterface
 
-	typeLookup K8STypeLookup
+	typeLookup kubernetes.K8STypeLookup
 
 	//nolint
-	services []*service
+	services []pipeline.Service
 
 	applications []*application
 
@@ -62,6 +64,8 @@ type impl struct {
 	groupVersionResource func() schema.GroupVersionResource
 
 	requester func() *authv1.UserInfo
+
+	serviceBuilder service.Builder
 }
 
 type bindingImpl struct {
@@ -75,7 +79,7 @@ func (i *impl) UnbindRequested() bool {
 
 type provider struct {
 	client     dynamic.Interface
-	typeLookup K8STypeLookup
+	typeLookup kubernetes.K8STypeLookup
 	get        func(binding interface{}) (pipeline.Context, error)
 }
 
@@ -83,7 +87,7 @@ func (p *provider) Get(binding interface{}) (pipeline.Context, error) {
 	return p.get(binding)
 }
 
-var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientauthzv1.SubjectAccessReviewInterface, typeLookup K8STypeLookup) pipeline.ContextProvider {
+var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientauthzv1.SubjectAccessReviewInterface, typeLookup kubernetes.K8STypeLookup) pipeline.ContextProvider {
 	return &provider{
 		client:     client,
 		typeLookup: typeLookup,
@@ -118,6 +122,7 @@ var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientau
 						requester: func() *authv1.UserInfo {
 							return apis.Requester(sb.ObjectMeta)
 						},
+						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client).LookOwnedResources(sb.Spec.DetectBindingResources),
 					},
 					serviceBinding: sb,
 				}, nil
@@ -191,7 +196,16 @@ func (i *bindingImpl) Services() ([]pipeline.Service, error) {
 			if err != nil {
 				return nil, err
 			}
-			i.services = append(i.services, &service{client: i.client, resource: u, groupVersionResource: gvr, namespace: *serviceRef.Namespace, id: serviceRef.Id, lookForOwnedResources: i.serviceBinding.Spec.DetectBindingResources})
+			var s pipeline.Service
+			if serviceRef.Id != nil {
+				s, err = i.serviceBuilder.Build(u, service.Id(*serviceRef.Id))
+			} else {
+				s, err = i.serviceBuilder.Build(u)
+			}
+			if err != nil {
+				return nil, err
+			}
+			i.services = append(i.services, s)
 		}
 	}
 	services := make([]pipeline.Service, len(i.services))

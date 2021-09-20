@@ -2,4 +2,5 @@
 resources:
 - operators_v1alpha1_servicebinding.yaml
 - servicebinding.io_v1alpha3_servicebinding.yaml
+- binding_v1alpha1_bindablekinds.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples

@@ -47,25 +47,29 @@ func NewDefinitionBuilder(annotationName string, annotationValue string, configM
 	}
 }
 
-func (m *annotationBackedDefinitionBuilder) isServiceBindingAnnotation() (bool, error) {
-	if m.name == ProvisionedServiceAnnotationKey {
+func IsServiceBindingAnnotation(annotationKey string) (bool, error) {
+	if annotationKey == ProvisionedServiceAnnotationKey {
 		return false, nil
 	}
 
-	if m.name == AnnotationPrefix {
+	if annotationKey == AnnotationPrefix {
 		return true, nil
-	} else if strings.HasPrefix(m.name, AnnotationPrefix) {
-		if strings.HasPrefix(m.name, AnnotationPrefix+"/") {
+	} else if strings.HasPrefix(annotationKey, AnnotationPrefix) {
+		if strings.HasPrefix(annotationKey, AnnotationPrefix+"/") {
 			return true, nil
 		}
 
 		// it starts with AnnotationPrefix, but has extra text at the end not
 		// separated by a /, so treat it as an error
-		return false, fmt.Errorf("can't process annotation with name %q", m.name)
+		return false, fmt.Errorf("can't process annotation with name %q", annotationKey)
 	}
 
 	// bail out when the annotation name doesn't start with "service.binding"
 	return false, nil
+}
+
+func (m *annotationBackedDefinitionBuilder) isServiceBindingAnnotation() (bool, error) {
+	return IsServiceBindingAnnotation(m.name)
 }
 
 func (m *annotationBackedDefinitionBuilder) outputName() string {

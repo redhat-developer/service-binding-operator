@@ -7,7 +7,6 @@ import (
 	"reflect"
 	"strings"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -56,7 +55,7 @@ func BindingDefinitions(ctx pipeline.Context) {
 				return
 			}
 			if descr != nil {
-				util.MergeMaps(anns, bindingAnnotations(descr))
+				util.MergeMaps(anns, descr.BindingAnnotations())
 			}
 			util.MergeMaps(anns, crd.Resource().GetAnnotations())
 		}
@@ -293,59 +292,4 @@ func makeBindingDefinition(key string, value string, ctx pipeline.Context) (bind
 		func(namespace string, name string) (*unstructured.Unstructured, error) {
 			return ctx.ReadSecret(namespace, name)
 		}).Build()
-}
-
-func bindingAnnotations(crdDescription *olmv1alpha1.CRDDescription) map[string]string {
-	anns := make(map[string]string)
-	for _, sd := range crdDescription.StatusDescriptors {
-		objectType := getObjectType(sd.XDescriptors)
-		for _, xd := range sd.XDescriptors {
-			loadDescriptor(anns, sd.Path, xd, "status", objectType)
-		}
-	}
-
-	for _, sd := range crdDescription.SpecDescriptors {
-		objectType := getObjectType(sd.XDescriptors)
-		for _, xd := range sd.XDescriptors {
-			loadDescriptor(anns, sd.Path, xd, "spec", objectType)
-		}
-	}
-	return anns
-}
-
-func getObjectType(descriptors []string) string {
-	typeAnno := "urn:alm:descriptor:io.kubernetes:"
-	for _, desc := range descriptors {
-		if strings.HasPrefix(desc, typeAnno) {
-			return strings.TrimPrefix(desc, typeAnno)
-		}
-	}
-	return ""
-}
-
-func loadDescriptor(anns map[string]string, path string, descriptor string, root string, objectType string) {
-	if !strings.HasPrefix(descriptor, binding.AnnotationPrefix) {
-		return
-	}
-
-	keys := strings.Split(descriptor, ":")
-	key := binding.AnnotationPrefix
-	value := ""
-
-	if len(keys) > 1 {
-		key += "/" + keys[1]
-	} else {
-		key += "/" + path
-	}
-
-	p := []string{fmt.Sprintf("path={.%s.%s}", root, path)}
-	if len(keys) > 1 {
-		p = append(p, keys[2:]...)
-	}
-	if objectType != "" {
-		p = append(p, []string{fmt.Sprintf("objectType=%s", objectType)}...)
-	}
-
-	value += strings.Join(p, ",")
-	anns[key] = value
 }
