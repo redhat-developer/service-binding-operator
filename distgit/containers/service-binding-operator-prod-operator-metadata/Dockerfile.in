@@ -5,19 +5,19 @@ COPY manifests /manifests/
 COPY metadata /metadata/
 
 LABEL com.redhat.component="service-binding-operator-bundle-container" \
-	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator-metadata"
+	name="ocp-tools-4/service-binding-operator-bundle"
 
 
 LABEL com.redhat.delivery.operator.bundle=true \
-      com.redhat.openshift.versions="v4.6" \
+      com.redhat.openshift.versions="v4.7" \
       com.redhat.delivery.backport=false
 
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
 LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=rh-service-binding-operator
-LABEL operators.operatorframework.io.bundle.channels.v1=preview,candidate
-LABEL operators.operatorframework.io.bundle.channel.default.v1=candidate
+LABEL operators.operatorframework.io.bundle.channels.v1=stable
+LABEL operators.operatorframework.io.bundle.channel.default.v1=stable
 LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.3.0
 LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3

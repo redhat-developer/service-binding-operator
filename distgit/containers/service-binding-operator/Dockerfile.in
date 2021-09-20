@@ -32,7 +32,7 @@ USER 10001
 ENTRYPOINT ["/manager"]
 
 LABEL com.redhat.component="service-binding-operator-container" \
-	name="ocp-tools-4-tech-preview/service-binding-rhel8-operator" \
+	name="ocp-tools-4/service-binding-rhel8-operator" \
 	description="Service Binding Operator" \
 	summary="Service Binding Operator" \
 	io.openshift.tags="service,binding" \
