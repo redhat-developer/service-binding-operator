@@ -37,9 +37,9 @@ webhooks:
   name: mspec-servicebinding.kb.io
   rules:
   - apiGroups:
-    - service.binding
+    - servicebinding.io
     apiVersions:
-    - v1alpha2
+    - v1alpha3
     operations:
     - CREATE
     - UPDATE
@@ -79,14 +79,14 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-service-binding-v1alpha2-servicebinding
+      path: /validate-servicebinding-io-v1alpha3-servicebinding
   failurePolicy: Fail
   name: vspecservicebinding.kb.io
   rules:
   - apiGroups:
-    - service.binding
+    - servicebinding.io
     apiVersions:
-    - v1alpha2
+    - v1alpha3
     operations:
     - UPDATE
     resources:

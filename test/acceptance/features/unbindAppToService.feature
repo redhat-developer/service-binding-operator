@@ -194,6 +194,7 @@ Feature: Unbind an application from a service
         Then Service Binding "unready-binding" is not persistent in the cluster
 
     @smoke
+    @spec
     Scenario: SPEC Remove bindings from test application
         Given Generic test application "spec-remove-bindings-as-files-app" is running
         * The Custom Resource is present
@@ -211,7 +212,7 @@ Feature: Unbind an application from a service
             """
         * Service Binding is applied
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: spec-remove-bindings-as-files-app-sb
@@ -222,7 +223,7 @@ Feature: Unbind an application from a service
                   kind: Backend
                   name: remove-bindings-as-files-app-backend
 
-                application:
+                workload:
                     name: spec-remove-bindings-as-files-app
                     apiVersion: apps/v1
                     kind: Deployment

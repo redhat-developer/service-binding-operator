@@ -22,7 +22,7 @@ class ServiceBinding(object):
         self.namespace = namespace
         apiVersion = res["apiVersion"]
         self.crdName = f"servicebindings.{apiVersion.split('/')[0]}"
-        if apiVersion == "service.binding":
+        if apiVersion == "servicebinding.io":
             self.secretPath = '{.status.binding.name}'
         else:
             self.secretPath = '{.status.secret}'
@@ -87,7 +87,7 @@ def sbo_is_ready(context, sbr_name):
     sbo_jq_is(context, '.status.conditions[] | select(.type=="InjectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
     sb = context.bindings[sbr_name]
-    if sb.crdName == "servicebindings.service.binding":
+    if sb.crdName == "servicebindings.servicebinding.io":
         assert sb.get_info_by_jsonpath("{.metadata.generation") == sb.get_info_by_jsonpath("{.status.observedGeneration"), \
             f"Service binding {sb.name} observed generation not equal to generation"
     context.sb_secret = context.bindings[sbr_name].get_secret_name()

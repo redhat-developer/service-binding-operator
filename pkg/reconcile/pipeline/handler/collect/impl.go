@@ -96,7 +96,7 @@ func BindingItems(ctx pipeline.Context) {
 	}
 }
 
-const ProvisionedServiceAnnotationKey = "service.binding/provisioned-service"
+const ProvisionedServiceAnnotationKey = "servicebinding.io/provisioned-service"
 
 func ProvisionedService(ctx pipeline.Context) {
 	services, _ := ctx.Services()

@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha2
+package v1alpha3
 
 import (
 	"errors"
@@ -38,7 +38,7 @@ func (r *ServiceBinding) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-service-binding-v1alpha2-servicebinding,mutating=false,failurePolicy=fail,sideEffects=None,groups=service.binding,resources=servicebindings,verbs=update,versions=v1alpha2,name=vspecservicebinding.kb.io,admissionReviewVersions={v1beta1}
+// +kubebuilder:webhook:path=/validate-servicebinding-io-v1alpha3-servicebinding,mutating=false,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=update,versions=v1alpha3,name=vspecservicebinding.kb.io,admissionReviewVersions={v1beta1}
 
 var _ webhook.Validator = &ServiceBinding{}
 

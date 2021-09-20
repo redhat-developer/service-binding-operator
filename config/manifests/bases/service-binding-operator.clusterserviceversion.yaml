@@ -25,7 +25,7 @@ spec:
     - description: (Tech Preview) Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload. Available as tech preview but subjected to change in near future.
       displayName: Service Binding (Spec API Tech Preview)
       kind: ServiceBinding
-      name: servicebindings.service.binding
+      name: servicebindings.servicebinding.io
       version: v1alpha2
   description: " The Service Binding Operator enables application developers to more
                    easily bind applications together with operator managed backing services such

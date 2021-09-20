@@ -83,7 +83,7 @@ kind: ClusterRole
 metadata:
   name: backends-view
   labels:
-    service.binding/controller: "true"
+    servicebinding.io/controller: "true"
 rules:
   - apiGroups:
       - stable.example.com

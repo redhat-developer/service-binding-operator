@@ -14,7 +14,7 @@ import (
 
 const (
 	finalizerName          = "finalizer.servicebinding.openshift.io"
-	requesterAnnotationKey = "service.binding/requester"
+	requesterAnnotationKey = "servicebinding.io/requester"
 )
 
 func MaybeAddFinalizer(obj Object) bool {

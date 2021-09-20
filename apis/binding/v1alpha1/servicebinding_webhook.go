@@ -43,7 +43,7 @@ func (r *ServiceBinding) SetupWebhookWithManager(mgr ctrl.Manager, serviceAccoun
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=binding.operators.coreos.com,resources=servicebindings,verbs=create;update,versions=v1alpha1,name=mservicebinding.kb.io,admissionReviewVersions={v1beta1}
-// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=service.binding,resources=servicebindings,verbs=create;update,versions=v1alpha2,name=mspec-servicebinding.kb.io,admissionReviewVersions={v1beta1}
+// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=create;update,versions=v1alpha3,name=mspec-servicebinding.kb.io,admissionReviewVersions={v1beta1}
 
 type admisionHandler struct {
 	decoder            *admission.Decoder

@@ -1,4 +1,4 @@
-apiVersion: service.binding/v1alpha2
+apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding
 metadata:
   name: servicebinding-sample

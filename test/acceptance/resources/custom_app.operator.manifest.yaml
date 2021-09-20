@@ -113,7 +113,7 @@ kind: ClusterRole
 metadata:
   name: admin-to-backend-appconfigs
   labels:
-    service.binding/controller: "true"
+    servicebinding.io/controller: "true"
 rules:
   - apiGroups: ["stable.example.com"]
     resources: ["appconfigs"]

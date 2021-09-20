@@ -915,7 +915,7 @@ Feature: Bind values from a secret referred in backing service resource
         * Generic test application "spec-myapp-provision-srv2" is running
         When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: spec-direct-secret-1
@@ -924,7 +924,7 @@ Feature: Bind values from a secret referred in backing service resource
                 apiVersion: v1
                 kind: Secret
                 name: provisioned-secret-1
-              application:
+              workload:
                 name: spec-myapp-provision-srv2
                 apiVersion: apps/v1
                 kind: Deployment
@@ -960,7 +960,7 @@ Feature: Bind values from a secret referred in backing service resource
         * Generic test application "spec-myapp-provision-srv6" is running
         When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: spec-bind-provisioned-service-6
@@ -969,7 +969,7 @@ Feature: Bind values from a secret referred in backing service resource
                 apiVersion: v1
                 kind: Secret
                 name: provisioned-secret-6
-              application:
+              workload:
                 name: spec-myapp-provision-srv6
                 apiVersion: apps/v1
                 kind: Deployment
@@ -1015,7 +1015,7 @@ Feature: Bind values from a secret referred in backing service resource
 
         When Service Binding is applied
           """
-          apiVersion: service.binding/v1alpha2
+          apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
               name: multi-container-binding
@@ -1024,7 +1024,7 @@ Feature: Bind values from a secret referred in backing service resource
                 apiVersion: v1
                 kind: Secret
                 name: provisioned-secret-1
-              application:
+              workload:
                 name: multi-container-app
                 apiVersion: stable.example.com/v1
                 kind: AppConfig

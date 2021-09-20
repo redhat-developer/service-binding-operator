@@ -150,7 +150,7 @@ Feature: Successful Service Binding are Immutable
         Given Generic test application "spec-app-immutable" is running
         And Service Binding is applied
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: spec-binding-immutable
@@ -160,7 +160,7 @@ Feature: Successful Service Binding are Immutable
                   apiVersion: stable.example.com/v1
                   kind: Backend
                   name: service-immutable
-                application:
+                workload:
                     name: spec-app-immutable
                     apiVersion: apps/v1
                     kind: Deployment
@@ -168,7 +168,7 @@ Feature: Successful Service Binding are Immutable
         When Service Binding "spec-binding-immutable" is ready
         Then Service Binding is unable to be applied
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: spec-binding-immutable
@@ -187,7 +187,7 @@ Feature: Successful Service Binding are Immutable
         Given Generic test application "spec-app-immutable-2" is running
         And Service Binding is applied
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: spec-binding-immutable-2
@@ -197,7 +197,7 @@ Feature: Successful Service Binding are Immutable
                   apiVersion: stable.example.com/v1
                   kind: Backend
                   name: service-immutable
-                application:
+                workload:
                     name: spec-app-immutable-2
                     apiVersion: apps/v1
                     kind: Deployment
@@ -205,7 +205,7 @@ Feature: Successful Service Binding are Immutable
         When Service Binding "spec-binding-immutable-2" is ready
         Then Service Binding is applied
             """
-            apiVersion: service.binding/v1alpha2
+            apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
                 name: spec-binding-immutable-2
@@ -219,7 +219,7 @@ Feature: Successful Service Binding are Immutable
                   apiVersion: stable.example.com/v1
                   kind: Backend
                   name: service-immutable
-                application:
+                workload:
                     name: spec-app-immutable-2
                     apiVersion: apps/v1
                     kind: Deployment
