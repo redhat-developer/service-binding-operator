@@ -83,6 +83,39 @@ Feature: Bind application to provisioned service
             bar
             """
 
+  @openshift
+  Scenario: Bind provisioned service to application deployed as deployment config
+    Given Generic test application is running as deployment config
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: stable.example.com
+                version: v1
+                kind: ProvisionedBackend
+                name: provisioned-service-1
+              application:
+                name: $scenario_id
+                group: apps.openshift.io
+                version: v1
+                resource: deploymentconfigs
+          """
+    Then Service Binding is ready
+    And jq ".status.secret" of Service Binding should be changed to "provisioned-secret-1"
+    And Content of file "/bindings/$scenario_id/username" in application pod is
+            """
+            foo
+            """
+    And Content of file "/bindings/$scenario_id/password" in application pod is
+            """
+            bar
+            """
+
+
   @negative
   Scenario: Fail binding to provisioned service if secret name is not provided
     Given The Custom Resource Definition is present

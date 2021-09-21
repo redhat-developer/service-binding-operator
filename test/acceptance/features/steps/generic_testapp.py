@@ -4,6 +4,7 @@ import json
 import polling2
 from behave import step
 from util import scenario_id
+from string import Template
 
 
 class GenericTestApp(App):
@@ -25,10 +26,6 @@ class GenericTestApp(App):
     def format_pattern(self, pattern):
         return pattern.format(name=self.name)
 
-    def get_generation(self):
-        deployment_name = self.openshift.get_deployment_name_in_namespace(self.format_pattern(self.deployment_name_pattern), self.namespace)
-        return int(self.openshift.get_resource_info_by_jsonpath("deployment", deployment_name, self.namespace, "{.metadata.generation}"))
-
     def get_file_value(self, file_path):
         resp = polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{file_path}"),
                              check_success=lambda r: r.status_code == 200, step=5, timeout=400, ignore_exceptions=(requests.exceptions.ConnectionError,))
@@ -46,10 +43,12 @@ class GenericTestApp(App):
 @step(u'Generic test application "{application_name}" is running')
 @step(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
 @step(u'Generic test application is running')
-def is_running(context, application_name=None, bindingRoot=None):
+def is_running(context, application_name=None, bindingRoot=None, asDeploymentConfig=False):
     if application_name is None:
         application_name = scenario_id(context)
     application = GenericTestApp(application_name, context.namespace.name)
+    if asDeploymentConfig:
+        application.resource = "deploymentconfig"
     if not application.is_running():
         print("application is not running, trying to import it")
         application.install(bindingRoot=bindingRoot)
@@ -58,6 +57,11 @@ def is_running(context, application_name=None, bindingRoot=None):
     # save the generation number
     context.original_application_generation = application.get_generation()
     context.latest_application_generation = application.get_generation()
+
+
+@step(u'Generic test application is running as deployment config')
+def is_running_deployment_config(context):
+    is_running(context, asDeploymentConfig=True)
 
 
 @step(u'The application env var "{name}" has value "{value}"')
@@ -75,7 +79,8 @@ def check_env_var_existence(context, name):
 @step(u'Content of file "{file_path}" in application pod is')
 def check_file_value(context, file_path):
     value = context.text.strip()
-    polling2.poll(lambda: context.application.get_file_value(file_path) == value, step=5, timeout=400)
+    resource = Template(file_path).substitute(scenario_id=scenario_id(context))
+    polling2.poll(lambda: context.application.get_file_value(resource) == value, step=5, timeout=400)
 
 
 @step(u'File "{file_path}" is unavailable in application pod')

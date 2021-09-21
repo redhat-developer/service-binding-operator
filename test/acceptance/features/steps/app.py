@@ -15,16 +15,18 @@ class App(object):
     route_url = ""
     port = ""
     bindingRoot = ""
+    resource = ""
 
-    def __init__(self, name, namespace, app_image, port=""):
+    def __init__(self, name, namespace, app_image, port="", resource="deployment"):
         self.name = name
         self.namespace = namespace
         self.app_image = app_image
         self.port = port
+        self.resource = resource
 
     def is_running(self, wait=False):
         output, exit_code = self.cmd.run(
-            f"{ctx.cli} wait --for=condition=Available=True deployment/{self.name} -n {self.namespace} --timeout={300 if wait else 0}s")
+            f"{ctx.cli} wait --for=condition=Available=True {self.resource}/{self.name} -n {self.namespace} --timeout={300 if wait else 0}s")
         running = exit_code == 0
         if running:
             self.route_url = polling2.poll(lambda: self.base_url(),
@@ -32,12 +34,17 @@ class App(object):
         return running
 
     def install(self, bindingRoot=None):
-        self.openshift.new_app(self.name, self.app_image, self.namespace, bindingRoot)
+        self.openshift.new_app(self.name, self.app_image, self.namespace, bindingRoot, self.resource == "deploymentconfig")
         self.openshift.expose_service_route(self.name, self.namespace, self.port)
         return self.is_running(wait=True)
 
     def base_url(self):
         return self.openshift.get_route_host(self.name, self.namespace)
+
+    def get_generation(self):
+        deployment_name = self.openshift.get_deployment_name_in_namespace(
+                            self.format_pattern(self.deployment_name_pattern), self.namespace, resource=self.resource)
+        return int(self.openshift.get_resource_info_by_jsonpath(self.resource, deployment_name, self.namespace, "{.metadata.generation}"))
 
 
 @step(u'jsonpath "{json_path}" on "{res_name}" should return "{json_value}"')

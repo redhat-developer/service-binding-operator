@@ -349,18 +349,18 @@ spec:
         status_found, output, exit_status = self.cmd.run_wait_for_status(cmd, wait_for_status, timeout=timeout)
         return status_found, output
 
-    def get_deployment_name_in_namespace(self, deployment_name_pattern, namespace, wait=False, interval=5, timeout=120):
+    def get_deployment_name_in_namespace(self, deployment_name_pattern, namespace, wait=False, interval=5, timeout=120, resource="deployment"):
         if wait:
             start = 0
             while ((start + interval) <= timeout):
-                deployment = self.search_resource_in_namespace("deployment", deployment_name_pattern, namespace)
+                deployment = self.search_resource_in_namespace(resource, deployment_name_pattern, namespace)
                 if deployment is not None:
                     return deployment
                 time.sleep(interval)
                 start += interval
             return None
         else:
-            return self.search_resource_in_namespace("deployment", deployment_name_pattern, namespace)
+            return self.search_resource_in_namespace(resource, deployment_name_pattern, namespace)
 
     def get_knative_route_host(self, name, namespace):
         cmd = f'{ctx.cli} get rt {name} -n {namespace} -o "jsonpath={{.status.url}}"'
@@ -480,11 +480,13 @@ spec:
                 print(f"No deployment that matches {deployment_name_pattern} found.\n")
         return None
 
-    def new_app(self, name, image_name, namespace, bindingRoot=None):
+    def new_app(self, name, image_name, namespace, bindingRoot=None, asDeploymentConfig=False):
         if ctx.cli == "oc":
             cmd = f"{ctx.cli} new-app --docker-image={image_name} --name={name} -n {namespace}"
             if bindingRoot:
                 cmd = cmd + f" -e SERVICE_BINDING_ROOT={bindingRoot}"
+            if asDeploymentConfig:
+                cmd = cmd + " --as-deployment-config=true"
             (output, exit_code) = self.cmd.run(cmd)
         else:
             cmd = f"{ctx.cli} create deployment {name} -n {namespace} --image={image_name}"

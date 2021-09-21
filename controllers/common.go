@@ -21,6 +21,7 @@ import (
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list
 // +kubebuilder:rbac:groups="operators.coreos.com",resources=clusterserviceversions,verbs=get;list
 // +kubebuilder:rbac:groups=apps,resources=deployments;daemonsets;replicasets;statefulsets,verbs=get;list;update;patch
+// +kubebuilder:rbac:groups=apps.openshift.io,resources=deploymentconfigs,verbs=get;list;update;patch
 // +kubebuilder:rbac:groups="",resources=pods;secrets;services;endpoints;configmaps,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=pods;secrets,verbs=update;patch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=create
