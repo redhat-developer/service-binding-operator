@@ -275,6 +275,46 @@ Feature: Bindings get injected as files in application
             8080
             """
 
+    @negative
+    Scenario: Do not bind as files if there is no binding data is collected from the service
+        Given Generic test application is running
+        * The Service is present
+            """
+            apiVersion: v1
+            kind: Service
+            metadata:
+                name: $scenario_id-svc
+            spec:
+                selector:
+                    name: $scenario_id-svc
+                ports:
+                  - port: 8080
+                    targetPort: 8080
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                bindAsFiles: true
+                detectBindingResources: true
+                services:
+                  - group: ""
+                    version: v1
+                    kind: Service
+                    name: $scenario_id-svc
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding CollectionReady.status is "True"
+        * Service Binding InjectionReady.status is "False"
+        * Service Binding InjectionReady.reason is "NoBindingData"
+
     @spec
     Scenario: SPEC Inject bindings gathered through annotations into application at default location
         Given Generic test application "spec-generic-app-a-d-u-2" is running

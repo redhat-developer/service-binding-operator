@@ -570,6 +570,8 @@ Feature: Bind an application to a service
             kind: Backend
             metadata:
                 name: demo-backserv-cr-3
+                annotations:
+                    service.binding/name: path={.metadata.name}
             """
         * Generic test application "gen-app-a-s-e" is running
         * Service Binding is applied
@@ -646,6 +648,8 @@ Feature: Bind an application to a service
             kind: Backend
             metadata:
                 name: demo-backserv-cr-5
+                annotations:
+                    service.binding/name: path={.metadata.name}
             """
         * Generic test application "gen-app-a-s-g" is running
         * Service Binding is applied
@@ -696,6 +700,8 @@ Feature: Bind an application to a service
             kind: Backend
             metadata:
                 name: demo-backserv-cr-4
+                annotations:
+                    service.binding/name: path={.metadata.name}
             """
         * Generic test application "gen-app-a-s-h" is running
         * Service Binding is applied
@@ -842,3 +848,43 @@ Feature: Bind an application to a service
             """
         Then Service Binding "binding-request-secret" is ready
         And The application env var "SECRET_WORD" has value "aGVsbG8="
+
+    @negative
+    Scenario: Do not bind as env if there is no binding data is collected from the service
+        Given Generic test application is running
+        * The Service is present
+            """
+            apiVersion: v1
+            kind: Service
+            metadata:
+                name: $scenario_id-svc
+            spec:
+                selector:
+                    name: $scenario_id-svc
+                ports:
+                  - port: 8080
+                    targetPort: 8080
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                bindAsFiles: false
+                detectBindingResources: true
+                services:
+                  - group: ""
+                    version: v1
+                    kind: Service
+                    name: $scenario_id-svc
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then Service Binding CollectionReady.status is "True"
+        * Service Binding InjectionReady.status is "False"
+        * Service Binding InjectionReady.reason is "NoBindingData"
