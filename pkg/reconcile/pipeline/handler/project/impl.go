@@ -389,7 +389,7 @@ func mountPath(container map[string]interface{}, ctx pipeline.Context) (string, 
 	if err != nil {
 		return "", err
 	}
-	envs = append(envs, u)
+
 	if found {
 		container["env"] = append(envs, u)
 	} else {

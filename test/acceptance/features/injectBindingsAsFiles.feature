@@ -115,6 +115,7 @@ Feature: Bindings get injected as files in application
             """
             8080
             """
+        And The container declared in application resource contains env "SERVICE_BINDING_ROOT" set only once
 
     Scenario: Binding is injected as file into application at the location specified through mountPath
         Given Generic test application "generic-app-a-d-u-3" is running
@@ -363,3 +364,64 @@ Feature: Bindings get injected as files in application
             """
             mysql
             """
+
+    Scenario: SERVICE_BIDNING_ROOT is not defined twice in the deployment after binding two services
+        Given Generic test application is running
+        * The env var "SERVICE_BINDING_ROOT" is not available to the application
+        * The Service is present
+            """
+            apiVersion: v1
+            kind: Service
+            metadata:
+                name: $scenario_id-2
+                annotations:
+                    service.binding/service2: path={.metadata.name}
+            spec:
+                selector:
+                    name: $scenario_id
+                ports:
+                  - port: 80
+                    targetPort: 8080
+            """
+        * The Service is present
+            """
+            apiVersion: v1
+            kind: Service
+            metadata:
+                name: $scenario_id-3
+                annotations:
+                    service.binding/service3: path={.metadata.name}
+            spec:
+                selector:
+                    name: $scenario_id
+                ports:
+                  - port: 80
+                    targetPort: 8080
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id
+            spec:
+                application:
+                    group: apps
+                    version: v1
+                    resource: deployments
+                    name: $scenario_id
+                bindAsFiles: true
+                detectBindingResources: true
+                services:
+                  - group: ""
+                    version: v1
+                    kind: Service
+                    name: $scenario_id-2
+                  - group: ""
+                    version: v1
+                    kind: Service
+                    name: $scenario_id-3
+            """
+        Then Service Binding is ready
+        * Service Binding has the binding secret name set in the status
+        * The container declared in application resource contains env "SERVICE_BINDING_ROOT" set only once

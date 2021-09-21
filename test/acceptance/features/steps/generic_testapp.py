@@ -3,6 +3,7 @@ import requests
 import json
 import polling2
 from behave import step
+from openshift import Openshift
 from util import scenario_id
 from string import Template
 
@@ -113,3 +114,14 @@ def set_common_label(context, label):
 def check_env_var_value_in_both_apps(context, name, value):
     polling2.poll(lambda: context.application1.get_env_var_value(name) == value, step=5, timeout=400)
     polling2.poll(lambda: context.application2.get_env_var_value(name) == value, step=5, timeout=400)
+
+
+@step(u'The container declared in application resource contains env "{envVar}" set only once')
+@step(u'The container declared in application "{app_name}" resource contains env "{envVar}" set only once')
+def check_env_var_count_set_on_container(context, envVar, app_name=None):
+    openshift = Openshift()
+    if app_name is None:
+        app_name = context.application.name
+    app_name = Template(app_name).substitute(scenario_id=scenario_id(context))
+    env = openshift.get_deployment_env_info(app_name, context.namespace.name)
+    assert str(env).count(envVar) == 1
