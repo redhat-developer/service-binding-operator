@@ -163,31 +163,6 @@ spec:
           status:
             description: ServiceBindingStatus defines the observed state of ServiceBinding.
             properties:
-              applications:
-                description: Applications defines the application workloads to which the binding secret has been injected.
-                items:
-                  description: Ref identifies an object reference in the same namespace.
-                  properties:
-                    group:
-                      description: Group of the referent.
-                      type: string
-                    kind:
-                      description: Kind of the referent.
-                      type: string
-                    name:
-                      description: Name of the referent.
-                      type: string
-                    resource:
-                      description: Resource of the referent.
-                      type: string
-                    version:
-                      description: Version of the referent.
-                      type: string
-                  required:
-                  - group
-                  - version
-                  type: object
-                type: array
               conditions:
                 description: Conditions describes the state of the operator's reconciliation functionality.
                 items:

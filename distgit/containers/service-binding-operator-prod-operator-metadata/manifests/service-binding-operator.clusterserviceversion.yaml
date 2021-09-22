@@ -28,7 +28,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "service.binding/v1alpha2",
+          "apiVersion": "servicebinding.io/v1alpha3",
           "kind": "ServiceBinding",
           "metadata": {
             "name": "servicebinding-sample"
@@ -49,16 +49,13 @@ metadata:
       ]
     capabilities: Basic Install
     categories: Developer Tools, OpenShift Optional, Integration & Delivery
+    containerImage: "registry-proxy.engineering.redhat.com/rh-osbs/ocp-tools-4-service-binding-rhel8-operator:v1.0.0"
     description: An operator to support binding capabilities between imported apps and operator backed services
     operators.openshift.io/infrastructure-features: '["disconnected"]'
     operators.operatorframework.io/builder: operator-sdk-v1.3.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Service Binding Operator Community
-  labels:
-    "operatorframework.io/arch.amd64": supported
-    "operatorframework.io/arch.ppc64le": supported
-    "operatorframework.io/arch.s390x": supported
   name: service-binding-operator.v0.10.0
   namespace: placeholder
 spec:
@@ -70,11 +67,9 @@ spec:
         kind: ServiceBinding
         name: servicebindings.binding.operators.coreos.com
         version: v1alpha1
-      - description: (Tech Preview) Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload. Available as tech preview but subjected to change in near future.
-        displayName: Service Binding (Spec API Tech Preview)
-        kind: ServiceBinding
-        name: servicebindings.service.binding
-        version: v1alpha2
+      - kind: ServiceBinding
+        name: servicebindings.servicebinding.io
+        version: v1alpha3
   description: " The Service Binding Operator enables application developers to more easily bind applications together with operator managed backing services such as databases, without having to perform manual configuration of secrets, configmaps, etc. The Service Binding Operator accomplishes this through automatically collecting binding information and sharing with an application to bind it with operator managed backing services. The binding is performed through a new custom resource called a ServiceBindingRequest.\n### Example\nA set of examples, each of which illustrates a usage scenario for the Service Binding Operator, is being developed in parallel with the Operator. Each example includes documentation and can be run either through the OpenShift web console or command line client. The examples are available [here](https://github.com/redhat-developer/service-binding-operator/blob/master/README.md#example-scenarios)\n### Documentation\nRefer to the [documentation](https://github.com/redhat-developer/service-binding-operator/blob/master/README.md)\n###  Help\nRaise a ticket for bugs, features and enhancement [here](https://github.com/redhat-developer/service-binding-operator/)\n### Licence\nService Binding Operator is licensed under [Apache License 2.0](https://github.com/redhat-developer/service-binding-operator/blob/master/LICENSE) "
   displayName: Service Binding Operator
   icon:
@@ -123,6 +118,15 @@ spec:
                 - deployments
                 - replicasets
                 - statefulsets
+              verbs:
+                - get
+                - list
+                - patch
+                - update
+            - apiGroups:
+                - apps.openshift.io
+              resources:
+                - deploymentconfigs
               verbs:
                 - get
                 - list
@@ -187,7 +191,7 @@ spec:
                 - get
                 - list
             - apiGroups:
-                - service.binding
+                - servicebinding.io
               resources:
                 - servicebindings
               verbs:
@@ -199,13 +203,13 @@ spec:
                 - update
                 - watch
             - apiGroups:
-                - service.binding
+                - servicebinding.io
               resources:
                 - servicebindings/finalizers
               verbs:
                 - update
             - apiGroups:
-                - service.binding
+                - servicebinding.io
               resources:
                 - servicebindings/status
               verbs:
@@ -343,9 +347,9 @@ spec:
       generateName: vspecservicebinding.kb.io
       rules:
         - apiGroups:
-            - service.binding
+            - servicebinding.io
           apiVersions:
-            - v1alpha2
+            - v1alpha3
           operations:
             - UPDATE
           resources:
@@ -353,7 +357,7 @@ spec:
       sideEffects: None
       targetPort: 9443
       type: ValidatingAdmissionWebhook
-      webhookPath: /validate-service-binding-v1alpha2-servicebinding
+      webhookPath: /validate-servicebinding-io-v1alpha3-servicebinding
     - admissionReviewVersions:
         - v1beta1
       containerPort: 443
@@ -382,9 +386,9 @@ spec:
       generateName: mspec-servicebinding.kb.io
       rules:
         - apiGroups:
-            - service.binding
+            - servicebinding.io
           apiVersions:
-            - v1alpha2
+            - v1alpha3
           operations:
             - CREATE
             - UPDATE
