@@ -82,7 +82,10 @@ def invalid_sbr_is_applied(context):
 
 
 @step(u'Service Binding "{sbr_name}" is ready')
-def sbo_is_ready(context, sbr_name):
+@step(u'Service Binding is ready')
+def sbo_is_ready(context, sbr_name=None):
+    if sbr_name is None:
+        sbr_name = list(context.bindings.values())[0].name
     sbo_jq_is(context, '.status.conditions[] | select(.type=="CollectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="InjectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
@@ -95,7 +98,10 @@ def sbo_is_ready(context, sbr_name):
 
 # STEP
 @step(u'jq "{jq_expression}" of Service Binding "{sbr_name}" should be changed to "{json_value}"')
-def sbo_jq_is(context, jq_expression, sbr_name, json_value):
+@step(u'jq "{jq_expression}" of Service Binding should be changed to "{json_value}"')
+def sbo_jq_is(context, jq_expression, sbr_name=None, json_value=""):
+    if sbr_name is None:
+        sbr_name = list(context.bindings.values())[0].name
     polling2.poll(lambda: json.loads(
         context.bindings[sbr_name].get_info_by_jsonpath(jq_expression)) == json_value,
                   step=5, timeout=800, ignore_exceptions=(json.JSONDecodeError,))

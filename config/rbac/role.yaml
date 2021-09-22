@@ -51,6 +51,15 @@ rules:
   - patch
   - update
 - apiGroups:
+  - apps.openshift.io
+  resources:
+  - deploymentconfigs
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+- apiGroups:
   - authentication.k8s.io
   resources:
   - tokenreviews
