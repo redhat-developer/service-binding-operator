@@ -309,6 +309,7 @@ def check_secret_key_with_ip_value(context, secret_key):
 @given(u'The ConfigMap is present')
 @given(u'The Secret is present')
 @when(u'The Secret is present')
+@step(u'The Service is present')
 def apply_yaml(context, user=None):
     openshift = Openshift()
     resource = Template(context.text).substitute(scenario_id=scenario_id(context))

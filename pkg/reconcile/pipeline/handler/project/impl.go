@@ -28,8 +28,14 @@ func PreFlightCheck(mandatoryBindingKeys ...string) func(pipeline.Context) {
 			ctx.StopProcessing()
 			return
 		}
+		items := ctx.BindingItems()
+		if len(items) == 0 {
+			err := errors.New("no binding data to project")
+			ctx.RetryProcessing(err)
+			ctx.SetCondition(apis.Conditions().NotInjectionReady().Reason(apis.NoBindingDataReason).Msg(err.Error()).Build())
+			return
+		}
 		if len(mandatoryBindingKeys) > 0 {
-			items := ctx.BindingItems()
 			itemMap := items.AsMap()
 			for _, bk := range mandatoryBindingKeys {
 				if _, found := itemMap[bk]; !found {
