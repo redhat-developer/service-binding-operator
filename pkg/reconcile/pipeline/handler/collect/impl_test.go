@@ -156,7 +156,7 @@ var _ = Describe("Collect Binding Definitions", func() {
 
 				serviceContent.SetAnnotations(map[string]string{
 					"foo":                                   "bar",
-					collect.ProvisionedServiceAnnotationKey: "true",
+					binding.ProvisionedServiceAnnotationKey: "true",
 					"service.binding/foo":                   "path={.status.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2":                  "path={.status.foo2},objectType=Secret,sourceValue=username",
 				})
@@ -418,6 +418,51 @@ var _ = Describe("Collect Binding Data", func() {
 					collect.BindingItems(ctx)
 				},
 			)
+		})
+
+		Context("on invalid annotations", func() {
+			var (
+				service        *mocks.MockService
+				serviceContent *unstructured.Unstructured
+			)
+			BeforeEach(func() {
+				service = mocks.NewMockService(mockCtrl)
+				serviceContent = &unstructured.Unstructured{}
+				service.EXPECT().CustomResourceDefinition().Return(nil, nil)
+				service.EXPECT().Resource().Return(serviceContent)
+
+				ctx.EXPECT().Services().Return([]pipeline.Service{service}, nil)
+			})
+
+			It("should error when elementType is invalid", func() {
+				serviceContent.SetAnnotations(map[string]string{
+					"service.binding/foo": "path={.status.foo},elementType=asdf",
+				})
+
+				condition := apis.Conditions().NotCollectionReady().
+					Msg("Failed to create binding definition from \"service.binding/foo: path={.status.foo},elementType=asdf\": Annotation service.binding/foo: path={.status.foo},elementType=asdf not implemented!").
+					Reason(collect.InvalidAnnotation).Build()
+				ctx.EXPECT().SetCondition(condition)
+				ctx.EXPECT().Error(errors.New("Annotation service.binding/foo: path={.status.foo},elementType=asdf not implemented!"))
+				ctx.EXPECT().StopProcessing()
+
+				collect.BindingDefinitions(ctx)
+			})
+
+			It("should error when objectType is invalid", func() {
+				serviceContent.SetAnnotations(map[string]string{
+					"service.binding/foo": "path={.status.foo},objectType=asdf",
+				})
+
+				condition := apis.Conditions().NotCollectionReady().
+					Msg("Failed to create binding definition from \"service.binding/foo: path={.status.foo},objectType=asdf\": Annotation service.binding/foo: path={.status.foo},objectType=asdf not implemented!").
+					Reason(collect.InvalidAnnotation).Build()
+				ctx.EXPECT().SetCondition(condition)
+				ctx.EXPECT().Error(errors.New("Annotation service.binding/foo: path={.status.foo},objectType=asdf not implemented!"))
+				ctx.EXPECT().StopProcessing()
+
+				collect.BindingDefinitions(ctx)
+			})
 		})
 
 		Context("on returning unexpected data", func() {
@@ -752,7 +797,7 @@ var _ = Describe("Collect From Provisioned Service", func() {
 			err := errors.New("CRD of service ns1/foo indicates provisioned service, but no secret name provided under .status.binding.name")
 			crd := mocks.NewMockCRD(mockCtrl)
 			u := &unstructured.Unstructured{}
-			u.SetAnnotations(map[string]string{collect.ProvisionedServiceAnnotationKey: "true"})
+			u.SetAnnotations(map[string]string{binding.ProvisionedServiceAnnotationKey: "true"})
 
 			crd.EXPECT().Resource().Return(u)
 

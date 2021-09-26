@@ -27,7 +27,8 @@ const (
 	ErrorReadingBindingReason    = "ErrorReadingBinding"
 	ErrorReadingSecret           = "ErrorReadingSecret"
 
-	ValueNotFound = "ValueNotFound"
+	ValueNotFound     = "ValueNotFound"
+	InvalidAnnotation = "InvalidAnnotation"
 )
 
 func PreFlight(ctx pipeline.Context) {
@@ -65,9 +66,14 @@ func BindingDefinitions(ctx pipeline.Context) {
 		for k, v := range anns {
 			definition, err := makeBindingDefinition(k, v, ctx)
 			if err != nil {
-				continue
+				condition := notCollectionReadyCond(InvalidAnnotation, fmt.Errorf("Failed to create binding definition from \"%v: %v\": %v", k, v, err))
+				ctx.SetCondition(condition)
+				ctx.Error(err)
+				ctx.StopProcessing()
 			}
-			service.AddBindingDef(definition)
+			if definition != nil {
+				service.AddBindingDef(definition)
+			}
 		}
 	}
 }
@@ -95,8 +101,6 @@ func BindingItems(ctx pipeline.Context) {
 		}
 	}
 }
-
-const ProvisionedServiceAnnotationKey = "servicebinding.io/provisioned-service"
 
 func ProvisionedService(ctx pipeline.Context) {
 	services, _ := ctx.Services()
@@ -126,7 +130,7 @@ func ProvisionedService(ctx pipeline.Context) {
 			if crd == nil {
 				continue
 			}
-			v, ok := crd.Resource().GetAnnotations()[ProvisionedServiceAnnotationKey]
+			v, ok := crd.Resource().GetAnnotations()[binding.ProvisionedServiceAnnotationKey]
 			if ok && v == "true" {
 				requestRetry(ctx, ErrorReadingBindingReason, fmt.Errorf("CRD of service %v/%v indicates provisioned service, but no secret name provided under .status.binding.name", res.GetNamespace(), res.GetName()))
 				return
@@ -255,9 +259,7 @@ func collectItems(prefix string, ctx pipeline.Context, service pipeline.Service,
 			if mapVal := v.MapIndex(n).Interface(); mapVal != nil {
 				collectItems(p, ctx, service, n, mapVal)
 			} else {
-				condition := apis.Conditions().NotCollectionReady().
-					Msg(fmt.Sprintf("Value for key %v_%v not found", prefix+k.String(), n.String())).
-					Reason(ValueNotFound).Build()
+				condition := notCollectionReadyCond(ValueNotFound, fmt.Errorf("Value for key %v_%v not found", prefix+k.String(), n.String()))
 				ctx.SetCondition(condition)
 				ctx.Error(ErrorValueNotFound)
 				ctx.StopProcessing()
