@@ -1,6 +1,7 @@
 package builder_test
 
 import (
+	"fmt"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -82,6 +83,27 @@ var _ = Describe("Pipeline", func() {
 		Expect(retry).To(BeTrue())
 	})
 
+	It("should retry processing if panic occurred in a handler", func() {
+		err := fmt.Errorf("panic occurred: %v", "foo")
+
+		h1 := defHandler()
+		h1.EXPECT().Handle(ctx)
+		h2 := func(c pipeline.Context) {
+			panic("foo")
+		}
+		h3 := defHandler()
+		p := builder.Builder().WithContextProvider(&ctxProvider{ctx: ctx}).WithHandlers(h1, pipeline.HandlerFunc(h2), h3).Build()
+
+		ctx.EXPECT().RetryProcessing(err)
+		ctx.EXPECT().Close().Return(nil)
+		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{})
+		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{Retry: true, Stop: true, Err: err})
+
+		retry, rerr := p.Process(&v1alpha1.ServiceBinding{})
+		Expect(rerr).To(Equal(err))
+		Expect(retry).To(BeTrue())
+	})
+
 	It("should stop without retry and error and propagate that back to caller", func() {
 		h1 := defHandler()
 		h1.EXPECT().Handle(ctx)
@@ -114,6 +136,32 @@ var _ = Describe("Pipeline", func() {
 
 		retry, err := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(err).To(Equal(err))
+		Expect(retry).To(BeTrue())
+	})
+
+	It("should retry processing if panic occurs when closing context", func() {
+		var err = fmt.Errorf("panic occurred: %v", "foo")
+		h1 := defHandler()
+		h1.EXPECT().Handle(ctx)
+		p := builder.Builder().WithContextProvider(&ctxProvider{ctx: ctx}).WithHandlers(h1).Build()
+
+		ctx.EXPECT().Close().DoAndReturn(func() { panic("foo") })
+		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{}).Times(1)
+
+		retry, perr := p.Process(&v1alpha1.ServiceBinding{})
+		Expect(perr).To(Equal(err))
+		Expect(retry).To(BeTrue())
+	})
+
+	It("should retry processing if panic occurs when calling context provider", func() {
+		var err = fmt.Errorf("panic occurred: %v", "foo")
+		h1 := defHandler()
+		provider := mocks.NewMockContextProvider(mockCtrl)
+		provider.EXPECT().Get(&v1alpha1.ServiceBinding{}).DoAndReturn(func(b interface{}) { panic("foo") })
+		p := builder.Builder().WithContextProvider(provider).WithHandlers(h1).Build()
+
+		retry, perr := p.Process(&v1alpha1.ServiceBinding{})
+		Expect(perr).To(Equal(err))
 		Expect(retry).To(BeTrue())
 	})
 })
