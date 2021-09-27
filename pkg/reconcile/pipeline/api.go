@@ -110,9 +110,6 @@ type Context interface {
 	// Return true if bindings should be projected as files inside application containers
 	BindAsFiles() bool
 
-	// Path where bindings should be mounted inside application containers
-	MountPath() string
-
 	// Template that should be applied on collected binding names, prior projection
 	NamingTemplate() string
 

@@ -374,13 +374,8 @@ func mountPath(container map[string]interface{}, ctx pipeline.Context) (string, 
 		}
 	}
 
-	mp := ctx.MountPath()
-	if mp == "" {
-		bindingRoot = "/bindings"
-		mp = path.Join(bindingRoot, ctx.BindingName())
-	} else {
-		return mp, nil
-	}
+	bindingRoot = "/bindings"
+	mp := path.Join(bindingRoot, ctx.BindingName())
 
 	u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&corev1.EnvVar{
 		Name:  bindingRootEnvVar,

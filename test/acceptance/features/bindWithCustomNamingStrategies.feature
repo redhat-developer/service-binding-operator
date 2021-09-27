@@ -175,7 +175,6 @@ Feature: Bind an application to a service using custom naming strategies
                 name: binding-request-custom-file-naming
             spec:
                 namingStrategy: "PREFIX_{{ .service.kind | upper }}_{{ .name | upper }}_SUFFIX"
-                mountPath: "/foo/bar"
                 bindAsFiles: true
                 application:
                     name: myapp-custom-file-naming
@@ -189,7 +188,7 @@ Feature: Bind an application to a service using custom naming strategies
                     name: backend-custom-file-naming
             """
         Then Service Binding "binding-request-custom-file-naming" is ready
-        And Content of file "/foo/bar/PREFIX_BACKEND_HOST_CROSS_NS_SERVICE_SUFFIX" in application pod is
+        And Content of file "/bindings/binding-request-custom-file-naming/PREFIX_BACKEND_HOST_CROSS_NS_SERVICE_SUFFIX" in application pod is
             """
             cross.ns.service.stable.example.com
             """

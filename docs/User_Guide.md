@@ -283,51 +283,9 @@ bindings
 │   ├── COCKROACHDB_CONF_PORT
 ```
 
-Instead of `/bindings`, you can specify a custom binding root path by specifying the same in `spec.mountPath`, example,
+Setting `spec.bindAsFiles` to `false` (default: `true`) enables injecting gathered bindings as environment variables into the application/workload instead of injecting this data as files.
 
-``` yaml
-apiVersion: binding.operators.coreos.com/v1alpha1
-kind: ServiceBinding
-metadata:
-  name: binding-request
-  namespace: service-binding-demo
-spec:
-  bindAsFiles: true
-  application:
-    name: java-app
-    group: apps
-    version: v1
-    resource: deployments
-  services:
-  - group: charts.helm.k8s.io
-    version: v1alpha1
-    kind: Cockroachdb
-    name: db-demo
-    id: db_1
-  mounthPath: '/bindings/accounts-db' # User configurable binding root
-```
-
-Here's how the mount paths would look like, where applicable:
-
-```
-bindings
-├── accounts-db
-│   ├── COCKROACHDB_CLUSTERIP
-│   ├── COCKROACHDB_CONF_PORT
-```
-
-Setting `spec.bindAsFiles` to `false` (default: `true`) enables injecting gathered bindings as env variables into the application/workload.
-
-For determining the folder where bindings should be injected, we can specify the destination using `spec.mountPath` or we can use `SERVICE_BINDING_ROOT` environment variable. If both are set then the `SERVICE_BINDING_ROOT` environment variable takes the higher precedence.
-
-The following table summarizes how the final bind path is computed:
-
-| spec.mountPath  | SERVICE_BINDING_ROOT | Final Bind Path                      |
-| --------------- | ---------------------| -------------------------------------|
-| nil             | non-existent         | /bindings/ServiceBinding_Name        |
-| nil             | /some/path/root      | /some/path/root/ServiceBinding_Name  |
-| /home/foo       | non-existent         | /home/foo                            |
-| /home/foo       | /some/path/root      | /some/path/root/ServiceBinding_Name  |
+For determining the folder where bindings should be injected, we can use the `SERVICE_BINDING_ROOT` environment variable.  This provides a method for overriding the path that injected configuration data will be exposed.
 
 ## Custom naming strategy
 Binding names declared through annotations or CSV descriptors are processed before injected into the application according to the following strategy

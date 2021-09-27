@@ -201,20 +201,6 @@ func (mr *MockContextMockRecorder) Mappings() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Mappings", reflect.TypeOf((*MockContext)(nil).Mappings))
 }
 
-// MountPath mocks base method.
-func (m *MockContext) MountPath() string {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MountPath")
-	ret0, _ := ret[0].(string)
-	return ret0
-}
-
-// MountPath indicates an expected call of MountPath.
-func (mr *MockContextMockRecorder) MountPath() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MountPath", reflect.TypeOf((*MockContext)(nil).MountPath))
-}
-
 // NamingTemplate mocks base method.
 func (m *MockContext) NamingTemplate() string {
 	m.ctrl.T.Helper()

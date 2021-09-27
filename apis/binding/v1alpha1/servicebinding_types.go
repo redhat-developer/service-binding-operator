@@ -30,18 +30,6 @@ var templates = map[string]string{
 
 // ServiceBindingSpec defines the desired state of ServiceBinding.
 type ServiceBindingSpec struct {
-	// MountPath specifies the path inside the app container where bindings
-	// will be mounted.  The environment variable `SERVICE_BINDING_ROOT`
-	// has higher precedence than this option, and setting it within an
-	// application to be bound will cause MountPath to be ignored and will
-	// always mount resources as files.  If it isn't set, then it is
-	// automatically set to the value of MountPath.  If neither MountPath
-	// nor `SERVICE_BINDING_ROOT` are set, this field defaults to
-	// `/bindings`, and `SERVICE_BINDING_ROOT` is also set.  This results
-	// in the file being mounted under the directory specified.
-	// +optional
-	MountPath string `json:"mountPath,omitempty"`
-
 	// NamingStrategy defines custom string template for preparing binding
 	// names.  It can be set to pre-defined strategies: `none`,
 	// `lowercase`, or `uppercase`.  Otherwise, it is treated as a custom
@@ -70,8 +58,9 @@ type ServiceBindingSpec struct {
 	DetectBindingResources bool `json:"detectBindingResources,omitempty"`
 
 	// BindAsFiles makes the binding values available as files in the
-	// application's container.  See the MountPath attribute description
-	// for more details.
+	// application's container.  By default, values are mounted under the path
+	// "/bindings"; this can be changed by setting the SERVICE_BINDING_ROOT
+	// environment variable.
 	// +optional
 	// +kubebuilder:default:=true
 	BindAsFiles bool `json:"bindAsFiles"`
