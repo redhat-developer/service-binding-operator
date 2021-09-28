@@ -474,7 +474,6 @@ var _ = Describe("Inject bindings as files", func() {
 			}
 
 			ctx.EXPECT().Applications().Return(apps, nil)
-			ctx.EXPECT().MountPath().Return("/bla").AnyTimes()
 			ctx.EXPECT().BindingName().Return(bindingName).AnyTimes()
 		})
 		It("should mount binding secret as volume", func() {
@@ -482,18 +481,24 @@ var _ = Describe("Inject bindings as files", func() {
 			for i, old := range deploymentsUnstructuredOld {
 				Expect(deploymentsUnstructured[i]).NotTo(Equal(old))
 			}
-			exoectedD1 := deployment("d1", []corev1.Container{
+			expectedD1 := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SERVICE_BINDING_ROOT",
+							Value: "/bindings",
+						},
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      bindingName,
-							MountPath: "/bla",
+							MountPath: "/bindings/sb1",
 						},
 					},
 				},
 			})
-			exoectedD1.Spec.Template.Spec.Volumes = []corev1.Volume{
+			expectedD1.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
@@ -565,10 +570,16 @@ var _ = Describe("Inject bindings as files", func() {
 			expectedD4 := deployment("d4", []corev1.Container{
 				{
 					Image: "foo",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SERVICE_BINDING_ROOT",
+							Value: "/bindings",
+						},
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      bindingName,
-							MountPath: "/bla",
+							MountPath: "/bindings/sb1",
 						},
 					},
 				},
@@ -599,11 +610,15 @@ var _ = Describe("Inject bindings as files", func() {
 							Name:  "SOME_ENV",
 							Value: "val1",
 						},
+						{
+							Name:  "SERVICE_BINDING_ROOT",
+							Value: "/bindings",
+						},
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      bindingName,
-							MountPath: "/bla",
+							MountPath: "/bindings/sb1",
 						},
 					},
 				},
@@ -621,10 +636,16 @@ var _ = Describe("Inject bindings as files", func() {
 			expectedD6 := deployment("d6", []corev1.Container{
 				{
 					Image: "foo",
+					Env: []corev1.EnvVar{
+						{
+							Name:  "SERVICE_BINDING_ROOT",
+							Value: "/bindings",
+						},
+					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
 							Name:      bindingName,
-							MountPath: "/bla",
+							MountPath: "/bindings/sb1",
 						},
 					},
 				},
@@ -639,7 +660,7 @@ var _ = Describe("Inject bindings as files", func() {
 					},
 				},
 			}
-			for i, expectedDeployment := range []*appsv1.Deployment{exoectedD1, expectedD2, expectedD3, expectedD4, expectedD5, expectedD6, expectedD6, expectedD6, expectedD6} {
+			for i, expectedDeployment := range []*appsv1.Deployment{expectedD1, expectedD2, expectedD3, expectedD4, expectedD5, expectedD6, expectedD6, expectedD6, expectedD6} {
 				d := &appsv1.Deployment{}
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[i].Object, d)
 				Expect(err).NotTo(HaveOccurred())

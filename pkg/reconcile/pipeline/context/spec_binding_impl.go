@@ -185,10 +185,6 @@ func (s *specImpl) BindAsFiles() bool {
 	return true
 }
 
-func (s *specImpl) MountPath() string {
-	return ""
-}
-
 func (s *specImpl) NamingTemplate() string {
 	return ""
 }

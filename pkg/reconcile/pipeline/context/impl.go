@@ -135,10 +135,6 @@ func (i *bindingImpl) EnvBindings() []*pipeline.EnvBinding {
 	return make([]*pipeline.EnvBinding, 0)
 }
 
-func (i *bindingImpl) MountPath() string {
-	return i.serviceBinding.Spec.MountPath
-}
-
 func (i *bindingImpl) Mappings() map[string]string {
 	result := make(map[string]string)
 	for _, m := range i.serviceBinding.Spec.Mappings {
