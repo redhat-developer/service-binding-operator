@@ -2,7 +2,7 @@ PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 include hack/common.mk
 
 # Current Operator version
-VERSION ?= 0.10.0
+VERSION ?= 0.11.0
 
 GIT_COMMIT_ID ?= $(shell git rev-parse --short=8 HEAD)
 
