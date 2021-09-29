@@ -5,13 +5,12 @@ import (
 	"encoding/base64"
 	e "errors"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/apis"
-	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
-
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/redhat-developer/service-binding-operator/apis"
+	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
@@ -422,6 +421,31 @@ var _ = Describe("Context", func() {
 
 			_, err = ctx.Services()
 			Expect(err).To(HaveOccurred())
+		})
+	})
+	Describe("Binding Name", func() {
+		var testProvider = Provider(nil, nil, nil)
+		It("should be equal on .spec.name if specified", func() {
+			ctx, _ := testProvider.Get(&bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "sb1",
+				},
+				Spec: bindingapi.ServiceBindingSpec{
+					Name: "sb2",
+				},
+			})
+
+			Expect(ctx.BindingName()).To(Equal("sb2"))
+		})
+
+		It("should be equal on .name if .spec.name not specified", func() {
+			ctx, _ := testProvider.Get(&bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "sb1",
+				},
+			})
+
+			Expect(ctx.BindingName()).To(Equal("sb1"))
 		})
 	})
 

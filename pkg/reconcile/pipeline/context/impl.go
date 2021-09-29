@@ -128,6 +128,9 @@ var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientau
 }
 
 func (i *bindingImpl) BindingName() string {
+	if i.serviceBinding.Spec.Name != "" {
+		return i.serviceBinding.Spec.Name
+	}
 	return i.bindingMeta.GetName()
 }
 
