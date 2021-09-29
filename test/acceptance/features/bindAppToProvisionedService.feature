@@ -345,6 +345,40 @@ Feature: Bind application to provisioned service
             db
             """
 
+  Scenario: Bind application to provisioned service and inject binding into folder specified by .spec.name
+    Given Generic test application is running
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              name: foo
+              services:
+                - group: stable.example.com
+                  version: v1
+                  kind: ProvisionedBackend
+                  name: provisioned-service-2
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                kind: Deployment
+          """
+    Then Service Binding is ready
+    And Content of file "/bindings/foo/username" in application pod is
+            """
+            foo
+            """
+    And Content of file "/bindings/foo/password" in application pod is
+            """
+            bar
+            """
+    And Content of file "/bindings/foo/type" in application pod is
+            """
+            db
+            """
 
 
   @spec

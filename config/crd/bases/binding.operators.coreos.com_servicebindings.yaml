@@ -161,6 +161,12 @@ spec:
                   - value
                   type: object
                 type: array
+              name:
+                description: Name is the name of the service as projected into the
+                  workload container.  Defaults to .metadata.name.
+                maxLength: 253
+                pattern: ^[a-z0-9\-\.]*$
+                type: string
               namingStrategy:
                 description: 'NamingStrategy defines custom string template for preparing
                   binding names.  It can be set to pre-defined strategies: `none`,

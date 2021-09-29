@@ -30,6 +30,11 @@ var templates = map[string]string{
 
 // ServiceBindingSpec defines the desired state of ServiceBinding.
 type ServiceBindingSpec struct {
+	// Name is the name of the service as projected into the workload container.  Defaults to .metadata.name.
+	// +kubebuilder:validation:Pattern=`^[a-z0-9\-\.]*$`
+	// +kubebuilder:validation:MaxLength=253
+	// +optional
+	Name string `json:"name,omitempty"`
 	// NamingStrategy defines custom string template for preparing binding
 	// names.  It can be set to pre-defined strategies: `none`,
 	// `lowercase`, or `uppercase`.  Otherwise, it is treated as a custom
