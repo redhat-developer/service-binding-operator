@@ -8,7 +8,6 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	v1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	binding "github.com/redhat-developer/service-binding-operator/pkg/binding"
 	pipeline "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -388,6 +387,21 @@ func (mr *MockServiceMockRecorder) Id() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Id", reflect.TypeOf((*MockService)(nil).Id))
 }
 
+// IsBindable mocks base method.
+func (m *MockService) IsBindable() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsBindable")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsBindable indicates an expected call of IsBindable.
+func (mr *MockServiceMockRecorder) IsBindable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBindable", reflect.TypeOf((*MockService)(nil).IsBindable))
+}
+
 // OwnedResources mocks base method.
 func (m *MockService) OwnedResources() ([]*unstructured.Unstructured, error) {
 	m.ctrl.T.Helper()
@@ -441,10 +455,10 @@ func (m *MockCRD) EXPECT() *MockCRDMockRecorder {
 }
 
 // Descriptor mocks base method.
-func (m *MockCRD) Descriptor() (*v1alpha1.CRDDescription, error) {
+func (m *MockCRD) Descriptor() (*pipeline.CRDDescription, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Descriptor")
-	ret0, _ := ret[0].(*v1alpha1.CRDDescription)
+	ret0, _ := ret[0].(*pipeline.CRDDescription)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -453,6 +467,21 @@ func (m *MockCRD) Descriptor() (*v1alpha1.CRDDescription, error) {
 func (mr *MockCRDMockRecorder) Descriptor() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Descriptor", reflect.TypeOf((*MockCRD)(nil).Descriptor))
+}
+
+// IsBindable mocks base method.
+func (m *MockCRD) IsBindable() (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsBindable")
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsBindable indicates an expected call of IsBindable.
+func (mr *MockCRDMockRecorder) IsBindable() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsBindable", reflect.TypeOf((*MockCRD)(nil).IsBindable))
 }
 
 // Resource mocks base method.

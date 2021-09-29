@@ -10,11 +10,12 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	specapi "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
-	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/mocks"
 	pipelinemocks "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 	corev1 "k8s.io/api/core/v1"
+	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -308,12 +309,13 @@ var _ = Describe("Spec API Context", func() {
 			}
 		)
 
-		It("return successfully", func() {
+		DescribeTable("return successfully", func(hasCrd bool) {
 			sb := defServiceBinding("sb1", "ns1", specapi.ServiceBindingServiceReference{
 				APIVersion: "foo/v1",
 				Kind:       "Bar",
 				Name:       "s0",
 			})
+			gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 			var objs []runtime.Object
 			u := &unstructured.Unstructured{}
 			u.SetGroupVersionKind(schema.GroupVersionKind{
@@ -324,10 +326,15 @@ var _ = Describe("Spec API Context", func() {
 			u.SetName("s0")
 			u.SetNamespace(sb.Namespace)
 			objs = append(objs, u)
-
+			if hasCrd {
+				crd := &unstructured.Unstructured{}
+				crd.SetGroupVersionKind(v1apiextensions.SchemeGroupVersion.WithKind("CustomResourceDefinition"))
+				crd.SetName(gvr.GroupResource().String())
+				objs = append(objs, crd)
+			}
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), objs...)
-			gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil)
+			typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(gvr, nil)
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
@@ -340,15 +347,17 @@ var _ = Describe("Spec API Context", func() {
 			s := services[0]
 
 			Expect(s.Resource()).To(Equal(u))
-			serviceImpl, ok := s.(*service)
-			if !ok {
-				Fail("not service impl")
+			Expect(s.Id()).To(BeNil())
+			crd, err := s.CustomResourceDefinition()
+			Expect(err).NotTo(HaveOccurred())
+			if hasCrd {
+				Expect(crd.Resource().GetName()).To(Equal(gvr.GroupResource().String()))
+			} else {
+				Expect(crd).To(BeNil())
 			}
-			Expect(serviceImpl.client).To(Equal(client))
-			Expect(serviceImpl.groupVersionResource).To(Equal(gvr))
-			Expect(serviceImpl.namespace).To(Equal(u.GetNamespace()))
-			Expect(serviceImpl.id).To(BeNil())
-		})
+		},
+			Entry("with no crd", false),
+			Entry("with crd", true))
 		It("Should return error when service not found", func() {
 			sb := defServiceBinding("sb1", "ns1", specapi.ServiceBindingServiceReference{
 				APIVersion: "foo/v1",

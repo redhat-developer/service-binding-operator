@@ -19,8 +19,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
+	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1beta1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"os"
+	"sync"
+
+	crdcontrollers "github.com/redhat-developer/service-binding-operator/controllers/crd"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/controllers"
@@ -52,6 +58,8 @@ func init() {
 
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(specv1alpha2.AddToScheme(scheme))
+	utilruntime.Must(v1apiextensions.AddToScheme(scheme))
+	utilruntime.Must(v1beta1apiextensions.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -138,6 +146,15 @@ func main() {
 	}
 	if err = (&specv1alpha2.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
+		os.Exit(1)
+	}
+	bindableKinds := &sync.Map{}
+	if err = (&crdcontrollers.CrdReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("CRD v1"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr, bindableKinds); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "CRD v1")
 		os.Exit(1)
 	}
 	// +kubebuilder:scaffold:builder
