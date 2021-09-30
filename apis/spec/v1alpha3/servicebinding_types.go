@@ -96,7 +96,6 @@ type ServiceBindingStatus struct {
 	Binding *ServiceBindingSecretReference `json:"binding,omitempty"`
 }
 
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding (spec API)"
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
 // +kubebuilder:subresource:status

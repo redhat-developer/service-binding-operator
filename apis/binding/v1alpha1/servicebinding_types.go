@@ -172,7 +172,6 @@ type BindingPath struct {
 // ServiceBinding expresses intent to bind a service with an application
 // workload.
 // +kubebuilder:subresource:status
-// +operator-sdk:gen-csv:customresourcedefinitions.displayName="Service Binding"
 // +kubebuilder:resource:path=servicebindings,shortName=sbr;sbrs
 // +kubebuilder:object:root=true
 type ServiceBinding struct {
