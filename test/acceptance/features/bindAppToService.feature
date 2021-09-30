@@ -505,35 +505,6 @@ Feature: Bind an application to a service
         And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "sbr-csv-attribute" should be changed to "True"
         And Secret contains "BACKSERV_ENV_SVCNAME" key with value "demo-backserv-cr-1"
 
-    @examples
-    Scenario: Bind an imported Node.js application to Etcd database
-        Given Etcd operator running
-        * Etcd cluster "etcd-cluster-example" is running
-        * Nodejs application "node-todo-git" imported from "quay.io/pmacik/node-todo" image is running
-        When Service Binding is applied
-            """
-            apiVersion: binding.operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-              name: binding-request-etcd
-            spec:
-              bindAsFiles: false
-              namingStrategy: "ETCDCLUSTER_{{ .name | upper }}"
-              application:
-                group: apps
-                version: v1
-                resource: deployments
-                name: node-todo-git
-              services:
-                - group: etcd.database.coreos.com
-                  version: v1beta2
-                  kind: EtcdCluster
-                  name: etcd-cluster-example
-              detectBindingResources: true
-            """
-        Then Service Binding "binding-request-etcd" is ready
-        And Application endpoint "/api/todos" is available
-
     @negative
     Scenario: Service Binding with empty services is not allowed in the cluster
         When Invalid Service Binding is applied
