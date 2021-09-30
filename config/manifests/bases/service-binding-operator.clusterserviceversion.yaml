@@ -17,6 +17,11 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
+    - description: BindableKinds contains a list of bindable type (group, version, kind) found in the cluster. It is cluster-scoped and there is only single instance named 'bindable-kinds'.
+      displayName: Bindable Kinds
+      kind: BindableKinds
+      name: bindablekinds.binding.operators.coreos.com
+      version: v1alpha1
     - description: Service Binding expresses intent to bind a backing service with an application workload. 
       displayName: Service Binding
       kind: ServiceBinding
@@ -26,7 +31,7 @@ spec:
       displayName: Service Binding (Spec API Tech Preview)
       kind: ServiceBinding
       name: servicebindings.servicebinding.io
-      version: v1alpha2
+      version: v1alpha3
   description: " The Service Binding Operator enables application developers to more
                    easily bind applications together with operator managed backing services such
                    as databases, without having to perform manual configuration of secrets, configmaps,
