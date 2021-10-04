@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/redhat-developer/service-binding-operator/apis/webhooks"
 	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1beta1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"os"
@@ -140,10 +141,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr, serviceAccountName); err != nil {
+	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "ServiceBinding")
 		os.Exit(1)
 	}
+	webhooks.SetupWithManager(mgr, serviceAccountName)
 	if err = (&specv1alpha2.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
 		os.Exit(1)
