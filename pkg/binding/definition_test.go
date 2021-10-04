@@ -13,6 +13,7 @@ func TestStringDefinition(t *testing.T) {
 		description   string
 		outputName    string
 		path          string
+		value         string
 		expectedValue interface{}
 	}
 
@@ -31,6 +32,14 @@ func TestStringDefinition(t *testing.T) {
 			path:        "{.status.dbCredentials.username}",
 			expectedValue: map[string]interface{}{
 				"anotherName": "AzureDiamond",
+			},
+		},
+		{
+			description: "raw value",
+			outputName:  "foo",
+			value:       "bar",
+			expectedValue: map[string]interface{}{
+				"foo": "bar",
 			},
 		},
 	}
@@ -52,6 +61,7 @@ func TestStringDefinition(t *testing.T) {
 				definition: definition{
 					path: tc.path,
 				},
+				value: tc.value,
 			}
 			val, err := d.Apply(u)
 			require.NoError(t, err)

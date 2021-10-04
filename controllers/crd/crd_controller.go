@@ -24,6 +24,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
+	"github.com/redhat-developer/service-binding-operator/pkg/util"
 	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -34,6 +35,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sync"
 )
+
+var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
+	schema.GroupVersionKind{Group: "redis.redis.opstreelabs.in", Version: "v1beta1", Kind: "Redis"}: {
+		"service.binding/type":     "redis",
+		"service.binding/host":     "path={.metadata.name}",
+		"service.binding/password": "path={.spec.kubernetesConfig.redisSecret.name},objectType=Secret,sourceKey=password",
+	},
+}
 
 // CrdReconciler reconciles a CustomResourceDefinition resources
 type CrdReconciler struct {
@@ -47,7 +56,7 @@ type CrdReconciler struct {
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=bindablekinds,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=bindablekinds/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=bindablekinds/finalizers,verbs=update
-// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch
+// +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list;watch;update;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -75,10 +84,13 @@ func (r *CrdReconciler) Reconcile(req ctrl.Request) (reconcileResult ctrl.Result
 		return ctrl.Result{}, err
 	}
 
+	toPersist := false
+
 	for i := range crd.Spec.Versions {
 		gvk := schema.GroupVersionKind{Group: crd.Spec.Group, Kind: crd.Spec.Names.Kind, Version: crd.Spec.Versions[i].Name}
 		if !crd.GetDeletionTimestamp().IsZero() {
 			r.bindableKinds.Delete(gvk)
+			toPersist = true
 			continue
 		}
 		fakeServiceContent := &unstructured.Unstructured{}
@@ -96,10 +108,27 @@ func (r *CrdReconciler) Reconcile(req ctrl.Request) (reconcileResult ctrl.Result
 		}
 		if bindable {
 			r.bindableKinds.Store(gvk, true)
+			toPersist = true
 			log.Info("bindable", "gvk", gvk)
+		} else {
+			annotations, found := bindingAnnotations[gvk]
+			if found {
+				log.Info("Found bindable annotations", "gvk", gvk, "annotations", annotations)
+				crd.SetAnnotations(util.MergeMaps(crd.GetAnnotations(), annotations))
+				err := r.Update(ctx, crd)
+				if err != nil {
+					log.Error(err, "Error updating CRD")
+					return ctrl.Result{}, err
+				}
+				log.Info("Annotations applied")
+			}
 		}
 	}
 
+	if !toPersist {
+		log.Info("Done")
+		return ctrl.Result{}, nil
+	}
 	bk := &bindingapi.BindableKinds{}
 	err = r.Get(ctx, client.ObjectKey{Name: "bindable-kinds"}, bk)
 	if err != nil {

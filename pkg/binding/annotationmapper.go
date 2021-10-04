@@ -34,6 +34,7 @@ const (
 	elementTypeModelKey             modelKey = "elementType"
 	AnnotationPrefix                         = "service.binding"
 	ProvisionedServiceAnnotationKey          = "servicebinding.io/provisioned-service"
+	TypeKey                                  = AnnotationPrefix + "/type"
 )
 
 func NewDefinitionBuilder(annotationName string, annotationValue string, configMapReader UnstructuredResourceReader, secretReader UnstructuredResourceReader) *annotationBackedDefinitionBuilder {
@@ -95,9 +96,10 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 	}
 
 	switch {
-	case mod.isStringElementType() && mod.isStringObjectType():
+	case (mod.isStringElementType() && mod.isStringObjectType()) || mod.value != "":
 		return &stringDefinition{
 			outputName: outputName,
+			value:      mod.value,
 			definition: definition{
 				path: mod.path,
 			},

@@ -29,10 +29,11 @@ class Operator(object):
             return False
 
     def install_catalog_source(self):
-        install_src_output = self.openshift.create_catalog_source(self.operator_catalog_source_name, self.operator_catalog_image)
-        if re.search(r'.*catalogsource.operators.coreos.com/%s\s(unchanged|created)' % self.operator_catalog_source_name, install_src_output) is None:
-            print("Failed to create {} catalog source".format(self.operator_catalog_source_name))
-            return False
+        if self.operator_catalog_image != "":
+            install_src_output = self.openshift.create_catalog_source(self.operator_catalog_source_name, self.operator_catalog_image)
+            if re.search(r'.*catalogsource.operators.coreos.com/%s\s(unchanged|created)' % self.operator_catalog_source_name, install_src_output) is None:
+                print("Failed to create {} catalog source".format(self.operator_catalog_source_name))
+                return False
         return self.openshift.wait_for_package_manifest(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
 
     def install_operator_subscription(self):
