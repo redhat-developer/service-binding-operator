@@ -79,9 +79,15 @@ def check_env_var_existence(context, name):
 
 @step(u'Content of file "{file_path}" in application pod is')
 def check_file_value(context, file_path):
-    value = context.text.strip()
+    value = Template(context.text.strip()).substitute(NAMESPACE=context.namespace.name)
     resource = Template(file_path).substitute(scenario_id=scenario_id(context))
     polling2.poll(lambda: context.application.get_file_value(resource) == value, step=5, timeout=400)
+
+
+@step(u'File "{file_path}" exists in application pod')
+def check_file_exists(context, file_path):
+    resource = Template(file_path).substitute(scenario_id=scenario_id(context))
+    polling2.poll(lambda: context.application.get_file_value(resource) != "", step=5, timeout=400)
 
 
 @step(u'File "{file_path}" is unavailable in application pod')

@@ -65,7 +65,7 @@ func newModel(annotationValue string) (*model, error) {
 		}
 		return nil, fmt.Errorf("path not found: %q", annotationValue)
 	}
-	if !strings.HasPrefix(path, "{") || !strings.HasSuffix(path, "}") {
+	if n := strings.Count(path, "{"); n == 0 || n != strings.Count(path, "}") {
 		return nil, fmt.Errorf("path has invalid syntax: %q", path)
 	}
 

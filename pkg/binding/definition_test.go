@@ -42,6 +42,22 @@ func TestStringDefinition(t *testing.T) {
 				"foo": "bar",
 			},
 		},
+		{
+			description: "value with prefix",
+			outputName:  "foo",
+			path:        "foo-{.status.dbCredentials.username}",
+			expectedValue: map[string]interface{}{
+				"foo": "foo-AzureDiamond",
+			},
+		},
+		{
+			description: "concatenate two json paths",
+			outputName:  "foo",
+			path:        "{.status.dbCredentials.username}-{.status.dbCredentials.password}",
+			expectedValue: map[string]interface{}{
+				"foo": "AzureDiamond-foo",
+			},
+		},
 	}
 
 	u := &unstructured.Unstructured{
@@ -49,6 +65,7 @@ func TestStringDefinition(t *testing.T) {
 			"status": map[string]interface{}{
 				"dbCredentials": map[string]interface{}{
 					"username": "AzureDiamond",
+					"password": "foo",
 				},
 			},
 		},
@@ -214,6 +231,37 @@ func TestMapFromSecretDataField(t *testing.T) {
 		objectType: secretObjectType,
 		definition: definition{
 			path: "{.status.dbCredentials}",
+		},
+	}
+	val, err := d.Apply(&unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"namespace": "test-namespace",
+			},
+			"status": map[string]interface{}{
+				"dbCredentials": "dbCredentials-secret",
+			},
+		},
+	})
+	require.NoError(t, err)
+	v := map[string]string{
+		"username": "user",
+		"password": "password",
+	}
+	require.Equal(t, v, val.Get())
+}
+
+func TestMapFromConstructedSecretName(t *testing.T) {
+	f := mocks.NewFake(t, "test-namespace")
+	f.AddMockedUnstructuredSecret("foo-dbCredentials-secret")
+	d := &mapFromDataFieldDefinition{
+		secretConfigMapReader: &secretConfigMapReader{
+			secretReader:    secretsReader(f.FakeDynClient()),
+			configMapReader: configMapsReader(f.FakeDynClient()),
+		},
+		objectType: secretObjectType,
+		definition: definition{
+			path: "foo-{.status.dbCredentials}",
 		},
 	}
 	val, err := d.Apply(&unstructured.Unstructured{

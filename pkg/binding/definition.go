@@ -166,7 +166,7 @@ func (d *mapFromDataFieldDefinition) Apply(u *unstructured.Unstructured) (Value,
 	if len(res) != 1 {
 		return nil, fmt.Errorf("only one value should be returned for %v but we got %v", d.path, res)
 	}
-	resourceName := res[0].Elem().String()
+	resourceName := fmt.Sprintf("%v", res[0].Interface())
 
 	var otherObj *unstructured.Unstructured
 	if d.objectType == secretObjectType {
