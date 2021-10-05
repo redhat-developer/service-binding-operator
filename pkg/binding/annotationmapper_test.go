@@ -86,6 +86,17 @@ func TestAnnotationBackedBuilderValidAnnotations(t *testing.T) {
 			},
 		},
 		{
+			description: "value definition",
+			builder: &annotationBackedDefinitionBuilder{
+				name:  "service.binding/type",
+				value: "foo",
+			},
+			expectedValue: &stringDefinition{
+				outputName: "type",
+				value:      "foo",
+			},
+		},
+		{
 			description: "Ignore non-service binding annotations",
 			builder: &annotationBackedDefinitionBuilder{
 				name:  "foo",

@@ -33,6 +33,6 @@ uuid()
 
 mkdir -p "$OUTPUT_DIR"
 
-[ -f "$NS_FILE" ] || echo "test-namespace-$(uuid | cut -d '-' -f 5)" > "$NS_FILE"
+[ -f "$NS_FILE" ] || echo "test-ns-$(uuid | cut -d '-' -f 5 | cut -c -4)" > "$NS_FILE"
 
 cat "$NS_FILE"
