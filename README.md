@@ -114,38 +114,6 @@ Clone the repository and run `make run` using an existing `kube:admin` kube cont
 * Auto-detect binding resources in the absence of binding decorators.
 
 
-## Getting Started
-
-The best way to get started with the Service Binding Operator is to see it in action.
-
-A number of example scenarios for using the operator are included in this
-repo. The examples are found in the "/examples" directory. Each of these
-examples illustrates a usage scenario for the operator. Each example also
-includes a README file with step-by-step instructions for how to run the
-example.
-
-The following section in this README file includes links to the current set of examples.
-
-## Example Scenarios
-
-The following example scenarios are available:
-
-[Binding an Imported app with an In-cluster Operator Managed PostgreSQL Database](examples/nodejs_postgresql/README.md)
-
-[Binding an Imported app with an Off-cluster Operator Managed AWS RDS Database](examples/nodejs_awsrds_varprefix/README.md)
-
-[Binding an Imported Java Spring Boot app with an In-cluster Operator Managed PostgreSQL Database](examples/java_postgresql_customvar/README.md)
-
-[Binding an Imported Quarkus app deployed as Knative service with an In-cluster Operator Managed PostgreSQL Database](examples/knative_postgresql_customvar/README.md)
-
-[Binding an Imported app with an In-cluster Operator Managed ETCD Database](examples/nodejs_etcd_operator/README.md)
-
-[Binding an Imported app to an Off-cluster Operator Managed IBM Cloud Service](examples/nodejs_ibmcloud_operator/README.md)
-
-[Binding an Imported app in one namespace with an In-cluster Managed PostgreSQL Database in another namespace](examples/nodejs_postgresql_namespaces/README.md)
-
-[Binding an Imported app to a Route/Ingress](examples/route_k8s_resource/README.md)
-
 ## Roadmap
 
 The [Service Binding Operator roadmap uses the label roadmap](https://github.com/redhat-developer/service-binding-operator/labels/roadmap) to track the direction of the project.

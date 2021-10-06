@@ -32,7 +32,6 @@ Feature: Insert service binding to a custom location in application resource
             """
         * OLM Operator "custom_app" is running
 
-    # https://github.com/redhat-developer/service-binding-operator/tree/master/examples/pod_spec_path
     Scenario: Specify container's path in Service Binding
         Given The Custom Resource is present
             """
