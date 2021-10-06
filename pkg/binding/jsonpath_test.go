@@ -59,30 +59,34 @@ func TestGetValueByJSONPath(t *testing.T) {
 		WantErr bool
 	}{
 		{
-			Path: ".spec.serviceName",
+			Path: "{.spec.serviceName}",
 			Want: "db1-svc",
 		},
 		{
-			Path: ".spec.template.spec.containers[0].name",
+			Path: "{.spec.template.spec.containers[0].name}",
 			Want: "db1",
 		},
 		{
-			Path: ".spec.template.spec.containers[0].env[2].value",
+			Path: "{.spec.template.spec.containers[0].env[2].value}",
 			Want: "mydb",
 		},
 		{
-			Path: ".spec.template.spec.containers[?(@.name==\"db1\")].env[?(@.name==\"POSTGRESQL_USER\")].value",
+			Path: "{.spec.template.spec.containers[?(@.name==\"db1\")].env[?(@.name==\"POSTGRESQL_USER\")].value}",
 			Want: "user1",
 		},
 		{
-			Path: ".spec.template.metadata.labels",
+			Path: "{.spec.template.metadata.labels}",
 			Want: map[string]interface{}{
 				"app": "db1",
 			},
 		},
 		{
-			Path:    ".foo",
+			Path:    "{.foo}",
 			WantErr: true,
+		},
+		{
+			Path: "foo-{.spec.serviceName}",
+			Want: "foo-db1-svc",
 		},
 	}
 
@@ -94,7 +98,7 @@ func TestGetValueByJSONPath(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Path, func(t *testing.T) {
-			result, err := getValuesByJSONPath(u.Object, "{"+test.Path+"}")
+			result, err := getValuesByJSONPath(u.Object, test.Path)
 			if (err != nil) != test.WantErr {
 				t.Errorf("Expecting err %v, got %v\n", test.WantErr, err)
 			}

@@ -42,6 +42,12 @@ var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
 		"service.binding/host":     "path={.metadata.name}",
 		"service.binding/password": "path={.spec.kubernetesConfig.redisSecret.name},objectType=Secret,sourceKey=password",
 	},
+	schema.GroupVersionKind{Group: "postgres-operator.crunchydata.com", Version: "v1beta1", Kind: "PostgresCluster"}: {
+		"service.binding/type":     "postgresql",
+		"service.binding":          "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret",
+		"service.binding/database": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=dbname",
+		"service.binding/username": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=user",
+	},
 }
 
 // CrdReconciler reconciles a CustomResourceDefinition resources
