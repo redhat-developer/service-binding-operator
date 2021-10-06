@@ -4,6 +4,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,4 +45,63 @@ var _ = Describe("Validation Webhook", func() {
 		}
 		Expect(sb.ValidateUpdate(old)).ShouldNot(HaveOccurred())
 	})
+
+	It("should return error if both application name and selecter is specified during creation", func() {
+
+		ls := &metav1.LabelSelector{
+			MatchLabels: map[string]string{"env": "prod"},
+		}
+
+		ref := Application{
+			Ref: Ref{
+				Group:   "app",
+				Version: "v1",
+				Kind:    "Foo",
+				Name:    "app1",
+			},
+			LabelSelector: ls,
+		}
+
+		sb := &ServiceBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sb1",
+				Namespace: "ns1",
+			},
+			Spec: ServiceBindingSpec{
+				Application: ref,
+			},
+		}
+		Expect(sb.ValidateCreate()).Should(HaveOccurred())
+
+	})
+
+	It("should return error if both application name and selecter is specified during update", func() {
+
+		ls := &metav1.LabelSelector{
+			MatchLabels: map[string]string{"env": "prod"},
+		}
+
+		ref := Application{
+			Ref: Ref{
+				Group:   "app",
+				Version: "v1",
+				Kind:    "Foo",
+				Name:    "app1",
+			},
+			LabelSelector: ls,
+		}
+
+		sb := &ServiceBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "sb1",
+				Namespace: "ns1",
+			},
+			Spec: ServiceBindingSpec{
+				Application: ref,
+			},
+		}
+		Expect(sb.ValidateUpdate(sb)).Should(HaveOccurred())
+
+	})
+
 })

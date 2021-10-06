@@ -331,6 +331,199 @@ Feature: Bind an application to a service
         Then Error message is thrown
         And Service Binding "binding-request-empty-app" is not persistent in the cluster
 
+    @negative
+    Scenario: Cannot create Service Binding with name and label selector
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-empty-app
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.common
+                username: foo
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-with-name-label-selector
+            spec:
+                bindAsFiles: false
+                application:
+                    name: gen-missing-app
+                    group: apps
+                    version: v1
+                    resource: deployments
+                    labelSelector:
+                      matchLabels:
+                        name: backend-operator
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo-empty-app
+            """
+        Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
+
+    @spec
+    Scenario: Cannot create Service Binding with name and label selector in the spec API
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-empty-app
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.common
+                username: foo
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-with-name-label-selector-spec
+            spec:
+                workload:
+                  name: gen-missing-app
+                  apiVersion: apps/v1
+                  kind: Deployment
+                  selector:
+                    matchLabels:
+                      name: backend-operator
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: backend-demo-empty-app
+            """
+        Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
+
+    @negative
+    Scenario: Cannot update Service Binding with name and label selector
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-empty-app
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.common
+                username: foo
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-with-name-label-selector2
+            spec:
+                bindAsFiles: false
+                application:
+                    group: apps
+                    version: v1
+                    resource: deployments
+                    labelSelector:
+                      matchLabels:
+                        name: backend-operator
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo-empty-app
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-with-name-label-selector2
+            spec:
+                bindAsFiles: false
+                application:
+                    name: gen-missing-app
+                    group: apps
+                    version: v1
+                    resource: deployments
+                    labelSelector:
+                      matchLabels:
+                        name: backend-operator
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: backend-demo-empty-app
+            """
+        Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
+
+    @spec
+    Scenario: Cannot update Service Binding with name and label selector in the spec API
+        Given CustomResourceDefinition backends.stable.example.com is available
+        * The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: backend-demo-empty-app
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.common
+                username: foo
+            """
+        When Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-with-name-label-selector-spec2
+            spec:
+                workload:
+                  apiVersion: apps/v1
+                  kind: Deployment
+                  selector:
+                    matchLabels:
+                      name: backend-operator
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: backend-demo-empty-app
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ServiceBinding
+            metadata:
+                name: binding-request-with-name-label-selector-spec2
+            spec:
+                workload:
+                  name: gen-missing-app
+                  apiVersion: apps/v1
+                  kind: Deployment
+                  selector:
+                    matchLabels:
+                      name: backend-operator
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: backend-demo-empty-app
+            """
+        Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
+
     @olm
     Scenario: Bind service to application using binding definition available in x-descriptors
         Given OLM Operator "backend-new-spec" is running

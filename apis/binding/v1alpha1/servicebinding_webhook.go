@@ -15,6 +15,7 @@ package v1alpha1
 
 import (
 	"errors"
+
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -31,13 +32,22 @@ func (r *ServiceBinding) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// +kubebuilder:webhook:path=/validate-binding-operators-coreos-com-v1alpha1-servicebinding,mutating=false,failurePolicy=fail,sideEffects=None,groups=binding.operators.coreos.com,resources=servicebindings,verbs=update,versions=v1alpha1,name=vservicebinding.kb.io,admissionReviewVersions={v1beta1}
+// +kubebuilder:webhook:path=/validate-binding-operators-coreos-com-v1alpha1-servicebinding,mutating=false,failurePolicy=fail,sideEffects=None,groups=binding.operators.coreos.com,resources=servicebindings,verbs=create;update,versions=v1alpha1,name=vservicebinding.kb.io,admissionReviewVersions={v1beta1}
 
 var _ webhook.Validator = &ServiceBinding{}
 
+func checkNameAndSelector(r *ServiceBinding) error {
+	if r.Spec.Application.Name != "" && r.Spec.Application.LabelSelector != nil && r.Spec.Application.LabelSelector.MatchLabels != nil {
+		err := errors.New("name and selector MUST NOT be defined in the application reference")
+		log.Error(err, "name and selector check failed")
+		return err
+	}
+	return nil
+}
+
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ServiceBinding) ValidateCreate() error {
-	return nil
+	return checkNameAndSelector(r)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -49,8 +59,9 @@ func (r *ServiceBinding) ValidateUpdate(old runtime.Object) error {
 	err := apis.CanUpdateBinding(r, oldSb)
 	if err != nil {
 		log.Error(err, "Update failed")
+		return err
 	}
-	return err
+	return checkNameAndSelector(r)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type

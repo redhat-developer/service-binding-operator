@@ -69,6 +69,7 @@ webhooks:
     apiVersions:
     - v1alpha1
     operations:
+    - CREATE
     - UPDATE
     resources:
     - servicebindings
@@ -88,6 +89,7 @@ webhooks:
     apiVersions:
     - v1alpha3
     operations:
+    - CREATE
     - UPDATE
     resources:
     - servicebindings

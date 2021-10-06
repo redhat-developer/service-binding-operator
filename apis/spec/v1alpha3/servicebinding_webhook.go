@@ -19,6 +19,7 @@ package v1alpha3
 
 import (
 	"errors"
+
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -38,13 +39,22 @@ func (r *ServiceBinding) SetupWebhookWithManager(mgr ctrl.Manager) error {
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-// +kubebuilder:webhook:path=/validate-servicebinding-io-v1alpha3-servicebinding,mutating=false,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=update,versions=v1alpha3,name=vspecservicebinding.kb.io,admissionReviewVersions={v1beta1}
+// +kubebuilder:webhook:path=/validate-servicebinding-io-v1alpha3-servicebinding,mutating=false,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=create;update,versions=v1alpha3,name=vspecservicebinding.kb.io,admissionReviewVersions={v1beta1}
 
 var _ webhook.Validator = &ServiceBinding{}
 
+func checkNameAndSelector(r *ServiceBinding) error {
+	if r.Spec.Workload.Name != "" && r.Spec.Workload.Selector != nil && r.Spec.Workload.Selector.MatchLabels != nil {
+		err := errors.New("name and selector MUST NOT be defined in the application reference")
+		log.Error(err, "name and selector check failed")
+		return err
+	}
+	return nil
+}
+
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *ServiceBinding) ValidateCreate() error {
-	return nil
+	return checkNameAndSelector(r)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
@@ -56,8 +66,9 @@ func (sb *ServiceBinding) ValidateUpdate(old runtime.Object) error {
 	err := apis.CanUpdateBinding(sb, oldSb)
 	if err != nil {
 		log.Error(err, "Update failed")
+		return err
 	}
-	return err
+	return checkNameAndSelector(sb)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
