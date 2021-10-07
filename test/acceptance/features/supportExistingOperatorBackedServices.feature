@@ -158,3 +158,70 @@ Feature: Support a number of existing operator-backed services out of the box
            hippo
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+
+  @crdv1beta1
+  Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
+    Given Percona Mysql operator is running
+    * Generic test application is running
+    * The Custom Resource is present
+          """
+          apiVersion: pxc.percona.com/v1-8-0
+          kind: PerconaXtraDBCluster
+          metadata:
+            name: minimal-cluster
+          spec:
+            crVersion: 1.8.0
+            secretsName: minimal-cluster-secrets
+            allowUnsafeConfigurations: true
+            upgradeOptions:
+              apply: 8.0-recommended
+              schedule: "0 4 * * *"
+            pxc:
+              size: 1
+              image: percona/percona-xtradb-cluster:8.0.23-14.1
+              volumeSpec:
+                persistentVolumeClaim:
+                  resources:
+                    requests:
+                      storage: 6G
+            haproxy:
+              enabled: true
+              size: 1
+              image: perconalab/percona-xtradb-cluster-operator:main-haproxy
+            logcollector:
+              enabled: true
+              image: perconalab/percona-xtradb-cluster-operator:main-logcollector
+          """
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: pxc.percona.com
+                version: v1-8-0
+                kind: PerconaXtraDBCluster
+                name: minimal-cluster
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then Service Binding is ready
+    And Kind PerconaXtraDBCluster with apiVersion pxc.percona.com/v1-8-0 is listed in bindable kinds
+    And Content of file "/bindings/$scenario_id/type" in application pod is
+           """
+           mysql
+           """
+    And Content of file "/bindings/$scenario_id/host" in application pod is
+           """
+           minimal-cluster-haproxy.$NAMESPACE
+           """
+    And Content of file "/bindings/$scenario_id/username" in application pod is
+           """
+           root
+           """
+    And File "/bindings/$scenario_id/password" exists in application pod

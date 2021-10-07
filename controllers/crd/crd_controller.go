@@ -48,6 +48,20 @@ var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
 		"service.binding/database": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=dbname",
 		"service.binding/username": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=user",
 	},
+	schema.GroupVersionKind{Group: "pxc.percona.com", Version: "v1-8-0", Kind: "PerconaXtraDBCluster"}: {
+		"service.binding/type":     "mysql",
+		"service.binding":          "path={.spec.secretsName},objectType=Secret",
+		"service.binding/host":     "path={.status.host}",
+		"service.binding/username": "root",
+		"service.binding/password": "path={.spec.secretsName},objectType=Secret,sourceKey=root",
+	},
+	schema.GroupVersionKind{Group: "pxc.percona.com", Version: "v1-9-0", Kind: "PerconaXtraDBCluster"}: {
+		"service.binding/type":     "mysql",
+		"service.binding":          "path={.spec.secretsName},objectType=Secret",
+		"service.binding/host":     "path={.status.host}",
+		"service.binding/username": "root",
+		"service.binding/password": "path={.spec.secretsName},objectType=Secret,sourceKey=root",
+	},
 }
 
 // CrdReconciler reconciles a CustomResourceDefinition resources
