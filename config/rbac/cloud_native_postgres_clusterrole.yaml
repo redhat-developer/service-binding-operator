@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-native-postgres-viewer-role
+  labels:
+    servicebinding.io/controller: "true"
+rules:
+  - apiGroups:
+      - postgresql.k8s.enterprisedb.io
+    resources:
+      - clusters
+    verbs:
+      - get
+      - list

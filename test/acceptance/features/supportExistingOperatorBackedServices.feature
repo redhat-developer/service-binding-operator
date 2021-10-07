@@ -226,3 +226,67 @@ Feature: Support a number of existing operator-backed services out of the box
            root
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+
+  Scenario: Bind test application to Postgres instance provisioned by Cloud Native Postgres operator
+    Given Cloud Native Postgres operator is running
+    * Generic test application is running
+    * The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: cluster-example-app-user
+            type: kubernetes.io/basic-auth
+            stringData:
+              password: secret
+              username: guest
+            """
+    * The Custom Resource is present
+            """
+            apiVersion: postgresql.k8s.enterprisedb.io/v1
+            kind: Cluster
+            metadata:
+              name: postgres
+            spec:
+              instances: 1
+              primaryUpdateStrategy: unsupervised
+              storage:
+                size: 1Gi
+            """
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: postgresql.k8s.enterprisedb.io
+                version: v1
+                kind: Cluster
+                name: postgres
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then Service Binding is ready
+    And Kind Cluster with apiVersion postgresql.k8s.enterprisedb.io/v1 is listed in bindable kinds
+    And Content of file "/bindings/$scenario_id/type" in application pod is
+           """
+           postgresql
+           """
+    And Content of file "/bindings/$scenario_id/host" in application pod is
+           """
+           postgres
+           """
+    And Content of file "/bindings/$scenario_id/username" in application pod is
+           """
+           app
+           """
+    And Content of file "/bindings/$scenario_id/database" in application pod is
+           """
+           app
+           """
+    And File "/bindings/$scenario_id/password" exists in application pod
