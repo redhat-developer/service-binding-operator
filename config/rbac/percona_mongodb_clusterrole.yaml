@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: percona-mongodb-view
+  labels:
+    servicebinding.io/controller: "true"
+rules:
+  - apiGroups:
+      - psmdb.percona.com
+    resources:
+      - perconaservermongodbs
+      - perconaservermongodbs/status
+    verbs:
+      - get
+      - list

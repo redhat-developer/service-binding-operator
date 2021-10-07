@@ -63,6 +63,22 @@ var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
 		"service.binding/username": "root",
 		"service.binding/password": "path={.spec.secretsName},objectType=Secret,sourceKey=root",
 	},
+	schema.GroupVersionKind{Group: "psmdb.percona.com", Version: "v1-9-0", Kind: "PerconaServerMongoDB"}: {
+		"service.binding/type":     "mongodb",
+		"service.binding/provider": "percona",
+		"service.binding":          "path={.spec.secrets.users},objectType=Secret",
+		"service.binding/username": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_USER",
+		"service.binding/password": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_PASSWORD",
+		"service.binding/host":     "path={.status.host}",
+	},
+	schema.GroupVersionKind{Group: "psmdb.percona.com", Version: "v1-10-0", Kind: "PerconaServerMongoDB"}: {
+		"service.binding/type":     "mongodb",
+		"service.binding/provider": "percona",
+		"service.binding":          "path={.spec.secrets.users},objectType=Secret",
+		"service.binding/username": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_USER",
+		"service.binding/password": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_PASSWORD",
+		"service.binding/host":     "path={.status.host}",
+	},
 	schema.GroupVersionKind{Group: "postgresql.k8s.enterprisedb.io", Version: "v1", Kind: "Cluster"}: {
 		"service.binding/type":     "postgresql",
 		"service.binding/host":     "path={.metadata.name}",
