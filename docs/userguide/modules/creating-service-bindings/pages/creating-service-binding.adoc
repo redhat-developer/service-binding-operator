@@ -1,0 +1,94 @@
+= Creating Service Binding
+
+In this section, consider the case that the service you want to connect to is already
+exposing binding data by either:
+
+[arabic]
+. Provisioned Service
+. Direct Secret Reference
+. Secret Generated through CRD/CR annotations
+. Secret Generated through OLM Descriptors
+. Detect Bindings through owned resources
+
+You also need an application to be used along with the ServiceBinding
+resource.
+
+Service Binding Operator is providing and supporting two different APIs.
+
+* `binding.operators.coreos.com/v1alpha1`: This API is compliant with
+the Service Binding specification. It is fully supported and considered
+as the mature API. It’s the API we recommend in production environments.
+* `servicebinding.io/v1alpha3` : This API is the one defined in the
+Service Binding specification. The specification is still evolving and
+maturing, as a result the API might change in the future. We recommend
+you to carefully use that API for testing purposes and preparing your
+integration to become fully compliant with the specification. It is
+available in Service Binding Operator 1.x, as Tech Preview.
+* We’ll consider supporting only the API from the specification, once
+the Service Binding specification will be officially GA. Of course, that
+will be a breaking change and handle in a safe way for you.
+
+Some of the key difference between the APIs:
+
+[width="100%",cols="46%,54%",options="header",]
+|==
+|binding.operators.coreos.com API |servicebinding.io API
+|Support naming strategy |Does not support naming strategy
+
+|Support custom mapping |Does not support custom mapping
+
+|Support to auto-detect binding resources |Does not support
+auto-detecting binding resources
+
+|Flag to bind as files or env vars |No flag switch between files and env
+vars
+|==
+
+Here is the example servicebinding in
+`binding.operators.coreos.com/v1alpha1` API:
+
+....
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: account-service
+spec:
+  application:
+    version: v1
+    group: apps
+    kind: Deployment
+    name: online-banking
+
+  services:
+  - version: v1alpha1
+    group: example.com
+    kind: AccountService
+    name: prod-account-service
+....
+
+Here is the same example with `servicebinding.io` API group:
+
+....
+apiVersion: servicebinding.io/v1alpha3
+kind: ServiceBinding
+metadata:
+  name: account-service
+spec:
+  application:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: online-banking
+
+  service:
+    apiVersion: example.com/v1alpha1
+    kind: AccountService
+    name: prod-account-service
+....
+
+The `.spec.services` is a list of resources related to a service. The
+second API only supports only one service. The service kind is
+`Database`, API group is `example.com`, API version `v1alpha1`, and the
+name of the resource is `prod-account-service`.
+
+The application resource is a deployment resource with the name
+`online-banking`.

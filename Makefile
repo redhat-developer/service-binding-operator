@@ -325,3 +325,8 @@ release-manifests: prepare-operatorhub-pr kustomize yq
 ## Removes temp directories
 clean:
 	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
+
+.PHONY: site
+## render site
+site:
+	$(CONTAINER_RUNTIME) run -u $(shell id -u) -e HOME=/antora -v ${PWD}:/antora:Z --rm -t antora/antora:2.3.4 antora-playbook.yaml

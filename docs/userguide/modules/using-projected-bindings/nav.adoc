@@ -1,0 +1,2 @@
+* Using Projected Bindings
+** xref:using-projected-bindings.adoc[]

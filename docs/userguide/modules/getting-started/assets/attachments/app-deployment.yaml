@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-rest
+  namespace: my-postgresql
+  labels:
+    app: spring-petclinic-rest
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-petclinic-rest
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-rest
+    spec:
+      containers:
+        - name: application
+          image: quay.io/baijum/spring-petclinic-rest:latest
+          env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: postgresql,spring-data-jpa
+          ports:
+          - name: http
+            containerPort: 9966
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-petclinic-rest
+  namespace: my-postgresql
+spec:
+  ports:
+  - port: 80
+    targetPort: 9966
+  selector:
+    app: spring-petclinic-rest

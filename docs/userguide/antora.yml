@@ -1,0 +1,10 @@
+name: userguide
+version: master
+title: User Guide
+start_page: intro.adoc
+nav:
+  - modules/ROOT/nav.adoc
+  - modules/getting-started/nav.adoc
+  - modules/creating-service-bindings/nav.adoc
+  - modules/using-projected-bindings/nav.adoc
+  - modules/exposing-binding-data/nav.adoc
