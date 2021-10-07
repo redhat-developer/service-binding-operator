@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Introduction :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/intro.html">
+    <meta name="generator" content="Antora 2.3.4">
+    <link rel="stylesheet" href="../_/css/site.css">
+    <script>var uiRootPath = '../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="getting-started/quick-start.html">Quick Start Guide</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="creating-service-bindings/binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="creating-service-bindings/unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="using-projected-bindings/using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Expose Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/adding-annotation.html">Adding Binding Data as Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="intro.html">master</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="intro.html" class="home-link is-current"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="intro.html">User Guide</a></li>
+    <li><a href="intro.html">Introduction</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Introduction</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service Binding manages the data plane for applications and backing
+services. Service Binding Controller reads data made available by the
+control plane of backing services and projects the data to applications
+according to the rules provided via ServiceBinding resource.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/intro-bindings.png" alt="service-binding-intro"></span></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_why_service_bindings"><a class="anchor" href="#_why_service_bindings"></a>Why Service Bindings?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Today in Kubernetes, the exposure of secrets for connecting applications
+to external services such as REST APIs, databases, event buses, and many
+more is manual and bespoke. Each service provider suggests a different
+way to access their secrets, and each application developer consumes
+those secrets in a custom way to their applications. While there is a
+good deal of value to this flexibility level, large development teams
+lose overall velocity dealing with each unique solution.</p>
+</div>
+<div class="paragraph">
+<p><strong>Service Binding:</strong> - Enables developers to connect their application to
+backing services with a consistent and predictable experience - Removes
+error-prone manual configuration of binding information - Provides
+service operators a low-touch administrative experience to provision and
+manage access to services - Enriches development lifecycle with a
+consistent and declarative service binding methow that eliminates
+environments discrepancies</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_features"><a class="anchor" href="#_features"></a>Features</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Application Projection</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Projection of binding data as file, with a volume mount</p>
+</li>
+<li>
+<p>Projection of binding data as environment variables</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Extracting Binding data from Services</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Extract binding data based on annotations present in
+CRDs/CRs/resources</p>
+</li>
+<li>
+<p>Extract binding data based on annotations present in OLM descriptors</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Service Binding Options</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Cross-namespace binding</p>
+</li>
+<li>
+<p>Binding to a specific container of an application</p>
+</li>
+<li>
+<p>Custom path projection</p>
+</li>
+<li>
+<p>Secret substitution and mappings with Go Template</p>
+</li>
+<li>
+<p>Auto-detection of bindings in the absence of binding decorators</p>
+</li>
+<li>
+<p>Binding of PodSpec or non-PodSpec workloads</p>
+</li>
+<li>
+<p>Custom binding variables composed from one or more backing services</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_security"><a class="anchor" href="#_security"></a>Security</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>RBAC support to opt-in</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_terminology"><a class="anchor" href="#_terminology"></a>Terminology</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Backing Service</strong></p>
+</div>
+<div class="paragraph">
+<p>Any software that exposes functionality. Examples include a database, a
+message broker, an application with REST endpoints, an event stream, an
+Application Performance Monitor, or a Hardware Security Module.</p>
+</div>
+<div class="paragraph">
+<p><strong>Application</strong></p>
+</div>
+<div class="paragraph">
+<p>Any process, running within a container. Examples include a Spring Boot
+application, a NodeJS Express application, or a Ruby Rails application.
+Note: This is different than an umbrella application as defined by the
+Kubernetes SIG, which refers to a set of micro-services.</p>
+</div>
+<div class="paragraph">
+<p><strong>Service Binding</strong></p>
+</div>
+<div class="paragraph">
+<p>The act of or representation of the action of providing information
+about a Service to an Application</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_referenced_specification"><a class="anchor" href="#_referenced_specification"></a>Referenced Specification</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service Binding Operator supports the
+<a href="https://github.com/k8s-service-bindings/spec">Service Binding
+Specification for Kubernetes</a>.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../_/js/site.js"></script>
+<script async src="../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

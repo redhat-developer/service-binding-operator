@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Adding Binding Data as Annotations :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/adding-annotation.html">
+    <meta name="generator" content="Antora 2.3.4">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick Start Guide</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../using-projected-bindings/using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Expose Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="adding-annotation.html">Adding Binding Data as Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../intro.html">master</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Expose Binding Data</li>
+    <li><a href="adding-annotation.html">Adding Binding Data as Annotations</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Adding Binding Data as Annotations</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>If your backing service is not compliant with the Service Binding
+specification as a Provisioned Service resource, you can annotate the
+resources of the backing service to expose the binding data with
+specific annotations. Adding annotations under the metadata section
+alters the custom resources and CRDs of the backing services. Using this
+method, you can create a corresponding mapping with the connectivity
+values and binding data.</p>
+</div>
+<div class="paragraph">
+<p>The Service Binding Operator detects the annotations added to the CRDs
+and custom resources and creates a Secret service resource with the
+values extracted based on the annotations. The Service Binding Operator
+then projects these values into the application.</p>
+</div>
+<div class="paragraph">
+<p>The following examples show the annotations that are added under the
+metadata section and the referenced ConfigMap and Secret resources:</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_annotations_for_a_secret_object"><a class="anchor" href="#_example_annotations_for_a_secret_object"></a>Example: Annotations for a Secret object</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
+spec:
+  ...
+
+status:
+  data:
+    dbCredentials: db-cred</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_annotations_for_a_configmap_object"><a class="anchor" href="#_example_annotations_for_a_configmap_object"></a>Example: Annotations for a ConfigMap object</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout"
+spec:
+  ...
+
+status:
+  data:
+    dbConfiguration: db-conf</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_referenced_configmap_object_from_a_resource"><a class="anchor" href="#_example_referenced_configmap_object_from_a_resource"></a>Example: Referenced ConfigMap object from a resource</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  db_timeout: "10s"
+  username: "guest"</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_an_entire_secret_as_the_binding_data"><a class="anchor" href="#_exposing_an_entire_secret_as_the_binding_data"></a>Exposing an entire Secret as the binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations for the Secret, under the metadata section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
+spec:
+  ...
+
+status:
+  data:
+    dbCredentials: db-cred</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_the_referenced_secret_from_the_backing_service_resource"><a class="anchor" href="#_example_the_referenced_secret_from_the_backing_service_resource"></a>Example: The referenced Secret from the backing service resource</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: v1
+kind: Secret
+metadata:
+  name: db-cred
+data:
+  password: "MTBz"
+  username: "Z3Vlc3Q="</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_an_entire_config_map_as_the_binding_data"><a class="anchor" href="#_exposing_an_entire_config_map_as_the_binding_data"></a>Exposing an entire config map as the binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations for the ConfigMap, under the metadata
+section.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding": "path={.status.data.dbConfiguration},objectType=ConfigMap"
+spec:
+  ...
+
+status:
+  data:
+    dbConfiguration: db-config</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_the_referenced_configmap_from_the_backing_service_resource"><a class="anchor" href="#_example_the_referenced_configmap_from_the_backing_service_resource"></a>Example: The referenced ConfigMap from the backing service resource</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  db_timeout: "10s"
+  username: "guest"</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_an_entry_from_a_configmap_as_the_binding_data"><a class="anchor" href="#_exposing_an_entry_from_a_configmap_as_the_binding_data"></a>Exposing an entry from a ConfigMap as the binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations for the ConfigMap entry, under the
+<code>metadata</code> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_2"><a class="anchor" href="#_example_2"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout"
+spec:
+  ...
+
+status:
+  data:
+    dbConfiguration: db-conf</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_the_referenced_config_map_from_the_backing_service_resource"><a class="anchor" href="#_example_the_referenced_config_map_from_the_backing_service_resource"></a>Example: The Referenced config map from the backing service resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The binding data should have a key with name as <code>timeout</code> and value as
+<code>10s</code>:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  db_timeout: "10s"
+  username: "guest"</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_an_entry_from_a_secret_as_the_binding_data"><a class="anchor" href="#_exposing_an_entry_from_a_secret_as_the_binding_data"></a>Exposing an entry from a Secret as the binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Adding the required annotations under the <code>metadata</code> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_3"><a class="anchor" href="#_example_3"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=Secret,sourceKey=db_timeout"
+spec:
+  ...
+
+status:
+  data:
+    dbConfiguration: db-conf</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_the_referenced_secret_from_the_backing_service_resource_2"><a class="anchor" href="#_example_the_referenced_secret_from_the_backing_service_resource_2"></a>Example: The referenced Secret from the backing service resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The binding data should have a key with name as <code>timeout</code> and value as
+<code>10s</code>:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: v1
+kind: Secret
+metadata:
+  name: db-config
+data:
+  password: "MTBz"
+  username: "Z3Vlc3Q="</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_a_resource_definition_value_as_the_binding_data"><a class="anchor" href="#_exposing_a_resource_definition_value_as_the_binding_data"></a>Exposing a resource definition value as the binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations under the <code>metadata</code> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_4"><a class="anchor" href="#_example_4"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/uri":  "path={.status.data.connectionURL}"
+spec:
+  ...
+
+status:
+  data:
+    connectionURL: "http://guest:secret123@192.168.1.29/db"</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_the_entries_of_a_collection_as_the_binding_data_by_selecting_the_key_and_value_from_each_entry"><a class="anchor" href="#_exposing_the_entries_of_a_collection_as_the_binding_data_by_selecting_the_key_and_value_from_each_entry"></a>Exposing the entries of a collection as the binding data by selecting the key and value from each entry</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations under the <code>metadata</code> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_5"><a class="anchor" href="#_example_5"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/uri": "path={.status.connections},elementType=sliceOfMaps,sourceKey=type,sourceValue=url"
+spec:
+  ...
+
+status:
+  connections:
+    - type: primary
+      url: primary.example.com
+    - type: secondary
+      url: secondary.example.com
+    - type: '404'
+      url: black-hole.example.com</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_binding_data_files"><a class="anchor" href="#_example_binding_data_files"></a>Example: Binding data files</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>/bindings/&lt;binding-name&gt;/uri_primary =&gt; primary.example.com
+/bindings/&lt;binding-name&gt;/uri_secondary =&gt; secondary.example.com
+/bindings/&lt;binding-name&gt;/uri_404 =&gt; black-hole.example.com</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_the_items_of_a_collection_as_the_binding_data_with_one_key_per_item"><a class="anchor" href="#_exposing_the_items_of_a_collection_as_the_binding_data_with_one_key_per_item"></a>Exposing the items of a collection as the binding data with one key per item</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations under the <code>metadata</code> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_6"><a class="anchor" href="#_example_6"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/tags": "path={.spec.tags},elementType=sliceOfStrings"
+
+spec:
+    tags:
+      - knowledge
+      - is
+      - power</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_binding_data_files_2"><a class="anchor" href="#_example_binding_data_files_2"></a>Example: Binding data files</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>/bindings/&lt;binding-name&gt;/tags_0 =&gt; knowledge
+/bindings/&lt;binding-name&gt;/tags_1 =&gt; is
+/bindings/&lt;binding-name&gt;/tags_2 =&gt; power</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_exposing_the_values_of_collection_entries_as_the_binding_data_with_one_key_per_entry_value"><a class="anchor" href="#_exposing_the_values_of_collection_entries_as_the_binding_data_with_one_key_per_entry_value"></a>Exposing the values of collection entries as the binding data with one key per entry value</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the required annotations under the <code>metadata</code> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_7"><a class="anchor" href="#_example_7"></a>Example</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/url": "path={.spec.connections},elementType=sliceOfStrings,sourceValue=url"
+
+spec:
+    connections:
+      - type: primary
+        url: primary.example.com
+      - type: secondary
+        url: secondary.example.com
+      - type: '404'
+        url: black-hole.example.com</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_binding_data_files_3"><a class="anchor" href="#_example_binding_data_files_3"></a>Example: Binding data files</h2>
+<div class="sectionbody">
+<div class="literalblock">
+<div class="content">
+<pre>/bindings/&lt;binding-name&gt;/url_primary =&gt; primary.example.com
+/bindings/&lt;binding-name&gt;/url_secondary =&gt; secondary.example.com
+/bindings/&lt;binding-name&gt;/url_404 =&gt; black-hole.example.com</pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../_/js/site.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

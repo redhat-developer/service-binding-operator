@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Installing Service Binding Operator :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/installing-service-binding.html">
+    <meta name="generator" content="Antora 2.3.4">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+      <div class="navbar-end">
+        <a class="navbar-item" href="#">Home</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="quick-start.html">Quick Start Guide</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../using-projected-bindings/using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Expose Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Adding Binding Data as Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../intro.html">master</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Getting Started</li>
+    <li><a href="installing-service-binding.html">Installing Service Binding Operator</a></li>
+  </ul>
+</nav>
+</div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Installing Service Binding Operator</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Service Binding Operator can be installed on the following version
+of Kubernetes and OpenShift:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#installing-the-service-binding-operator-on-kubernetes">Kubernetes
+version 1.19 or above</a>.</p>
+</li>
+<li>
+<p><a href="#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui">OpenShift
+version 4.6 or above</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing_the_service_binding_operator_on_kubernetes"><a class="anchor" href="#_installing_the_service_binding_operator_on_kubernetes"></a>Installing the Service Binding Operator on Kubernetes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can install the Service Binding Operator using the following
+methods:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Installing the Service Binding Operator using OLM</p>
+<div class="olist loweralpha">
+<ol class="loweralpha" type="a">
+<li>
+<p>Go to
+<a href="https://operatorhub.io/operator/service-binding-operator">OperatorHub.io</a>.</p>
+</li>
+<li>
+<p>Click on the blue <strong>Install</strong> button.</p>
+</li>
+<li>
+<p>Follow the instructions to install the Service Binding Operator.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p>Installing the Service Binding Operator without OLM</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>If you do not have Operator Lifecycle Manager, you can install the
+Operator using the released resources:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>kubectl apply -f https://github.com/redhat-developer/service-binding-operator/releases/latest/download/release.yaml</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing_the_service_binding_operator_from_the_openshift_container_platform_web_ui"><a class="anchor" href="#_installing_the_service_binding_operator_from_the_openshift_container_platform_web_ui"></a>Installing the Service Binding Operator from the OpenShift Container Platform web UI</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Prerequisite:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://docs.openshift.com/container-platform/4.8/welcome/index.html" class="bare">https://docs.openshift.com/container-platform/4.8/welcome/index.html</a>.[Red
+Hat OpenShift Container Platform] installed.</p>
+</li>
+</ul>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Navigate in the web console to the OperatorHub page and type <code>Service
+Binding'' into the </code>Filter by keyword'' box:</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/ocp_operathub.png" alt="ocp_operathub"></span></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="2">
+<li>
+<p>Click <strong>Service Binding Operator</strong> from the result. A page to install
+the Operator is displayed with additional information about the
+Operator.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/sbo_intall_landing.png" alt="sbo_intall_landing"></span></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="3">
+<li>
+<p>Click <strong>Install</strong>. The Install Operator page is displayed.</p>
+</li>
+<li>
+<p>Select the options as per your requirements and click <strong>Install</strong>. After
+the installation is complete, a page with the <strong>Installed Operator –
+ready for use</strong> message is displayed.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/sbo_install_options.png" alt="sbo_install_options"></span></p>
+</div>
+<div class="olist arabic">
+<ol class="arabic" start="5">
+<li>
+<p>Click <strong>View Operator</strong>. The <strong>Service Binding Operator</strong> page is
+displayed with the Operator details.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/sbo_post_install.png" alt="sbo_post_install"></span></p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../_/js/site.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
