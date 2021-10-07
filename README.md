@@ -27,7 +27,7 @@ information that's “interesting” to applications.
 There are multiple methods for making backing services
 bindable, including the backing service provider providing metadata as
 annotations on the resource. Details on the methods for making backing services bindable
-are available in the [User Guide](docs/User_Guide.md).
+are available in the [User Guide](https://redhat-developer.github.io/service-binding-operator).
 
 To make an imported application (for example, a NodeJS application)
 connect to a backing service (for example, a database):
@@ -81,7 +81,7 @@ spec:
     id: postgresDB
 ```
 
-## [User guide](docs/User_Guide.md)
+## [User guide](https://redhat-developer.github.io/service-binding-operator)
 
 ## Dependencies
 
