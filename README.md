@@ -120,7 +120,7 @@ The [Service Binding Operator roadmap uses the label roadmap](https://github.com
 
 ## Community, discussion, contribution, and support
 
-The Service Binding community meets weekly on Thursdays at 1:00 PM UTC via [Google Meet](https://meet.google.com/nkc-ngfv-ojn).
+The Service Binding community meets weekly on Thursdays at 1:00 PM UTC via [Google Meet](https://meet.google.com/wsc-jjsy-eih).
 
 Meeting Agenda is maintained [here](https://docs.google.com/document/d/1HwhAKqpM6l4Ur3h3IApDFzbH2Y_xvj_n1x1pEdwRuSY/edit?usp=sharing)
 
