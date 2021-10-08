@@ -19,6 +19,8 @@ package binding
 import (
 	ctx "context"
 	"fmt"
+	"sync"
+
 	"github.com/go-logr/logr"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
@@ -33,7 +35,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sync"
 )
 
 var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
@@ -61,6 +62,12 @@ var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
 		"service.binding/host":     "path={.status.host}",
 		"service.binding/username": "root",
 		"service.binding/password": "path={.spec.secretsName},objectType=Secret,sourceKey=root",
+	},
+	schema.GroupVersionKind{Group: "postgresql.k8s.enterprisedb.io", Version: "v1", Kind: "Cluster"}: {
+		"service.binding/type":     "postgresql",
+		"service.binding/host":     "path={.metadata.name}",
+		"service.binding":          "path={.metadata.name}-{.spec.bootstrap.initdb.owner},objectType=Secret",
+		"service.binding/database": "path={.spec.bootstrap.initdb.database}",
 	},
 }
 
