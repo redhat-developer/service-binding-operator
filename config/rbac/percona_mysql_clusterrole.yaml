@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: percona-mysql-viewer-role
+  labels:
+    servicebinding.io/controller: "true"
+rules:
+  - apiGroups:
+      - pxc.percona.com
+    resources:
+      - perconaxtradbclusters
+    verbs:
+      - get
+      - list
