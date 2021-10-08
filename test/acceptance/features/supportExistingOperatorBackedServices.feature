@@ -290,3 +290,51 @@ Feature: Support a number of existing operator-backed services out of the box
            app
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+
+  Scenario: Bind test application to RabbitMQ instance provisioned by RabbitMq operator
+    Given RabbitMQ operator is running
+    * Generic test application is running
+    * The Custom Resource is present
+          """
+          apiVersion: rabbitmq.com/v1beta1
+          kind: RabbitmqCluster
+          metadata:
+            name: hello-world
+          """
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: rabbitmq.com
+                version: v1beta1
+                kind: RabbitmqCluster
+                name: hello-world
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then Service Binding is ready
+    And Kind RabbitmqCluster with apiVersion rabbitmq.com/v1beta1 is listed in bindable kinds
+    And Content of file "/bindings/$scenario_id/type" in application pod is
+           """
+           rabbitmq
+           """
+    And Content of file "/bindings/$scenario_id/host" in application pod is
+           """
+           hello-world.$NAMESPACE.svc
+           """
+    And Content of file "/bindings/$scenario_id/port" in application pod is
+           """
+           5672
+           """
+    And File "/bindings/$scenario_id/username" exists in application pod
+           """
+           root
+           """
+    And File "/bindings/$scenario_id/password" exists in application pod

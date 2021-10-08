@@ -69,6 +69,9 @@ var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
 		"service.binding":          "path={.metadata.name}-{.spec.bootstrap.initdb.owner},objectType=Secret",
 		"service.binding/database": "path={.spec.bootstrap.initdb.database}",
 	},
+	schema.GroupVersionKind{Group: "rabbitmq.com", Version: "v1beta1", Kind: "RabbitmqCluster"}: {
+		"servicebinding.io/provisioned-service": "true",
+	},
 }
 
 // CrdReconciler reconciles a CustomResourceDefinition resources
