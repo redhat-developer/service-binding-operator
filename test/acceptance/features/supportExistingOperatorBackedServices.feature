@@ -1,5 +1,5 @@
 @olm
-@supported-operators
+@supported-operator
 Feature: Support a number of existing operator-backed services out of the box
 
   As a user of Service Binding operator
