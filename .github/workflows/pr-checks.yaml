@@ -201,7 +201,7 @@ jobs:
 
       - uses: actions/upload-artifact@v2
         with:
-          name: kubernetes-with-olm-test-results
+          name: supported-operators-kubernetes
           path: ${{ env.TEST_RESULTS }}
         if: always()
 
