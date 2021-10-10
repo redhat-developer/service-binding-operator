@@ -1,0 +1,14 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rabbitmq-operator-viewer-role
+  labels:
+    servicebinding.io/controller: "true"
+rules:
+  - apiGroups:
+      - rabbitmq.com
+    resources:
+      - rabbitmqclusters
+    verbs:
+      - get
+      - list
