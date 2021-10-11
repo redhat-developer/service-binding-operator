@@ -5,6 +5,7 @@ import (
 	e "errors"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
+	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 
@@ -213,6 +214,13 @@ type customResourceDefinition struct {
 }
 
 func (c *customResourceDefinition) Resource() *unstructured.Unstructured {
+	if b, err := c.IsBindable(); b && err == nil {
+		return c.resource
+	}
+	gvk := c.serviceGVR.GroupVersion().WithKind(c.kind())
+	if annotations, found := registry.ServiceAnnotations.GetAnnotations(gvk); found {
+		c.resource.SetAnnotations(util.MergeMaps(c.resource.GetAnnotations(), annotations))
+	}
 	return c.resource
 }
 
@@ -282,7 +290,7 @@ func (c *customResourceDefinition) Descriptor() (*pipeline.CRDDescription, error
 			if err != nil {
 				return nil, err
 			}
-			if crdDesciption.Name == c.Resource().GetName() && crdDesciption.Kind == c.kind() && crdDesciption.Version == c.serviceGVR.Version {
+			if crdDesciption.Name == c.resource.GetName() && crdDesciption.Kind == c.kind() && crdDesciption.Version == c.serviceGVR.Version {
 				return crdDesciption, nil
 			}
 		}

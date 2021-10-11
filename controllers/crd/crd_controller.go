@@ -19,6 +19,7 @@ package binding
 import (
 	ctx "context"
 	"fmt"
+	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"sync"
 
 	"github.com/go-logr/logr"
@@ -37,66 +38,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var bindingAnnotations = map[schema.GroupVersionKind]map[string]string{
-	schema.GroupVersionKind{Group: "redis.redis.opstreelabs.in", Version: "v1beta1", Kind: "Redis"}: {
-		"service.binding/type":     "redis",
-		"service.binding/host":     "path={.metadata.name}",
-		"service.binding/password": "path={.spec.kubernetesConfig.redisSecret.name},objectType=Secret,sourceKey=password",
-	},
-	schema.GroupVersionKind{Group: "postgres-operator.crunchydata.com", Version: "v1beta1", Kind: "PostgresCluster"}: {
-		"service.binding/type":     "postgresql",
-		"service.binding":          "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret",
-		"service.binding/database": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=dbname",
-		"service.binding/username": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=user",
-	},
-	schema.GroupVersionKind{Group: "pxc.percona.com", Version: "v1-8-0", Kind: "PerconaXtraDBCluster"}: {
-		"service.binding/type":     "mysql",
-		"service.binding":          "path={.spec.secretsName},objectType=Secret",
-		"service.binding/host":     "path={.status.host}",
-		"service.binding/username": "root",
-		"service.binding/password": "path={.spec.secretsName},objectType=Secret,sourceKey=root",
-	},
-	schema.GroupVersionKind{Group: "pxc.percona.com", Version: "v1-9-0", Kind: "PerconaXtraDBCluster"}: {
-		"service.binding/type":     "mysql",
-		"service.binding":          "path={.spec.secretsName},objectType=Secret",
-		"service.binding/host":     "path={.status.host}",
-		"service.binding/username": "root",
-		"service.binding/password": "path={.spec.secretsName},objectType=Secret,sourceKey=root",
-	},
-	schema.GroupVersionKind{Group: "psmdb.percona.com", Version: "v1-9-0", Kind: "PerconaServerMongoDB"}: {
-		"service.binding/type":     "mongodb",
-		"service.binding/provider": "percona",
-		"service.binding":          "path={.spec.secrets.users},objectType=Secret",
-		"service.binding/username": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_USER",
-		"service.binding/password": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_PASSWORD",
-		"service.binding/host":     "path={.status.host}",
-	},
-	schema.GroupVersionKind{Group: "psmdb.percona.com", Version: "v1-10-0", Kind: "PerconaServerMongoDB"}: {
-		"service.binding/type":     "mongodb",
-		"service.binding/provider": "percona",
-		"service.binding":          "path={.spec.secrets.users},objectType=Secret",
-		"service.binding/username": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_USER",
-		"service.binding/password": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_PASSWORD",
-		"service.binding/host":     "path={.status.host}",
-	},
-	schema.GroupVersionKind{Group: "postgresql.k8s.enterprisedb.io", Version: "v1", Kind: "Cluster"}: {
-		"service.binding/type":     "postgresql",
-		"service.binding/host":     "path={.metadata.name}",
-		"service.binding":          "path={.metadata.name}-{.spec.bootstrap.initdb.owner},objectType=Secret",
-		"service.binding/database": "path={.spec.bootstrap.initdb.database}",
-	},
-	schema.GroupVersionKind{Group: "rabbitmq.com", Version: "v1beta1", Kind: "RabbitmqCluster"}: {
-		"servicebinding.io/provisioned-service": "true",
-	},
-}
-
 // CrdReconciler reconciles a CustomResourceDefinition resources
 type CrdReconciler struct {
 	client.Client
-	serviceBuilder service.Builder
-	Log            logr.Logger
-	Scheme         *runtime.Scheme
-	bindableKinds  *sync.Map
+	serviceBuilder     service.Builder
+	Log                logr.Logger
+	Scheme             *runtime.Scheme
+	bindableKinds      *sync.Map
+	annotationRegistry registry.Registry
 }
 
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=bindablekinds,verbs=get;list;watch;create;update;patch;delete
@@ -157,7 +106,7 @@ func (r *CrdReconciler) Reconcile(req ctrl.Request) (reconcileResult ctrl.Result
 			toPersist = true
 			log.Info("bindable", "gvk", gvk)
 		} else {
-			annotations, found := bindingAnnotations[gvk]
+			annotations, found := r.annotationRegistry.GetAnnotations(gvk)
 			if found {
 				log.Info("Found bindable annotations", "gvk", gvk, "annotations", annotations)
 				crd.SetAnnotations(util.MergeMaps(crd.GetAnnotations(), annotations))
@@ -214,6 +163,7 @@ func (r *CrdReconciler) Reconcile(req ctrl.Request) (reconcileResult ctrl.Result
 // SetupWithManager sets up the controller with the Manager.
 func (r *CrdReconciler) SetupWithManager(mgr ctrl.Manager, bindableKinds *sync.Map) error {
 	r.bindableKinds = bindableKinds
+	r.annotationRegistry = registry.ServiceAnnotations
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())
 	if err != nil {
 		return err
