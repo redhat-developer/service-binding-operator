@@ -338,3 +338,67 @@ Feature: Support a number of existing operator-backed services out of the box
            root
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+
+  @crdv1beta1
+  Scenario: Bind test application to MongoDB provisioned by Percona's MongoDB operator
+    Given Percona MongoDB operator is running
+    * Generic test application is running
+    * The Custom Resource is present
+          """
+          apiVersion: psmdb.percona.com/v1-9-0
+          kind: PerconaServerMongoDB
+          metadata:
+              name: mongo-cluster
+          spec:
+              crVersion: 1.9.0
+              image: percona/percona-server-mongodb:4.4.8-9
+              allowUnsafeConfigurations: true
+              upgradeOptions:
+                  apply: 4.4-recommended
+                  schedule: "0 2 * * *"
+              secrets:
+                  users: mongo-cluster-secrets
+              replsets:
+                  - name: rs0
+                    size: 1
+                    volumeSpec:
+                        persistentVolumeClaim:
+                            resources:
+                                requests:
+                                    storage: 1Gi
+              sharding:
+                  enabled: false
+          """
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: psmdb.percona.com
+                version: v1-9-0
+                kind: PerconaServerMongoDB
+                name: mongo-cluster
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then Service Binding is ready
+    And Kind PerconaServerMongoDB with apiVersion psmdb.percona.com/v1-9-0 is listed in bindable kinds
+    And Content of file "/bindings/$scenario_id/type" in application pod is
+           """
+           mongodb
+           """
+    And Content of file "/bindings/$scenario_id/username" in application pod is
+           """
+           userAdmin
+           """
+    And File "/bindings/$scenario_id/password" exists in application pod
+    And Content of file "/bindings/$scenario_id/host" in application pod is
+            """
+            mongo-cluster-rs0.$NAMESPACE.svc.cluster.local
+            """
