@@ -63,6 +63,10 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/redhat-developer/service-binding-operator
     support: Service Binding Operator Community
+  labels:
+    "operatorframework.io/arch.amd64": supported
+    "operatorframework.io/arch.ppc64le": supported
+    "operatorframework.io/arch.s390x": supported
   name: service-binding-operator.v1.0.0
   namespace: placeholder
 spec:
