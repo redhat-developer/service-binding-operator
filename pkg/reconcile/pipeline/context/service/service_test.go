@@ -6,6 +6,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,6 +54,30 @@ var _ = Describe("Service", func() {
 		Entry("v1 crd", "v1", schema.GroupResource{Group: "foo", Resource: "bar"}),
 		Entry("v1beta crd", "v1beta1", schema.GroupResource{Group: "foo", Resource: "bar"}),
 	)
+
+	It("should contain bindable annotations if listed in registry", func() {
+		gvk := schema.GroupVersionKind{Group: "postgres-operator.crunchydata.com", Version: "v1beta1", Kind: "PostgresCluster"}
+		gvr := schema.GroupVersionResource{Group: "postgres-operator.crunchydata.com", Version: "v1beta1", Resource: "postgresclusters"}
+		crd := crd(gvr.Version, gvr.GroupResource())
+		err := unstructured.SetNestedField(crd.Object, gvk.Kind, "spec", "names", "kind")
+		Expect(err).NotTo(HaveOccurred())
+
+		client = fake.NewSimpleDynamicClient(runtime.NewScheme(), crd)
+		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
+
+		builer := NewBuilder(typeLookup).WithClient(client)
+		u := &unstructured.Unstructured{}
+		u.SetGroupVersionKind(gvk)
+		service, err := builer.Build(u)
+		Expect(err).NotTo(HaveOccurred())
+
+		serviceAnns, _ := registry.ServiceAnnotations.GetAnnotations(gvk)
+		res, err := service.CustomResourceDefinition()
+		Expect(err).NotTo(HaveOccurred())
+		Expect(res.Resource()).NotTo(Equal(crd))
+		Expect(res.Resource().GetAnnotations()).To(Equal(serviceAnns))
+	})
+
 	It("should return nil when no crd exist", func() {
 		client = fake.NewSimpleDynamicClient(runtime.NewScheme())
 		typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(&schema.GroupVersionResource{Group: "app", Resource: "deployments", Version: "v1"}, nil)
@@ -208,7 +233,8 @@ var _ = Describe("Builder", func() {
 		u := &unstructured.Unstructured{}
 		u.SetName("foo1")
 		u.SetGroupVersionKind(gvk)
-		builder := NewBuilder(typeLookup).WithCrdReader(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
+		client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+		builder := NewBuilder(typeLookup).WithClient(client).WithCrdReader(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
 			return crdResource, nil
 		})
 		s, err := builder.Build(u)
@@ -220,7 +246,7 @@ var _ = Describe("Builder", func() {
 		Expect(crd.Resource()).To(Equal(crdResource))
 	})
 
-	It("should use custom CRD reader set on buil", func() {
+	It("should use custom CRD reader set on build", func() {
 		gvk := schema.GroupVersionKind{Kind: "Foo"}
 		gvr := schema.GroupVersionResource{Resource: "foo"}
 		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
@@ -229,7 +255,8 @@ var _ = Describe("Builder", func() {
 		u := &unstructured.Unstructured{}
 		u.SetName("foo1")
 		u.SetGroupVersionKind(gvk)
-		builder := NewBuilder(typeLookup)
+		client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+		builder := NewBuilder(typeLookup).WithClient(client)
 
 		s, err := builder.Build(u, CrdReaderOption(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
 			return crdResource, nil
