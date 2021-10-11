@@ -73,3 +73,23 @@ jobs:
           file: cover.out
           verbose: true
           fail_ci_if_error: true
+
+  publish-website:
+    name: Publish website
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: generate website
+        run: |
+          make site
+          touch ./out/site/.nojekyll
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out/site
+          destination_dir: docs
