@@ -1,105 +1,132 @@
-= Adding Binding Data as Annotations
+= Declare Binding Data with Resource Annotations
 
 If your backing service is not compliant with the Service Binding
-specification as a Provisioned Service resource, you can annotate the
-resources of the backing service to expose the binding data with
-specific annotations. Adding annotations under the metadata section
-alters the custom resources and CRDs of the backing services. Using this
-method, you can create a corresponding mapping with the connectivity
-values and binding data.
+specification as a {provisioned-service} resource, you can annotate the
+resources of the backing service and/or its {crd} declaring what data are exposed
+as binding.
 
-The Service Binding Operator detects the annotations added to the CRDs
-and custom resources and creates a Secret service resource with the
-values extracted based on the annotations. The Service Binding Operator
-then projects these values into the application.
+The Service Binding Operator implements support for {secret-generation-extension}.
+It detects the annotations added to the {crd} and/or service resource and creates a Secret
+resource with the values extracted based on the annotations. The Service Binding Operator
+then projects these bindings into the application.
 
-The following examples show the annotations that are added under the
-metadata section and the referenced ConfigMap and Secret resources:
+Service binding annotations follow the convention:
 
-== Example: Annotations for a Secret object
-
+[source,yaml]
 ....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
-spec:
-  ...
-
-status:
-  data:
-    dbCredentials: db-cred
+service.binding(/<NAME>)?: "<VALUE>|(path=<JSONPATH_TEMPLATE>(,objectType=<OBJECT_TYPE)?(,elementType=<ELEMENT_TYPE>)?(,sourceKey=<SOURCE_KEY>)?(,sourceValue=<SOURCE_VALUE>)?)"
 ....
 
-== Example: Annotations for a ConfigMap object
+where:
 
-....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout"
-spec:
-  ...
+* `<NAME>` specifies the name under which the binding value is going to be exposed. It can omitted only
+when `objectType` is set to `Secret` or `ConfigMap`
+* `<VALUE>` specifies the constant value exposed, when no `path` is set
 
-status:
-  data:
-    dbConfiguration: db-conf
-....
+[NOTE]
+Please check xref:intro-expose-binding.adoc#_data_model[Data Model] for more details on allowed values
+and semantic for `path`, `elementType`, `objectType`, `sourceKey`, and `sourceValue`.
 
-== Example: Referenced ConfigMap object from a resource
+== Examples
 
-....
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-config
-data:
-  db_timeout: "10s"
-  username: "guest"
-....
+The following examples assume existence of `Secret` `db-cred`:
 
-== Exposing an entire Secret as the binding data
-
-Add the required annotations for the Secret, under the metadata section.
-
-== Example
-
-....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
-spec:
-  ...
-
-status:
-  data:
-    dbCredentials: db-cred
-....
-
-== Example: The referenced Secret from the backing service resource
-
+.Secret `db-cred`
+[source,yaml]
 ....
 apiVersion: v1
 kind: Secret
 metadata:
   name: db-cred
 data:
-  password: "MTBz"
-  username: "Z3Vlc3Q="
+  password: "foo"
+  username: "guest"
 ....
 
-== Exposing an entire config map as the binding data
+and `ConfigMap` `db-conf`:
 
-Add the required annotations for the ConfigMap, under the metadata
-section.
+.ConfigMap `db-conf`
+[source,yaml]
+....
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-conf
+data:
+  timeout: 10s
+  database: db1
+....
 
+.Expose constant value as the binding item
+[source,yaml]
+....
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/type": "foo" # <1>
+spec:
+  ...
+
+....
+<1> exposed binding `type` with value `foo`
+
+.Expose all secret entries as binding data
+[source,yaml]
+....
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
+spec:
+  ...
+
+status:
+  data:
+    dbCredentials: db-cred # <1>
+....
+<1> Secret name
+
+.Expose all entries from a secret not referred by the service
+[source,yaml]
+....
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: db
+  annotations:
+    "service.binding": "path={.metadata.name}-cred,objectType=Secret" # <1>
+spec:
+  ...
+
+....
+
+<1> Secret name is constructed from `{.metadata.name}-cred` template that resolved to `db-cred` eventually.
+Multiple JSONPath can be contained in the template.
+
+.Exposing `username` entry from a Secret as `user` binding item
+[source, yaml]
+....
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/user": "path={.status.data.dbCredentials},objectType=Secret,sourceKey=username"
+spec:
+  ...
+
+status:
+  data:
+    dbCredentials: db-cred # <1>
+....
+<1> Secret name
+
+.Expose all entries from ConfigMap
+[source,yaml]
 ....
 apiVersion: apps.example.org/v1beta1
 kind: Database
@@ -112,28 +139,13 @@ spec:
 
 status:
   data:
-    dbConfiguration: db-config
+    dbConfiguration: db-conf # <1>
 ....
+<1> ConfigMap name
 
-== Example: The referenced ConfigMap from the backing service resource
 
-....
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-config
-data:
-  db_timeout: "10s"
-  username: "guest"
-....
-
-== Exposing an entry from a ConfigMap as the binding data
-
-Add the required annotations for the ConfigMap entry, under the
-`metadata` section.
-
-== Example
-
+.Exposing `db_timeout` entry from a ConfigMap as `timeout` binding
+[source,yaml]
 ....
 apiVersion: apps.example.org/v1beta1
 kind: Database
@@ -146,66 +158,12 @@ spec:
 
 status:
   data:
-    dbConfiguration: db-conf
+    dbConfiguration: db-conf # <1>
 ....
+<1> ConfigMap name
 
-== Example: The Referenced config map from the backing service resource
-
-The binding data should have a key with name as `timeout` and value as
-`10s`:
-
-....
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-config
-data:
-  db_timeout: "10s"
-  username: "guest"
-....
-
-== Exposing an entry from a Secret as the binding data
-
-Adding the required annotations under the `metadata` section.
-
-== Example
-
-....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=Secret,sourceKey=db_timeout"
-spec:
-  ...
-
-status:
-  data:
-    dbConfiguration: db-conf
-....
-
-== Example: The referenced Secret from the backing service resource
-
-The binding data should have a key with name as `timeout` and value as
-`10s`:
-
-....
-apiVersion: v1
-kind: Secret
-metadata:
-  name: db-config
-data:
-  password: "MTBz"
-  username: "Z3Vlc3Q="
-....
-
-== Exposing a resource definition value as the binding data
-
-Add the required annotations under the `metadata` section.
-
-== Example
-
+.Expose `status.data.connectionURL` resource value as `uri` binding item
+[source,yaml]
 ....
 apiVersion: apps.example.org/v1beta1
 kind: Database
@@ -221,12 +179,8 @@ status:
     connectionURL: "http://guest:secret123@192.168.1.29/db"
 ....
 
-== Exposing the entries of a collection as the binding data by selecting the key and value from each entry
-
-Add the required annotations under the `metadata` section.
-
-== Example
-
+.Exposing the collection entries as the binding data by selecting the key and value from each entry
+[source,yaml]
 ....
 apiVersion: apps.example.org/v1beta1
 kind: Database
@@ -239,28 +193,19 @@ spec:
 
 status:
   connections:
-    - type: primary
+    - type: primary # <1>
       url: primary.example.com
-    - type: secondary
+    - type: secondary # <2>
       url: secondary.example.com
-    - type: '404'
+    - type: '404' # <3>
       url: black-hole.example.com
 ....
+<1> exposed as `uri_primary` with value `primary.example.com`
+<2> exposed as `uri_secondary` with value `secondary.example.com`
+<3> exposed as `uri_404` with value `black-hole.example.com`
 
-== Example: Binding data files
-
-....
-/bindings/<binding-name>/uri_primary => primary.example.com
-/bindings/<binding-name>/uri_secondary => secondary.example.com
-/bindings/<binding-name>/uri_404 => black-hole.example.com
-....
-
-== Exposing the items of a collection as the binding data with one key per item
-
-Add the required annotations under the `metadata` section.
-
-== Example
-
+.Exposing the collection of strings
+[source,yaml]
 ....
 apiVersion: apps.example.org/v1beta1
 kind: Database
@@ -271,47 +216,12 @@ metadata:
 
 spec:
     tags:
-      - knowledge
-      - is
-      - power
+      - knowledge # <1>
+      - is # <2>
+      - power # <3>
 ....
+<1> exposed as `tags_0` with value `knowledge`
+<2> exposed as `tags_1` with value `is`
+<3> exposed as `tags_2` with value `power`
 
-== Example: Binding data files
 
-....
-/bindings/<binding-name>/tags_0 => knowledge
-/bindings/<binding-name>/tags_1 => is
-/bindings/<binding-name>/tags_2 => power
-....
-
-== Exposing the values of collection entries as the binding data with one key per entry value
-
-Add the required annotations under the `metadata` section.
-
-== Example
-
-....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/url": "path={.spec.connections},elementType=sliceOfStrings,sourceValue=url"
-
-spec:
-    connections:
-      - type: primary
-        url: primary.example.com
-      - type: secondary
-        url: secondary.example.com
-      - type: '404'
-        url: black-hole.example.com
-....
-
-== Example: Binding data files
-
-....
-/bindings/<binding-name>/url_primary => primary.example.com
-/bindings/<binding-name>/url_secondary => secondary.example.com
-/bindings/<binding-name>/url_404 => black-hole.example.com
-....
