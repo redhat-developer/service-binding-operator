@@ -14,16 +14,16 @@ detected by Service Binding Operator.
 Binding data is exposed for the following scenarios:
 
 * *The backing service is considered as a
-https://github.com/k8s-service-bindings/spec#provisioned-service[Provisioned
+xref:provisioned-service.adoc[Provisioned
 Service]* resource: The service you intend to connect to, is compliant
 with the Service Binding specification and the detection of all the
 binding data values is automatic.
 * *The backing service is not a
-https://github.com/k8s-service-bindings/spec#provisioned-service[Provisioned
+xref:provisioned-service.adoc[Provisioned
 Service]* resource: You must expose the binding data from the backing
 service. You can expose the binding data using any of the following
 methods:
-** *https://github.com/k8s-service-bindings/spec#direct-secret-reference[Direct
+** *xref:direct-secret-reference.adoc[Direct
 Secret Reference]*: When all the required binding values are available
 in a `Secret` that you can reference in your Service Binding definition.
 ** *Generate Secret through CRD or CR annotations*: When you can

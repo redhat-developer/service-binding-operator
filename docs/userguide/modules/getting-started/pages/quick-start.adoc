@@ -38,6 +38,7 @@ database instance]
 . link:#connect-the-application-to-the-database[Connect the application
 to the database with Service Binding]
 
+[#prerequisites]
 == Prerequisites
 
 In order to follow the quick start, you’ll need the following tools
@@ -50,6 +51,7 @@ https://kind.sigs.k8s.io/[kind], locally)
 * PostgreSQL client (`psql` CLI tool)
 * xref:installing-service-binding.adoc[]
 
+[#create-a-postgresql-database-instance]
 == Create a PostgreSQL database instance
 
 The application is going to use to a PostgreSQL database backend which
@@ -108,6 +110,7 @@ We have now finished to configured the database for the application. We
 are ready to deploy the sample application and connect it to the
 database.
 
+[#deploy-the-sample-application]
 == Deploy the sample application
 
 In this section, we are going to deploy the application on our
@@ -155,6 +158,7 @@ Connection"}
 Now, we are going to see how you can use Service Binding to easily
 connect the application to the database.
 
+[#connect-the-application-to-the-database]
 == Connect the application to the database
 
 Suppose the Service Binding operator is not present. In that case, the
@@ -335,6 +339,6 @@ application-to-service linkage.
 
 You can continue to learn more about Service Binding by:
 
-* xref:creating-service-bindings:creating-service-binding.adoc[]
-* Using Projected Bindings
-* xref:exposing-binding-data:intro-expose-binding.adoc[]
+* xref:creating-service-bindings:creating-service-binding.adoc[Creating Service Binding]
+* xref:using-projected-bindings:using-projected-bindings.adoc[Using Projected Bindings]
+* xref:exposing-binding-data:intro-expose-binding.adoc[Expose Binding Data]

@@ -8,6 +8,7 @@ version 1.19 or above].
 * link:#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui[OpenShift
 version 4.6 or above].
 
+[#installing-the-service-binding-operator-on-kubernetes]
 == Installing the Service Binding Operator on Kubernetes
 
 You can install the Service Binding Operator using the following
@@ -29,6 +30,7 @@ Operator using the released resources:
 kubectl apply -f https://github.com/redhat-developer/service-binding-operator/releases/latest/download/release.yaml
 ....
 
+[#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui]
 == Installing the Service Binding Operator from the OpenShift Container Platform web UI
 
 Prerequisite:
