@@ -5,3 +5,4 @@
 ** xref:adding-annotation.adoc[]
 ** xref:olm-descriptors.adoc[]
 ** xref:detect-bindings.adoc[]
+** xref:rbac-requirements.adoc[]
