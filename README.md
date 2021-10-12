@@ -15,35 +15,32 @@
 
 ## Introduction
 
-The goal of the Service Binding Operator is to enable application authors to
-import an application and run it on Kubernetes with services
-such as databases represented as Kubernetes objects including Operator-backed and chart-based backing services, without having to perform manual configuration of `Secrets`,
-`ConfigMaps`, etc.
+Service Binding manages the data plane for applications and backing services.
+Service Binding Operator reads data made available by the control plane of
+backing services and projects the data to applications according to the rules
+provided via ServiceBinding resource.
 
-To make a service bindable, the service provider needs to express
-the information needed by applications to bind with the services. In other words, the service provider must express the
-information that's “interesting” to applications.
+![service-binding-intro](/docs/userguide/modules/ROOT/assets/images/intro-bindings.png)
 
-There are multiple methods for making backing services
-bindable, including the backing service provider providing metadata as
-annotations on the resource. Details on the methods for making backing services bindable
-are available in the [User Guide](https://redhat-developer.github.io/service-binding-operator).
+### Why Service Bindings?
 
-To make an imported application (for example, a NodeJS application)
-connect to a backing service (for example, a database):
+Today in Kubernetes, the exposure of secrets for connecting applications to
+external services such as REST APIs, databases, event buses, and many more is
+manual and bespoke.  Each service provider suggests a different way to access
+their secrets, and each application developer consumes those secrets in a custom
+way to their applications.  While there is a good deal of value to this
+flexibility level, large development teams lose overall velocity dealing with
+each unique solution.
 
-* The app author (developer) creates a `ServiceBinding` and specifies:
-  * The resource that needs the binding information. The resource can be
-    specified by label selectors;
-  * The backing service's resource reference that the imported application
-    needs to be bound to;
+Service Binding:
+* Enables developers to connect their application to backing services with a
+  consistent and predictable experience
+* Removes error-prone manual configuration of binding information
+* Provides service operators a low-touch administrative experience to provision
+  and manage access to services
+* Enriches development lifecycle with a consistent and declarative service
+  binding methow that eliminates environments discrepancies
 
-* The Service Binding Controller then:
-  * Reads backing service operator CRD annotations to discover the
-    binding attributes
-  * Creates a binding secret for the backing service, example, an operator-managed database;
-  * Injects environment variables into the applications' `Deployment`, `DeploymentConfig`,
-    `Replicaset`, `KnativeService` or anything that uses a standard PodSpec;
 
 ## Key Features
 
@@ -58,72 +55,74 @@ connect to a backing service (for example, a database):
 * Custom binding variables composed from one or more backing services.
 * Auto-detect binding resources in the absence of binding decorators.
 
-### Example
-#### Binding a Java Application with a Database
-
-``` yaml
-apiVersion: binding.operators.coreos.com/v1alpha1
-kind: ServiceBinding
-metadata:
-  name: binding-request
-  namespace: service-binding-demo
-spec:
-  application:
-    name: java-app
-    group: apps
-    version: v1
-    resource: deployments
-  services:
-  - group: postgresql.baiju.dev
-    version: v1alpha1
-    kind: Database
-    name: db-demo
-    id: postgresDB
-```
-
-## [User guide](https://redhat-developer.github.io/service-binding-operator)
-
-## Dependencies
-
-| Dependency                                | Supported versions           |
-| ----------------------------------------- | ---------------------------- |
-| [Kubernetes](https://kubernetes.io/)      |  v1.17.\* or higher.        |
-
-
-## Quick Start
+## Getting started
 
 ### Installing in a Cluster
 
 Follow [OperatorHub instructions](https://operatorhub.io/operator/service-binding-operator).
 
-### Running Operator Locally
+### Usage
 
-Clone the repository and run `make run` using an existing `kube:admin` kube context.
+To get started, consult the [quick start
+tutorial](https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/quick-start.html).
+General documentation can be found
+[here](https://redhat-developer.github.io/service-binding-operator/).
 
-## Key Features
+## Known bindable operators
 
-* Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
-* Support binding with multiple-backing services.
-* Extract binding information based on annotations present in CRDs/CRs/resources.
-* Extract binding values based on annotations present in OLM descriptors.
-* Project binding values as volume mounts.
-* Project binding values as environment variables.
-* Binding of PodSpec-based workloads.
-* Binding of non-PodSpec-based Kubernetes resources.
-* Custom binding variables composed from one or more backing services.
-* Auto-detect binding resources in the absence of binding decorators.
+The Service Binding Operator can automatically detect and bind to services
+created by a limited selection of operators.  These operators do not support
+binding directly.  Instead, the service binding operator is able to detect and
+configure the operator's CRDs so that they become bindable.  The long-term
+intention is to contribute upstream support for service binding and remove the
+operators that gain native support for service bindings.  The operators that
+currently fall in this category are:
 
+* [OpsTree Redis](https://operatorhub.io/operator/redis-operator): bindable with
+  `Redis.redis.redis.opstreelabs.in/v1beta1` services
+* [CrunchyData Postgres](https://operatorhub.io/operator/postgresql): bindable
+  with `PostgresCluster.postgres-operator.crunchydata.com/v1beta1` services
+* [Cloud Native
+  PostgreSQL](https://operatorhub.io/operator/cloud-native-postgresql): bindable
+  with `Cluster.postgresql.k8s.enterprisedb.io/v1` services
+* [Percona XtraDB
+  Cluster](https://operatorhub.io/operator/percona-xtradb-cluster-operator):
+  bindable with `PerconaXtraDBCluster.pxc.percona.com/v1-8-0` and `v1-9-0`
+  services
+* [Percona
+  MongoDB](https://operatorhub.io/operator/percona-server-mongodb-operator):
+  bindable with `PerconaServerMongoDB.psmdb.percona.com/v1-9-0` and `v1-10-0`
+  services
+  * NOTE: Provides administrative access to the cluster by default
+* [RabbitMQ Cluster](https://github.com/rabbitmq/cluster-operator): bindable
+  with `RabbitmqCluster.rabbitmq.com/v1beta1` services
+
+OpenShift Streams for Apache Kafka are also bindable, although getting binding
+to work requires a little more effort.  See [here][kafka] for more details.
 
 ## Roadmap
 
-The [Service Binding Operator roadmap uses the label roadmap](https://github.com/redhat-developer/service-binding-operator/labels/roadmap) to track the direction of the project.
+The direction of this project is tracked under
+[milestones](https://github.com/redhat-developer/service-binding-operator/milestones)
+posted here on GitHub.
 
 ## Community, discussion, contribution, and support
 
-The Service Binding community meets weekly on Thursdays at 1:00 PM UTC via [Google Meet](https://meet.google.com/wsc-jjsy-eih).
+The Service Binding community meets weekly on Thursdays at 1:00 PM UTC via
+[Google Meet](https://meet.google.com/wsc-jjsy-eih), and the meeting agenda is
+maintained
+[here](https://docs.google.com/document/d/1HwhAKqpM6l4Ur3h3IApDFzbH2Y_xvj_n1x1pEdwRuSY/edit?usp=sharing).
+If you have a topic you wish to discuss at this meeting, please feel free to add
+a discussion topic to the agenda.
 
-Meeting Agenda is maintained [here](https://docs.google.com/document/d/1HwhAKqpM6l4Ur3h3IApDFzbH2Y_xvj_n1x1pEdwRuSY/edit?usp=sharing)
+Please file bug reports on
+[Github](https://github.com/redhat-developer/service-binding-operator/issues/new).
+For any other questions, reach out on
+[service-binding-support@redhat.com](https://www.redhat.com/mailman/listinfo/service-binding-support).
 
-Please file bug reports on [Github](https://github.com/redhat-developer/service-binding-operator/issues/new). For any other questions, reach out on [service-binding-support@redhat.com](https://www.redhat.com/mailman/listinfo/service-binding-support).
+Join the
+[service-binding-operator](https://app.slack.com/client/T09NY5SBT/C019LQYGC5C)
+channel in the [Kubernetes Workspace](https://slack.k8s.io/) for any discussions
+and collaboration with the community.
 
-Join the [service-binding-operator](https://app.slack.com/client/T09NY5SBT/C019LQYGC5C) channel in the [Kubernetes Workspace](https://slack.k8s.io/) for any discussions and collaboration with the community.
+[kafka]: https://developers.redhat.com/articles/2021/07/27/connect-nodejs-applications-red-hat-openshift-streams-apache-kafka-service#prerequisites
