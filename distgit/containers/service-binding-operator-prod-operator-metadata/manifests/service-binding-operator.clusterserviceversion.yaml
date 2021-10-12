@@ -6,13 +6,6 @@ metadata:
       [
         {
           "apiVersion": "binding.operators.coreos.com/v1alpha1",
-          "kind": "BindableKinds",
-          "metadata": {
-            "name": "bindablekinds-sample"
-          }
-        },
-        {
-          "apiVersion": "binding.operators.coreos.com/v1alpha1",
           "kind": "ServiceBinding",
           "metadata": {
             "name": "example-servicebinding"
