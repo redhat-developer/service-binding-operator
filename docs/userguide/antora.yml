@@ -1,3 +1,8 @@
+asciidoc:
+  attributes:
+    provisioned-service: https://github.com/servicebinding/spec#provisioned-service[Provisioned Service]
+    crd: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions[CRD]
+    secret-generation-extension: https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension]
 name: userguide
 version: master
 title: User Guide

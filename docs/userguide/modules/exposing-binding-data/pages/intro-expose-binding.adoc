@@ -35,11 +35,13 @@ descriptors, if the backing service is provided by an Operator.
 service owns Kubernetes resources such as `Service`, `Route`,
 `ConfigMap` or `Secret` that you can use to detect the binding data.
 
-Service Binding Operator provides the ability to expose the values from
+Service Binding Operator implements support for https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension]
+and hence provides the ability to expose the values from
 the backing service resources. You can use the following methods to map
 and expose the binding data:
 
 * Expose a string from a resource
+* Expose a constant value
 * Expose an entire ConfigMap or Secret that is referenced from a
 resource
 * Expose a specific entry from a ConfigMap or Secret that is referenced
@@ -54,12 +56,12 @@ collection of objects
 == Data Model
 
 This section explains the data model used in the annotation and OLM
-descripors. The data model is same for CRD or CR annotations and OLM
+descriptors. The data model is same for CRD or CR annotations and OLM
 descriptors, but the syntax is different, which is explained in the
 respective sections.
 
-* `path`: JSONPath expression that gets applied to the service resource
-to filer out values that are going to be exposed.
+* `path`: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.
+The behaviour matches https://kubernetes.io/docs/reference/kubectl/jsonpath[kubectl JSONPath support]
 * `elementType`: Specifies whether the value of the element referenced
 in `path` complies with any one of the following types `string` or
 `sliceOfStrings` or `sliceOfMaps`. Defaults to `string` if `elementType`
