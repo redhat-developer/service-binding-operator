@@ -27,8 +27,8 @@ the descriptor.
 The following examples show how to define an X-Descriptor depending on
 the resource to which you point the path:
 
-== Example: X-Descriptor definition for the path pointing to a Secret service resource
-
+.X-Descriptor definition for the path pointing to a Secret service resource
+[source,yaml]
 ....
 - path: data.dbCredentials
   x-descriptors:
@@ -39,6 +39,7 @@ the resource to which you point the path:
 Similary, if the path is pointing to a `ConfigMap` resource, there
 should be an X-Descriptors defined like this:
 
+[source,yaml]
 ....
 - path: data.dbConfiguration
   x-descriptors:
@@ -46,13 +47,14 @@ should be an X-Descriptors defined like this:
   - service.binding
 ....
 
-*Note:*
-
+[NOTE]
+====
 * You must have a `service.binding` entry in the X-Descriptors to
 identify that it is a configuration for service binding.
 * Absence of the `Secret` or `ConfigMap` specific X-Descriptors
 indicates that the descriptor is referencing the binding data value at
 the given path.
+====
 
 == Exposing an entire Secret as the binding Secret
 
@@ -63,12 +65,11 @@ you can create and use a `specDescriptors` array. Or, if the attribute
 is part of the `.status` section, you can create and use a
 `statusDescriptors` array.
 
-[arabic]
-. Using the `path` attribute, create an entry to indicate that the path
+Using the `path` attribute, create an entry to indicate that the path
 points to the `Secret` service resource.
 
-== Example: Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry
-
+.Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry
+[source,yaml]
 ....
 - path: data.dbCredentials
   x-descriptors:
@@ -85,12 +86,11 @@ section, you can create and use a `specDescriptors` array. Or, if the
 attribute is part of the `.status` section, you can create and use a
 `statusDescriptors` array.
 
-[arabic]
-. Using the `path` attribute, create an entry to indicate that the path
+Using the `path` attribute, create an entry to indicate that the path
 points to the `ConfigMap` service resource.
 
-== Example: Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry
-
+.Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry
+[source,yaml]
 ....
 - path: data.dbConfiguration
   x-descriptors:
@@ -100,16 +100,15 @@ points to the `ConfigMap` service resource.
 
 == Exposing an entry from a ConfigMap into the binding Secret
 
-[arabic]
-. Using the `path` attribute, update `X-Descriptors` for
+Using the `path` attribute, update `X-Descriptors` for
 `service.binding` and `sourceKey` by providing the following
 information:
 
 * name of the binding key that is to be projected
 * name of the key in the Secret service resource
 
-== Example: Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry
-
+.Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry
+[source,yaml]
 ....
 - path: data.dbConfiguration
   x-descriptors:
@@ -123,16 +122,15 @@ name of the binding key that is going to be projected.
 
 == Exposing an entry from a Secret into the binding Secret
 
-[arabic]
-. Using the `path` attribute, update `X-Descriptors` for
+Using the `path` attribute, update `X-Descriptors` for
 `service.binding` and `sourceKey` by providing the following
 information:
 
 * name of the binding key that is to be projected
 * name of the key in the Secret service resource
 
-== Example: Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry
-
+.Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry
+[source,yaml]
 ....
 - path: data.dbConfiguration
   x-descriptors:
@@ -153,12 +151,11 @@ attributes of its resources, you can annotate these values, using
 * Annotating the values identifies them as the binding data.
 * Content for Procedure:
 
-[arabic]
-. Using the `path` attribute, update `X-Descriptors` with the required
+ Using the `path` attribute, update `X-Descriptors` with the required
 resource definition value.
 
-== Example: The connectionURL attribute pointing to the uri value
-
+.The connectionURL attribute pointing to the uri value
+[source,yaml]
 ....
 - path: data.connectionURL
   x-descriptors:
@@ -170,14 +167,11 @@ required value that is to be projected as `uri`.
 
 == Exposing the entries of a collection into the binding Secret selecting the key and value from each entry
 
-* Content for Procedure:
-
-[arabic]
-. Using the `path` attribute, update `X-Descriptors` for the required
+Using the `path` attribute, update `X-Descriptors` for the required
 entries of a collection.
 
-== Example: Configuration from a backing service resource
-
+.Configuration from a backing service resource
+[source,yaml]
 ....
 status:
   connections:
@@ -192,8 +186,8 @@ status:
 The previous example helps you to project all those values with key such
 as `primary`, `secondary`, and so on.
 
-== Example: Configuration for the required entries of a collection
-
+.Configuration for the required entries of a collection
+[source,yaml]
 ....
 - path: bootstrap
   x-descriptors:
@@ -202,14 +196,11 @@ as `primary`, `secondary`, and so on.
 
 == Exposing the items of a collection into the binding Secret with one key per item
 
-* Content for Procedure:
-
-[arabic]
-. Using the `path` attribute, update `X-Descriptors` for the required
+Using the `path` attribute, update `X-Descriptors` for the required
 items of a collection.
 
-== Example: Configuration from a backing service resource
-
+.Configuration from a backing service resource
+[source,yaml]
 ....
 spec:
     tags:
@@ -222,8 +213,8 @@ The previous example helps you project all those values with key such as
 `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the
 resource kind:
 
-== Example: Configuration for the required items of a collection
-
+.Configuration for the required items of a collection
+[source,yaml]
 ....
 - path: spec.tags
   x-descriptors:
@@ -232,14 +223,11 @@ resource kind:
 
 == Exposing the values of collection entries into the binding Secret with one key per entry value
 
-* Content for Procedure:
-
-[arabic]
-. Using the `path` attribute, update `X-Descriptors` for the required
+Using the `path` attribute, update `X-Descriptors` for the required
 values of collection entries.
 
-== Example: Configuration from a backing service resource
-
+.Configuration from a backing service resource
+[source,yaml]
 ....
 spec:
     connections:
@@ -255,8 +243,8 @@ The previous example helps you project all those values with key such as
 `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the
 resource kind:
 
-== Example: Configuration for the required values of collection entries
-
+.Configuration for the required values of collection entries
+[source,yaml]
 ....
 - path: bootstrap
   x-descriptors:

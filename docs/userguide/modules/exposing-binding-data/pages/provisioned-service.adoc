@@ -16,10 +16,8 @@ author, you can create a `Secret` service resource with all the
 necessary connection details and refer them using the
 `.status.binding.name` field.
 
-== Example: AccountService resource
-
-This example shows an `AccountService` resource with relavant details:
-
+.Example: AccountService resource
+[source,yaml]
 ....
 apiVersion: example.com/v1alpha1
 kind: AccountService
@@ -33,6 +31,7 @@ status:
 
 This is the referenced Secret:
 
+[source,yaml]
 ....
 apiVersion: v1
 kind: Secret
@@ -47,8 +46,8 @@ When creating service binding, directly give the details of the
 `AccountService` resource in the following `ServiceBinding`
 specifications:
 
-== Example: Specification with the binding.operators.coreos.com API
-
+.Example: Specification with the binding.operators.coreos.com API
+[source,yaml]
 ....
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -68,8 +67,8 @@ spec:
     resource: deployments
 ....
 
-== Example: Specification that is compliant with the service.binding API
-
+.Example: Specification that is compliant with the service.binding API
+[source,yaml]
 ....
 apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding

@@ -7,8 +7,8 @@ ConfigMap, and Secret resources.
 Set this `detectBindingResources` API option to `true` in the
 `ServiceBinding` custom resource.
 
-== Example
-
+.Example
+[source,yaml]
 ....
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
