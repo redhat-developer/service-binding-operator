@@ -113,7 +113,7 @@
     <a class="nav-link" href="direct-secret-reference.html">Direct Secret Reference</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="adding-annotation.html">Adding Binding Data as Annotations</a>
+    <a class="nav-link" href="adding-annotation.html">Declare Binding Data with Resource Annotations</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
@@ -226,7 +226,8 @@ service owns Kubernetes resources such as <code>Service</code>, <code>Route</cod
 </ul>
 </div>
 <div class="paragraph">
-<p>Service Binding Operator provides the ability to expose the values from
+<p>Service Binding Operator implements support for <a href="https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md">Secret Generation Extension</a>
+and hence provides the ability to expose the values from
 the backing service resources. You can use the following methods to map
 and expose the binding data:</p>
 </div>
@@ -234,6 +235,9 @@ and expose the binding data:</p>
 <ul>
 <li>
 <p>Expose a string from a resource</p>
+</li>
+<li>
+<p>Expose a constant value</p>
 </li>
 <li>
 <p>Expose an entire ConfigMap or Secret that is referenced from a
@@ -266,15 +270,15 @@ collection of objects</p>
 <div class="sectionbody">
 <div class="paragraph">
 <p>This section explains the data model used in the annotation and OLM
-descripors. The data model is same for CRD or CR annotations and OLM
+descriptors. The data model is same for CRD or CR annotations and OLM
 descriptors, but the syntax is different, which is explained in the
 respective sections.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>path</code>: JSONPath expression that gets applied to the service resource
-to filer out values that are going to be exposed.</p>
+<p><code>path</code>: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.
+The behaviour matches <a href="https://kubernetes.io/docs/reference/kubectl/jsonpath">kubectl JSONPath support</a></p>
 </li>
 <li>
 <p><code>elementType</code>: Specifies whether the value of the element referenced

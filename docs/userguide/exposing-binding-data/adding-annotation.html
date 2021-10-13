@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Adding Binding Data as Annotations :: Service Binding Operator Documentation</title>
+    <title>Declare Binding Data with Resource Annotations :: Service Binding Operator Documentation</title>
     <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/adding-annotation.html">
     <meta name="generator" content="Antora 2.3.4">
     <link rel="stylesheet" href="../../_/css/site.css">
@@ -113,7 +113,7 @@
     <a class="nav-link" href="direct-secret-reference.html">Direct Secret Reference</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="adding-annotation.html">Adding Binding Data as Annotations</a>
+    <a class="nav-link" href="adding-annotation.html">Declare Binding Data with Resource Annotations</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
@@ -155,7 +155,7 @@
   <ul>
     <li><a href="../intro.html">User Guide</a></li>
     <li>Expose Binding Data</li>
-    <li><a href="adding-annotation.html">Adding Binding Data as Annotations</a></li>
+    <li><a href="adding-annotation.html">Declare Binding Data with Resource Annotations</a></li>
   </ul>
 </nav>
   <div class="edit-this-page"><a href="file:///antora/docs/userguide/modules/exposing-binding-data/pages/adding-annotation.adoc">Edit this Page</a></div>
@@ -165,143 +165,188 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Adding Binding Data as Annotations</h1>
+<h1 class="page">Declare Binding Data with Resource Annotations</h1>
 <div id="preamble">
 <div class="sectionbody">
 <div class="paragraph">
 <p>If your backing service is not compliant with the Service Binding
-specification as a Provisioned Service resource, you can annotate the
-resources of the backing service to expose the binding data with
-specific annotations. Adding annotations under the metadata section
-alters the custom resources and CRDs of the backing services. Using this
-method, you can create a corresponding mapping with the connectivity
-values and binding data.</p>
+specification as a <a href="https://github.com/servicebinding/spec#provisioned-service">Provisioned Service</a> resource, you can annotate the
+resources of the backing service and/or its <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> declaring what data are exposed
+as binding.</p>
 </div>
 <div class="paragraph">
-<p>The Service Binding Operator detects the annotations added to the CRDs
-and custom resources and creates a Secret service resource with the
-values extracted based on the annotations. The Service Binding Operator
-then projects these values into the application.</p>
+<p>The Service Binding Operator implements support for <a href="https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md">Secret Generation Extension</a>.
+It detects the annotations added to the <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> and/or service resource and creates a Secret
+resource with the values extracted based on the annotations. The Service Binding Operator
+then projects these bindings into the application.</p>
 </div>
 <div class="paragraph">
-<p>The following examples show the annotations that are added under the
-metadata section and the referenced ConfigMap and Secret resources:</p>
+<p>Service binding annotations follow the convention:</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_annotations_for_a_secret_object"><a class="anchor" href="#_example_annotations_for_a_secret_object"></a>Example: Annotations for a Secret object</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
-spec:
-  ...
-
-status:
-  data:
-    dbCredentials: db-cred</pre>
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">service.binding(/&lt;NAME&gt;)?: "&lt;VALUE&gt;|(path=&lt;JSONPATH_TEMPLATE&gt;(,objectType=&lt;OBJECT_TYPE)?(,elementType=&lt;ELEMENT_TYPE&gt;)?(,sourceKey=&lt;SOURCE_KEY&gt;)?(,sourceValue=&lt;SOURCE_VALUE&gt;)?)"</code></pre>
 </div>
 </div>
+<div class="paragraph">
+<p>where:</p>
 </div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>&lt;NAME&gt;</code> specifies the name under which the binding value is going to be exposed. It can omitted only
+when <code>objectType</code> is set to <code>Secret</code> or <code>ConfigMap</code></p>
+</li>
+<li>
+<p><code>&lt;VALUE&gt;</code> specifies the constant value exposed, when no <code>path</code> is set</p>
+</li>
+</ul>
 </div>
-<div class="sect1">
-<h2 id="_example_annotations_for_a_configmap_object"><a class="anchor" href="#_example_annotations_for_a_configmap_object"></a>Example: Annotations for a ConfigMap object</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout"
-spec:
-  ...
-
-status:
-  data:
-    dbConfiguration: db-conf</pre>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+Please check <a href="intro-expose-binding.html#_data_model" class="page">Data Model</a> for more details on allowed values
+and semantic for <code>path</code>, <code>elementType</code>, <code>objectType</code>, <code>sourceKey</code>, and <code>sourceValue</code>.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_example_referenced_configmap_object_from_a_resource"><a class="anchor" href="#_example_referenced_configmap_object_from_a_resource"></a>Example: Referenced ConfigMap object from a resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-config
-data:
-  db_timeout: "10s"
-  username: "guest"</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_an_entire_secret_as_the_binding_data"><a class="anchor" href="#_exposing_an_entire_secret_as_the_binding_data"></a>Exposing an entire Secret as the binding data</h2>
+<h2 id="_examples"><a class="anchor" href="#_examples"></a>Examples</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Add the required annotations for the Secret, under the metadata section.</p>
+<p>The following examples assume existence of <code>Secret</code> <code>db-cred</code>:</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Secret <code>db-cred</code></div>
 <div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
-spec:
-  ...
-
-status:
-  data:
-    dbCredentials: db-cred</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_the_referenced_secret_from_the_backing_service_resource"><a class="anchor" href="#_example_the_referenced_secret_from_the_backing_service_resource"></a>Example: The referenced Secret from the backing service resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: v1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
 kind: Secret
 metadata:
   name: db-cred
 data:
-  password: "MTBz"
-  username: "Z3Vlc3Q="</pre>
+  password: "foo"
+  username: "guest"</code></pre>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_an_entire_config_map_as_the_binding_data"><a class="anchor" href="#_exposing_an_entire_config_map_as_the_binding_data"></a>Exposing an entire config map as the binding data</h2>
-<div class="sectionbody">
 <div class="paragraph">
-<p>Add the required annotations for the ConfigMap, under the metadata
-section.</p>
+<p>and <code>ConfigMap</code> <code>db-conf</code>:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">ConfigMap <code>db-conf</code></div>
 <div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-conf
+data:
+  timeout: 10s
+  database: db1</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Expose constant value as the binding item</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/type": "foo" <i class="conum" data-value="1"></i><b>(1)</b>
+spec:
+  ...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>exposed binding <code>type</code> with value <code>foo</code></td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Expose all secret entries as binding data</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding": "path={.status.data.dbCredentials},objectType=Secret"
+spec:
+  ...
+
+status:
+  data:
+    dbCredentials: db-cred <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Secret name</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Expose all entries from a secret not referred by the service</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: db
+  annotations:
+    "service.binding": "path={.metadata.name}-cred,objectType=Secret" <i class="conum" data-value="1"></i><b>(1)</b>
+spec:
+  ...</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Secret name is constructed from <code>{.metadata.name}-cred</code> template that resolved to <code>db-cred</code> eventually.
+Multiple JSONPath can be contained in the template.</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Exposing <code>username</code> entry from a Secret as <code>user</code> binding item</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  annotations:
+    "service.binding/user": "path={.status.data.dbCredentials},objectType=Secret,sourceKey=username"
+spec:
+  ...
+
+status:
+  data:
+    dbCredentials: db-cred <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Secret name</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Expose all entries from ConfigMap</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
@@ -312,42 +357,21 @@ spec:
 
 status:
   data:
-    dbConfiguration: db-config</pre>
+    dbConfiguration: db-conf <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>ConfigMap name</td>
+</tr>
+</table>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_example_the_referenced_configmap_from_the_backing_service_resource"><a class="anchor" href="#_example_the_referenced_configmap_from_the_backing_service_resource"></a>Example: The referenced ConfigMap from the backing service resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Exposing <code>db_timeout</code> entry from a ConfigMap as <code>timeout</code> binding</div>
 <div class="content">
-<pre>apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-config
-data:
-  db_timeout: "10s"
-  username: "guest"</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_an_entry_from_a_configmap_as_the_binding_data"><a class="anchor" href="#_exposing_an_entry_from_a_configmap_as_the_binding_data"></a>Exposing an entry from a ConfigMap as the binding data</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Add the required annotations for the ConfigMap entry, under the
-<code>metadata</code> section.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_2"><a class="anchor" href="#_example_2"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
@@ -358,94 +382,21 @@ spec:
 
 status:
   data:
-    dbConfiguration: db-conf</pre>
+    dbConfiguration: db-conf <i class="conum" data-value="1"></i><b>(1)</b></code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>ConfigMap name</td>
+</tr>
+</table>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_example_the_referenced_config_map_from_the_backing_service_resource"><a class="anchor" href="#_example_the_referenced_config_map_from_the_backing_service_resource"></a>Example: The Referenced config map from the backing service resource</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The binding data should have a key with name as <code>timeout</code> and value as
-<code>10s</code>:</p>
-</div>
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Expose <code>status.data.connectionURL</code> resource value as <code>uri</code> binding item</div>
 <div class="content">
-<pre>apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: db-config
-data:
-  db_timeout: "10s"
-  username: "guest"</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_an_entry_from_a_secret_as_the_binding_data"><a class="anchor" href="#_exposing_an_entry_from_a_secret_as_the_binding_data"></a>Exposing an entry from a Secret as the binding data</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Adding the required annotations under the <code>metadata</code> section.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_3"><a class="anchor" href="#_example_3"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=Secret,sourceKey=db_timeout"
-spec:
-  ...
-
-status:
-  data:
-    dbConfiguration: db-conf</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_the_referenced_secret_from_the_backing_service_resource_2"><a class="anchor" href="#_example_the_referenced_secret_from_the_backing_service_resource_2"></a>Example: The referenced Secret from the backing service resource</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>The binding data should have a key with name as <code>timeout</code> and value as
-<code>10s</code>:</p>
-</div>
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: v1
-kind: Secret
-metadata:
-  name: db-config
-data:
-  password: "MTBz"
-  username: "Z3Vlc3Q="</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_a_resource_definition_value_as_the_binding_data"><a class="anchor" href="#_exposing_a_resource_definition_value_as_the_binding_data"></a>Exposing a resource definition value as the binding data</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Add the required annotations under the <code>metadata</code> section.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_4"><a class="anchor" href="#_example_4"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
@@ -456,25 +407,13 @@ spec:
 
 status:
   data:
-    connectionURL: "http://guest:secret123@192.168.1.29/db"</pre>
+    connectionURL: "http://guest:secret123@192.168.1.29/db"</code></pre>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_the_entries_of_a_collection_as_the_binding_data_by_selecting_the_key_and_value_from_each_entry"><a class="anchor" href="#_exposing_the_entries_of_a_collection_as_the_binding_data_by_selecting_the_key_and_value_from_each_entry"></a>Exposing the entries of a collection as the binding data by selecting the key and value from each entry</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Add the required annotations under the <code>metadata</code> section.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_5"><a class="anchor" href="#_example_5"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Exposing the collection entries as the binding data by selecting the key and value from each entry</div>
 <div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
@@ -485,42 +424,34 @@ spec:
 
 status:
   connections:
-    - type: primary
+    - type: primary <i class="conum" data-value="1"></i><b>(1)</b>
       url: primary.example.com
-    - type: secondary
+    - type: secondary <i class="conum" data-value="2"></i><b>(2)</b>
       url: secondary.example.com
-    - type: '404'
-      url: black-hole.example.com</pre>
+    - type: '404' <i class="conum" data-value="3"></i><b>(3)</b>
+      url: black-hole.example.com</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>exposed as <code>uri_primary</code> with value <code>primary.example.com</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>exposed as <code>uri_secondary</code> with value <code>secondary.example.com</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>exposed as <code>uri_404</code> with value <code>black-hole.example.com</code></td>
+</tr>
+</table>
 </div>
-</div>
-<div class="sect1">
-<h2 id="_example_binding_data_files"><a class="anchor" href="#_example_binding_data_files"></a>Example: Binding data files</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Exposing the collection of strings</div>
 <div class="content">
-<pre>/bindings/&lt;binding-name&gt;/uri_primary =&gt; primary.example.com
-/bindings/&lt;binding-name&gt;/uri_secondary =&gt; secondary.example.com
-/bindings/&lt;binding-name&gt;/uri_404 =&gt; black-hole.example.com</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_the_items_of_a_collection_as_the_binding_data_with_one_key_per_item"><a class="anchor" href="#_exposing_the_items_of_a_collection_as_the_binding_data_with_one_key_per_item"></a>Exposing the items of a collection as the binding data with one key per item</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Add the required annotations under the <code>metadata</code> section.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_6"><a class="anchor" href="#_example_6"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
@@ -529,66 +460,26 @@ metadata:
 
 spec:
     tags:
-      - knowledge
-      - is
-      - power</pre>
+      - knowledge <i class="conum" data-value="1"></i><b>(1)</b>
+      - is <i class="conum" data-value="2"></i><b>(2)</b>
+      - power <i class="conum" data-value="3"></i><b>(3)</b></code></pre>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_binding_data_files_2"><a class="anchor" href="#_example_binding_data_files_2"></a>Example: Binding data files</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>/bindings/&lt;binding-name&gt;/tags_0 =&gt; knowledge
-/bindings/&lt;binding-name&gt;/tags_1 =&gt; is
-/bindings/&lt;binding-name&gt;/tags_2 =&gt; power</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_exposing_the_values_of_collection_entries_as_the_binding_data_with_one_key_per_entry_value"><a class="anchor" href="#_exposing_the_values_of_collection_entries_as_the_binding_data_with_one_key_per_entry_value"></a>Exposing the values of collection entries as the binding data with one key per entry value</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>Add the required annotations under the <code>metadata</code> section.</p>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_7"><a class="anchor" href="#_example_7"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/url": "path={.spec.connections},elementType=sliceOfStrings,sourceValue=url"
-
-spec:
-    connections:
-      - type: primary
-        url: primary.example.com
-      - type: secondary
-        url: secondary.example.com
-      - type: '404'
-        url: black-hole.example.com</pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_binding_data_files_3"><a class="anchor" href="#_example_binding_data_files_3"></a>Example: Binding data files</h2>
-<div class="sectionbody">
-<div class="literalblock">
-<div class="content">
-<pre>/bindings/&lt;binding-name&gt;/url_primary =&gt; primary.example.com
-/bindings/&lt;binding-name&gt;/url_secondary =&gt; secondary.example.com
-/bindings/&lt;binding-name&gt;/url_404 =&gt; black-hole.example.com</pre>
-</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>exposed as <code>tags_0</code> with value <code>knowledge</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>exposed as <code>tags_1</code> with value <code>is</code></td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>exposed as <code>tags_2</code> with value <code>power</code></td>
+</tr>
+</table>
 </div>
 </div>
 </div>
