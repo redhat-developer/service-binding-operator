@@ -3,7 +3,6 @@ site:
   url: https://redhat-developer.github.io/service-binding-operator
   start_page: userguide::intro.adoc
 content:
-  edit_url: ~
   sources:
     - url: .
       branches: HEAD
