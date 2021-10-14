@@ -217,7 +217,7 @@ into the sample application.</p>
 needed components configured on your K8s cluster.</p>
 </div>
 <div class="paragraph">
-<p>The quick start will then consist into three main steps:</p>
+<p>The quick start consists of three main steps:</p>
 </div>
 <div class="olist arabic">
 <ol class="arabic">
@@ -246,10 +246,26 @@ installed and configured:</p>
 <div class="ulist">
 <ul>
 <li>
-<p>Kubernetes cluster (<strong>Note:</strong> You can use
-<a href="https://minikube.sigs.k8s.io/">minikube</a> or
-<a href="https://kind.sigs.k8s.io/">kind</a>, locally)</p>
+<p>Kubernetes cluster</p>
 </li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can use
+<a href="https://minikube.sigs.k8s.io/">minikube</a> or
+<a href="https://kind.sigs.k8s.io/">kind</a>, locally
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
 <li>
 <p><a href="https://kubernetes.io/docs/tasks/tools/#kubectl">kubectl</a></p>
 </li>
@@ -284,22 +300,15 @@ itself, so we need to create one.</p>
 <code>PostgresCluster</code> and that will trigger the operator reconciliation. For
 convenience, run this command to create <code>PostgresCluster</code> custom
 resource:</p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/pgcluster.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/pgcluster.yaml</a></code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="2">
+</li>
 <li>
 <p>Once the database is created, we need to ensure all the pods in
 <code>my-postgresql</code> namespace are running (it will take few minutes):</p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pod -n my-postgresql</code></pre>
@@ -308,13 +317,13 @@ resource:</p>
 <div class="paragraph">
 <p>You should see output something like this:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>NAME                                     READY   STATUS      RESTARTS   AGE
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                                     READY   STATUS      RESTARTS   AGE
 hippo-backup-6th6--1-28849               0/1     Completed   0          1m
 hippo-instance1-sl4r-0                   2/2     Running     0          2m
 hippo-pgbouncer-8454474bc7-lhcn9         2/2     Running     0          2m
-pgo-84b9679484-79c6m                     1/1     Running     0          3m</pre>
+pgo-84b9679484-79c6m                     1/1     Running     0          3m</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -322,14 +331,10 @@ pgo-84b9679484-79c6m                     1/1     Running     0          3m</pre>
 set its schema and we will also project a sample data set, so we can
 play around with the application.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="3">
+</li>
 <li>
 <p>You can initialize the database with the schema and sample data using
 this command:</p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sL <a href="_attachments/init-database.sh">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/init-database.sh</a> | bash</code></pre>
@@ -339,6 +344,9 @@ this command:</p>
 <p>We have now finished to configured the database for the application. We
 are ready to deploy the sample application and connect it to the
 database.</p>
+</div>
+</li>
+</ol>
 </div>
 </div>
 </div>
@@ -356,29 +364,21 @@ application.</p>
 <li>
 <p>Deploy the <code>spring-petclinic-rest</code> app with this <code>Deployment</code>
 configuration:</p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/app-deployment.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/app-deployment.yaml</a></code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="2">
+</li>
 <li>
 <p>Let’s now setup the port forwarding from the application port so we
 can access it from our local environment</p>
-</li>
-</ol>
-</div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql</pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="3">
+</li>
 <li>
 <p>You should be able to open <a href="http://localhost:9966/petclinic" class="bare">http://localhost:9966/petclinic</a> and see a
 <a href="https://swagger.io">Swagger UI</a> where you can play with the API.</p>
@@ -394,14 +394,14 @@ application.</p>
 <p>For example, if you try to access the list of all pets, you can see an
 error like this:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
 
 {"className":"org.springframework.transaction.CannotCreateTransactionException","exMessage":"Could
 not open JPA EntityManager for transaction; nested exception is
 org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC
-Connection"}</pre>
+Connection"}</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -451,9 +451,6 @@ into the application.</p>
 <ol class="arabic">
 <li>
 <p>Create the ServiceBinding resource to project the binding data:</p>
-</li>
-</ol>
-</div>
 <div class="paragraph">
 <p>The <code>.spec</code> has two sections. The first is a list of service
 resources (<code>.spec.services</code>), and the second one is the application
@@ -506,7 +503,7 @@ resource status conditions by the following command:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">[
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">[
   [
     {
       "lastTransitionTime": "2021-09-06T13:42:28Z",
@@ -571,48 +568,43 @@ done</code></pre>
 <div class="paragraph">
 <p>You should see output something like:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>/bindings/spring-petclinic-rest/username: hippo
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">/bindings/spring-petclinic-rest/username: hippo
 /bindings/spring-petclinic-rest/password: w0ZB&lt;0j1W|K;+4*TlK7-w^z/
 /bindings/spring-petclinic-rest/host: hippo-pgbouncer
 /bindings/spring-petclinic-rest/port: 5432
-/bindings/spring-petclinic-rest/type: postgresql</pre>
+/bindings/spring-petclinic-rest/type: postgresql</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="2">
+</li>
 <li>
 <p>Let’s now check how the application is behaving and setup the port
 forwarding of the application port to access it from our local
 environment</p>
-</li>
-</ol>
-</div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql</pre>
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="3">
+</li>
 <li>
 <p>Open <a href="http://localhost:9966/petclinic" class="bare">http://localhost:9966/petclinic</a>, you should see a
 <a href="https://swagger.io">Swagger UI</a> where you can play with the API.</p>
-</li>
-</ol>
-</div>
 <div class="paragraph">
 <p>If you try to access list of all pets, you can see the application is
 now connected to the database and see the sample data initially
 configured:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>$ curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
 [{"id":1,"name":"Leo","birthDate":"2000/09/07","type":{"id":1,"name":"cat"},
-"owner":{"id":1,"firstName":"George","lastName":"Franklin","address":"110...</pre>
+"owner":{"id":1,"firstName":"George","lastName":"Franklin","address":"110...</code></pre>
 </div>
+</div>
+</li>
+</ol>
 </div>
 </div>
 </div>

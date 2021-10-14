@@ -206,34 +206,34 @@ the descriptor.</p>
 <p>The following examples show how to define an X-Descriptor depending on
 the resource to which you point the path:</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_x_descriptor_definition_for_the_path_pointing_to_a_secret_service_resource"><a class="anchor" href="#_example_x_descriptor_definition_for_the_path_pointing_to_a_secret_service_resource"></a>Example: X-Descriptor definition for the path pointing to a Secret service resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">X-Descriptor definition for the path pointing to a Secret service resource</div>
 <div class="content">
-<pre>- path: data.dbCredentials
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbCredentials
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:Secret
-  - service.binding</pre>
+  - service.binding</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Similary, if the path is pointing to a <code>ConfigMap</code> resource, there
 should be an X-Descriptors defined like this:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>- path: data.dbConfiguration
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:ConfigMap
-  - service.binding</pre>
+  - service.binding</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p><strong>Note:</strong></p>
-</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
 <div class="ulist">
 <ul>
 <li>
@@ -246,6 +246,10 @@ indicates that the descriptor is referencing the binding data value at
 the given path.</p>
 </li>
 </ul>
+</div>
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -260,25 +264,17 @@ you can create and use a <code>specDescriptors</code> array. Or, if the attribut
 is part of the <code>.status</code> section, you can create and use a
 <code>statusDescriptors</code> array.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, create an entry to indicate that the path
 points to the <code>Secret</code> service resource.</p>
-</li>
-</ol>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_with_a_urnalmdescriptorio_kubernetessecret_entry"><a class="anchor" href="#_example_configuration_with_a_urnalmdescriptorio_kubernetessecret_entry"></a>Example: Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry</div>
 <div class="content">
-<pre>- path: data.dbCredentials
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbCredentials
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:Secret
-  - service.binding</pre>
+  - service.binding</code></pre>
 </div>
 </div>
 </div>
@@ -294,25 +290,17 @@ section, you can create and use a <code>specDescriptors</code> array. Or, if the
 attribute is part of the <code>.status</code> section, you can create and use a
 <code>statusDescriptors</code> array.</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, create an entry to indicate that the path
 points to the <code>ConfigMap</code> service resource.</p>
-</li>
-</ol>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_with_a_urnalmdescriptorio_kubernetesconfigmap_entry"><a class="anchor" href="#_example_configuration_with_a_urnalmdescriptorio_kubernetesconfigmap_entry"></a>Example: Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry</div>
 <div class="content">
-<pre>- path: data.dbConfiguration
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:ConfigMap
-  - service.binding</pre>
+  - service.binding</code></pre>
 </div>
 </div>
 </div>
@@ -320,12 +308,11 @@ points to the <code>ConfigMap</code> service resource.</p>
 <div class="sect1">
 <h2 id="_exposing_an_entry_from_a_configmap_into_the_binding_secret"><a class="anchor" href="#_exposing_an_entry_from_a_configmap_into_the_binding_secret"></a>Exposing an entry from a ConfigMap into the binding Secret</h2>
 <div class="sectionbody">
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, update <code>X-Descriptors</code> for
 <code>service.binding</code> and <code>sourceKey</code> by providing the following
 information:</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -336,20 +323,13 @@ information:</p>
 </li>
 </ul>
 </div>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_with_a_urnalmdescriptorio_kubernetesconfigmap_entry_2"><a class="anchor" href="#_example_configuration_with_a_urnalmdescriptorio_kubernetesconfigmap_entry_2"></a>Example: Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry</div>
 <div class="content">
-<pre>- path: data.dbConfiguration
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:ConfigMap
-  - service.binding:my_certificate:sourceKey=certificate</pre>
+  - service.binding:my_certificate:sourceKey=certificate</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -362,12 +342,11 @@ name of the binding key that is going to be projected.</p>
 <div class="sect1">
 <h2 id="_exposing_an_entry_from_a_secret_into_the_binding_secret"><a class="anchor" href="#_exposing_an_entry_from_a_secret_into_the_binding_secret"></a>Exposing an entry from a Secret into the binding Secret</h2>
 <div class="sectionbody">
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, update <code>X-Descriptors</code> for
 <code>service.binding</code> and <code>sourceKey</code> by providing the following
 information:</p>
+</div>
 <div class="ulist">
 <ul>
 <li>
@@ -378,20 +357,13 @@ information:</p>
 </li>
 </ul>
 </div>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_with_a_urnalmdescriptorio_kubernetessecret_entry_2"><a class="anchor" href="#_example_configuration_with_a_urnalmdescriptorio_kubernetessecret_entry_2"></a>Example: Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry</div>
 <div class="content">
-<pre>- path: data.dbConfiguration
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:Secret
-  - service.binding:my_certificate:sourceKey=certificate</pre>
+  - service.binding:my_certificate:sourceKey=certificate</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -416,27 +388,21 @@ attributes of its resources, you can annotate these values, using
 </li>
 <li>
 <p>Content for Procedure:</p>
+<div class="literalblock">
+<div class="content">
+<pre> Using the `path` attribute, update `X-Descriptors` with the required
+resource definition value.</pre>
+</div>
+</div>
 </li>
 </ul>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Using the <code>path</code> attribute, update <code>X-Descriptors</code> with the required
-resource definition value.</p>
-</li>
-</ol>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_the_connectionurl_attribute_pointing_to_the_uri_value"><a class="anchor" href="#_example_the_connectionurl_attribute_pointing_to_the_uri_value"></a>Example: The connectionURL attribute pointing to the uri value</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">The connectionURL attribute pointing to the uri value</div>
 <div class="content">
-<pre>- path: data.connectionURL
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.connectionURL
   x-descriptors:
-  - service.binding:uri</pre>
+  - service.binding:uri</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -448,52 +414,33 @@ required value that is to be projected as <code>uri</code>.</p>
 <div class="sect1">
 <h2 id="_exposing_the_entries_of_a_collection_into_the_binding_secret_selecting_the_key_and_value_from_each_entry"><a class="anchor" href="#_exposing_the_entries_of_a_collection_into_the_binding_secret_selecting_the_key_and_value_from_each_entry"></a>Exposing the entries of a collection into the binding Secret selecting the key and value from each entry</h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Content for Procedure:</p>
-</li>
-</ul>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, update <code>X-Descriptors</code> for the required
 entries of a collection.</p>
-</li>
-</ol>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_from_a_backing_service_resource"><a class="anchor" href="#_example_configuration_from_a_backing_service_resource"></a>Example: Configuration from a backing service resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration from a backing service resource</div>
 <div class="content">
-<pre>status:
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">status:
   connections:
     - type: primary
       url: primary.example.com
     - type: secondary
       url: secondary.example.com
     - type: '404'
-      url: black-hole.example.com</pre>
+      url: black-hole.example.com</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>The previous example helps you to project all those values with key such
 as <code>primary</code>, <code>secondary</code>, and so on.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_for_the_required_entries_of_a_collection"><a class="anchor" href="#_example_configuration_for_the_required_entries_of_a_collection"></a>Example: Configuration for the required entries of a collection</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration for the required entries of a collection</div>
 <div class="content">
-<pre>- path: bootstrap
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: bootstrap
   x-descriptors:
-  - service.binding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url</pre>
+  - service.binding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url</code></pre>
 </div>
 </div>
 </div>
@@ -501,33 +448,18 @@ as <code>primary</code>, <code>secondary</code>, and so on.</p>
 <div class="sect1">
 <h2 id="_exposing_the_items_of_a_collection_into_the_binding_secret_with_one_key_per_item"><a class="anchor" href="#_exposing_the_items_of_a_collection_into_the_binding_secret_with_one_key_per_item"></a>Exposing the items of a collection into the binding Secret with one key per item</h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Content for Procedure:</p>
-</li>
-</ul>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, update <code>X-Descriptors</code> for the required
 items of a collection.</p>
-</li>
-</ol>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_from_a_backing_service_resource_2"><a class="anchor" href="#_example_configuration_from_a_backing_service_resource_2"></a>Example: Configuration from a backing service resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration from a backing service resource</div>
 <div class="content">
-<pre>spec:
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spec:
     tags:
       - knowledge
       - is
-      - power</pre>
+      - power</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -535,16 +467,12 @@ items of a collection.</p>
 <code>prefix_0</code>, <code>prefix_1</code>, and so on. The default prefix is the name of the
 resource kind:</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_for_the_required_items_of_a_collection"><a class="anchor" href="#_example_configuration_for_the_required_items_of_a_collection"></a>Example: Configuration for the required items of a collection</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration for the required items of a collection</div>
 <div class="content">
-<pre>- path: spec.tags
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: spec.tags
   x-descriptors:
-  - service.binding:tags:elementType=sliceOfStrings</pre>
+  - service.binding:tags:elementType=sliceOfStrings</code></pre>
 </div>
 </div>
 </div>
@@ -552,36 +480,21 @@ resource kind:</p>
 <div class="sect1">
 <h2 id="_exposing_the_values_of_collection_entries_into_the_binding_secret_with_one_key_per_entry_value"><a class="anchor" href="#_exposing_the_values_of_collection_entries_into_the_binding_secret_with_one_key_per_entry_value"></a>Exposing the values of collection entries into the binding Secret with one key per entry value</h2>
 <div class="sectionbody">
-<div class="ulist">
-<ul>
-<li>
-<p>Content for Procedure:</p>
-</li>
-</ul>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
+<div class="paragraph">
 <p>Using the <code>path</code> attribute, update <code>X-Descriptors</code> for the required
 values of collection entries.</p>
-</li>
-</ol>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_from_a_backing_service_resource_3"><a class="anchor" href="#_example_configuration_from_a_backing_service_resource_3"></a>Example: Configuration from a backing service resource</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration from a backing service resource</div>
 <div class="content">
-<pre>spec:
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spec:
     connections:
       - type: primary
         url: primary.example.com
       - type: secondary
         url: secondary.example.com
       - type: '404'
-        url: black-hole.example.com</pre>
+        url: black-hole.example.com</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -589,16 +502,12 @@ values of collection entries.</p>
 <code>prefix_0</code>, <code>prefix_1</code>, and so on. The default prefix is the name of the
 resource kind:</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_configuration_for_the_required_values_of_collection_entries"><a class="anchor" href="#_example_configuration_for_the_required_values_of_collection_entries"></a>Example: Configuration for the required values of collection entries</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Configuration for the required values of collection entries</div>
 <div class="content">
-<pre>- path: bootstrap
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: bootstrap
   x-descriptors:
-  - service.binding:endpoints:elementType=sliceOfStrings:sourceValue=url</pre>
+  - service.binding:endpoints:elementType=sliceOfStrings:sourceValue=url</code></pre>
 </div>
 </div>
 </div>

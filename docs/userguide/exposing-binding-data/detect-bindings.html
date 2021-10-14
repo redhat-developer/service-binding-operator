@@ -166,8 +166,6 @@
 </aside>
 <article class="doc">
 <h1 class="page">Detect Bindings through owned resources</h1>
-<div id="preamble">
-<div class="sectionbody">
 <div class="paragraph">
 <p>The Service Bindings Operator can detect binding data from resources
 owned by the backing service custom resource such as Route, Service,
@@ -177,14 +175,10 @@ ConfigMap, and Secret resources.</p>
 <p>Set this <code>detectBindingResources</code> API option to <code>true</code> in the
 <code>ServiceBinding</code> custom resource.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example"><a class="anchor" href="#_example"></a>Example</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Example</div>
 <div class="content">
-<pre>apiVersion: binding.operators.coreos.com/v1alpha1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: etcdbinding
@@ -200,14 +194,12 @@ spec:
   - group: etcd.database.coreos.com
     version: v1beta2
     kind: EtcdCluster
-    name: etcd-cluster-example</pre>
+    name: etcd-cluster-example</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>The Service Binding Operator automatically detects the binding
 connections and exposes the binding data.</p>
-</div>
-</div>
 </div>
 </article>
   </div>

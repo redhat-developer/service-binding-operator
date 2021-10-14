@@ -211,40 +211,61 @@ you to carefully use that API for testing purposes and preparing your
 integration to become fully compliant with the specification. It is
 available in Service Binding Operator 1.x, as Tech Preview.</p>
 </li>
-<li>
-<p>We’ll consider supporting only the API from the specification, once
-the Service Binding specification will be officially GA. Of course, that
-will be a breaking change and handle in a safe way for you.</p>
-</li>
 </ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We’ll consider supporting only the API from the specification, once
+the Service Binding specification will be officially GA. Of course, that
+will be a breaking change and handle in a safe way for you.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>Some of the key difference between the APIs:</p>
 </div>
-<div class="paragraph">
-<p>|==
-|binding.operators.coreos.com API |servicebinding.io API
-|Support naming strategy |Does not support naming strategy</p>
-</div>
-<div class="paragraph">
-<p>|Support custom mapping |Does not support custom mapping</p>
-</div>
-<div class="paragraph">
-<p>|Support to auto-detect binding resources |Does not support
-auto-detecting binding resources</p>
-</div>
-<div class="paragraph">
-<p>|Flag to bind as files or env vars |No flag switch between files and env
-vars
-|==</p>
-</div>
-<div class="paragraph">
-<p>Here is the example servicebinding in
-<code>binding.operators.coreos.com/v1alpha1</code> API:</p>
-</div>
-<div class="literalblock">
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">binding.operators.coreos.com API</th>
+<th class="tableblock halign-left valign-top">servicebinding.io API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support naming strategy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support naming strategy</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support custom mapping</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support custom mapping</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support to auto-detect binding resources</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support
+auto-detecting binding resources</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag to bind as files or env vars</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No flag switch between files and env
+vars</p></td>
+</tr>
+</tbody>
+</table>
+<div class="listingblock">
+<div class="title">Example servicebinding in <code>binding.operators.coreos.com/v1alpha1</code> API:</div>
 <div class="content">
-<pre>apiVersion: binding.operators.coreos.com/v1alpha1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: account-service
@@ -254,25 +275,46 @@ spec:
     group: apps
     kind: Deployment
     name: online-banking
-
-  services:
-  - version: v1alpha1
-    group: example.com
-    kind: AccountService
-    name: prod-account-service</pre>
+  services: <i class="conum" data-value="1"></i><b>(1)</b>
+  - version: v1alpha1 <i class="conum" data-value="2"></i><b>(2)</b>
+    group: example.com <i class="conum" data-value="3"></i><b>(3)</b>
+    kind: AccountService <i class="conum" data-value="4"></i><b>(4)</b>
+    name: prod-account-service <i class="conum" data-value="5"></i><b>(5)</b></code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>Here is the same example with <code>servicebinding.io</code> API group:</p>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>is a list of resources related to a service</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>service API version</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>service API group</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>serivce kind</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>service name</td>
+</tr>
+</table>
 </div>
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Example with <code>servicebinding.io</code> API group:</div>
 <div class="content">
-<pre>apiVersion: servicebinding.io/v1alpha3
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding
 metadata:
   name: account-service
 spec:
-  application:
+  application: <i class="conum" data-value="1"></i><b>(1)</b>
     apiVersion: apps/v1
     kind: Deployment
     name: online-banking
@@ -280,18 +322,17 @@ spec:
   service:
     apiVersion: example.com/v1alpha1
     kind: AccountService
-    name: prod-account-service</pre>
+    name: prod-account-service</code></pre>
 </div>
 </div>
-<div class="paragraph">
-<p>The <code>.spec.services</code> is a list of resources related to a service. The
-second API only supports only one service. The service kind is
-<code>Database</code>, API group is <code>example.com</code>, API version <code>v1alpha1</code>, and the
-name of the resource is <code>prod-account-service</code>.</p>
-</div>
-<div class="paragraph">
-<p>The application resource is a deployment resource with the name
-<code>online-banking</code>.</p>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>The application resource is a deployment resource with the name
+<code>online-banking</code>.</td>
+</tr>
+</table>
 </div>
 </article>
   </div>

@@ -204,9 +204,9 @@ other Service Binding could provide binding data to the cache server.</p>
 <div class="paragraph">
 <p>Let’s take a look at the example:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>$SERVICE_BINDING_ROOT
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$SERVICE_BINDING_ROOT
 ├── account-database
 │   ├── type
 │   ├── provider
@@ -218,7 +218,7 @@ other Service Binding could provide binding data to the cache server.</p>
     ├── connection-count
     ├── uri
     ├── certificates
-    └── private-key</pre>
+    └── private-key</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -262,13 +262,28 @@ resource.</p>
 <div class="paragraph">
 <p>The following table summarizes how the final bind path is computed:</p>
 </div>
-<div class="paragraph">
-<p>|==
-|SERVICE_BINDING_ROOT |Final Path
-|non-existent |/bindings/ServiceBinding_Name
-|/some/path/root |/some/path/root/
-|==</p>
-</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">SERVICE_BINDING_ROOT</th>
+<th class="tableblock halign-left valign-top">Final Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">non-existent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/bindings/ServiceBinding_Name</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/some/path/root</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/some/path/root/</p></td>
+</tr>
+</tbody>
+</table>
 <div class="paragraph">
 <p>You can use the built-in language feature of your programming language
 of choice to read environment variables.</p>
@@ -277,8 +292,8 @@ of choice to read environment variables.</p>
 <p>For accessing binding data within <code>SERVICE_BINDING_ROOT</code>, there are
 language or framework specific programs:</p>
 </div>
-<div class="olist arabic">
-<ol class="arabic">
+<div class="ulist">
+<ul>
 <li>
 <p>Python: <a href="https://github.com/baijum/pyservicebinding" class="bare">https://github.com/baijum/pyservicebinding</a></p>
 </li>
@@ -298,19 +313,28 @@ language or framework specific programs:</p>
 <li>
 <p>.NET: <a href="https://github.com/donschenck/dotnetservicebinding" class="bare">https://github.com/donschenck/dotnetservicebinding</a></p>
 </li>
-</ol>
+</ul>
 </div>
-<div class="paragraph">
-<p>Note: All these libraries expect <code>SERVICE_BINDING_ROOT</code> to be set.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+All these libraries expect <code>SERVICE_BINDING_ROOT</code> to be set.
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
 <div class="sect1">
 <h2 id="_example_python_client_usage"><a class="anchor" href="#_example_python_client_usage"></a>Example: Python client usage</h2>
 <div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>from pyservicebinding import binding
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">from pyservicebinding import binding
 try:
     sb = binding.ServiceBinding()
 except binding.ServiceBindingRootMissingError as msg:
@@ -319,7 +343,7 @@ except binding.ServiceBindingRootMissingError as msg:
 
 sb = binding.ServiceBinding()
 
-bindings_list = sb.bindings("postgresql")</pre>
+bindings_list = sb.bindings("postgresql")</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -342,12 +366,12 @@ Secret resource.</p>
 <div class="paragraph">
 <p>Here is example Python client usage:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>import os
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import os
 
 username = os.getenv("USERNAME")
-password = os.getenv("PASSWORD")</pre>
+password = os.getenv("PASSWORD")</code></pre>
 </div>
 </div>
 </div>

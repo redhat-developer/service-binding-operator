@@ -196,7 +196,7 @@ backing services with a consistent and predictable experience - Removes
 error-prone manual configuration of binding information - Provides
 service operators a low-touch administrative experience to provision and
 manage access to services - Enriches development lifecycle with a
-consistent and declarative service binding methow that eliminates
+consistent and declarative service binding method that eliminates
 environments discrepancies</p>
 </div>
 </div>
@@ -274,41 +274,39 @@ CRDs/CRs/resources</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_terminology"><a class="anchor" href="#_terminology"></a>Terminology</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><strong>Backing Service</strong></p>
-</div>
-<div class="paragraph">
-<p>Any software that exposes functionality. Examples include a database, a
-message broker, an application with REST endpoints, an event stream, an
-Application Performance Monitor, or a Hardware Security Module.</p>
-</div>
-<div class="paragraph">
-<p><strong>Application</strong></p>
-</div>
-<div class="paragraph">
-<p>Any process, running within a container. Examples include a Spring Boot
-application, a NodeJS Express application, or a Ruby Rails application.
-Note: This is different than an umbrella application as defined by the
-Kubernetes SIG, which refers to a set of micro-services.</p>
-</div>
-<div class="paragraph">
-<p><strong>Service Binding</strong></p>
-</div>
-<div class="paragraph">
-<p>The act of or representation of the action of providing information
-about a Service to an Application</p>
-</div>
-</div>
-</div>
-<div class="sect1">
 <h2 id="_referenced_specification"><a class="anchor" href="#_referenced_specification"></a>Referenced Specification</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>Service Binding Operator supports the
 <a href="https://github.com/k8s-service-bindings/spec">Service Binding
 Specification for Kubernetes</a>.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">Terminology</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Backing Service</dt>
+<dd>
+<p>Any software that exposes functionality. Examples include a database, a
+message broker, an application with REST endpoints, an event stream, an
+Application Performance Monitor, or a Hardware Security Module.</p>
+</dd>
+<dt class="hdlist1">Application</dt>
+<dd>
+<p>Any process, running within a container. Examples include a Spring Boot
+application, a NodeJS Express application, or a Ruby Rails application.
+Note: This is different than an umbrella application as defined by the
+Kubernetes SIG, which refers to a set of micro-services.</p>
+</dd>
+<dt class="hdlist1">Service Binding</dt>
+<dd>
+<p>The act of or representation of the action of providing information
+about a Service to an Application</p>
+</dd>
+</dl>
+</div>
+</div>
 </div>
 </div>
 </div>

@@ -169,17 +169,26 @@
 <div class="sect1">
 <h2 id="_containers_path"><a class="anchor" href="#_containers_path"></a>Containers Path</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>This feature is only available for <code>ServiceBinding</code> in the
-<code>binding.operators.coreos.com</code> API group.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is only available for <code>ServiceBinding</code> in the
+<code>binding.operators.coreos.com</code> API group.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>SBO provides an api to bind container paths at a custom location.
 Here is an example custom resource with containers in a custom location:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: "stable.example.com/v1"
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: "stable.example.com/v1"
 kind: AppConfig
 metadata:
     name: example-appconfig
@@ -188,7 +197,7 @@ spec:
     - name: hello-world
       image: yusufkaratoprak/kubernetes-gosample:latest
       ports:
-      - containerPort: 8090</pre>
+      - containerPort: 8090</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -196,9 +205,9 @@ spec:
 specify this path in the <code>ServiceBinding</code> config at
 <code>spec.application.bindingPath.containersPath</code>:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: binding.operators.coreos.com/v1alpha1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
     name: binding-request
@@ -217,16 +226,16 @@ spec:
         kind: Database
         name: example-db
         id: zzz
-        namePrefix: qiye</pre>
+        namePrefix: qiye</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>After reconciliation, the <code>spec.containers</code> will be updated with
 <code>envFrom</code> and <code>secretRef</code> like this:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: stable.example.com/v1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: stable.example.com/v1
 kind: AppConfig
 metadata:
     name: example-appconfig
@@ -242,7 +251,7 @@ spec:
     name: hello-world
     ports:
     - containerPort: 8090
-    resources: {}</pre>
+    resources: {}</code></pre>
 </div>
 </div>
 </div>
@@ -250,22 +259,31 @@ spec:
 <div class="sect1">
 <h2 id="_secret_path"><a class="anchor" href="#_secret_path"></a>Secret Path</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>This feature is only available for <code>ServiceBinding</code> in the
-<code>binding.operators.coreos.com</code> API group.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is only available for <code>ServiceBinding</code> in the
+<code>binding.operators.coreos.com</code> API group.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>SBO provides an API to inject a binding secret name into a custom application resource field.
 Here is an example CR with the secret in a custom location:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: "stable.example.com/v1"
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: "stable.example.com/v1"
 kind: AppConfig
 metadata:
     name: example-appconfig
 spec:
-    secret: ""</pre>
+    secret: ""</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -273,9 +291,9 @@ spec:
 this path in the <code>ServiceBinding</code> config at
 <code>spec.application.bindingPath.secretPath</code>:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: binding.operators.coreos.com/v1alpha1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
     name: binding-request
@@ -294,21 +312,21 @@ spec:
         kind: Database
         name: example-db
         id: zzz
-        namePrefix: qiye</pre>
+        namePrefix: qiye</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>After reconciliation, the <code>spec.secret</code> will be updated with
 <code>binding-request</code> as the value:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: "stable.example.com/v1"
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: "stable.example.com/v1"
 kind: AppConfig
 metadata:
     name: example-appconfig
 spec:
-    secret: binding-request-72ddc0c540ab3a290e138726940591debf14c581</pre>
+    secret: binding-request-72ddc0c540ab3a290e138726940591debf14c581</code></pre>
 </div>
 </div>
 </div>

@@ -166,8 +166,6 @@
 </aside>
 <article class="doc">
 <h1 class="page">Provisioned Service</h1>
-<div id="preamble">
-<div class="sectionbody">
 <div class="paragraph">
 <p>As a backing service author or provider, you can use this method to be
 compliant with the Service Binding specification.</p>
@@ -187,38 +185,31 @@ author, you can create a <code>Secret</code> service resource with all the
 necessary connection details and refer them using the
 <code>.status.binding.name</code> field.</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_accountservice_resource"><a class="anchor" href="#_example_accountservice_resource"></a>Example: AccountService resource</h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p>This example shows an <code>AccountService</code> resource with relavant details:</p>
-</div>
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Example: AccountService resource</div>
 <div class="content">
-<pre>apiVersion: example.com/v1alpha1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: example.com/v1alpha1
 kind: AccountService
 name: prod-account-service
 spec:
   ...
 status:
   binding:
-    name: production-db-secret</pre>
+    name: production-db-secret</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>This is the referenced Secret:</p>
 </div>
-<div class="literalblock">
+<div class="listingblock">
 <div class="content">
-<pre>apiVersion: v1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
 kind: Secret
 metadata:
   name: production-db-secret
 data:
   password: "MTBz"
-  username: "Z3Vlc3Q="</pre>
+  username: "Z3Vlc3Q="</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -226,14 +217,10 @@ data:
 <code>AccountService</code> resource in the following <code>ServiceBinding</code>
 specifications:</p>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_specification_with_the_binding_operators_coreos_com_api"><a class="anchor" href="#_example_specification_with_the_binding_operators_coreos_com_api"></a>Example: Specification with the binding.operators.coreos.com API</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Example: Specification with the binding.operators.coreos.com API</div>
 <div class="content">
-<pre>apiVersion: binding.operators.coreos.com/v1alpha1
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: account-service
@@ -248,17 +235,13 @@ spec:
     name: nodejs-app
     group: apps
     version: v1
-    resource: deployments</pre>
+    resource: deployments</code></pre>
 </div>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_example_specification_that_is_compliant_with_the_service_binding_api"><a class="anchor" href="#_example_specification_that_is_compliant_with_the_service_binding_api"></a>Example: Specification that is compliant with the service.binding API</h2>
-<div class="sectionbody">
-<div class="literalblock">
+<div class="listingblock">
+<div class="title">Example: Specification that is compliant with the service.binding API</div>
 <div class="content">
-<pre>apiVersion: servicebinding.io/v1alpha3
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding
 metadata:
   name: account-service
@@ -272,14 +255,12 @@ spec:
   application:
     apiVersion: apps/v1
     kind: Deployment
-    name: nodejs-app</pre>
+    name: nodejs-app</code></pre>
 </div>
 </div>
 <div class="paragraph">
 <p>All the keys in the <code>Secret</code> resource are exposed as binding data and
 projected into the application.</p>
-</div>
-</div>
 </div>
 </article>
   </div>

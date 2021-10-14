@@ -169,14 +169,23 @@
 <div class="sect1">
 <h2 id="_transform_binding_names_before_projection_into_application"><a class="anchor" href="#_transform_binding_names_before_projection_into_application"></a>Transform binding names before projection into application</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Note: This feature is only available for <code>ServiceBinding</code> in the
-<code>binding.operators.coreos.com</code> API group.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is only available for <code>ServiceBinding</code> in the
+<code>binding.operators.coreos.com</code> API group.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>If an application expects the projected environment variables in a
 particular format, but the values from backing services are not
-available in that foramt, then users can use the feature described here
+available in that format, then users can use the feature described here
 to transform binding names.</p>
 </div>
 <div class="paragraph">
@@ -286,43 +295,35 @@ in <code>namingStrategy</code></p>
 <p><code>none</code> - When this is applied, no transformations are performed on
 binding names. The binding names is in following form - <code>{{ .name }}</code>.
 This is the default behavior.</p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">host: example.com
 port: 8080</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="2">
+</li>
 <li>
 <p><code>uppercase</code> - This is by uppercase set when no <code>namingStrategy</code> is
 defined and <code>bindAsFiles</code> set to false -
 <code>{{ .service.kind | upper}}_{{ .name | upper    }}</code></p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">DATABASE_HOST: example.com
 DATABASE_PORT: 8080</code></pre>
 </div>
 </div>
-<div class="olist arabic">
-<ol class="arabic" start="3">
+</li>
 <li>
 <p><code>lowercase</code> - This is by default set when <code>bindAsFiles</code> set to true -
 <code>{{ .name | lower }}</code></p>
-</li>
-</ol>
-</div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">host: example.com
 port: 8080</code></pre>
 </div>
+</div>
+</li>
+</ol>
 </div>
 </div>
 </div>
@@ -347,9 +348,18 @@ port: 8080</code></pre>
 <div class="sect1">
 <h2 id="_compose_custom_binding_data"><a class="anchor" href="#_compose_custom_binding_data"></a>Compose custom binding data</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>This feature is only available for <code>ServiceBinding</code> in the
-<code>binding.operators.coreos.com</code> API group.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is only available for <code>ServiceBinding</code> in the
+<code>binding.operators.coreos.com</code> API group.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>If the backing service doesn’t expose binding data or the values exposed
@@ -381,12 +391,12 @@ spec:
   - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
-    name: db-demo   &lt;--- Database service
-    id: postgresDB &lt;--- Optional "id" field
+    name: db-demo   <i class="conum" data-value="1"></i><b>(1)</b>
+    id: postgresDB <i class="conum" data-value="2"></i><b>(2)</b>
   - group: ibmcloud.ibm.com
     version: v1alpha1
     kind: Binding
-    name: mytranslator-binding &lt;--- Translation service
+    name: mytranslator-binding <i class="conum" data-value="3"></i><b>(3)</b>
     id: translationService
 
   mappings:
@@ -410,6 +420,22 @@ spec:
     - name: DB_JSON
       value: {{ json .postgresDB.status }}</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Database service</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Optional "id" field</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Translation service</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
