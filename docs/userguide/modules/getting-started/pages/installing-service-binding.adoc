@@ -3,29 +3,28 @@
 The Service Binding Operator can be installed on the following version
 of Kubernetes and OpenShift:
 
-* link:#installing-the-service-binding-operator-on-kubernetes[Kubernetes
+* xref:#installing-on-kubernetes[Kubernetes
 version 1.19 or above].
-* link:#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui[OpenShift
+* xref:#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui[OpenShift
 version 4.6 or above].
 
-[#installing-the-service-binding-operator-on-kubernetes]
-== Installing the Service Binding Operator on Kubernetes
+[#installing-on-kubernetes]
+== Installing on Kubernetes
 
 You can install the Service Binding Operator using the following
 methods:
 
-[arabic]
 . Installing the Service Binding Operator using OLM
-[loweralpha]
 .. Go to
 https://operatorhub.io/operator/service-binding-operator[OperatorHub.io].
-.. Click on the blue *Install* button.
+.. Click on the blue btn:[Install] button.
 .. Follow the instructions to install the Service Binding Operator.
 . Installing the Service Binding Operator without OLM
 
 If you do not have Operator Lifecycle Manager, you can install the
 Operator using the released resources:
 
+[source,bash]
 ....
 kubectl apply -f https://github.com/redhat-developer/service-binding-operator/releases/latest/download/release.yaml
 ....
@@ -33,34 +32,30 @@ kubectl apply -f https://github.com/redhat-developer/service-binding-operator/re
 [#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui]
 == Installing the Service Binding Operator from the OpenShift Container Platform web UI
 
-Prerequisite:
+Prerequisites:
 
-* https://docs.openshift.com/container-platform/4.8/welcome/index.html.[Red
+. https://docs.openshift.com/container-platform/4.8/welcome/index.html[Red
 Hat OpenShift Container Platform] installed.
 
-[arabic]
-. Navigate in the web console to the OperatorHub page and type ``Service
-Binding'' into the ``Filter by keyword'' box:
-
+. Navigate in the web console to the OperatorHub page and type `Service
+Binding` into the `Filter by keyword` box:
++
 image:ocp_operathub.png[ocp_operathub]
 
-[arabic, start=2]
 . Click *Service Binding Operator* from the result. A page to install
 the Operator is displayed with additional information about the
 Operator.
-
++
 image:sbo_intall_landing.png[sbo_intall_landing]
 
-[arabic, start=3]
-. Click *Install*. The Install Operator page is displayed.
-. Select the options as per your requirements and click *Install*. After
+. Click btn:[Install]. The Install Operator page is displayed.
+. Select the options as per your requirements and click btn:[Install]. After
 the installation is complete, a page with the *Installed Operator –
 ready for use* message is displayed.
-
++
 image:sbo_install_options.png[sbo_install_options]
 
-[arabic, start=5]
-. Click *View Operator*. The *Service Binding Operator* page is
+. Click btn:[View Operator]. The *Service Binding Operator* page is
 displayed with the Operator details.
-
++
 image:sbo_post_install.png[sbo_post_install]

@@ -3,7 +3,6 @@
 In this section, consider the case that the service you want to connect to is already
 exposing binding data by either:
 
-[arabic]
 . Provisioned Service
 . Direct Secret Reference
 . Secret Generated through CRD/CR annotations
@@ -24,15 +23,17 @@ maturing, as a result the API might change in the future. We recommend
 you to carefully use that API for testing purposes and preparing your
 integration to become fully compliant with the specification. It is
 available in Service Binding Operator 1.x, as Tech Preview.
-* We’ll consider supporting only the API from the specification, once
+
+NOTE: We’ll consider supporting only the API from the specification, once
 the Service Binding specification will be officially GA. Of course, that
 will be a breaking change and handle in a safe way for you.
 
 Some of the key difference between the APIs:
 
-[width="100%",cols="46%,54%",options="header",]
-|==
+[cols="1, 1"]
+|===
 |binding.operators.coreos.com API |servicebinding.io API
+
 |Support naming strategy |Does not support naming strategy
 
 |Support custom mapping |Does not support custom mapping
@@ -42,11 +43,10 @@ auto-detecting binding resources
 
 |Flag to bind as files or env vars |No flag switch between files and env
 vars
-|==
+|===
 
-Here is the example servicebinding in
-`binding.operators.coreos.com/v1alpha1` API:
-
+.Example servicebinding in `binding.operators.coreos.com/v1alpha1` API:
+[source,yaml]
 ....
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -58,23 +58,27 @@ spec:
     group: apps
     kind: Deployment
     name: online-banking
-
-  services:
-  - version: v1alpha1
-    group: example.com
-    kind: AccountService
-    name: prod-account-service
+  services: # <1>
+  - version: v1alpha1 # <2>
+    group: example.com # <3>
+    kind: AccountService # <4>
+    name: prod-account-service # <5>
 ....
+<1> is a list of resources related to a service
+<2> service API version
+<3> service API group
+<4> serivce kind
+<5> service name
 
-Here is the same example with `servicebinding.io` API group:
-
+.Example with `servicebinding.io` API group:
+[source,yaml]
 ....
 apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding
 metadata:
   name: account-service
 spec:
-  application:
+  application: # <1>
     apiVersion: apps/v1
     kind: Deployment
     name: online-banking
@@ -84,11 +88,5 @@ spec:
     kind: AccountService
     name: prod-account-service
 ....
-
-The `.spec.services` is a list of resources related to a service. The
-second API only supports only one service. The service kind is
-`Database`, API group is `example.com`, API version `v1alpha1`, and the
-name of the resource is `prod-account-service`.
-
-The application resource is a deployment resource with the name
+<1> The application resource is a deployment resource with the name
 `online-banking`.

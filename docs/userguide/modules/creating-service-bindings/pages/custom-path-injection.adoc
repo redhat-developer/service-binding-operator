@@ -2,11 +2,13 @@
 
 == Containers Path
 
-This feature is only available for `ServiceBinding` in the
+NOTE: This feature is only available for `ServiceBinding` in the
 `binding.operators.coreos.com` API group.
 
 SBO provides an api to bind container paths at a custom location.
 Here is an example custom resource with containers in a custom location:
+
+[source,yaml]
 ....
 apiVersion: "stable.example.com/v1"
 kind: AppConfig
@@ -24,6 +26,7 @@ In the above CR, the containers path is at `spec.containers`. You can
 specify this path in the `ServiceBinding` config at
 `spec.application.bindingPath.containersPath`:
 
+[source,yaml]
 ....
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -50,6 +53,7 @@ spec:
 After reconciliation, the `spec.containers` will be updated with
 `envFrom` and `secretRef` like this:
 
+[source,yaml]
 ....
 apiVersion: stable.example.com/v1
 kind: AppConfig
@@ -72,11 +76,13 @@ spec:
 
 == Secret Path
 
-This feature is only available for `ServiceBinding` in the
+NOTE: This feature is only available for `ServiceBinding` in the
 `binding.operators.coreos.com` API group.
 
 SBO provides an API to inject a binding secret name into a custom application resource field.
 Here is an example CR with the secret in a custom location:
+
+[source,yaml]
 ....
 apiVersion: "stable.example.com/v1"
 kind: AppConfig
@@ -90,6 +96,7 @@ In the above CR, the secret path is at `spec.secret`. You can specify
 this path in the `ServiceBinding` config at
 `spec.application.bindingPath.secretPath`:
 
+[source,yaml]
 ....
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
@@ -116,6 +123,7 @@ spec:
 After reconciliation, the `spec.secret` will be updated with
 `binding-request` as the value:
 
+[source,yaml]
 ....
 apiVersion: "stable.example.com/v1"
 kind: AppConfig

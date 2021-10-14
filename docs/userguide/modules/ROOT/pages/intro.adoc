@@ -22,7 +22,7 @@ backing services with a consistent and predictable experience - Removes
 error-prone manual configuration of binding information - Provides
 service operators a low-touch administrative experience to provision and
 manage access to services - Enriches development lifecycle with a
-consistent and declarative service binding methow that eliminates
+consistent and declarative service binding method that eliminates
 environments discrepancies
 
 == Features
@@ -52,28 +52,28 @@ CRDs/CRs/resources
 
 * RBAC support to opt-in
 
-== Terminology
-
-*Backing Service*
-
-Any software that exposes functionality. Examples include a database, a
-message broker, an application with REST endpoints, an event stream, an
-Application Performance Monitor, or a Hardware Security Module.
-
-*Application*
-
-Any process, running within a container. Examples include a Spring Boot
-application, a NodeJS Express application, or a Ruby Rails application.
-Note: This is different than an umbrella application as defined by the
-Kubernetes SIG, which refers to a set of micro-services.
-
-*Service Binding*
-
-The act of or representation of the action of providing information
-about a Service to an Application
-
 == Referenced Specification
 
 Service Binding Operator supports the
 https://github.com/k8s-service-bindings/spec[Service Binding
 Specification for Kubernetes].
+
+.Terminology
+[sidebar]
+--
+Backing Service::
+Any software that exposes functionality. Examples include a database, a
+message broker, an application with REST endpoints, an event stream, an
+Application Performance Monitor, or a Hardware Security Module.
+
+Application::
+Any process, running within a container. Examples include a Spring Boot
+application, a NodeJS Express application, or a Ruby Rails application.
+Note: This is different than an umbrella application as defined by the
+Kubernetes SIG, which refers to a set of micro-services.
+
+Service Binding::
+The act of or representation of the action of providing information
+about a Service to an Application
+--
+

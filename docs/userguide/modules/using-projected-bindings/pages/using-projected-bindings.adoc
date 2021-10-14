@@ -22,6 +22,7 @@ other Service Binding could provide binding data to the cache server.
 
 Let’s take a look at the example:
 
+[source,text]
 ....
 $SERVICE_BINDING_ROOT
 ├── account-database
@@ -69,12 +70,13 @@ resource.
 
 The following table summarizes how the final bind path is computed:
 
-[cols=",",options="header",]
-|==
+[cols="1,1"]
+|===
 |SERVICE_BINDING_ROOT |Final Path
+
 |non-existent |/bindings/ServiceBinding_Name
 |/some/path/root |/some/path/root/
-|==
+|===
 
 You can use the built-in language feature of your programming language
 of choice to read environment variables.
@@ -82,19 +84,20 @@ of choice to read environment variables.
 For accessing binding data within `SERVICE_BINDING_ROOT`, there are
 language or framework specific programs:
 
-[arabic]
-. Python: https://github.com/baijum/pyservicebinding
-. Go: https://github.com/baijum/servicebinding
-. Java/Spring: https://github.com/spring-cloud/spring-cloud-bindings
-. Quarkus:
-https://quarkus.io/guides/deploying-to-kubernetes#service-binding
-. JS/Node: https://github.com/nodeshift/kube-service-bindings
-. .NET: https://github.com/donschenck/dotnetservicebinding
 
-Note: All these libraries expect `SERVICE_BINDING_ROOT` to be set.
+* Python: https://github.com/baijum/pyservicebinding
+* Go: https://github.com/baijum/servicebinding
+* Java/Spring: https://github.com/spring-cloud/spring-cloud-bindings
+* Quarkus:
+https://quarkus.io/guides/deploying-to-kubernetes#service-binding
+* JS/Node: https://github.com/nodeshift/kube-service-bindings
+* .NET: https://github.com/donschenck/dotnetservicebinding
+
+NOTE: All these libraries expect `SERVICE_BINDING_ROOT` to be set.
 
 == Example: Python client usage
 
+[source,python]
 ....
 from pyservicebinding import binding
 try:
@@ -122,6 +125,7 @@ Secret resource.
 
 Here is example Python client usage:
 
+[source,python]
 ....
 import os
 

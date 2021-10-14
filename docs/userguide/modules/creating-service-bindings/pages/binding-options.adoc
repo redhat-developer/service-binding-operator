@@ -2,12 +2,12 @@
 
 == Transform binding names before projection into application
 
-Note: This feature is only available for `ServiceBinding` in the
+NOTE: This feature is only available for `ServiceBinding` in the
 `binding.operators.coreos.com` API group.
 
 If an application expects the projected environment variables in a
 particular format, but the values from backing services are not
-available in that foramt, then users can use the feature described here
+available in that format, then users can use the feature described here
 to transform binding names.
 
 The transformation rules can be specified in the `.spec.namingStrategy`
@@ -83,32 +83,29 @@ in `namingStrategy`
 
 There are few naming strategies predefine.
 
-[arabic]
 . `none` - When this is applied, no transformations are performed on
 binding names. The binding names is in following form - `{{ .name }}`.
 This is the default behavior.
-
++
 [source,yaml]
 ----
 host: example.com
 port: 8080
 ----
 
-[arabic, start=2]
 . `uppercase` - This is by uppercase set when no `namingStrategy` is
 defined and `bindAsFiles` set to false -
 `{{ .service.kind | upper}}_{{ .name | upper    }}`
-
++
 [source,yaml]
 ----
 DATABASE_HOST: example.com
 DATABASE_PORT: 8080
 ----
 
-[arabic, start=3]
 . `lowercase` - This is by default set when `bindAsFiles` set to true -
 `{{ .name | lower }}`
-
++
 [source,yaml]
 ----
 host: example.com
@@ -117,14 +114,13 @@ port: 8080
 
 == Predefined string post processing functions
 
-[arabic]
 . `upper` - Capatalize all letters
 . `lower` - Lowercase all letters
 . `title` - Title case all letters.
 
 == Compose custom binding data
 
-This feature is only available for `ServiceBinding` in the
+NOTE: This feature is only available for `ServiceBinding` in the
 `binding.operators.coreos.com` API group.
 
 If the backing service doesn’t expose binding data or the values exposed
@@ -155,12 +151,12 @@ spec:
   - group: postgresql.baiju.dev
     version: v1alpha1
     kind: Database
-    name: db-demo   <--- Database service
-    id: postgresDB <--- Optional "id" field
+    name: db-demo   # <1>
+    id: postgresDB # <2>
   - group: ibmcloud.ibm.com
     version: v1alpha1
     kind: Binding
-    name: mytranslator-binding <--- Translation service
+    name: mytranslator-binding # <3>
     id: translationService
 
   mappings:
@@ -184,3 +180,6 @@ spec:
     - name: DB_JSON
       value: {{ json .postgresDB.status }}
 ----
+<1>  Database service
+<2> Optional "id" field
+<3>  Translation service

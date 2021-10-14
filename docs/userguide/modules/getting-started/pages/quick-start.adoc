@@ -26,12 +26,11 @@ collect the binding data from the PostgreSQL database and project them
 into the sample application.
 
 Before starting, we invite you to refer to the
-link:#prerequisites[Prerequisites] section to make sure you have all the
+xref:#prerequisites[] section to make sure you have all the
 needed components configured on your K8s cluster.
 
-The quick start will then consist into three main steps:
+The quick start consists of three main steps:
 
-[arabic]
 . link:#create-a-postgresql-database-instance[Create a PostgreSQL
 database instance]
 . link:#deploy-the-sample-application[Deploy the application]
@@ -44,9 +43,12 @@ to the database with Service Binding]
 In order to follow the quick start, you’ll need the following tools
 installed and configured:
 
-* Kubernetes cluster (*Note:* You can use
+* Kubernetes cluster
+
+NOTE: You can use
 https://minikube.sigs.k8s.io/[minikube] or
-https://kind.sigs.k8s.io/[kind], locally)
+https://kind.sigs.k8s.io/[kind], locally
+
 * https://kubernetes.io/docs/tasks/tools/#kubectl[kubectl]
 * PostgreSQL client (`psql` CLI tool)
 * xref:installing-service-binding.adoc[]
@@ -63,28 +65,27 @@ availabe in our `my-postgresql` namespace.
 The installation of the operator doesn’t create a database instance
 itself, so we need to create one.
 
-[arabic]
 . To create a database instance, you need to create custom resource
 `PostgresCluster` and that will trigger the operator reconciliation. For
 convenience, run this command to create `PostgresCluster` custom
 resource:
-
++
 [source,bash,subs="attributes,macros"]
 ----
 kubectl apply -f link:{attachmentsdir}/pgcluster.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/pgcluster.yaml]]
 ----
 
-[arabic, start=2]
 . Once the database is created, we need to ensure all the pods in
 `my-postgresql` namespace are running (it will take few minutes):
-
++
 [source,bash]
 ----
 kubectl get pod -n my-postgresql
 ----
-
++
 You should see output something like this:
-
++
+[source,terminal]
 ....
 NAME                                     READY   STATUS      RESTARTS   AGE
 hippo-backup-6th6--1-28849               0/1     Completed   0          1m
@@ -92,20 +93,19 @@ hippo-instance1-sl4r-0                   2/2     Running     0          2m
 hippo-pgbouncer-8454474bc7-lhcn9         2/2     Running     0          2m
 pgo-84b9679484-79c6m                     1/1     Running     0          3m
 ....
-
++
 The database has been created and is empty at this stage. We now need to
 set its schema and we will also project a sample data set, so we can
 play around with the application.
 
-[arabic, start=3]
 . You can initialize the database with the schema and sample data using
 this command:
-
++
 [source,bash,subs="attributes,macros"]
 ----
 curl -sL link:{attachmentsdir}/init-database.sh[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/init-database.sh]] | bash
 ----
-
++
 We have now finished to configured the database for the application. We
 are ready to deploy the sample application and connect it to the
 database.
@@ -118,24 +118,22 @@ kubernetes cluster. For that, we will use a deployment configuration and
 do the configuration of our local environment to be able to test the
 application.
 
-[arabic]
 . Deploy the `spring-petclinic-rest` app with this `Deployment`
 configuration:
-
++
 [source,bash,subs="attributes,macros"]
 ----
 kubectl apply -f link:{attachmentsdir}/app-deployment.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/app-deployment.yaml]]
 ----
 
-[arabic, start=2]
 . Let’s now setup the port forwarding from the application port so we
 can access it from our local environment
-
++
+[source,bash]
 ....
 kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql
 ....
 
-[arabic, start=3]
 . You should be able to open http://localhost:9966/petclinic and see a
 https://swagger.io[Swagger UI] where you can play with the API.
 
@@ -146,6 +144,7 @@ application.
 For example, if you try to access the list of all pets, you can see an
 error like this:
 
+[source,bash]
 ....
 curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
 
@@ -166,7 +165,6 @@ application’s admin needs to extract all the configuration details and
 create a Secret resource and expose it to the application through volume
 mount in Kubernetes. The steps would be something like this:
 
-[arabic]
 . Identify the required values for connecting the application to the
 database
 . Locate the resources where the values are present
@@ -181,9 +179,8 @@ order to do that, we’ll need to create a Service Binding resource which
 will trigger the Service Binding Operator to project the binding datas
 into the application.
 
-[arabic]
 . Create the ServiceBinding resource to project the binding data:
-
++
 The `.spec` has two sections. The first is a list of service
 resources (`.spec.services`), and the second one is the application
 (`.spec.application`). The services resources points to the database’s
@@ -191,7 +188,7 @@ service resources. How the values are exposed from service resources are
 explained xref:exposing-binding-data:intro-expose-binding.adoc[]
 section. The application points to a `Deployment`
 or any resource that is PodSpec compatible.
-
++
 [source,yaml]
 ----
 apiVersion: binding.operators.coreos.com/v1alpha1
@@ -211,26 +208,26 @@ spec:
     version: v1
     resource: deployments
 ----
-
++
 For simplicity, you can copy/paste the following command to create the
 resource:
-
++
 [source,bash,subs="attributes,macros"]
 ----
 kubectl apply -f link:{attachmentsdir}/service-binding.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/service-binding.yaml]]
 ----
-
++
 To check if the binding was successful you can check the binding
 resource status conditions by the following command:
-
++
 [source,bash]
 ----
 kubectl get servicebindings spring-petclinic-rest -n my-postgresql -o jsonpath-as-json='{.status.conditions}'
 ----
-
++
 You should see output something like:
-
-[source,yaml]
++
+[source,json]
 ----
 [
   [
@@ -258,10 +255,10 @@ You should see output something like:
   ],
 ]
 ----
-
++
 To learn more about creating service bindings, you can find more
 information on the following xref:creating-service-bindings:creating-service-binding.adoc[document]
-
++
 By creating this `Service Binding` resource, we now have values from the
 database’s binding data projected into the application container as
 files (that’s the default behavior, but you can also project environment
@@ -278,11 +275,11 @@ https://github.com/spring-cloud/spring-cloud-bindings[Spring Cloud
 Bindings] and it looks for `SERVICE_BINDING_ROOT` to get the projected
 binding data. See the using projected binding data section about how the
 values can be used from the application.
-
++
 To verify that binding was successful and that the files in the
 application contain the expected content, you can use the following script to
 inspect the deployment:
-
++
 [source,bash]
 ----
 for i in username password host port type; do
@@ -290,9 +287,10 @@ for i in username password host port type; do
   echo
 done
 ----
-
++
 You should see output something like:
-
++
+[source,bash]
 ....
 /bindings/spring-petclinic-rest/username: hippo
 /bindings/spring-petclinic-rest/password: w0ZB<0j1W|K;+4*TlK7-w^z/
@@ -301,23 +299,23 @@ You should see output something like:
 /bindings/spring-petclinic-rest/type: postgresql
 ....
 
-[arabic, start=2]
 . Let’s now check how the application is behaving and setup the port
 forwarding of the application port to access it from our local
 environment
-
++
+[source,bash]
 ....
 kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql
 ....
 
-[arabic, start=3]
 . Open http://localhost:9966/petclinic, you should see a
 https://swagger.io[Swagger UI] where you can play with the API.
-
++
 If you try to access list of all pets, you can see the application is
 now connected to the database and see the sample data initially
 configured:
-
++
+[source,bash]
 ....
 $ curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
 [{"id":1,"name":"Leo","birthDate":"2000/09/07","type":{"id":1,"name":"cat"},

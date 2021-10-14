@@ -4,13 +4,14 @@ To unbind an application from a service, delete the `ServiceBinding`
 custom resource linked to it using the `kubectl` or `oc` command line
 tool:
 
-[source,console]
+[source,bash]
 ----
 kubectl delete ServiceBinding <.metadata.name>
 ----
 
 OR
 
+[source,bash]
 ....
 oc delete ServiceBinding <.metadata.name>
 ....
@@ -19,10 +20,12 @@ where `<.metadata.name>` is the name of the `ServiceBinding` resource.
 
 Examples:
 
+[source,bash]
 ....
 kubectl delete ServiceBinding binding-request
 ....
 
+[source,bash]
 ....
 oc delete ServiceBinding binding-request
 ....
