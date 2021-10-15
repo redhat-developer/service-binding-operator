@@ -17,13 +17,14 @@ those secrets in a custom way to their applications. While there is a
 good deal of value to this flexibility level, large development teams
 lose overall velocity dealing with each unique solution.
 
-*Service Binding:* - Enables developers to connect their application to
-backing services with a consistent and predictable experience - Removes
-error-prone manual configuration of binding information - Provides
-service operators a low-touch administrative experience to provision and
-manage access to services - Enriches development lifecycle with a
-consistent and declarative service binding method that eliminates
-environments discrepancies
+*Service Binding:*
+* Enables developers to connect their application to backing services
+  with a consistent and predictable experience
+* Removes error-prone manual configuration of binding information
+* Provides service operators a low-touch administrative experience to
+  provision and manage access to services
+* Enriches development lifecycle with a consistent and declarative
+  service binding method that eliminates environments discrepancies
 
 == Features
 
