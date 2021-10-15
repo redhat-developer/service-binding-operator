@@ -45,6 +45,12 @@ auto-detecting binding resources
 vars
 |===
 
+[IMPORTANT]
+Service Binding Operator performs requests against Kubernetes API using a dedicated service account. By default the account has permissions to bind services to applications, both represented by standard Kubernetes Deployments, DaemonSets, ReplicaSets, StatefulSets and https://docs.openshift.com/container-platform/latest/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are[OpenShift DeploymentConfigs]. Binding services/application defined by {crd} requires adding appropriate rights to the service account, either by cluster admins or operator vendors. Please check xref:exposing-binding-data:rbac-requirements.adoc[] Section for further details.
++
+Equally important is to note that the Service Binding Operator prevent users to bind services to application if
+the user does not have permissions to read binding data or modify application resource. This check is added to prevent privilege escalation, i.e. get access to unauthorized services/applications.
+
 .Example servicebinding in `binding.operators.coreos.com/v1alpha1` API:
 [source,yaml]
 ....

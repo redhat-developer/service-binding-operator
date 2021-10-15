@@ -1,0 +1,17 @@
+= RBAC Requirements
+
+
+Service Binding Operator performs requests against Kubernetes API using a dedicated service account. By default the account has permissions to bind services to applications, both represented by standard Kubernetes Deployments, DaemonSets, ReplicaSets, StatefulSets and https://docs.openshift.com/container-platform/latest/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are[OpenShift DeploymentConfigs]
+
+Based on https://github.com/servicebinding/spec#considerations-for-role-based-access-control-rbac[the spec recommendation], the operator service account is bound to 
+https://kubernetes.io/docs/reference/access-authn-authz/rbac/#aggregated-clusterroles[an aggregated cluster role], allowing operator vendors and/or cluster admins to enable binding custom service resources. The needed permissions need be encapsulated within a `ClusterRole` labelled with `servicebinding.io/controller: "true"`.
+
+
+.Example: Enable binding to MongoDB instances provisioned by https://operatorhub.io/operator/percona-server-mongodb-operator[Percona MongoDB operator]:
+[source,yaml]
+....
+include::ROOT:example$percona_mongodb_clusterrole.yaml[]
+....
+
+This cluster role can be deployed during the installation of the backing service
+operator.  You can add it as part of the manifests.
