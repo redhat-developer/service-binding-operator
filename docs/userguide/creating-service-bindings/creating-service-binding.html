@@ -121,6 +121,9 @@
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detect Bindings through owned resources</a>
   </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC Requirements</a>
+  </li>
 </ul>
   </li>
 </ul>
@@ -262,6 +265,23 @@ vars</p></td>
 </tr>
 </tbody>
 </table>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+Service Binding Operator performs requests against Kubernetes API using a dedicated service account. By default the account has permissions to bind services to applications, both represented by standard Kubernetes Deployments, DaemonSets, ReplicaSets, StatefulSets and <a href="https://docs.openshift.com/container-platform/latest/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are">OpenShift DeploymentConfigs</a>. Binding services/application defined by <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> requires adding appropriate rights to the service account, either by cluster admins or operator vendors. Please check <a href="../exposing-binding-data/rbac-requirements.html" class="page">RBAC Requirements</a> Section for further details.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>+
+Equally important is to note that the Service Binding Operator prevent users to bind services to application if
+the user does not have permissions to read binding data or modify application resource. This check is added to prevent privilege escalation, i.e. get access to unauthorized services/applications.</p>
+</div>
 <div class="listingblock">
 <div class="title">Example servicebinding in <code>binding.operators.coreos.com/v1alpha1</code> API:</div>
 <div class="content">
