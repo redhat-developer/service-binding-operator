@@ -18,6 +18,7 @@ good deal of value to this flexibility level, large development teams
 lose overall velocity dealing with each unique solution.
 
 *Service Binding:*
+
 * Enables developers to connect their application to backing services
   with a consistent and predictable experience
 * Removes error-prone manual configuration of binding information
