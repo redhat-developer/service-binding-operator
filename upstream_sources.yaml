@@ -2,7 +2,7 @@
 
 git:
 - branch: master
-  commit: c8de6df753f00b4f9193b39b8a58d3b7f562243b
+  commit: 9230857d0d6d5eb542cf95149bfe2511ed96ddbb
   dest_formats:
     branch:
       gen_source_repos: true
