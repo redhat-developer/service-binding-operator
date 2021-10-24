@@ -55,6 +55,14 @@ Service Binding:
 * Custom binding variables composed from one or more backing services.
 * Auto-detect binding resources in the absence of binding decorators.
 
+## Service Binding Specification Alignment
+
+* Service Binding Operator provides two different APIs.  
+    * binding.operators.coreos.com/v1alpha1: This API is compliant with the Service Binding Specification for Kubernetes.
+    * servicebinding.io/v1alpha3 (tech preview): This API implements the Service Binding Specification for Kubernetes. 
+
+The [Service Binding Specification for Kubernetes](https://github.com/k8s-service-bindings/spec) is still evolving and maturing.  We are tracking changes to the spec as it approaches a stable release and are updating our APIs accordingly and as a result our APIs may change in the future. 
+
 ## Getting started
 
 ### Installing in a Cluster
