@@ -68,7 +68,7 @@ else
 fi
 
 #Apply subscription for subscribing to the requested channel of the service binding operator
-SUB_ALREADY_FOUND=$(kubectl get sub -n $OPERATOR_NAMESPACE -o json --ignore-not-found | jq -rc '.items[] | select(.spec.source == "'$CATSRC_NAME'" and .spec.sourceNamespace == "'$CATSRC_NAMESPACE'" and .spec.channel == "'$OPERATOR_CHANNEL'").metadata.name')
+SUB_ALREADY_FOUND=$(kubectl get sub -n $OPERATOR_NAMESPACE -o json --ignore-not-found | jq -rc '.items[] | select(.spec.source == "'$CATSRC_NAME'" and .spec.sourceNamespace == "'$CATSRC_NAMESPACE'" and .spec.channel == "'$OPERATOR_CHANNEL'" and .spec.name == "'$OPERATOR_PACKAGE'").metadata.name')
 if [ -n "$SUB_ALREADY_FOUND" ]; then
   echo "Subscription to the given channel '$OPERATOR_CHANNEL' of the given Catalog Source '$CATSRC_NAMESPACE/$CATSRC_NAME)' already found: '$SUB_ALREADY_FOUND'."
   echo "Skipping creation of the subscription to avoid duplicities."
