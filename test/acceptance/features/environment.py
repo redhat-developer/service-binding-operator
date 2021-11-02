@@ -16,17 +16,18 @@ from steps.command import Command
 from steps.environment import ctx
 
 import os
+import semver
 
 cmd = Command()
 
 
 def before_all(_context):
     if ctx.cli == "oc":
-        output, code = cmd.run("oc version | grep Client")
+        output, code = cmd.run("oc version --client | grep Client")
         assert code == 0, f"Checking oc version failed: {output}"
 
         oc_ver = output.split()[2]
-        assert oc_ver >= "4.5", f"oc version is required 4.5+, but is {oc_ver}."
+        assert semver.compare(oc_ver, "4.5.0") > 0, f"oc version is required 4.5+, but is {oc_ver}."
 
         namespace = os.getenv("TEST_NAMESPACE")
         output, code = cmd.run(f"oc project {namespace}")

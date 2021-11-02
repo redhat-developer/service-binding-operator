@@ -2,3 +2,4 @@ behave==1.2.6
 requests==2.24.0
 polling2==0.4.6
 PyYAML==5.4
+semver==2.13.0
