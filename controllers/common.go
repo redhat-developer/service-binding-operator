@@ -64,6 +64,8 @@ func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // +kubebuilder:rbac:groups=authorization.k8s.io,resources=selfsubjectaccessreviews,verbs=create
 // +kubebuilder:rbac:groups=authentication.k8s.io,resources=tokenreviews,verbs=create
 
+// tag::reconcile-func[]
+
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
@@ -101,7 +103,7 @@ func (r *BindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	} else {
 		log.Info("Deleted, unbind the application")
 	}
-	retry, err := r.pipeline.Process(serviceBinding)
+	retry, err := r.pipeline.Process(serviceBinding) // <.>
 	if !retry && err == nil {
 		if serviceBinding.HasDeletionTimestamp() {
 			if apis.MaybeRemoveFinalizer(serviceBinding) {
@@ -118,3 +120,4 @@ func (r *BindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	return result, nil
 }
+// end::reconcile-func[]

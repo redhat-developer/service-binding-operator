@@ -1,0 +1,14 @@
+asciidoc:
+  attributes:
+    provisioned-service: https://github.com/servicebinding/spec#provisioned-service[Provisioned Service]
+    operator-sdk: https://sdk.operatorframework.io[Operator SDK]
+    kubebuilder: https://kubebuilder.io[Kubebuilder]
+    controller-runtime: https://github.com/kubernetes-sigs/controller-runtime[controller-runtime]
+    secret-generation-extension: https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension]
+    experimental: true
+name: devguide
+version: master
+title: Developer Guide
+start_page: architecture.adoc
+nav:
+  - modules/ROOT/nav.adoc

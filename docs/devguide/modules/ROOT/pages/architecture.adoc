@@ -1,0 +1,50 @@
+= Architecture
+
+
+* Based on {operator-sdk}, meanwhile a tiny wrapper around {kubebuilder}, and therefore uses {controller-runtime} as the library under the hood
+* Controller watches for changes on Service Binding resources and process them in reconcile loop
+* Reconciliation logic is modeled as a pipeline, moving the incoming Service Binding instance through the following stages:
+** Gather bindings from {provisioned-service}
+** Gather bindings from https://github.com/servicebinding/spec#direct-secret-reference[Direct Secret Reference]
+** Gather binding definitions ({secret-generation-extension})
+** Extract binding data from services and/or referred resources using binding definitions
+** Generate synthetic binding data, whose definitions are part of Service Binding
+** Adjust binding item names if required through submitted Service Binding
+** If needed, create intermediate binding secret from the gathered binding data
+** If requested, project binding data as a set of environment variables in application container
+** If requested, project binding data as a set of files mounted inside application container
+** Persist changes in cluster
+
+image:reconcile-pipeline.svg[title="Reconcile Pipeline"]
+
+
+The pipeline implements a form of  https://www.oracle.com/java/technologies/intercepting-filter.html[Intercepting Filter] pattern to give a developer full control over how a change on Service Binding is handled and how the handlers in the pipeline interact with each other:
+
+* A handler can decide if processing stops or the context is passed down to the next handler
+* Handlers communicate with each other only via reading/writing data to the context
+* Communication with cluster is abstracted via context
+
+[NOTE]
+For details around Pipeline API, please check https://github.com/redhat-developer/service-binding-operator/blob/master/pkg/reconcile/pipeline/api.go[github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline] package.
+
+.Benefits
+[sidebar]
+--
+* Separation of concern - each stage does only one thing and does it good
+* Improved code readability/maintainability
+* Easy unit testing/integration testing
+* Single communication point with cluster allow easy mocking of cluster API
+* Possible reconciliation of service bindings outside of operator scope - use it as a library and allow tighter integration with other projects.
+* Easy support for various similar service binding APIs - same pipeline can be reused, just a new context provider need to implemented
+* Easy support for different environments - e.g. binding services and application on plain Docker engine is possible by just providing proper context provider
+* Opens up an opportunity for better logging
+* Opens up an opportunity for better error handling
+--
+
+Both ServiceBinding APIs are supported using the same pipeline mechanism, but configured with a slightly different sets of stages and different context implementation. Pipelines reconciling `binding.operators.coreos.com` service bindings are instantiated with the help of `DefaultBuilder` from https://github.com/redhat-developer/service-binding-operator/blob/master/pkg/reconcile/pipeline/builder/pipeline.go[github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder] package, whereas `servicebinding.io` service bindings are processed by pipelines created by `SpecBuilder` from the same package. These pipelines are created during startup of the appropriate controllers and used within https://github.com/redhat-developer/service-binding-operator/blob/master/controllers/common.go[`Reconcile`] functions.
+
+[source,go]
+----
+include::example$common.go[tag=reconcile-func]
+----
+<.> Pushing service binding to the pipeline
