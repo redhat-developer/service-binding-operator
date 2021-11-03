@@ -41,7 +41,6 @@ Service Binding:
 * Enriches development lifecycle with a consistent and declarative service
   binding methow that eliminates environments discrepancies
 
-
 ## Key Features
 
 * Support Binding with backing services represented by Kubernetes resources including third-party CRD-backed resources.
@@ -57,11 +56,11 @@ Service Binding:
 
 ## Service Binding Specification Alignment
 
-* Service Binding Operator provides two different APIs.  
+* Service Binding Operator provides two different APIs.
     * binding.operators.coreos.com/v1alpha1: This API is compliant with the Service Binding Specification for Kubernetes.
-    * servicebinding.io/v1alpha3 (tech preview): This API implements the Service Binding Specification for Kubernetes. 
+    * servicebinding.io/v1alpha3 (tech preview): This API implements the Service Binding Specification for Kubernetes.
 
-The [Service Binding Specification for Kubernetes](https://github.com/servicebinding/spec) is still evolving and maturing.  We are tracking changes to the spec as it approaches a stable release and are updating our APIs accordingly and as a result our APIs may change in the future. 
+The [Service Binding Specification for Kubernetes](https://github.com/servicebinding/spec) is still evolving and maturing.  We are tracking changes to the spec as it approaches a stable release and are updating our APIs accordingly and as a result our APIs may change in the future.
 
 ## Getting started
 
@@ -75,6 +74,13 @@ To get started, consult the [quick start
 tutorial](https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/quick-start.html).
 General documentation can be found
 [here](https://redhat-developer.github.io/service-binding-operator/).
+
+### Read more
+
+Here are some more places to read about SBO in use:
+
+* [Announcing Service Binding Operator 1.0 GA](https://developers.redhat.com/articles/2021/10/27/announcing-service-binding-operator-10-ga)
+* [How to use service binding with RabbitMQ](https://developers.redhat.com/articles/2021/11/03/how-use-service-binding-rabbitmq)
 
 ## Known bindable operators
 
