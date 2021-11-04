@@ -53,13 +53,13 @@ Feature: Bind application to provisioned service
             """
 
   Scenario: Bind application to provisioned service
-    Given Generic test application "myaop-provision-srv" is running
+    Given Generic test application is running
     When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-1
+              name: $scenario_id
           spec:
               services:
               - group: stable.example.com
@@ -67,18 +67,18 @@ Feature: Bind application to provisioned service
                 kind: ProvisionedBackend
                 name: provisioned-service-1
               application:
-                name: myaop-provision-srv
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-    Then Service Binding "bind-provisioned-service-1" is ready
-    And jq ".status.secret" of Service Binding "bind-provisioned-service-1" should be changed to "provisioned-secret-1"
-    And Content of file "/bindings/bind-provisioned-service-1/username" in application pod is
+    Then Service Binding "$scenario_id" is ready
+    And jq ".status.secret" of Service Binding "$scenario_id" should be changed to "provisioned-secret-1"
+    And Content of file "/bindings/$scenario_id/username" in application pod is
             """
             foo
             """
-    And Content of file "/bindings/bind-provisioned-service-1/password" in application pod is
+    And Content of file "/bindings/$scenario_id/password" in application pod is
             """
             bar
             """
@@ -104,7 +104,7 @@ Feature: Bind application to provisioned service
                 version: v1
                 resource: deploymentconfigs
           """
-    Then Service Binding is ready
+    Then Service Binding "$scenario_id" is ready
     And jq ".status.secret" of Service Binding should be changed to "provisioned-secret-1"
     And Content of file "/bindings/$scenario_id/username" in application pod is
             """
@@ -164,13 +164,13 @@ Feature: Bind application to provisioned service
             spec:
                 foo: bar
             """
-    * Generic test application "myaop-provision-srv2" is running
+    * Generic test application is running
     When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-2
+              name: $scenario_id
           spec:
               services:
               - group: stable.example.com
@@ -178,14 +178,14 @@ Feature: Bind application to provisioned service
                 kind: ProvisionedBackend
                 name: provisioned-service-2
               application:
-                name: myaop-provision-srv2
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "bind-provisioned-service-2" should be changed to "False"
-    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "bind-provisioned-service-2" should be changed to "False"
-    And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding "bind-provisioned-service-2" should be changed to "ErrorReadingBinding"
+    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "$scenario_id" should be changed to "False"
+    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "$scenario_id" should be changed to "False"
+    And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding "$scenario_id" should be changed to "ErrorReadingBinding"
 
   Scenario: Bind application to provisioned service that has binding annotations as well
     Given OLM Operator "provisioned_backend_with_annotations" is running
@@ -194,7 +194,7 @@ Feature: Bind application to provisioned service
             apiVersion: stable.example.com/v1
             kind: ProvisionedBackend
             metadata:
-                name: provisioned-service-3
+                name: $scenario_id
                 annotations:
                     "service.binding/foo": "path={.spec.foo}"
             spec:
@@ -203,35 +203,35 @@ Feature: Bind application to provisioned service
                 binding:
                     name: provisioned-secret-1
             """
-    * Generic test application "myaop-provision-srv3" is running
+    * Generic test application is running
     When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-3
+              name: $scenario_id
           spec:
               services:
               - group: stable.example.com
                 version: v1
                 kind: ProvisionedBackend
-                name: provisioned-service-3
+                name: $scenario_id
               application:
-                name: myaop-provision-srv3
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-    Then Service Binding "bind-provisioned-service-3" is ready
-    And Content of file "/bindings/bind-provisioned-service-3/username" in application pod is
+    Then Service Binding "$scenario_id" is ready
+    And Content of file "/bindings/$scenario_id/username" in application pod is
             """
             foo
             """
-    And Content of file "/bindings/bind-provisioned-service-3/password" in application pod is
+    And Content of file "/bindings/$scenario_id/password" in application pod is
             """
             bar
             """
-    And Content of file "/bindings/bind-provisioned-service-3/foo" in application pod is
+    And Content of file "/bindings/$scenario_id/foo" in application pod is
             """
             bla
             """
@@ -239,47 +239,47 @@ Feature: Bind application to provisioned service
   @spec
   @smoke
   Scenario: SPEC Bind application to provisioned service
-    Given Generic test application "spec-myapp-provision-srv" is running
+    Given Generic test application is running
     When Service Binding is applied
           """
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: spec-bind-provisioned-service-1
+              name: $scenario_id
           spec:
               service:
                 apiVersion: stable.example.com/v1
                 kind: ProvisionedBackend
                 name: provisioned-service-2
               workload:
-                name: spec-myapp-provision-srv
+                name: $scenario_id
                 apiVersion: apps/v1
                 kind: Deployment
           """
-    Then Service Binding "spec-bind-provisioned-service-1" is ready
-    And jq ".status.binding.name" of Service Binding "spec-bind-provisioned-service-1" should be changed to "provisioned-secret-2"
-    And Content of file "/bindings/spec-bind-provisioned-service-1/username" in application pod is
+    Then Service Binding "$scenario_id" is ready
+    And jq ".status.binding.name" of Service Binding "$scenario_id" should be changed to "provisioned-secret-2"
+    And Content of file "/bindings/$scenario_id/username" in application pod is
             """
             foo
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-1/password" in application pod is
+    And Content of file "/bindings/$scenario_id/password" in application pod is
             """
             bar
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-1/type" in application pod is
+    And Content of file "/bindings/$scenario_id/type" in application pod is
             """
             db
             """
 
   @spec
   Scenario: SPEC Bind application to provisioned service and inject type/provider from values set on service binding
-    Given Generic test application "spec-myapp-provision-srv4" is running
+    Given Generic test application is running
     When Service Binding is applied
           """
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: spec-bind-provisioned-service-4
+              name: $scenario_id
           spec:
               type: mysql
               provider: foovendor
@@ -288,37 +288,37 @@ Feature: Bind application to provisioned service
                 kind: ProvisionedBackend
                 name: provisioned-service-1
               workload:
-                name: spec-myapp-provision-srv4
+                name: $scenario_id
                 apiVersion: apps/v1
                 kind: Deployment
           """
-    Then Service Binding "spec-bind-provisioned-service-4" is ready
-    And Content of file "/bindings/spec-bind-provisioned-service-4/username" in application pod is
+    Then Service Binding "$scenario_id" is ready
+    And Content of file "/bindings/$scenario_id/username" in application pod is
             """
             foo
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-4/password" in application pod is
+    And Content of file "/bindings/$scenario_id/password" in application pod is
             """
             bar
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-4/type" in application pod is
+    And Content of file "/bindings/$scenario_id/type" in application pod is
             """
             mysql
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-4/provider" in application pod is
+    And Content of file "/bindings/$scenario_id/provider" in application pod is
             """
             foovendor
             """
 
   @spec
   Scenario: SPEC Bind application to provisioned service and inject binding into folder specified by .spec.name
-    Given Generic test application "spec-myapp-provision-srv3" is running
+    Given Generic test application is running
     When Service Binding is applied
           """
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: spec-bind-provisioned-service-3
+              name: $scenario_id
           spec:
               name: foo-bindings
               service:
@@ -326,12 +326,12 @@ Feature: Bind application to provisioned service
                 kind: ProvisionedBackend
                 name: provisioned-service-2
               workload:
-                name: spec-myapp-provision-srv3
+                name: $scenario_id
                 apiVersion: apps/v1
                 kind: Deployment
           """
-    Then Service Binding "spec-bind-provisioned-service-3" is ready
-    And jq ".status.binding.name" of Service Binding "spec-bind-provisioned-service-3" should be changed to "provisioned-secret-2"
+    Then Service Binding "$scenario_id" is ready
+    And jq ".status.binding.name" of Service Binding "$scenario_id" should be changed to "provisioned-secret-2"
     And Content of file "/bindings/foo-bindings/username" in application pod is
             """
             foo
@@ -383,13 +383,13 @@ Feature: Bind application to provisioned service
 
   @spec
   Scenario: SPEC Inject specified bindings as env vars
-    Given Generic test application "spec-myapp-provision-srv8" is running
+    Given Generic test application is running
     When Service Binding is applied
           """
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: spec-bind-provisioned-service-8
+              name: $scenario_id
           spec:
               env:
                 - name: "FOO"
@@ -401,21 +401,21 @@ Feature: Bind application to provisioned service
                 kind: ProvisionedBackend
                 name: provisioned-service-2
               workload:
-                name: spec-myapp-provision-srv8
+                name: $scenario_id
                 apiVersion: apps/v1
                 kind: Deployment
           """
-    Then Service Binding "spec-bind-provisioned-service-8" is ready
-    And jq ".status.binding.name" of Service Binding "spec-bind-provisioned-service-8" should be changed to "provisioned-secret-2"
-    And Content of file "/bindings/spec-bind-provisioned-service-8/username" in application pod is
+    Then Service Binding "$scenario_id" is ready
+    And jq ".status.binding.name" of Service Binding "$scenario_id" should be changed to "provisioned-secret-2"
+    And Content of file "/bindings/$scenario_id/username" in application pod is
             """
             foo
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-8/password" in application pod is
+    And Content of file "/bindings/$scenario_id/password" in application pod is
             """
             bar
             """
-    And Content of file "/bindings/spec-bind-provisioned-service-8/type" in application pod is
+    And Content of file "/bindings/$scenario_id/type" in application pod is
             """
             db
             """

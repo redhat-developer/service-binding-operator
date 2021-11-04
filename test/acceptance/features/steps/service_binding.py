@@ -74,7 +74,8 @@ def sbr_is_applied(context, user=None):
 @when(u'Invalid Service Binding is applied')
 @then(u'Service Binding is unable to be applied')
 def invalid_sbr_is_applied(context):
-    sbr = ServiceBinding(context.text, context.namespace.name)
+    resource = Template(context.text).substitute(scenario_id=scenario_id(context))
+    sbr = ServiceBinding(resource, context.namespace.name)
     # Get resource version of sbr if sbr is available
     if sbr.name in context.bindings.keys():
         context.resource_version = sbr.get_info_by_jsonpath("{.metadata.resourceVersion}")
@@ -86,6 +87,8 @@ def invalid_sbr_is_applied(context):
 def sbo_is_ready(context, sbr_name=None):
     if sbr_name is None:
         sbr_name = list(context.bindings.values())[0].name
+    else:
+        sbr_name = Template(sbr_name).substitute(scenario_id=scenario_id(context))
     sbo_jq_is(context, '.status.conditions[] | select(.type=="CollectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="InjectionReady").status', sbr_name, 'True')
     sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
@@ -102,6 +105,9 @@ def sbo_is_ready(context, sbr_name=None):
 def sbo_jq_is(context, jq_expression, sbr_name=None, json_value=""):
     if sbr_name is None:
         sbr_name = list(context.bindings.values())[0].name
+    else:
+        sbr_name = Template(sbr_name).substitute(scenario_id=scenario_id(context))
+    json_value = Template(json_value).substitute(scenario_id=scenario_id(context))
     polling2.poll(lambda: json.loads(
         context.bindings[sbr_name].get_info_by_jsonpath(jq_expression)) == json_value,
                   step=5, timeout=800, ignore_exceptions=(json.JSONDecodeError,))
@@ -109,15 +115,17 @@ def sbo_jq_is(context, jq_expression, sbr_name=None, json_value=""):
 
 @when(u'Service binding "{sb_name}" is deleted')
 def service_binding_is_deleted(context, sb_name):
-    sb = context.bindings[sb_name]
+    resource = Template(sb_name).substitute(scenario_id=scenario_id(context))
+    sb = context.bindings[resource]
     context.sb_secret = sb.get_secret_name()
     sb.delete()
 
 
 @then(u'Service Binding "{sb_name}" is not updated')
 def validate_persistent_sb(context, sb_name):
+    resource = Template(sb_name).substitute(scenario_id=scenario_id(context))
     json_path = "{.metadata.resourceVersion}"
-    assert context.resource_version == context.bindings[sb_name].get_info_by_jsonpath(json_path), "Service Binding got update"
+    assert context.resource_version == context.bindings[resource].get_info_by_jsonpath(json_path), "Service Binding got update"
 
 
 @step(u'Service Binding "{sbr_name}" has the binding secret name set in the status')

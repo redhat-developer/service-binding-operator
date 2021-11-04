@@ -48,6 +48,9 @@ TEST_ACCEPTANCE_REPORT_DIR ?= $(OUTPUT_DIR)/acceptance-tests-report
 TEST_ACCEPTANCE_ARTIFACTS ?= $(ARTIFACT_DIR)
 TEST_NAMESPACE = $(shell $(HACK_DIR)/get-test-namespace $(OUTPUT_DIR))
 TEST_ACCEPTANCE_CLI ?= oc
+#
+# -- Use 2 workers by default.  If you want as many workers as there are tests, set this to 0.
+TEST_ACCEPTANCE_NUM_WORKERS ?= 2
 
 TEST_ACCEPTANCE_TAGS ?=
 
@@ -228,7 +231,7 @@ test-acceptance: test-acceptance-setup
 	    TEST_ACCEPTANCE_START_SBO=$(TEST_ACCEPTANCE_START_SBO) \
 		TEST_ACCEPTANCE_SBO_STARTED=$(TEST_ACCEPTANCE_SBO_STARTED) \
 		TEST_NAMESPACE=$(TEST_NAMESPACE) \
-		xargs -P 0 -n 1 \
+		xargs -P $(TEST_ACCEPTANCE_NUM_WORKERS) -n 1 \
 		$(PYTHON_VENV_DIR)/bin/behave --junit --junit-directory $(TEST_ACCEPTANCE_OUTPUT_DIR) $(V_FLAG) --no-capture --no-capture-stderr $(TEST_ACCEPTANCE_TAGS_ARG) $(EXTRA_BEHAVE_ARGS)
 ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 	$(Q)kill $(TEST_ACCEPTANCE_SBO_STARTED)
