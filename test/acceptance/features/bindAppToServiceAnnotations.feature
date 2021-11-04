@@ -20,6 +20,8 @@ Feature: Bind an application to a service using annotations
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/ready: path={.status.ready}
+                    service.binding/environment: path={.spec.userLabels.environment}
+                    service.binding/dataType: path={.status.data.type}
             spec:
                 group: stable.example.com
                 versions:
@@ -41,11 +43,21 @@ Feature: Bind an application to a service using annotations
                                     properties:
                                         host:
                                             type: string
+                                        userLabels:
+                                            type: object
+                                            properties:
+                                                environment:
+                                                    type: string
                                 status:
                                     type: object
                                     properties:
                                         ready:
                                             type: boolean
+                                        data:
+                                            type: object
+                                            properties:
+                                                type:
+                                                    type: string
                 scope: Namespaced
                 names:
                     plural: backends
@@ -62,8 +74,12 @@ Feature: Bind an application to a service using annotations
                 name: backend-demo
             spec:
                 host: example.common
+                userLabels:
+                    environment: staging
             status:
                 ready: true
+                data:
+                    type: base64
             """
         * Service Binding is applied
             """
@@ -89,6 +105,8 @@ Feature: Bind an application to a service using annotations
         Then Service Binding "binding-request-backend-a" is ready
         And The application env var "BACKEND_READY" has value "true"
         And The application env var "BACKEND_HOST" has value "example.common"
+        And The application env var "BACKEND_ENVIRONMENT" has value "staging"
+        And The application env var "BACKEND_DATATYPE" has value "base64"
 
     Scenario: Each value in referred map from service resource gets injected into app as separate env variable
         Given Generic test application "rsa-2-service" is running
