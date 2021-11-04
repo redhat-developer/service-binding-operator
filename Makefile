@@ -49,7 +49,7 @@ TEST_ACCEPTANCE_ARTIFACTS ?= $(ARTIFACT_DIR)
 TEST_NAMESPACE = $(shell $(HACK_DIR)/get-test-namespace $(OUTPUT_DIR))
 TEST_ACCEPTANCE_CLI ?= oc
 # -- Use 2 workers by default.  If you want as many workers as there are tests, set this to 0.
-TEST_ACCEPTANCE_NUM_WORKERS ?= 1
+TEST_ACCEPTANCE_NUM_WORKERS ?= 2
 
 TEST_ACCEPTANCE_TAGS ?=
 
