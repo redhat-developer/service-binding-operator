@@ -44,6 +44,7 @@ class GenericTestApp(App):
 @step(u'Generic test application "{application_name}" is running')
 @step(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
 @step(u'Generic test application is running')
+@step(u'Generic test application is running with binding root as "{bindingRoot}"')
 def is_running(context, application_name=None, bindingRoot=None, asDeploymentConfig=False):
     if application_name is None:
         application_name = scenario_id(context)
