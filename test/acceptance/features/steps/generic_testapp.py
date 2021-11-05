@@ -68,6 +68,7 @@ def is_running_deployment_config(context):
 
 @step(u'The application env var "{name}" has value "{value}"')
 def check_env_var_value(context, name, value):
+    value = Template(value).substitute(scenario_id=scenario_id(context))
     found = polling2.poll(lambda: context.application.get_env_var_value(name) == value, step=5, timeout=400)
     assert found, f'Env var "{name}" should contain value "{value}"'
 

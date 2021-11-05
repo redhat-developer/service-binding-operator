@@ -133,8 +133,8 @@ Feature: Bind a single application to multiple services
                     name: $scenario_id-external
                     id: db2
             """
-        Then Service Binding "binding-request-1sbr" is ready
+        Then Service Binding "$scenario_id-binding" is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
         And The application env var "BACKEND_HOST_EXTERNAL_DB" has value "external.db.stable.example.com"
-        And The application env var "FOO" has value "internal-db-1sbr_external-db-1sbr"
-        And The application env var "FOO2" has value "internal-db-1sbr_Backend"
+        And The application env var "FOO" has value "$scenario_id-internal_$scenario_id-external"
+        And The application env var "FOO2" has value "$scenario_id-internal_Backend"
