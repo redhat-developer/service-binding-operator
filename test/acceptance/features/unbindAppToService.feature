@@ -14,7 +14,7 @@ Feature: Unbind an application from a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: example-backend
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -22,17 +22,17 @@ Feature: Unbind an application from a service
                 host: example.com
                 username: foo
             """
-        * Generic test application "generic-app-a-d-u" is running
+        * Generic test application is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-a-d-u
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: generic-app-a-d-u
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -40,13 +40,13 @@ Feature: Unbind an application from a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: example-backend
+                    name: $scenario_id-backend
                     id: backend
             """
-        * Service Binding "binding-request-a-d-u" is ready
+        * Service Binding "$scenario_id-binding" is ready
         * The application env var "BACKEND_HOST" has value "example.com"
         * The application env var "BACKEND_USERNAME" has value "foo"
-        When Service binding "binding-request-a-d-u" is deleted
+        When Service binding "$scenario_id-binding" is deleted
         Then The env var "BACKEND_HOST" is not available to the application
         * The env var "BACKEND_USERNAME" is not available to the application
         * Service Binding secret is not present
@@ -57,7 +57,7 @@ Feature: Unbind an application from a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: example-backend
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -65,17 +65,17 @@ Feature: Unbind an application from a service
                 host: example.com
                 username: foo
             """
-        * Generic test application "generic-app-a-d-u" is running
+        * Generic test application is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-a-d-u
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: generic-app-a-d-u
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -86,7 +86,7 @@ Feature: Unbind an application from a service
                     name: example-backend
                     id: backend
             """
-        * Service Binding "binding-request-a-d-u" is ready
+        * Service Binding "$scenario_id-binding" is ready
         * The application env var "BACKEND_HOST" has value "example.com"
         * The application env var "BACKEND_USERNAME" has value "foo"
         * BackingService is deleted
@@ -94,7 +94,7 @@ Feature: Unbind an application from a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: example-backend
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -102,19 +102,19 @@ Feature: Unbind an application from a service
                 host: example.com
                 username: foo
             """
-        When Service binding "binding-request-a-d-u" is deleted
+        When Service binding "$scenario_id-binding" is deleted
         Then The env var "BACKEND_HOST" is not available to the application
         * The env var "BACKEND_USERNAME" is not available to the application
         * Service Binding secret is not present
 
     Scenario: Remove bindings projected as files from generic test application
-        Given Generic test application "remove-bindings-as-files-app" is running
+        Given Generic test application is running
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: remove-bindings-as-files-app-backend
+                name: $scenario_id-backend
                 annotations:
                     "service.binding/host": "path={.spec.host}"
                     "service.binding/port": "path={.spec.port}"
@@ -127,33 +127,33 @@ Feature: Unbind an application from a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: remove-bindings-as-files-app-sb
+                name: $scenario_id-binding
             spec:
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: remove-bindings-as-files-app-backend
+                    name: $scenario_id-backend
 
                 application:
-                    name: remove-bindings-as-files-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        * Service Binding "remove-bindings-as-files-app-sb" is ready
-        * Content of file "/bindings/remove-bindings-as-files-app-sb/host" in application pod is
+        * Service Binding "$scenario_id-binding" is ready
+        * Content of file "/bindings/$scenario_id-binding/host" in application pod is
             """
             example.common
             """
-        * Content of file "/bindings/remove-bindings-as-files-app-sb/port" in application pod is
+        * Content of file "/bindings/$scenario_id-binding/port" in application pod is
             """
             8080
             """
-        When Service Binding "remove-bindings-as-files-app-sb" is deleted
+        When Service Binding "$scenario_id-binding" is deleted
         Then The application got redeployed 2 times so far
-        * File "/bindings/remove-bindings-as-files-app-sb/host" is unavailable in application pod
-        * File "/bindings/remove-bindings-as-files-app-sb/port" is unavailable in application pod
+        * File "/bindings/$scenario_id-binding/host" is unavailable in application pod
+        * File "/bindings/$scenario_id-binding/port" is unavailable in application pod
         * Service Binding secret is not present
 
     Scenario: Remove not ready binding
@@ -162,7 +162,7 @@ Feature: Unbind an application from a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: example-backend
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -175,7 +175,7 @@ Feature: Unbind an application from a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: unready-binding
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
@@ -189,20 +189,20 @@ Feature: Unbind an application from a service
                     kind: Backend
                     name: example-backend
             """
-        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "unready-binding" should be changed to "False"
-        When Service binding "unready-binding" is deleted
-        Then Service Binding "unready-binding" is not persistent in the cluster
+        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "$scenario_id-binding" should be changed to "False"
+        When Service binding "$scenario_id-binding" is deleted
+        Then Service Binding "$scenario_id-binding" is not persistent in the cluster
 
     @smoke
     @spec
     Scenario: SPEC Remove bindings from test application
-        Given Generic test application "spec-remove-bindings-as-files-app" is running
+        Given Generic test application is running
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: remove-bindings-as-files-app-backend
+                name: $scenario_id-backend
                 annotations:
                     "service.binding/host": "path={.spec.host}"
                     "service.binding/port": "path={.spec.port}"
@@ -215,35 +215,35 @@ Feature: Unbind an application from a service
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: spec-remove-bindings-as-files-app-sb
+                name: $scenario_id-binding
             spec:
                 type: mysql
                 service:
                   apiVersion: stable.example.com/v1
                   kind: Backend
-                  name: remove-bindings-as-files-app-backend
+                  name: $scenario_id-backend
 
                 workload:
-                    name: spec-remove-bindings-as-files-app
+                    name: $scenario_id
                     apiVersion: apps/v1
                     kind: Deployment
             """
-        * Service Binding "spec-remove-bindings-as-files-app-sb" is ready
-        * Content of file "/bindings/spec-remove-bindings-as-files-app-sb/host" in application pod is
+        * Service Binding "scenario_id-binding" is ready
+        * Content of file "/bindings/$scenario_id-binding/host" in application pod is
             """
             example.common
             """
-        * Content of file "/bindings/spec-remove-bindings-as-files-app-sb/port" in application pod is
+        * Content of file "/bindings/$scenario_id-binding/port" in application pod is
             """
             8080
             """
-        * Content of file "/bindings/spec-remove-bindings-as-files-app-sb/type" in application pod is
+        * Content of file "/bindings/$scenario_id-binding/type" in application pod is
             """
             mysql
             """
-        When Service Binding "spec-remove-bindings-as-files-app-sb" is deleted
+        When Service Binding "$scenario_id-binding" is deleted
         Then The application got redeployed 2 times so far
-        * File "/bindings/spec-remove-bindings-as-files-app-sb/host" is unavailable in application pod
-        * File "/bindings/spec-remove-bindings-as-files-app-sb/port" is unavailable in application pod
-        * File "/bindings/spec-remove-bindings-as-files-app-sb/type" is unavailable in application pod
+        * File "/bindings/$scenario_id-binding/host" is unavailable in application pod
+        * File "/bindings/$scenario_id-binding/port" is unavailable in application pod
+        * File "/bindings/$scenario_id-binding/type" is unavailable in application pod
         * Service Binding secret is not present

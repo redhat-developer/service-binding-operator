@@ -26,7 +26,7 @@ Feature: Bind multiple applications to a single service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-a-s-f
+                name: $scenario_id-service
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
@@ -38,14 +38,14 @@ Feature: Bind multiple applications to a single service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-a-s-f
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-a-s-f
+                    name: $scenario_id-service
                 application:
                     labelSelector:
                       matchLabels:
@@ -54,6 +54,6 @@ Feature: Bind multiple applications to a single service
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "service-binding-a-s-f" is ready
+        Then Service Binding "$scenario_id-binding" is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond" in both apps
         And The application env var "BACKEND_PASSWORD" has value "hunter2" in both apps
