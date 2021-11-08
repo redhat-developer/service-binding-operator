@@ -83,7 +83,7 @@ Feature: Unbind an application from a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: example-backend
+                    name: $scenario_id-backend
                     id: backend
             """
         * Service Binding "$scenario_id-binding" is ready
@@ -228,7 +228,7 @@ Feature: Unbind an application from a service
                     apiVersion: apps/v1
                     kind: Deployment
             """
-        * Service Binding "scenario_id-binding" is ready
+        * Service Binding "$scenario_id-binding" is ready
         * Content of file "/bindings/$scenario_id-binding/host" in application pod is
             """
             example.common
