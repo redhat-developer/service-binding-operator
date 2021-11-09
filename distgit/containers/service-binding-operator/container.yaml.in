@@ -2,6 +2,7 @@
 platforms:
     only:
         - x86_64
+        - aarch64
         - ppc64le
         - s390x
 image_build_method: imagebuilder

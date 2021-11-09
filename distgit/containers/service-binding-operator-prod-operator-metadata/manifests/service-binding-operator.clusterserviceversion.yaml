@@ -58,6 +58,7 @@ metadata:
     support: Service Binding Operator Community
   labels:
     "operatorframework.io/arch.amd64": supported
+    "operatorframework.io/arch.arm64": supported
     "operatorframework.io/arch.ppc64le": supported
     "operatorframework.io/arch.s390x": supported
   name: service-binding-operator.v1.0.0
