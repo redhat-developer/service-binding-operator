@@ -9,13 +9,13 @@ Feature: Bind a single application to multiple services
         * CustomResourceDefinition backends.stable.example.com is available
 
     Scenario: Bind two backend services by creating 2 SBRs to a single application
-        Given Generic test application "myapp-2-sbrs" is running
+        Given Generic test application is running
         * The Custom Resource is present
         """
         apiVersion: stable.example.com/v1
         kind: Backend
         metadata:
-            name: myapp-2-sbrs-service-1
+            name: $scenario_id-backend-1
             annotations:
                 service.binding/host: path={.spec.host}
         spec:
@@ -26,7 +26,7 @@ Feature: Bind a single application to multiple services
         apiVersion: stable.example.com/v1
         kind: Backend
         metadata:
-            name: myapp-2-sbrs-service-2
+            name: $scenario_id-backend-2
             annotations:
                 service.binding/port: path={.spec.port}
         spec:
@@ -37,11 +37,11 @@ Feature: Bind a single application to multiple services
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding1-myapp-2-sbrs
+                name: $scenario_id-binding-1
             spec:
                 bindAsFiles: false
                 application:
-                    name: myapp-2-sbrs
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -49,9 +49,9 @@ Feature: Bind a single application to multiple services
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: myapp-2-sbrs-service-1
+                    name: $scenario_id-backend-1
             """
-        Then Service Binding "binding1-myapp-2-sbrs" is ready
+        Then Service Binding "$scenario_id-binding-1" is ready
         And The application env var "BACKEND_HOST" has value "foo"
 
         When Service Binding is applied
@@ -59,11 +59,11 @@ Feature: Bind a single application to multiple services
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding2-myapp-2-sbrs
+                name: $scenario_id-binding-2
             spec:
                 bindAsFiles: false
                 application:
-                    name: myapp-2-sbrs
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -71,22 +71,22 @@ Feature: Bind a single application to multiple services
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: myapp-2-sbrs-service-2
+                    name: $scenario_id-backend-2
             """
-        Then Service Binding "binding2-myapp-2-sbrs" is ready
+        Then Service Binding "$scenario_id-binding-2" is ready
         And The application env var "BACKEND_HOST" has value "foo"
         And The application env var "BACKEND_PORT" has value "bar"
         And The application got redeployed 2 times so far
         And The application does not get redeployed again with 5 minutes
 
     Scenario: Bind two backend services by creating 1 SBR to a single application
-        Given Generic test application "myapp-1sbr" is running
+        Given Generic test application is running
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: internal-db-1sbr
+                name: $scenario_id-internal
                 annotations:
                     service.binding/host_internal_db: path={.spec.host_internal_db}
             spec:
@@ -97,7 +97,7 @@ Feature: Bind a single application to multiple services
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: external-db-1sbr
+                name: $scenario_id-external
                 annotations:
                     service.binding/host_external_db: path={.spec.host_external_db}
             spec:
@@ -108,11 +108,11 @@ Feature: Bind a single application to multiple services
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-1sbr
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: myapp-1sbr
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -125,16 +125,16 @@ Feature: Bind a single application to multiple services
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: internal-db-1sbr
+                    name: $scenario_id-internal
                     id: db1
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: external-db-1sbr
+                    name: $scenario_id-external
                     id: db2
             """
-        Then Service Binding "binding-request-1sbr" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
         And The application env var "BACKEND_HOST_EXTERNAL_DB" has value "external.db.stable.example.com"
-        And The application env var "FOO" has value "internal-db-1sbr_external-db-1sbr"
-        And The application env var "FOO2" has value "internal-db-1sbr_Backend"
+        And The application env var "FOO" has value "$scenario_id-internal_$scenario_id-external"
+        And The application env var "FOO2" has value "$scenario_id-internal_Backend"

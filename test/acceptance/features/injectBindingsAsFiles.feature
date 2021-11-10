@@ -10,13 +10,13 @@ Feature: Bindings get injected as files in application
         * CustomResourceDefinition backends.stable.example.com is available
 
     Scenario: Binding is injected as files at the location of SERVICE_BINDING_ROOT env var
-        Given Generic test application "generic-app-a-d-u-1" is running with binding root as "/var/data"
+        Given Generic test application is running with binding root as "/var/data"
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-01
+                name: $scenario_id-backend
                 annotations:
                     "service.binding/host": "path={.spec.host}"
                     "service.binding/port": "path={.spec.port}"
@@ -29,14 +29,14 @@ Feature: Bindings get injected as files in application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-backend-vm-01
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: true
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo-01
+                    name: $scenario_id-backend
                     id: bk
 
                 mappings:
@@ -44,38 +44,38 @@ Feature: Bindings get injected as files in application
                     value: '{{ .bk.spec.host }}'
 
                 application:
-                    name: generic-app-a-d-u-1
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-01" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-01" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding should be changed to "True"
         And The env var "host" is not available to the application
         And The env var "port" is not available to the application
         And The env var "MYHOST" is not available to the application
         And The application env var "SERVICE_BINDING_ROOT" has value "/var/data"
-        And Content of file "/var/data/binding-backend-vm-01/host" in application pod is
+        And Content of file "/var/data/$scenario_id-binding/host" in application pod is
             """
             example.common
             """
-        And Content of file "/var/data/binding-backend-vm-01/port" in application pod is
+        And Content of file "/var/data/$scenario_id-binding/port" in application pod is
             """
             8080
             """
-        And Content of file "/var/data/binding-backend-vm-01/MYHOST" in application pod is
+        And Content of file "/var/data/$scenario_id-binding/MYHOST" in application pod is
             """
             example.common
             """
 
     Scenario: Binding is injected as file into application at default location
-        Given Generic test application "generic-app-a-d-u-2" is running
+        Given Generic test application is running
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-02
+                name: $scenario_id-backend
                 annotations:
                     "service.binding/host": "path={.spec.host}"
                     "service.binding/port": "path={.spec.port}"
@@ -88,30 +88,30 @@ Feature: Bindings get injected as files in application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-backend-vm-02
+                name: $scenario_id-binding
             spec:
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo-02
+                    name: $scenario_id-backend
 
                 application:
-                    name: generic-app-a-d-u-2
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "binding-backend-vm-02" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "binding-backend-vm-02" should be changed to "True"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding should be changed to "True"
         And The env var "host" is not available to the application
         And The env var "port" is not available to the application
         And The application env var "SERVICE_BINDING_ROOT" has value "/bindings"
-        And Content of file "/bindings/binding-backend-vm-02/host" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/host" in application pod is
             """
             example.common
             """
-        And Content of file "/bindings/binding-backend-vm-02/port" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/port" in application pod is
             """
             8080
             """
@@ -159,13 +159,13 @@ Feature: Bindings get injected as files in application
 
     @spec
     Scenario: SPEC Inject bindings gathered through annotations into application at default location
-        Given Generic test application "spec-generic-app-a-d-u-2" is running
+        Given Generic test application is running
         * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-02
+                name: $scenario_id-backend
                 annotations:
                     "service.binding/host": "path={.spec.host}"
                     "service.binding/port": "path={.spec.port}"
@@ -178,35 +178,35 @@ Feature: Bindings get injected as files in application
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: spec-binding-backend-vm-02
+                name: $scenario_id-binding
             spec:
                 type: mysql
                 service:
                   apiVersion: stable.example.com/v1
                   kind: Backend
-                  name: backend-demo-02
+                  name: $scenario_id-backend
 
                 workload:
-                    name: spec-generic-app-a-d-u-2
+                    name: $scenario_id
                     apiVersion: apps/v1
                     kind: Deployment
             """
-        Then Service Binding "spec-binding-backend-vm-02" is ready
+        Then Service Binding is ready
         And The application env var "SERVICE_BINDING_ROOT" has value "/bindings"
-        And Content of file "/bindings/spec-binding-backend-vm-02/host" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/host" in application pod is
             """
             example.common
             """
-        And Content of file "/bindings/spec-binding-backend-vm-02/port" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/port" in application pod is
             """
             8080
             """
-        And Content of file "/bindings/spec-binding-backend-vm-02/type" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/type" in application pod is
             """
             mysql
             """
 
-    Scenario: SERVICE_BIDNING_ROOT is not defined twice in the deployment after binding two services
+    Scenario: SERVICE_BINDING_ROOT is not defined twice in the deployment after binding two services
         Given Generic test application is running
         * The env var "SERVICE_BINDING_ROOT" is not available to the application
         * The Service is present

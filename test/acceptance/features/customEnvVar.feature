@@ -15,24 +15,24 @@ Feature: Inject custom env variable into application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-with-tag-sequence
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 tags:
                     - "centos7-12.3"
                     - "123"
             """
-        * Generic test application "foo" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: custom-env-var-from-sequence
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: foo
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -40,13 +40,13 @@ Feature: Inject custom env variable into application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-with-tag-sequence
+                    name: $scenario_id-backend
                     id: backend
                 mappings:
                    - name: TAGS
                      value: '{{ .backend.spec.tags }}'
             """
-        Then Service Binding "custom-env-var-from-sequence" is ready
+        Then Service Binding is ready
         And The application env var "TAGS" has value "[centos7-12.3 123]"
 
     Scenario: Map from service resource is injected into application using custom env variables without specifying annotations
@@ -55,24 +55,24 @@ Feature: Inject custom env variable into application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-with-user-labels-map
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 userLabels:
                     archive: "false"
                     environment: "demo"
             """
-        * Generic test application "foo2" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: custom-env-var-from-map
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: foo2
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -80,13 +80,13 @@ Feature: Inject custom env variable into application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-with-user-labels-map
+                    name: $scenario_id-backend
                     id: backend
                 mappings:
                    - name: USER_LABELS
                      value: '{{ .backend.spec.userLabels }}'
             """
-        Then Service Binding "custom-env-var-from-map" is ready
+        Then Service Binding is ready
         And The application env var "USER_LABELS" has value "map[archive:false environment:demo]"
 
     Scenario: Scalar from service resource is injected into application using custom env variables without specifying annotations
@@ -95,24 +95,24 @@ Feature: Inject custom env variable into application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-with-user-labels-archive
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 userLabels:
                     archive: "false"
                     environment: "demo"
             """
-        * Generic test application "foo3" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: custom-env-var-from-scalar
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: foo3
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -120,12 +120,12 @@ Feature: Inject custom env variable into application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-with-user-labels-archive
+                    name: $scenario_id-backend
                     id: backend
                 mappings:
                    - name: USER_LABELS_ARCHIVE
                      value: '{{ .backend.spec.userLabels.archive }}'
             """
-        Then Service Binding "custom-env-var-from-scalar" is ready
+        Then Service Binding is ready
         And The application env var "USER_LABELS_ARCHIVE" has value "false"
 
