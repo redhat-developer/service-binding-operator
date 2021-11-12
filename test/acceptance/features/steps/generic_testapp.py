@@ -12,7 +12,7 @@ class GenericTestApp(App):
 
     deployment_name_pattern = "{name}"
 
-    def __init__(self, name, namespace, app_image="quay.io/redhat-developer/sbo-generic-test-app:20200923"):
+    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20211112"):
         App.__init__(self, name, namespace, app_image, "8080")
 
     def get_env_var_value(self, name):
