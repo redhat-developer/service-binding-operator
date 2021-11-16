@@ -56,7 +56,7 @@ Feature: Insert service binding to a custom location in application resource
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-csp
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
@@ -72,7 +72,7 @@ Feature: Insert service binding to a custom location in application resource
                     kind: Backend
                     name: service-csp
             """
-        Then Service Binding "binding-request-csp" is ready
+        Then Service Binding is ready
         And Secret has been injected in to CR "demo-appconfig-csp" of kind "AppConfig" at path "{.spec.spec.containers[0].envFrom[0].secretRef.name}"
 
     Scenario: Specify secret's path in Service Binding
@@ -91,7 +91,7 @@ Feature: Insert service binding to a custom location in application resource
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-ssp
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
@@ -107,5 +107,5 @@ Feature: Insert service binding to a custom location in application resource
                     kind: Backend
                     name: service-csp
             """
-        Then Service Binding "binding-request-ssp" is ready
+        Then Service Binding is ready
         And Secret has been injected in to CR "demo-appconfig-ssp" of kind "AppConfig" at path "{.spec.spec.secret}"

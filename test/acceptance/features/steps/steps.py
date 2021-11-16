@@ -11,7 +11,6 @@ import binascii
 import yaml
 import json
 
-from string import Template
 from behave import given, register_type, then, when, step
 from dboperator import DbOperator
 from etcdcluster import EtcdCluster
@@ -25,13 +24,13 @@ from quarkus_application import QuarkusApplication
 from serverless_operator import ServerlessOperator
 from servicebindingoperator import Servicebindingoperator
 from app import App
-from util import scenario_id
+from util import substitute_scenario_id
 
 
 # STEP
 @given(u'Namespace "{namespace_name}" exists')
 def namespace_maybe_create(context, namespace_name):
-    namespace = Namespace(namespace_name)
+    namespace = Namespace(substitute_scenario_id(context, namespace_name))
     if not namespace.is_present():
         print("Namespace is not present, creating namespace: {}...".format(namespace_name))
         assert namespace.create(), f"Unable to create namespace '{namespace_name}'"
@@ -313,7 +312,7 @@ def check_secret_key_with_ip_value(context, secret_key):
 @step(u'The Service is present')
 def apply_yaml(context, user=None):
     openshift = Openshift()
-    resource = Template(context.text).substitute(scenario_id=scenario_id(context))
+    resource = substitute_scenario_id(context, context.text)
     metadata = yaml.full_load(resource)["metadata"]
     metadata_name = metadata["name"]
     if "namespace" in metadata:
@@ -334,7 +333,8 @@ def apply_yaml(context, user=None):
 @when(u'BackingService is deleted')
 def delete_yaml(context):
     openshift = Openshift()
-    metadata = yaml.full_load(context.text)["metadata"]
+    text = substitute_scenario_id(context, context.text)
+    metadata = yaml.full_load(text)["metadata"]
     metadata_name = metadata["name"]
     if "namespace" in metadata:
         ns = metadata["namespace"]
@@ -343,7 +343,7 @@ def delete_yaml(context):
             ns = context.namespace.name
         else:
             ns = None
-    output = openshift.delete(context.text, ns)
+    output = openshift.delete(text, ns)
     result = re.search(rf'.*{metadata_name}.*(deleted)', output)
     assert result is not None, f"Unable to delete CR '{metadata_name}': {output}"
 
@@ -445,7 +445,7 @@ def check_resource_unreadable(context, user, resource, namespace=None):
     openshift = Openshift()
     data = resource.split("/")
     res_type = data[0]
-    res_name = Template(data[1]).substitute(scenario_id=scenario_id(context))
+    res_name = substitute_scenario_id(context, data[1])
     ns = namespace if namespace is not None else context.namespace.name
     res = openshift.get_resource_info_by_jsonpath(resource_type=res_type, name=res_name, namespace=ns, user=user)
     assert res is None, f"User {user} should not be able to read {resource} in {namespace} namespace"
@@ -456,7 +456,7 @@ def check_resource_readable(context, user, resource, namespace=None):
     openshift = Openshift()
     data = resource.split("/")
     res_type = data[0]
-    res_name = Template(data[1]).substitute(scenario_id=scenario_id(context))
+    res_name = substitute_scenario_id(context, data[1])
     ns = namespace if namespace is not None else context.namespace.name
     res = openshift.get_resource_info_by_jsonpath(resource_type=res_type, name=res_name, namespace=ns, user=user)
     assert res is not None, f"User {user} should be able to read {resource} in {ns} namespace"

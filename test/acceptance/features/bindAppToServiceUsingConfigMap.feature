@@ -8,7 +8,7 @@ Feature: Bind values from a config map referred in backing service resource
         * Service Binding Operator is running
 
     Scenario: Inject into app a key from a config map referred within service resource
-        Given Generic test application "cmsa-1" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -63,7 +63,7 @@ Feature: Bind values from a config map referred in backing service resource
             apiVersion: v1
             kind: ConfigMap
             metadata:
-                name: cmsa-1-configmap
+                name: $scenario_id-configmap
             data:
                 certificate: "certificate value"
             """
@@ -72,39 +72,39 @@ Feature: Bind values from a config map referred in backing service resource
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: cmsa-1-service
+                name: $scenario_id-service
             spec:
                 image: docker.io/postgres
                 imageName: postgres
                 dbName: db-demo
             status:
                 data:
-                    dbConfiguration: cmsa-1-configmap
+                    dbConfiguration: $scenario_id-configmap
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: cmsa-1
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: cmsa-1-service
+                    name: $scenario_id-service
                 application:
-                    name: cmsa-1
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "cmsa-1" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_CERTIFICATE" has value "certificate value"
 
     Scenario: Inject into app all keys from a config map referred within service resource
-        Given Generic test application "cmsa-2" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -159,7 +159,7 @@ Feature: Bind values from a config map referred in backing service resource
             apiVersion: v1
             kind: ConfigMap
             metadata:
-                name: cmsa-2-configmap
+                name: $scenario_id-configmap
             data:
                 timeout: "30"
                 certificate: certificate value
@@ -169,33 +169,33 @@ Feature: Bind values from a config map referred in backing service resource
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: cmsa-2-service
+                name: $scenario_id-backend
             spec:
                 image: docker.io/postgres
                 imageName: postgres
                 dbName: db-demo
             status:
                 data:
-                    dbConfiguration: cmsa-2-configmap    # ConfigMap
+                    dbConfiguration: $scenario_id-configmap    # ConfigMap
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: cmsa-2
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: cmsa-2-service
+                    name: $scenario_id-backend
                 application:
-                    name: cmsa-2
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "cmsa-2" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_CERTIFICATE" has value "certificate value"

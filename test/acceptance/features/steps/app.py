@@ -2,6 +2,7 @@ from openshift import Openshift
 from command import Command
 from environment import ctx
 from behave import step
+from util import substitute_scenario_id
 import polling2
 import json
 
@@ -51,6 +52,9 @@ class App(object):
 @step(u'jsonpath "{json_path}" on "{res_name}" should return no value')
 def resource_jsonpath_value(context, json_path, res_name, json_value=""):
     openshift = Openshift()
+    json_path = substitute_scenario_id(context, json_path)
+    res_name = substitute_scenario_id(context, res_name)
+    json_value = substitute_scenario_id(context, json_value)
     (crdName, name) = res_name.split("/")
     polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crdName, name, context.namespace.name, json_path) == json_value,
                   step=5, timeout=800, ignore_exceptions=(json.JSONDecodeError,))

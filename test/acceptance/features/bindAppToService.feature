@@ -9,14 +9,14 @@ Feature: Bind an application to a service
 
     @smoke
     Scenario: Bind an application to backend service in the following order: Application, Service and Binding
-        Given Generic test application "gen-app-a-s-b" is running
+        Given Generic test application is running
         * CustomResourceDefinition backends.stable.example.com is available
         * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: backend-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -26,53 +26,53 @@ Feature: Bind an application to a service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-a-s-b
+                name: $scenario_id-backend
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
                 data:
-                    dbCredentials: backend-secret
+                    dbCredentials: $scenario_id-secret
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-a-s-b
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-a-s-b
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-a-s-b
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "service-binding-a-s-b" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
     Scenario:  Bind an application to backend service in the following order: Application, Binding and Service
-        Given Generic test application "gen-app-a-b-s" is running
+        Given Generic test application is running
         And Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-a-b-s
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-a-b-s
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-a-b-s
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -83,7 +83,7 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: Secret
             metadata:
-                name: backend-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -93,14 +93,14 @@ Feature: Bind an application to a service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-a-b-s
+                name: $scenario_id-backend
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
                 data:
-                    dbCredentials: backend-secret
+                    dbCredentials: $scenario_id-secret
             """
-        Then Service Binding "service-binding-a-b-s" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -111,7 +111,7 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: Secret
             metadata:
-                name: backend-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -121,34 +121,34 @@ Feature: Bind an application to a service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-s-b-a
+                name: $scenario_id-backend
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
                 data:
-                    dbCredentials: backend-secret
+                    dbCredentials: $scenario_id-secret
             """
         And Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-s-b-a
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-s-b-a
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-s-b-a
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        When Generic test application "gen-app-s-b-a" is running
-        Then Service Binding "service-binding-s-b-a" is ready
+        When Generic test application is running
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -158,28 +158,28 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-b-a-s
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-b-a-s
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-b-a-s
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        * Generic test application "gen-app-b-a-s" is running
+        * Generic test application is running
         * CustomResourceDefinition backends.stable.example.com is available
         * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: backend-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -189,14 +189,14 @@ Feature: Bind an application to a service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-b-a-s
+                name: $scenario_id-backend
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
                 data:
-                    dbCredentials: backend-secret
+                    dbCredentials: $scenario_id-secret
             """
-        Then Service Binding "service-binding-b-a-s" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -206,16 +206,16 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-b-s-a
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-b-s-a
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-b-s-a
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -226,7 +226,7 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: Secret
             metadata:
-                name: backend-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -236,15 +236,15 @@ Feature: Bind an application to a service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-b-s-a
+                name: $scenario_id-backend
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
                 data:
-                    dbCredentials: backend-secret
+                    dbCredentials: $scenario_id-secret
             """
-        When Generic test application "gen-app-b-s-a" is running
-        Then Service Binding "service-binding-b-s-a" is ready
+        When Generic test application is running
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -256,7 +256,7 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: Secret
             metadata:
-                name: backend-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -266,23 +266,23 @@ Feature: Bind an application to a service
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-missing-app
+                name: $scenario_id-backend
                 annotations:
                     service.binding: path={.status.data.dbCredentials},objectType=Secret,elementType=map
             status:
                 data:
-                    dbCredentials: backend-secret
+                    dbCredentials: $scenario_id-secret
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-missing-app
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: gen-missing-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -290,12 +290,12 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-missing-app
+                    name: $scenario_id-backend
             """
-        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding "service-binding-missing-app" should be changed to "True"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding "service-binding-missing-app" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "service-binding-missing-app" should be changed to "ApplicationNotFound"
-        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "service-binding-missing-app" should be changed to "False"
+        Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding should be changed to "True"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").status" of Service Binding should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding should be changed to "ApplicationNotFound"
+        And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding should be changed to "False"
 
 
     @negative
@@ -306,7 +306,7 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-empty-app
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -319,17 +319,17 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-empty-app
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo-empty-app
+                    name: $scenario_id-backend
             """
         Then Error message is thrown
-        And Service Binding "binding-request-empty-app" is not persistent in the cluster
+        And Service Binding "$scenario_id-binding" is not persistent in the cluster
 
     @negative
     Scenario: Cannot create Service Binding with name and label selector
@@ -339,7 +339,7 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-empty-app
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -352,11 +352,11 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-with-name-label-selector
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: gen-missing-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -367,7 +367,7 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo-empty-app
+                    name: $scenario_id-backend
             """
         Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
 
@@ -379,7 +379,7 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-empty-app
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -392,10 +392,10 @@ Feature: Bind an application to a service
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: binding-request-with-name-label-selector-spec
+                name: $scenario_id-binding
             spec:
                 workload:
-                  name: gen-missing-app
+                  name: $scenario_id
                   apiVersion: apps/v1
                   kind: Deployment
                   selector:
@@ -404,7 +404,7 @@ Feature: Bind an application to a service
                 service:
                   apiVersion: stable.example.com/v1
                   kind: Backend
-                  name: backend-demo-empty-app
+                  name: $scenario_id-backend
             """
         Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
 
@@ -416,7 +416,7 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-empty-app
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -429,7 +429,7 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-with-name-label-selector2
+                name: $scenario_id-valid
             spec:
                 bindAsFiles: false
                 application:
@@ -443,18 +443,18 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo-empty-app
+                    name: $scenario_id-backend
             """
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-with-name-label-selector2
+                name: $scenario_id-invalid
             spec:
                 bindAsFiles: false
                 application:
-                    name: gen-missing-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -465,7 +465,7 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo-empty-app
+                    name: $scenario_id-backend
             """
         Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
 
@@ -477,7 +477,7 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo-empty-app
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host: path={.spec.host}
                     service.binding/username: path={.spec.username}
@@ -490,7 +490,7 @@ Feature: Bind an application to a service
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: binding-request-with-name-label-selector-spec2
+                name: $scenario_id-valid
             spec:
                 workload:
                   apiVersion: apps/v1
@@ -501,7 +501,7 @@ Feature: Bind an application to a service
                 service:
                   apiVersion: stable.example.com/v1
                   kind: Backend
-                  name: backend-demo-empty-app
+                  name: $scenario_id
             """
         When Invalid Service Binding is applied
             """
@@ -511,7 +511,7 @@ Feature: Bind an application to a service
                 name: binding-request-with-name-label-selector-spec2
             spec:
                 workload:
-                  name: gen-missing-app
+                  name: $scenario_id-invalid
                   apiVersion: apps/v1
                   kind: Deployment
                   selector:
@@ -520,20 +520,20 @@ Feature: Bind an application to a service
                 service:
                   apiVersion: stable.example.com/v1
                   kind: Backend
-                  name: backend-demo-empty-app
+                  name: $scenario_id-backend
             """
         Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
 
     @olm
     Scenario: Bind service to application using binding definition available in x-descriptors
         Given OLM Operator "backend-new-spec" is running
-        * Generic test application "gen-app-a-s-c" is running
+        * Generic test application is running
         * The Custom Resource is present
             """
             apiVersion: "beta.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 ports:
@@ -547,34 +547,34 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-backend-new-spec
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: beta.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-a-s-c
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "binding-request-backend-new-spec" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_HOST" has value "example.common"
         And The application env var "BACKEND_PORTS_FTP" has value "22"
         And The application env var "BACKEND_PORTS_TCP" has value "8080"
 
     Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
-        Given Generic test application "gen-app-c-e" is running
+        Given Generic test application is running
         * CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: service-c-e
+                name: $scenario_id-backend
                 annotations:
                     service.binding/port: path={.data.port}
                     service.binding/host: path={.data.host}
@@ -587,11 +587,11 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: service-binding-c-e
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: gen-app-c-e
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -599,13 +599,13 @@ Feature: Bind an application to a service
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: service-c-e
+                    name: $scenario_id-backend
                     id: backendSVC
                 mappings:
                     - name: HOST_ADDR
                       value: '{{ .backendSVC.data.host }}:{{ .backendSVC.data.port }}'
             """
-        Then Service Binding "service-binding-c-e" is ready
+        Then Service Binding is ready
         And The application env var "HOST_ADDR" has value "127.0.0.1:8080"
 
     @negative
@@ -615,12 +615,12 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-empty-services
+                name: $scenario_id-binding
             spec:
                 services:
             """
         Then Error message is thrown
-        And Service Binding "binding-request-empty-services" is not persistent in the cluster
+        And Service Binding "$scenario_id-binding" is not persistent in the cluster
 
     @negative
     Scenario: Service Binding without gvk of services is not allowed in the cluster
@@ -629,10 +629,10 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-without-gvk
+                name: $scenario_id-binding
             spec:
                 services:
-                -   name: backend-demo
+                -   name: $scenario_id
             """
         Then Error message is thrown
 
@@ -643,47 +643,47 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: demo-backserv-cr-3
+                name: $scenario_id-backend
                 annotations:
                     service.binding/name: path={.metadata.name}
             """
-        * Generic test application "gen-app-a-s-e" is running
+        * Generic test application is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-remove-service
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: demo-backserv-cr-3
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-a-s-e
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        * Service Binding "binding-request-remove-service" is ready
+        * Service Binding is ready
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-remove-service
+                name: $scenario_id-binding
             spec:
                 services:
                 application:
-                    name: gen-app-a-s-e
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
         Then Error message is thrown
-        And Service Binding "binding-request-remove-service" is not updated
+        And Service Binding "$scenario_id-binding" is not updated
 
     @negative
     Scenario: Service Binding without spec is not allowed in the cluster
@@ -692,10 +692,10 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-without-spec
+                name: $scenario_id-binding
             """
         Then Error message is thrown
-        And Service Binding "binding-request-without-spec" is not persistent in the cluster
+        And Service Binding "$scenario_id-binding" is not persistent in the cluster
 
     @negative
     Scenario: Service Binding with empty spec is not allowed in the cluster
@@ -704,11 +704,11 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-empty-spec
+                name: $scenario_id-binding
             spec:
             """
         Then Error message is thrown
-        And Service Binding "binding-request-empty-spec" is not persistent in the cluster
+        And Service Binding "$scenario_id-binding" is not persistent in the cluster
 
     @negative
     # Adding olm tag due to flakiness of this test on non-olm ci
@@ -721,46 +721,46 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: demo-backserv-cr-5
+                name: $scenario_id-backend
                 annotations:
                     service.binding/name: path={.metadata.name}
             """
-        * Generic test application "gen-app-a-s-g" is running
+        * Generic test application is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-emptying-spec
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: demo-backserv-cr-5
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-a-s-g
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        * Service Binding "binding-request-emptying-spec" is ready
+        * Service Binding is ready
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-emptying-spec
+                name: $scenario_id-binding
             spec:
                 application:
-                    name: gen-app-a-s-g
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
         Then Error message is thrown
-        And Service Binding "binding-request-emptying-spec" is not updated
+        And Service Binding "$scenario_id-binding" is not updated
 
     @negative
     # Adding olm tag due to flakiness of this test on non-olm ci
@@ -773,40 +773,40 @@ Feature: Bind an application to a service
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: demo-backserv-cr-4
+                name: $scenario_id-backend
                 annotations:
                     service.binding/name: path={.metadata.name}
             """
-        * Generic test application "gen-app-a-s-h" is running
+        * Generic test application is running
         * Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-remove-spec
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: demo-backserv-cr-4
+                    name: $scenario_id-backend
                 application:
-                    name: gen-app-a-s-h
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        * Service Binding "binding-request-remove-spec" is ready
+        * Service Binding is ready
         When Invalid Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-remove-spec
+                name: $scenario_id-binding
             """
         Then Error message is thrown
-        And Service Binding "binding-request-remove-spec" is not updated
+        And Service Binding "$scenario_id-binding" is not updated
 
     Scenario: Bind an application to a service present in a different namespace
         Given Namespace is present
@@ -814,31 +814,31 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: Namespace
             metadata:
-                name: backend-services
+                name: $scenario_id-ns
             """
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: backend-cross-ns-service
-                namespace: backend-services
+                name: $scenario_id-backend
+                namespace: $scenario_id-ns
                 annotations:
                     service.binding/host_cross_ns_service: path={.spec.host_cross_ns_service}
             spec:
                 host_cross_ns_service: cross.ns.service.stable.example.com
             """
-        * Generic test application "myapp-in-sbr-ns" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-cross-ns-service
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: myapp-in-sbr-ns
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -846,10 +846,10 @@ Feature: Bind an application to a service
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-cross-ns-service
-                    namespace: backend-services
+                    name: $scenario_id-backend
+                    namespace: $scenario_id-ns
             """
-        Then Service Binding "binding-request-cross-ns-service" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_HOST_CROSS_NS_SERVICE" has value "cross.ns.service.stable.example.com"
 
     Scenario: Inject all configmap keys into application
@@ -858,33 +858,33 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: ConfigMap
             metadata:
-                name: example
+                name: $scenario_id-configmap
                 annotations:
                     service.binding: path={.data},elementType=map
             data:
                 word: "hello"
             """
-        * Generic test application "myapp-cm" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-configmap
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: ""
                     version: v1
                     kind: ConfigMap
-                    name: example
+                    name: $scenario_id-configmap
                 application:
-                    name: myapp-cm
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "binding-request-configmap" is ready
+        Then Service Binding is ready
         And The application env var "CONFIGMAP_WORD" has value "hello"
 
 
@@ -894,33 +894,33 @@ Feature: Bind an application to a service
             apiVersion: v1
             kind: Secret
             metadata:
-                name: example
+                name: $scenario_id-secret
                 annotations:
                     service.binding: path={.data},elementType=map
             data:
                 word: "aGVsbG8="
             """
-        * Generic test application "myapp-secret" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-secret
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                 -   group: ""
                     version: v1
                     kind: Secret
-                    name: example
+                    name: $scenario_id-secret
                 application:
-                    name: myapp-secret
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "binding-request-secret" is ready
+        Then Service Binding is ready
         And The application env var "SECRET_WORD" has value "aGVsbG8="
 
     @negative
@@ -944,7 +944,7 @@ Feature: Bind an application to a service
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 detectBindingResources: true

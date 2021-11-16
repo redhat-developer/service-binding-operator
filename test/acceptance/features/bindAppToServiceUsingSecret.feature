@@ -9,7 +9,7 @@ Feature: Bind values from a secret referred in backing service resource
 
     Scenario: Inject into app a key from a secret referred within service resource
         Binding definition is declared on service CRD.
-        Given Generic test application "ssa-1" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -64,7 +64,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: ssa-1-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
             """
@@ -73,39 +73,39 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: ssa-1-service
+                name: $scenario_id-backend
             spec:
                 image: docker.io/postgres
                 imageName: postgres
                 dbName: db-demo
             status:
                 data:
-                    dbCredentials: ssa-1-secret
+                    dbCredentials: $scenario_id-secret
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: ssa-1
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: ssa-1-service
+                    name: $scenario_id-backend
                 application:
-                    name: ssa-1
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "ssa-1" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
 
     Scenario: Inject into app all keys from a secret referred within service resource
-        Given Generic test application "ssa-2" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -160,7 +160,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: ssa-2-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -170,42 +170,42 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: ssa-2-service
+                name: $scenario_id-backend
             spec:
                 image: docker.io/postgres
                 imageName: postgres
                 dbName: db-demo
             status:
                 data:
-                    dbCredentials: ssa-2-secret
+                    dbCredentials: $scenario_id-secret
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: ssa-2
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: ssa-2-service
+                    name: $scenario_id-backend
                 application:
-                    name: ssa-2
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "ssa-2" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
     @olm
     Scenario: Inject into app a key from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
-        Given Generic test application "ssd-1" is running
+        Given Generic test application is running
         * OLM Operator "backends_foo" is running
         * The Custom Resource Definition is present
             """
@@ -319,7 +319,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: ssd-1-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
             """
@@ -328,40 +328,40 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: foo.example.com/v1
             kind: Backend
             metadata:
-                name: ssd-1-service
+                name: $scenario_id-backend
             spec:
                 host: example.com
             status:
                 data:
-                    dbCredentials: ssd-1-secret
+                    dbCredentials: $scenario_id-secret
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: ssd-1
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: foo.example.com
                     version: v1
                     kind: Backend
-                    name: ssd-1-service
+                    name: $scenario_id-backend
                 application:
-                    name: ssd-1
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "ssd-1" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_HOST" has value "example.com"
 
     @olm
     Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
-        Given Generic test application "ssd-2" is running
+        Given Generic test application is running
         * OLM Operator "backends_bar" is running
         * The Custom Resource Definition is present
             """
@@ -473,7 +473,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: ssd-2-secret
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -483,35 +483,35 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: bar.example.com/v1
             kind: Backend
             metadata:
-                name: ssd-2-service
+                name: $scenario_id-backend
             spec:
                 image: docker.io/postgres
                 imageName: postgres
                 dbName: db-demo
             status:
                 data:
-                    dbCredentials: ssd-2-secret
+                    dbCredentials: $scenario_id-secret
             """
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: ssd-2
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: bar.example.com
                     version: v1
                     kind: Backend
-                    name: ssd-2-service
+                    name: $scenario_id-backend
                 application:
-                    name: ssd-2
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "ssd-2" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -558,15 +558,15 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Namespace
             metadata:
-                name: backend-services
+                name: $scenario_id-ns
             """
         * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: ssa-3-secret
-                namespace: backend-services
+                name: $scenario_id-secret
+                namespace: $scenario_id-ns
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -576,33 +576,33 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: ssa-3-service
-                namespace: backend-services
+                name: $scenario_id-backend
+                namespace: $scenario_id-ns
             status:
-                credentials: ssa-3-secret
+                credentials: $scenario_id-secret
             """
-        * Generic test application "ssa-3" is running
+        * Generic test application is running
         When Service Binding is applied
             """
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: ssa-3
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: ssa-3-service
-                    namespace: backend-services
+                    name: $scenario_id-backend
+                    namespace: $scenario_id-ns
                 application:
-                    name: ssa-3
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "ssa-3" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -612,7 +612,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: db-secret-x
+                name: $scenario_id-secret
             stringData:
                 username: AzureDiamond
                 password: hunter2
@@ -672,34 +672,34 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: backend-service-x
+                name: $scenario_id-backend
             spec:
                 containers:
                 - envFrom:
                   - secretRef:
-                        name: db-secret-x
+                        name: $scenario_id-secret
             """
-        * Generic test application "myapp-x" is running
+        * Generic test application is running
         When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: sb-inject-secret-data
+              name: $scenario_id-binding
           spec:
               bindAsFiles: false
               services:
               - group: stable.example.com
                 version: v1
                 kind: Backend
-                name: backend-service-x
+                name: $scenario_id-backend
               application:
-                name: myapp-x
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-        Then Service Binding "sb-inject-secret-data" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
@@ -710,37 +710,37 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-1
+                name: $scenario_id-secret
             stringData:
                 username: foo
                 password: bar
             """
-        * Generic test application "myapp-provision-srv2" is running
+        * Generic test application is running
         When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-direct-secret-1
+              name: $scenario_id-binding
           spec:
               services:
               - group: ""
                 version: v1
                 kind: Secret
-                name: provisioned-secret-1
+                name: $scenario_id-secret
               application:
-                name: myapp-provision-srv2
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-        Then Service Binding "bind-direct-secret-1" is ready
-        And jq ".status.secret" of Service Binding "bind-direct-secret-1" should be changed to "provisioned-secret-1"
-        And Content of file "/bindings/bind-direct-secret-1/username" in application pod is
+        Then Service Binding is ready
+        And jq ".status.secret" of Service Binding should be changed to "$scenario_id-secret"
+        And Content of file "/bindings/$scenario_id-binding/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-direct-secret-1/password" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/password" in application pod is
             """
             bar
             """
@@ -751,28 +751,28 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-1
+                name: $scenario_id-secret
             stringData:
                 username: foo
                 password: bar
             """
-        * Generic test application "myapp-provision-srv3" is running
+        * Generic test application is running
         When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-direct-secret-mapping
+              name: $scenario_id-binding
           spec:
               bindAsFiles: true
               services:
               - group: ""
                 version: v1
                 kind: Secret
-                name: provisioned-secret-1
+                name: $scenario_id-secret
                 id: sec
               application:
-                name: myapp-provision-srv3
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
@@ -780,71 +780,71 @@ Feature: Bind values from a secret referred in backing service resource
                 - name: username_with_password
                   value: '{{ .username }}:{{ .password }}'
           """
-        Then Service Binding "bind-direct-secret-mapping" is ready
-        And Service Binding "bind-direct-secret-mapping" has the binding secret name set in the status
-        And Content of file "/bindings/bind-direct-secret-mapping/username" in application pod is
+        Then Service Binding is ready
+        And Service Binding "$scenario_id-binding" has the binding secret name set in the status
+        And Content of file "/bindings/$scenario_id-binding/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-direct-secret-mapping/password" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/password" in application pod is
             """
             bar
             """
-        And Content of file "/bindings/bind-direct-secret-mapping/username_with_password" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/username_with_password" in application pod is
             """
             foo:bar
             """
 
     Scenario: Inject binding to an application from a Secret resource created later referred as service 
-        Given Generic test application "myapp-provision-srv4" is running
+        Given Generic test application is running
         When Service Binding is applied
           """
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-provisioned-service-4
+              name: $scenario_id-binding
           spec:
               services:
               - group: ""
                 version: v1
                 kind: Secret
-                name: provisioned-secret-4
+                name: $scenario_id-secret
               application:
-                name: myapp-provision-srv4
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "bind-provisioned-service-4" should be changed to "False"
+        * jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding should be changed to "False"
         * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-4
+                name: $scenario_id-secret
             stringData:
                 username: foo
                 password: bar
             """
 
-        Then Service Binding "bind-provisioned-service-4" is ready
-        And Content of file "/bindings/bind-provisioned-service-4/username" in application pod is
+        Then Service Binding is ready
+        And Content of file "/bindings/$scenario_id-binding/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-provisioned-service-4/password" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/password" in application pod is
             """
             bar
             """
 
     Scenario: Inject binding to an application from two Secret resources referred as services
-        Given Generic test application "myapp-provision-srv5" is running
+        Given Generic test application is running
         * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-5
+                name: $scenario_id-secret-1
             stringData:
                 username: foo
                 password: bar
@@ -854,7 +854,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-6
+                name: $scenario_id-secret-2
             stringData:
                 username2: foo2
                 password2: bar2
@@ -864,37 +864,37 @@ Feature: Bind values from a secret referred in backing service resource
           apiVersion: binding.operators.coreos.com/v1alpha1
           kind: ServiceBinding
           metadata:
-              name: bind-direct-secret-2
+              name: $scenario_id-binding
           spec:
               services:
               - group: ""
                 version: v1
                 kind: Secret
-                name: provisioned-secret-5
+                name: $scenario_id-secret-1
               - group: ""
                 version: v1
                 kind: Secret
-                name: provisioned-secret-6
+                name: $scenario_id-secret-2
               application:
-                name: myapp-provision-srv5
+                name: $scenario_id
                 group: apps
                 version: v1
                 resource: deployments
           """
-        Then Service Binding "bind-direct-secret-2" is ready
-        And Content of file "/bindings/bind-direct-secret-2/username" in application pod is
+        Then Service Binding is ready
+        And Content of file "/bindings/$scenario_id-binding/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/bind-direct-secret-2/password" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/password" in application pod is
             """
             bar
             """
-        And Content of file "/bindings/bind-direct-secret-2/username2" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/username2" in application pod is
             """
             foo2
             """
-        And Content of file "/bindings/bind-direct-secret-2/password2" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/password2" in application pod is
             """
             bar2
 
@@ -906,40 +906,40 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-1
+                name: $scenario_id-secret
             stringData:
                 username: foo
                 password: bar
                 type: db
             """
-        * Generic test application "spec-myapp-provision-srv2" is running
+        * Generic test application is running
         When Service Binding is applied
           """
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: spec-direct-secret-1
+              name: $scenario_id-binding
           spec:
               service:
                 apiVersion: v1
                 kind: Secret
-                name: provisioned-secret-1
+                name: $scenario_id-secret
               workload:
-                name: spec-myapp-provision-srv2
+                name: $scenario_id
                 apiVersion: apps/v1
                 kind: Deployment
           """
-        Then Service Binding "spec-direct-secret-1" is ready
-        And jq ".status.binding.name" of Service Binding "spec-direct-secret-1" should be changed to "provisioned-secret-1"
-        And Content of file "/bindings/spec-direct-secret-1/username" in application pod is
+        Then Service Binding is ready
+        And jq ".status.binding.name" of Service Binding should be changed to "$scenario_id-secret"
+        And Content of file "/bindings/$scenario_id-binding/username" in application pod is
             """
             foo
             """
-        And Content of file "/bindings/spec-direct-secret-1/password" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/password" in application pod is
             """
             bar
             """
-        And Content of file "/bindings/spec-direct-secret-1/type" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/type" in application pod is
             """
             db
             """
@@ -952,30 +952,30 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-6
+                name: $scenario_id-secret
             stringData:
                 username: foo
                 password: bar
             """
-        * Generic test application "spec-myapp-provision-srv6" is running
+        * Generic test application is running
         When Service Binding is applied
           """
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: spec-bind-provisioned-service-6
+              name: $scenario_id-binding
           spec:
               service:
                 apiVersion: v1
                 kind: Secret
-                name: provisioned-secret-6
+                name: $scenario_id-secret
               workload:
-                name: spec-myapp-provision-srv6
+                name: $scenario_id
                 apiVersion: apps/v1
                 kind: Deployment
           """
-        Then jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding "spec-bind-provisioned-service-6" should be changed to "False"
-        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding "spec-bind-provisioned-service-6" should be changed to "RequiredBindingNotFound"
+        Then jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding should be changed to "False"
+        And jq ".status.conditions[] | select(.type=="InjectionReady").reason" of Service Binding should be changed to "RequiredBindingNotFound"
 
     @spec
     Scenario: SPEC Inject binding to only specified containers inside application pod
@@ -984,7 +984,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: v1
             kind: Secret
             metadata:
-                name: provisioned-secret-1
+                name: $scenario_id-secret
             stringData:
                 username: foo
                 password: bar
@@ -996,7 +996,7 @@ Feature: Bind values from a secret referred in backing service resource
             apiVersion: "stable.example.com/v1"
             kind: AppConfig
             metadata:
-                name: multi-container-app
+                name: $scenario_id-appconfig
             spec:
                 template:
                     spec:
@@ -1018,14 +1018,14 @@ Feature: Bind values from a secret referred in backing service resource
           apiVersion: servicebinding.io/v1alpha3
           kind: ServiceBinding
           metadata:
-              name: multi-container-binding
+              name: $scenario_id-binding
           spec:
               service:
                 apiVersion: v1
                 kind: Secret
-                name: provisioned-secret-1
+                name: $scenario_id-secret
               workload:
-                name: multi-container-app
+                name: $scenario_id-appconfig
                 apiVersion: stable.example.com/v1
                 kind: AppConfig
                 containers:
@@ -1033,10 +1033,10 @@ Feature: Bind values from a secret referred in backing service resource
                     - bar
                     - bla
           """
-        Then Service Binding "multi-container-binding" is ready
-        * jq ".status.binding.name" of Service Binding "multi-container-binding" should be changed to "provisioned-secret-1"
-        * jsonpath "{.spec.template.spec.containers[0].volumeMounts}" on "appconfigs/multi-container-app" should return no value
-        * jsonpath "{.spec.template.spec.containers[1].volumeMounts}" on "appconfigs/multi-container-app" should return "[{"mountPath":"/bindings/multi-container-binding","name":"multi-container-binding"}]"
-        * jsonpath "{.spec.template.spec.containers[2].volumeMounts}" on "appconfigs/multi-container-app" should return "[{"mountPath":"/bindings/multi-container-binding","name":"multi-container-binding"}]"
-        * jsonpath "{.spec.template.spec.containers[3].volumeMounts}" on "appconfigs/multi-container-app" should return no value
-        * jsonpath "{.spec.template.spec.initContainers[0].volumeMounts}" on "appconfigs/multi-container-app" should return "[{"mountPath":"/bindings/multi-container-binding","name":"multi-container-binding"}]"
+        Then Service Binding is ready
+        * jq ".status.binding.name" of Service Binding should be changed to "$scenario_id-secret"
+        * jsonpath "{.spec.template.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return no value
+        * jsonpath "{.spec.template.spec.containers[1].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        * jsonpath "{.spec.template.spec.containers[2].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        * jsonpath "{.spec.template.spec.containers[3].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return no value
+        * jsonpath "{.spec.template.spec.initContainers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"

@@ -12,14 +12,14 @@ Feature: Prevent users to bind services to application
 
 
   Scenario: Service cannot be bound to application if user cannot read service resource from another namespace
-    Given Namespace "backend-ns" exists
+    Given Namespace "$scenario_id-ns" exists
     * The Custom Resource is present
             """
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
-                namespace: backend-ns
+                name: $scenario_id-backend
+                namespace: $scenario_id-ns
             spec:
                 host: example.common
                 tags:
@@ -33,7 +33,7 @@ Feature: Prevent users to bind services to application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 application:
                     name: $scenario_id
@@ -44,8 +44,8 @@ Feature: Prevent users to bind services to application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
-                    namespace: backend-ns
+                    name: $scenario_id-backend
+                    namespace: $scenario_id-ns
                     id: backend
                 mappings:
                    - name: TAGS
@@ -59,7 +59,7 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 tags:
@@ -73,7 +73,7 @@ Feature: Prevent users to bind services to application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 application:
                     name: $scenario_id
@@ -84,7 +84,7 @@ Feature: Prevent users to bind services to application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                     id: backend
                 mappings:
                    - name: TAGS
@@ -98,20 +98,20 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/username: path={.status.bindings},objectType=Secret,valueKey=username
             spec:
                 host: example.common
             status:
-                bindings: $scenario_id
+                bindings: $scenario_id-secret
             """
     * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: $scenario_id
+                name: $scenario_id-secret
             stringData:
                 username: acmeuser
 
@@ -124,7 +124,7 @@ Feature: Prevent users to bind services to application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 application:
                     name: $scenario_id
@@ -135,7 +135,7 @@ Feature: Prevent users to bind services to application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                     id: backend
             """
     Then Service Binding CollectionReady.status is "False"
@@ -146,7 +146,7 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/username: path={.status.bindings},objectType=ConfigMap,valueKey=username
             spec:
@@ -159,10 +159,9 @@ Feature: Prevent users to bind services to application
             apiVersion: v1
             kind: ConfigMap
             metadata:
-                name: $scenario_id
+                name: $scenario_id-secret
             data:
                 username: acmeuser
-
             """
     * User acceptance-tests-dev has 'service-binding-editor-role' role in test namespace
     * User acceptance-tests-dev has 'backends-view' role in test namespace
@@ -172,7 +171,7 @@ Feature: Prevent users to bind services to application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 application:
                     name: $scenario_id
@@ -183,7 +182,7 @@ Feature: Prevent users to bind services to application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                     id: backend
             """
     Then Service Binding CollectionReady.status is "False"
@@ -194,7 +193,7 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 tags:
@@ -209,7 +208,7 @@ Feature: Prevent users to bind services to application
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 application:
                     name: $scenario_id
@@ -220,7 +219,7 @@ Feature: Prevent users to bind services to application
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                     id: backend
                 mappings:
                    - name: TAGS
@@ -236,7 +235,7 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 tags:
@@ -250,7 +249,7 @@ Feature: Prevent users to bind services to application
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 type: foo
                 workload:
@@ -260,7 +259,7 @@ Feature: Prevent users to bind services to application
                 service:
                     apiVersion: stable.example.com/v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
             """
     Then Service Binding CollectionReady.status is "False"
 
@@ -271,20 +270,20 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/username: path={.status.bindings},objectType=Secret,valueKey=username
             spec:
                 host: example.common
             status:
-                bindings: $scenario_id
+                bindings: $scenario_id-secret
             """
     * The Secret is present
             """
             apiVersion: v1
             kind: Secret
             metadata:
-                name: $scenario_id
+                name: $scenario_id-secret
             stringData:
                 username: acmeuser
 
@@ -297,7 +296,7 @@ Feature: Prevent users to bind services to application
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 type: foo
                 workload:
@@ -307,7 +306,7 @@ Feature: Prevent users to bind services to application
                 service:
                     apiVersion: stable.example.com/v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
             """
     Then Service Binding CollectionReady.status is "False"
 
@@ -318,23 +317,22 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/username: path={.status.bindings},objectType=ConfigMap,valueKey=username
             spec:
                 host: example.common
             status:
-                bindings: $scenario_id
+                bindings: $scenario_id-secret
             """
     * The ConfigMap is present
             """
             apiVersion: v1
             kind: ConfigMap
             metadata:
-                name: $scenario_id
+                name: $scenario_id-secret
             data:
                 username: acmeuser
-
             """
     * User acceptance-tests-dev has 'service-binding-editor-role' role in test namespace
     * User acceptance-tests-dev has 'backends-view' role in test namespace
@@ -344,7 +342,7 @@ Feature: Prevent users to bind services to application
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 type: foo
                 workload:
@@ -354,7 +352,7 @@ Feature: Prevent users to bind services to application
                 service:
                     apiVersion: stable.example.com/v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
             """
     Then Service Binding CollectionReady.status is "False"
 
@@ -365,7 +363,7 @@ Feature: Prevent users to bind services to application
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 tags:
@@ -380,7 +378,7 @@ Feature: Prevent users to bind services to application
             apiVersion: servicebinding.io/v1alpha3
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 type: foo
                 workload:
@@ -390,7 +388,7 @@ Feature: Prevent users to bind services to application
                 service:
                     apiVersion: stable.example.com/v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
             """
     Then Service Binding CollectionReady.status is "True"
     And Service Binding InjectionReady.status is "False"

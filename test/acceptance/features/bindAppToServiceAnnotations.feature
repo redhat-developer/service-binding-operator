@@ -10,7 +10,7 @@ Feature: Bind an application to a service using annotations
         * Service Binding Operator is running
 
     Scenario: Provide binding info through backing service CRD annotation and ensure app env vars reflect it
-        Given Generic test application "rsa-2-service" is running
+        Given Generic test application is running
         Given The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -71,7 +71,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: "stable.example.com/v1"
             kind: Backend
             metadata:
-                name: backend-demo
+                name: $scenario_id-backend
             spec:
                 host: example.common
                 userLabels:
@@ -86,30 +86,30 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-request-backend-a
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: backend-demo
+                    name: $scenario_id-backend
                     id: SBR
                 application:
-                    name: rsa-2-service
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
 
-        Then Service Binding "binding-request-backend-a" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_READY" has value "true"
         And The application env var "BACKEND_HOST" has value "example.common"
         And The application env var "BACKEND_ENVIRONMENT" has value "staging"
         And The application env var "BACKEND_DATATYPE" has value "base64"
 
     Scenario: Each value in referred map from service resource gets injected into app as separate env variable
-        Given Generic test application "rsa-2-service" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -179,7 +179,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: rsa-2-service
+                name: $scenario_id-backend
             spec:
                 image: docker.io/postgres
                 imageName: postgres
@@ -202,27 +202,27 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: rsa-2
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: rsa-2-service
+                    name: $scenario_id-backend
                 application:
-                    name: rsa-2-service
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "rsa-2" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_SPEC_IMAGE" has value "docker.io/postgres"
         And The application env var "BACKEND_SPEC_IMAGENAME" has value "postgres"
         And The application env var "BACKEND_SPEC_DBNAME" has value "db-demo"
 
     Scenario: Each value in referred slice of strings from service resource gets injected into app as separate env variable
-        Given Generic test application "slos-app" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -272,7 +272,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: slos-service
+                name: $scenario_id-backend
             spec:
                 tags:
                   - knowledge
@@ -286,27 +286,27 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: slos-binding
+                name: $scenario_id
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: slos-service
+                    name: $scenario_id-backend
                 application:
-                    name: slos-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "slos-binding" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_TAGS_0" has value "knowledge"
         And The application env var "BACKEND_TAGS_1" has value "is"
         And The application env var "BACKEND_TAGS_2" has value "power"
 
     Scenario: Values extracted from each map by a given key in referred slice of maps from service resource gets injected into app as separate env variable
-        Given Generic test application "slom-to-slos-app" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -361,7 +361,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: slom-to-slos-service
+                name: $scenario_id-backend
             spec:
                 connections:
                   - type: primary
@@ -378,27 +378,27 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: slom-to-slos-binding
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: slom-to-slos-service
+                    name: $scenario_id-backend
                 application:
-                    name: slom-to-slos-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "slom-to-slos-binding" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_URL_0" has value "primary.example.com"
         And The application env var "BACKEND_URL_1" has value "secondary.example.com"
         And The application env var "BACKEND_URL_2" has value "black-hole.example.com"
 
     Scenario: Each value in referred slice of maps from service resource gets injected into app as separate env variable
-        Given Generic test application "slom-app" is running
+        Given Generic test application is running
         And The Custom Resource Definition is present
             """
             apiVersion: apiextensions.k8s.io/v1
@@ -453,7 +453,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: slom-service
+                name: $scenario_id-backend
             spec:
                 connections:
                   - type: primary
@@ -470,34 +470,34 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: slom-binding
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: slom-service
+                    name: $scenario_id-backend
                 application:
-                    name: slom-app
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
             """
-        Then Service Binding "slom-binding" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_WEBARROWS_PRIMARY" has value "primary.example.com"
         And The application env var "BACKEND_WEBARROWS_SECONDARY" has value "secondary.example.com"
         And The application env var "BACKEND_WEBARROWS_404" has value "black-hole.example.com"
 
     Scenario: Bind referring service using group version resource
-        Given Generic test application "binding-service-via-gvr" is running
+        Given Generic test application is running
         * CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: binding-service-via-gvr-service
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host_internal_db: path={.spec.host_internal_db}
             spec:
@@ -508,11 +508,11 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-service-via-gvr
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: binding-service-via-gvr
+                    name: $scenario_id
                     group: apps
                     version: v1
                     resource: deployments
@@ -520,20 +520,20 @@ Feature: Bind an application to a service using annotations
                 -   group: stable.example.com
                     version: v1
                     resource: backends
-                    name: binding-service-via-gvr-service
+                    name: $scenario_id-backend
             """
-        Then Service Binding "binding-service-via-gvr" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
 
     Scenario: Bind referring application using group version kind
-        Given Generic test application "binding-app-via-gvk" is running
+        Given Generic test application is running
         * CustomResourceDefinition backends.stable.example.com is available
         * The Custom Resource is present
             """
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: binding-app-via-gvk-service
+                name: $scenario_id-backend
                 annotations:
                     service.binding/host_internal_db: path={.spec.host_internal_db}
             spec:
@@ -544,11 +544,11 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: binding-app-via-gvk
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 application:
-                    name: binding-app-via-gvk
+                    name: $scenario_id
                     group: apps
                     version: v1
                     kind: Deployment
@@ -556,9 +556,9 @@ Feature: Bind an application to a service using annotations
                 -   group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: binding-app-via-gvk-service
+                    name: $scenario_id-backend
             """
-        Then Service Binding "binding-app-via-gvk" is ready
+        Then Service Binding is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
 
     Scenario: Application cannot be bound to service containing annotation with an invalid sourceValue value
@@ -569,7 +569,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/webarrows: path={.spec.connections},elementType=sliceOfMaps,sourceKey=type,sourceValue=asdf
             spec:
@@ -584,14 +584,14 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                 application:
                     name: $scenario_id
                     group: apps
@@ -610,7 +610,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/credentials: path={.spec.connections.dbCredentials},elementType=asdf
             spec:
@@ -625,14 +625,14 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                 application:
                     name: $scenario_id
                     group: apps
@@ -651,7 +651,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/credentials: path={.spec.connections.dbCredentials},objectType=asdf,sourceKey=username
             spec:
@@ -666,14 +666,14 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                 application:
                     name: $scenario_id
                     group: apps
@@ -692,7 +692,7 @@ Feature: Bind an application to a service using annotations
             apiVersion: stable.example.com/v1
             kind: Backend
             metadata:
-                name: $scenario_id
+                name: $scenario_id-backend
                 annotations:
                     service.binding/credentials: path=asdf
             spec:
@@ -707,14 +707,14 @@ Feature: Bind an application to a service using annotations
             apiVersion: binding.operators.coreos.com/v1alpha1
             kind: ServiceBinding
             metadata:
-                name: $scenario_id
+                name: $scenario_id-binding
             spec:
                 bindAsFiles: false
                 services:
                   - group: stable.example.com
                     version: v1
                     kind: Backend
-                    name: $scenario_id
+                    name: $scenario_id-backend
                 application:
                     name: $scenario_id
                     group: apps

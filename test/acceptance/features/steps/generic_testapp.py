@@ -4,7 +4,7 @@ import json
 import polling2
 from behave import step
 from openshift import Openshift
-from util import scenario_id
+from util import substitute_scenario_id
 from string import Template
 
 
@@ -44,9 +44,10 @@ class GenericTestApp(App):
 @step(u'Generic test application "{application_name}" is running')
 @step(u'Generic test application "{application_name}" is running with binding root as "{bindingRoot}"')
 @step(u'Generic test application is running')
+@step(u'Generic test application is running with binding root as "{bindingRoot}"')
 def is_running(context, application_name=None, bindingRoot=None, asDeploymentConfig=False):
     if application_name is None:
-        application_name = scenario_id(context)
+        application_name = substitute_scenario_id(context)
     application = GenericTestApp(application_name, context.namespace.name)
     if asDeploymentConfig:
         application.resource = "deploymentconfig"
@@ -67,6 +68,7 @@ def is_running_deployment_config(context):
 
 @step(u'The application env var "{name}" has value "{value}"')
 def check_env_var_value(context, name, value):
+    value = substitute_scenario_id(context, value)
     found = polling2.poll(lambda: context.application.get_env_var_value(name) == value, step=5, timeout=400)
     assert found, f'Env var "{name}" should contain value "{value}"'
 
@@ -80,13 +82,13 @@ def check_env_var_existence(context, name):
 @step(u'Content of file "{file_path}" in application pod is')
 def check_file_value(context, file_path):
     value = Template(context.text.strip()).substitute(NAMESPACE=context.namespace.name)
-    resource = Template(file_path).substitute(scenario_id=scenario_id(context))
+    resource = substitute_scenario_id(context, file_path)
     polling2.poll(lambda: context.application.get_file_value(resource) == value, step=5, timeout=400)
 
 
 @step(u'File "{file_path}" exists in application pod')
 def check_file_exists(context, file_path):
-    resource = Template(file_path).substitute(scenario_id=scenario_id(context))
+    resource = substitute_scenario_id(context, file_path)
     polling2.poll(lambda: context.application.get_file_value(resource) != "", step=5, timeout=400)
 
 
@@ -128,6 +130,6 @@ def check_env_var_count_set_on_container(context, envVar, app_name=None):
     openshift = Openshift()
     if app_name is None:
         app_name = context.application.name
-    app_name = Template(app_name).substitute(scenario_id=scenario_id(context))
+    app_name = substitute_scenario_id(context, app_name)
     env = openshift.get_deployment_env_info(app_name, context.namespace.name)
     assert str(env).count(envVar) == 1
