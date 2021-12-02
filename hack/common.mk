@@ -79,6 +79,9 @@ endif
 generate: controller-gen
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 
+gen-mocks: mockgen
+	PATH=$(shell pwd)/bin:$(shell printenv PATH) $(GO) generate $(V_FLAG) ./...
+
 # Download controller-gen locally if necessary
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
@@ -105,3 +108,7 @@ endef
 YQ = $(shell pwd)/bin/yq
 yq:
 	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@v4.9.8)
+
+MOCKGEN = $(shell pwd)/bin/mockgen
+mockgen:
+	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
