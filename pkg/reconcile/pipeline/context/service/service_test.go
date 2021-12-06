@@ -2,6 +2,8 @@ package service
 
 import (
 	"errors"
+	"strings"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -17,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/testing"
-	"strings"
 )
 
 var _ = Describe("Service", func() {
@@ -87,6 +88,23 @@ var _ = Describe("Service", func() {
 
 		res, err := service.CustomResourceDefinition()
 		Expect(err).NotTo(HaveOccurred())
+		Expect(res).To(BeNil())
+	})
+
+	It("should return nil when CrdReader returned error", func() {
+		client = fake.NewSimpleDynamicClient(runtime.NewScheme())
+		typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(&schema.GroupVersionResource{Group: "app", Resource: "deployments", Version: "v1"}, nil)
+		crdResource := &unstructured.Unstructured{}
+		crdResource.SetName("crdfoo1")
+		returnErorr := errors.New("some error")
+		builer := NewBuilder(typeLookup).WithClient(client).WithCrdReader(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
+			return crdResource, returnErorr
+		})
+		service, err := builer.Build(&unstructured.Unstructured{})
+		Expect(err).NotTo(HaveOccurred())
+
+		res, err := service.CustomResourceDefinition()
+		Expect(err).Should(MatchError(returnErorr))
 		Expect(res).To(BeNil())
 	})
 
