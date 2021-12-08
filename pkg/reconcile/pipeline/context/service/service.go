@@ -3,11 +3,14 @@ package service
 import (
 	"context"
 	e "errors"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
+
+	"reflect"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -16,7 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
-	"reflect"
 )
 
 var _ pipeline.Service = &service{}
@@ -183,6 +185,9 @@ func (s *service) CustomResourceDefinition() (pipeline.CRD, error) {
 		if errors.IsNotFound(err) {
 			s.crdLookup = true
 			return nil, nil
+		}
+		if err != nil {
+			return nil, err
 		}
 		s.crd = &customResourceDefinition{resource: u, client: s.client, ns: s.namespace, serviceGVR: s.groupVersionResource}
 		return s.crd, err
