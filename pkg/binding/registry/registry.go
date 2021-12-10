@@ -59,7 +59,8 @@ func New() Registry {
 			},
 			schema.GroupVersionKind{Group: "postgresql.k8s.enterprisedb.io", Version: "v1", Kind: "Cluster"}: {
 				"service.binding/type":     "postgresql",
-				"service.binding/host":     "path={.metadata.name}",
+				"service.binding/host":     "path={.status.writeService}",
+				"service.binding/provider": "enterprisedb",
 				"service.binding":          "path={.metadata.name}-{.spec.bootstrap.initdb.owner},objectType=Secret",
 				"service.binding/database": "path={.spec.bootstrap.initdb.database}",
 			},
