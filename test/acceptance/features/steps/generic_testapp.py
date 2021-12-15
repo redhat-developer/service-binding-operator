@@ -12,7 +12,7 @@ class GenericTestApp(App):
 
     deployment_name_pattern = "{name}"
 
-    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20211112"):
+    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20211209"):
         App.__init__(self, name, namespace, app_image, "8080")
 
     def get_env_var_value(self, name):
@@ -84,6 +84,11 @@ def check_file_value(context, file_path):
     value = Template(context.text.strip()).substitute(NAMESPACE=context.namespace.name)
     resource = substitute_scenario_id(context, file_path)
     polling2.poll(lambda: context.application.get_file_value(resource) == value, step=5, timeout=400)
+
+
+@step(u'Application can connect to the projected Postgres database')
+def postgres_can_connect(context):
+    check_file_exists(context, "/postgres-ready")
 
 
 @step(u'File "{file_path}" exists in application pod')

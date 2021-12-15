@@ -277,9 +277,13 @@ Feature: Support a number of existing operator-backed services out of the box
            """
            postgresql
            """
+    And Content of file "/bindings/$scenario_id/provider" in application pod is
+           """
+           enterprisedb
+           """
     And Content of file "/bindings/$scenario_id/host" in application pod is
            """
-           postgres
+           postgres-rw
            """
     And Content of file "/bindings/$scenario_id/username" in application pod is
            """
@@ -290,6 +294,7 @@ Feature: Support a number of existing operator-backed services out of the box
            app
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+    And Application can connect to the projected Postgres database
 
   Scenario: Bind test application to RabbitMQ instance provisioned by RabbitMq operator
     Given RabbitMQ operator is running
