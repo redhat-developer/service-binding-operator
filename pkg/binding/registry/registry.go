@@ -23,9 +23,11 @@ func New() Registry {
 			},
 			schema.GroupVersionKind{Group: "postgres-operator.crunchydata.com", Version: "v1beta1", Kind: "PostgresCluster"}: {
 				"service.binding/type":     "postgresql",
+				"service.binding/provider": "crunchydata",
 				"service.binding":          "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret",
 				"service.binding/database": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=dbname",
 				"service.binding/username": "path={.metadata.name}-pguser-{.metadata.name},objectType=Secret,sourceKey=user",
+				"service.binding/cert":     "path={.metadata.name}-cluster-cert,objectType=Secret",
 			},
 			schema.GroupVersionKind{Group: "pxc.percona.com", Version: "v1-8-0", Kind: "PerconaXtraDBCluster"}: {
 				"service.binding/type":     "mysql",

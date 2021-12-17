@@ -146,6 +146,10 @@ Feature: Support a number of existing operator-backed services out of the box
            """
            postgresql
            """
+    And Content of file "/bindings/$scenario_id/provider" in application pod is
+           """
+           crunchydata
+           """
     And Content of file "/bindings/$scenario_id/host" in application pod is
            """
            hippo-primary.$NAMESPACE.svc
@@ -159,6 +163,11 @@ Feature: Support a number of existing operator-backed services out of the box
            hippo
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+    And File "/bindings/$scenario_id/ca.crt" exists in application pod
+    And File "/bindings/$scenario_id/tls.crt" exists in application pod
+    And File "/bindings/$scenario_id/tls.key" exists in application pod
+    And Application can connect to the projected Postgres database
+
 
   @crdv1beta1
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
