@@ -1,0 +1,33 @@
+image:{quickstart-db}-spring-boot.png[]
+
+In this configuration, we leverage the {servicebinding-title} to collect the binding data from the PostgreSQL database and to project them into the Spring PetClinic application.
+
+include::partial$scenario-diagram-description-{quickstart-db}.adoc[]
+
+This scenario involves the following procedures:
+
+. xref:#creating-a-postgresql-database-service[Creating {quickstart-db-showname} service].
+. xref:#deploying-the-application[Deploying the Spring PetClinic application].
+. xref:#connecting-the-application-to-the-database[Connecting the application to the database service using {servicebinding-title}].
+
+[#creating-a-postgresql-database-service]
+include::partial$creating-db-{quickstart-db}.adoc[]
+
+Now, after the database is configured for the application, you can deploy the application and connect it to the database service.
+
+[#deploying-the-application]
+include::partial$deploying-application.adoc[]
+
+You can now use the {servicebinding-title} to connect the application to the database service.
+
+[#connecting-the-application-to-the-database]
+include::partial$connecting-petclinic-db.adoc[]
+
+== Conclusion
+
+In this scenario, we set up {quickstart-db-showname} and connected it 
+to the Spring PetClinic application using the {servicebinding-title} to collect the binding data and expose them to the application.
+
+== Next Steps
+
+include::partial$next-steps.adoc[]

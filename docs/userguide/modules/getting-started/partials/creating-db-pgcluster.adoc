@@ -1,0 +1,49 @@
+== Creating a PostgreSQL database instance
+
+This scenario uses a PostgreSQL database service, which you must install using the Operator Lifecycle Manager (OLM).
+
+[discrete]
+.Prerequisites
+* You have installed the https://operatorhub.io/operator/postgresql[Crunchy Postgres Operator
+from Crunchy Data available at OperatorHub.io] and the Operator is available in the `{quickstart-namespace}` namespace.
+
+The installation of the Crunchy PostgreSQL Operator does not create a database instance. To create a database service instance, you must create the following custom resource (CR), which will be processed by the Operator:
+
++++ <details><summary> +++
+`PostgresCluster` resource to run the actual database instance
++++ </summary><div> +++
+[source,yaml]
+----
+include::attachment$pgcluster-deployment.yaml[tag=db-deployment]
+----
++++ </div></details> +++
+
+[discrete]
+=== Procedure
+
+. To create a database instance, create a `PostgresCluster` CR by running the following command:
+[source,bash,subs="attributes,macros"]
++
+----
+kubectl apply -f link:{attachmentsdir}/pgcluster-deployment.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/pgcluster-deployment.yaml]] -n {quickstart-namespace}
+----
++
+. After the database is created, verify that all the pods in the `{quickstart-namespace}` namespace are running (it will take a few minutes):
++
+[source,bash,subs="attributes,macros"]
+----
+kubectl get pods -n {quickstart-namespace}
+----
++
+.Example output:
++
+[source,terminal]
+....
+NAME                               READY   STATUS      RESTARTS   AGE
+hippo-backup-jxv6--1-smqkz         0/1     Completed   0          42s
+hippo-instance1-ml48-0             3/3     Running     0          119s
+hippo-pgbouncer-56db454d6b-782hg   2/2     Running     0          118s
+hippo-repo-host-0                  1/1     Running     0          118s
+....
++
+The previous output verifies that the database service is created and configured.

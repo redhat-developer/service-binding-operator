@@ -1,0 +1,100 @@
+== Connecting the application to the database service with Service Binding Operator
+
+[NOTE]
+====
+In the absence of the {servicebinding-title}, as an administrator of the application,
+you must perform the following steps _manually_ to extract all the configuration details,
+create a `Secret` resource, and expose it to the application through a volume mount in Kubernetes:
+
+. Identify the required values for connecting the application to the database.
+. Locate the resources where the values are present.
+. Take the values from different resources and create a `Secret` resource.
+. Mount the `Secret` resource into the application.
+. Depending on the application requirement expose the values as environment variables or files.
+====
+
+To leverage the {servicebinding-title} as a way to easily and safely connect the sample application
+to the database service, you must create a `ServiceBinding` custom resource (CR)
+that triggers the {servicebinding-title} to project the binding data into the application:
+
++++ <details><summary> +++
+`ServiceBinding` resource to project the binding data 
++++ </summary><div> +++
+[source,yaml]
+----
+include::attachment$petclinic-{quickstart-db}-binding.yaml[tag=service-binding]
+----
++++ </div></details> +++
+
+The `.spec` field of the `ServiceBinding` CR has two sections:
+
+* The first section is a list of service resources (`.spec.services`). The services resources point to the database service resources. For more information on how the values are exposed from the service resources, see the xref:exposing-binding-data:intro-expose-binding.adoc[Exposing Binding Data] section.
+* The second section is the application (`.spec.application`). The application points to a `Deployment` or any resource that is compliant with PodSpec. 
+
+[discrete]
+=== Procedure
+
+. Create the `ServiceBinding` CR by running the following command in shell:
++
+[source,bash,subs="attributes,macros"]
+----
+kubectl apply -f link:{attachmentsdir}/petclinic-{quickstart-db}-binding.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/petclinic-{quickstart-db}-binding.yaml]] -n {quickstart-namespace}
+----
++
+. Verify that the request for service binding is successful by running the following command:
++
+[source,bash,subs="attributes,macros"]
+----
+kubectl get servicebindings -n {quickstart-namespace}
+----
++
+.Example output:
+[source,subs="attributes,macros"]
+----
+NAME                          READY   REASON              AGE
+spring-petclinic-{quickstart-db}   True    ApplicationsBound   28s
+----
++
+[NOTE]
+====
+By creating this `ServiceBinding` resource, we now have the binding data values from the
+database that is to be projected into the application container as
+files, by default. Alternatively, you can also choose to project the binding data values as environment
+variables if you prefer. If you check under the
+`/bindings/spring-petclinic-{quickstart-db}` directory, you can see all the values
+from the `Secret` resource projected there.
+
+In the case of the previous example, you can find `username` and `password` as the projected values.
+The values pointed out through the annotation are also projected, such as the `database`, `host`,
+and `port` values. For connectivity, the `type` value is projected as the binding data.
+
+The application looks for the `SERVICE_BINDING_ROOT` environment variable to
+find the location of the `/bindings` directory. The Spring Boot application
+used here uses the https://github.com/spring-cloud/spring-cloud-bindings[Spring Cloud Bindings] library
+and it looks for the `SERVICE_BINDING_ROOT` environment variable to get the projected
+binding data. For more information on how an application uses these values, 
+see the xref:using-projected-bindings:using-projected-bindings.adoc[Using Projected Bindings] section.
+====
++
+. Verify that the binding is successful by setting up the port forwarding
+from the application port to access the sample application from your local environment:
++
+[source,bash,subs="attributes"]
+----
+kubectl port-forward --address 0.0.0.0 svc/spring-petclinic 8080:80 -n {quickstart-namespace}
+----
++
+.Example output:
++
+[source,subs="attributes,macros"]
+----
+Forwarding from 0.0.0.0:8080 -> 8080
+----
++
+. Access http://localhost:8080.
++
+You can now remotely access web UI of the application and see
+that the application is now connected to the database service.
+
+For more information on creating requests for service binding,
+see the xref:creating-service-bindings:creating-service-binding.adoc[Creating Service Binding] section.

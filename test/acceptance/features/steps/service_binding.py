@@ -1,3 +1,4 @@
+import os
 import yaml
 import polling2
 import json
@@ -9,14 +10,23 @@ from util import substitute_scenario_id
 class ServiceBinding(object):
 
     openshift = Openshift()
+    yamlFile = ""
     yamlContent = ""
     crdName = ""
     name = ""
     namespace = ""
 
-    def __init__(self, yamlContent, namespace=None):
-        self.yamlContent = yamlContent
-        res = yaml.full_load(yamlContent)
+    def __init__(self, yamlContent, namespace=None, yamlFile=None):
+        print(f"yamlContent={yamlContent}, yamlFile={yamlFile}")
+        assert (yamlContent is not None) or (yamlFile is not None), "Both of the yamlContent or yamlFile can not be None!"
+        if yamlFile is not None:
+            f = open(yamlFile, "r")
+            assert f is not None, f"Failed to read file: {yamlFile}"
+            self.yamlContent = f.read()
+            f.close()
+        else:
+            self.yamlContent = yamlContent
+        res = yaml.full_load(self.yamlContent)
         self.name = res["metadata"]["name"]
         self.namespace = namespace
         apiVersion = res["apiVersion"]
@@ -48,8 +58,9 @@ class ServiceBinding(object):
 
 
 @step(u'Service Binding is applied')
+@step(u'Service Binding is applied from "{filePath}" file')
 @step(u'user {user} applies Service Binding')
-def sbr_is_applied(context, user=None):
+def sbr_is_applied(context, user=None, filePath=None):
     if "application" in context and "application_type" in context:
         application = context.application
         if context.application_type == "nodejs":
@@ -63,8 +74,11 @@ def sbr_is_applied(context, user=None):
         ns = context.namespace.name
     else:
         ns = None
-    resource = substitute_scenario_id(context, context.text)
-    binding = ServiceBinding(resource, ns)
+    if filePath is not None:
+        binding = ServiceBinding(None, namespace=ns, yamlFile=os.path.join(os.getcwd(), filePath))
+    else:
+        resource = substitute_scenario_id(context, context.text)
+        binding = ServiceBinding(resource, ns)
     assert binding.create(user) is not None, "Service binding not created"
     context.bindings[binding.name] = binding
     context.sb_secret = ""
@@ -113,8 +127,12 @@ def sbo_jq_is(context, jq_expression, sbr_name=None, json_value=""):
 
 
 @when(u'Service binding "{sb_name}" is deleted')
-def service_binding_is_deleted(context, sb_name):
-    resource = substitute_scenario_id(context, sb_name)
+@step(u'Service Binding is deleted')
+def service_binding_is_deleted(context, sb_name=None):
+    if sb_name is None:
+        resource = list(context.bindings.values())[0].name
+    else:
+        resource = substitute_scenario_id(context, sb_name)
     sb = context.bindings[resource]
     context.sb_secret = sb.get_secret_name()
     sb.delete()
@@ -142,3 +160,12 @@ def sbo_secret_name_has_been_set(context, sbr_name=None):
 def check_sb_condition_field_value(context, condition, field, field_value):
     sb = list(context.bindings.values())[0]
     sbo_jq_is(context, f'.status.conditions[] | select(.type=="{condition}").{field}', sb.name, field_value)
+
+
+@step(u'Service Binding secret contains "{secret_key}" key')
+def check_secret_key(context, secret_key):
+    sb = list(context.bindings.values())[0]
+    openshift = Openshift()
+    secret = polling2.poll(lambda: sb.get_secret_name(), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
+    json_path = f'{{.data.{secret_key}}}'
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath("secrets", secret, context.namespace.name, json_path) != "", step=5, timeout=120,)

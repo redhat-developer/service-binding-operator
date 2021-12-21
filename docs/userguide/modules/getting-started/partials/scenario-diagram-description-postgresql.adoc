@@ -1,0 +1,1 @@
+NOTE: The PostgreSQL database in this scenario is deployed using Kubernetes `Deployment` of the https://hub.docker.com/_/postgres[postgres] container image.

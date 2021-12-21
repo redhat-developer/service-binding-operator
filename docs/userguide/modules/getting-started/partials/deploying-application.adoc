@@ -1,0 +1,47 @@
+== Deploying the Spring PetClinic application
+
+To deploy the Spring PetClinic application on our
+Kubernetes cluster, use a deployment configuration consisting of the following resources:
+
++++ <details><summary> +++
+`Deployment` resource to run the actual application instance
++++ </summary><div> +++
+[source,yaml]
+----
+include::attachment$petclinic-deployment.yaml[tag=app-deployment]
+----
++++ </div></details> +++
+
++++ <details><summary> +++
+`Service` resource to provide a way to access the application UI
++++ </summary><div> +++
+[source,yaml]
+----
+include::attachment$petclinic-deployment.yaml[tag=app-service]
+----
++++ </div></details> +++
+
+[discrete]
+=== Procedure
+
+. Create the application resources by running the following command:
++
+[source,bash,subs="attributes,macros"]
+----
+kubectl apply -f link:{attachmentsdir}/petclinic-deployment.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/petclinic-deployment.yaml]] -n {quickstart-namespace}
+----
++
+. At this stage, the application is not yet connected to the database service. Hence the pod fails to start. To verify run the following command:
++
+[source,bash,subs="attributes"]
+----
+kubectl get pods -n {quickstart-namespace}
+----
++
+.Example output:
++
+[source]
+----
+NAME                                 READY  STATUS            RESTARTS    AGE
+spring-petclinic-5d47b7dbcd-7zd8v    0/1    CrashLoopBackOff  1 (7s ago)  28s
+----

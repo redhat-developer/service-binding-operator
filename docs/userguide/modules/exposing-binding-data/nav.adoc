@@ -1,4 +1,4 @@
-* Expose Binding Data
+* Exposing Binding Data
 ** xref:intro-expose-binding.adoc[]
 ** xref:provisioned-service.adoc[]
 ** xref:direct-secret-reference.adoc[]
