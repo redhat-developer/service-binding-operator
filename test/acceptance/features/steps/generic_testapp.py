@@ -6,13 +6,14 @@ from behave import step
 from openshift import Openshift
 from util import substitute_scenario_id
 from string import Template
+from polling2 import poll_decorator
 
 
 class GenericTestApp(App):
 
     deployment_name_pattern = "{name}"
 
-    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20211209"):
+    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20211221"):
         App.__init__(self, name, namespace, app_image, "8080")
 
     def get_env_var_value(self, name):
@@ -36,6 +37,13 @@ class GenericTestApp(App):
     def assert_file_not_exist(self, file_path):
         polling2.poll(lambda: requests.get(url=f"http://{self.route_url}{file_path}"),
                       check_success=lambda r: r.status_code == 404, step=5, timeout=400, ignore_exceptions=(requests.exceptions.ConnectionError,))
+
+    @poll_decorator(step=5, timeout=400, ignore_exceptions=(requests.exceptions.ConnectionError,))
+    def assert_file_exist(self, file_path):
+        resp = requests.get(url=f"http://{self.route_url}{file_path}")
+        if resp.status_code != 200:
+            print(f'file endpoint response: {resp.text} code: {resp.status_code}')
+        return resp.status_code == 200
 
     def set_label(self, label):
         self.openshift.set_label(self.name, label, self.namespace)
@@ -94,7 +102,7 @@ def postgres_can_connect(context):
 @step(u'File "{file_path}" exists in application pod')
 def check_file_exists(context, file_path):
     resource = substitute_scenario_id(context, file_path)
-    polling2.poll(lambda: context.application.get_file_value(resource) != "", step=5, timeout=400)
+    context.application.assert_file_exist(resource)
 
 
 @step(u'File "{file_path}" is unavailable in application pod')
