@@ -1,0 +1,17 @@
+# tag::service-binding[]
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: spring-petclinic
+spec:
+  services:
+    - group: apps
+      version: v1
+      kind: Deployment
+      name: spring-petclinic-postgresql
+  application:
+    name: spring-petclinic
+    group: apps
+    version: v1
+    resource: deployments
+# end::service-binding[]
