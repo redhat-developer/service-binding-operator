@@ -124,7 +124,7 @@ Enhancements and requests for new features are also tracked as [GitHub issues](h
 As is the case with bugs, review the existing feature requests before logging
 a new request.
 
-### Pull Requests for Code and Documentation
+## Pull Requests
 
 All submitted code and document changes are reviewed by the project
 maintainers through pull requests.
@@ -137,16 +137,108 @@ Include an informative title and full details on the code changed/added in
 the git commit message and pull request description.
 
 Before submitting the pull request, verify that all existing tests run
-cleanly by executing unit and acceptance tests with this make target:
+cleanly.
 
-```bash
-make test
-```
 Be sure to run yamllint on all yaml files included in pull requests. Ensure
 that all text in files in pull requests is compliant with:
 [.editorconfig](.editorconfig)
 
-### Pull Request Workflow
+Each Pull Request is expected to meet the following expectations around:
+
+* [Pull Request Description](#pull-request-description)
+* [Commits](#commits)
+* [Docs](#docs)
+* [Functionality](#functionality)
+* [Code](#code)
+* [Tests](#tests)
+
+## Pull request description
+
+ Include a link to the issue being addressed, but describe the context for the reviewer
+  * If there is no issue, consider whether there should be one:
+    * New functionality must be designed and approved, may require a TEP
+    * Bugs should be reported in detail
+  * If the template contains a checklist, it should be checked off
+  * Release notes filled in for user visible changes (bugs + features),
+    or removed if not applicable (refactoring, updating tests) (may be enforced
+    via the [release-note Prow plugin](https://github.com/tektoncd/plumbing/blob/main/prow/plugins.yaml))
+
+### Commits
+
+* Use the body to explain [what and why vs. how](https://chris.beams.io/posts/git-commit/#why-not-how).
+  Link to an issue whenever possible and [aim for 2 paragraphs](https://www.youtube.com/watch?v=PJjmw9TRB7s),
+  e.g.:
+  * What is the problem being solved?
+  * Why is this the best approach?
+  * What other approaches did you consider?
+  * What side effects will this approach have?
+  * What future work remains to be done?
+* Prefer one commit per PR. For multiple commits ensure each makes sense without the context of the others.
+* As much as possible try to stick to these general formatting guidelines:
+  * Separate subject line from message body.
+  * Write the subject line using the "imperative mood" ([see examples](https://chris.beams.io/posts/git-commit/#imperative)).
+  * Keep the subject to 50 characters or less.
+  * Try to keep the message wrapped at 72 characters.
+  * Check [these seven best practices](https://chris.beams.io/posts/git-commit/#seven-rules) for more detail.
+
+### Example Commit Message
+
+Here's a commit message example to work from that sticks to the spirit
+of the guidance outlined above:
+
+```
+Add example commit message to demo our guidance
+
+Prior to this message being included in our standards there was no
+canonical example of an "ideal" commit message for devs to quickly copy.
+
+Providing a decent example helps clarify the intended outcome of our
+commit message rules and offers a template for people to work from. We
+could alternatively link to good commit messages in our repos but that
+requires developers to follow more links rather than just showing
+what we want.
+```
+
+### Docs
+
+* Include AsciiDoc [doc updates](docs/userguide) for user visible features
+* We use [Antora framework](https://docs.antora.org/antora/latest/) for AsciiDoc rendering 
+* Spelling and grammar should be correct
+* Try to make formatting look as good as possible (use preview mode to check, i.e. render the content locally using `make site`)
+* Should explain thoroughly how the new feature works
+* If possible, in addition to code snippets, include a reference to an end to end example
+* Ensure that all links and references are valid
+
+### Functionality
+
+It should be safe to cut a release at any time, i.e. merging this PR should not
+put us into an unreleasable state
+
+## Code
+
+* Reviewers are expected to understand the changes well enough that they would feel confident
+  saying the understand what is changing and why:
+  * Read through all the code changes
+  * Read through linked issues and pull requests, including the discussions
+* Prefer small well factored packages with unit tests
+* [Go Code Review comments](https://github.com/golang/go/wiki/CodeReviewComments)
+  * All public functions and attributes have docstrings
+  * Don’t panic
+  * Error strings are not capitalized
+  * Handle all errors ([gracefully](https://dave.cheney.net/2016/04/27/dont-just-check-errors-handle-them-gracefully))
+    * When returning errors, add more context with `fmt.Errorf` and `%v`
+  * Use meaningful package names (avoid util, helper, lib)
+  * Prefer short variable names
+
+### Tests
+
+* New features (and often/whenever possible bug fixes) have one or all of:
+  * Unit tests
+  * End to end, i.e. acceptance tests
+* Unit tests:
+  * Coverage should remain the same or increase
+ 
+## Pull Request Workflow
 
 - Fork the repository and clone it your work directory
 - Create a topic branch from where you want to base your work
@@ -157,7 +249,6 @@ that all text in files in pull requests is compliant with:
     my-bug-fix upstream/master` (Here `upstream` is alias for the remote repo)
 - Make commits of logical units
 - Make sure your commit messages are in [the proper format][commit-message].
-  Also include any related GitHub issue references in the commit message.
 - Push your changes to a topic branch in your fork of the repository
 - Submit a pull request
 
@@ -167,7 +258,7 @@ Example:
 git remote add upstream https://github.com/kubepreset/kubepreset.git
 git fetch upstream
 git checkout -b my-bug-fix upstream/master
-git commit -a
+git commit -s
 git push origin my-bug-fix
 ```
 
