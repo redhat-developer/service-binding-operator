@@ -19,10 +19,10 @@ mv ${TMP_OCI_PATH}-unpacked/rootfs out/operatorhub-pr-files/service-binding-oper
 cat <<EOD
 Done.
 
-Now you can copy the content of out/operatorhub-pr-files/service-binding-operator
-into 'upstream-community-operators/service-binding-operator' folder of your local clone of
+Now you can submit the content of out/operatorhub-pr-files/service-binding-operator
+to https://github.com/k8s-operatorhub/community-operators/tree/main/operators/service-binding-operator
 
-  github.com/operator-framework/community-operators
-
-and submit a pull request.
+Please check the content of out/operatorhub-pr-files/service-binding-operator/VERSION/metadata/annotations.yaml
+and verify the channel where the operator will be published. Usually, the operator should be published to `stable`
+channel.
 EOD
