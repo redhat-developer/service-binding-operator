@@ -16,7 +16,7 @@ rm -rf out/operatorhub-pr-files
 mkdir out/operatorhub-pr-files/service-binding-operator -p
 mv ${TMP_OCI_PATH}-unpacked/rootfs out/operatorhub-pr-files/service-binding-operator/$1
 
-cat <<EOD
+cat <<'EOD'
 Done.
 
 Now you can submit the content of out/operatorhub-pr-files/service-binding-operator
