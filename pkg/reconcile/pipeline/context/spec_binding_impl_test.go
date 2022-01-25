@@ -8,6 +8,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	specapi "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
@@ -195,7 +196,9 @@ var _ = Describe("Spec API Context", func() {
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
 			typeLookup.EXPECT().ResourceForReferable(&ref).Return(gvr, nil)
 
-			client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+			schema := runtime.NewScheme()
+			schema.AddKnownTypeWithName(gvr.GroupVersion().WithKind("FooList"), &unstructured.UnstructuredList{})
+			client := fake.NewSimpleDynamicClient(schema)
 			expectedError := "Error listing foo"
 			client.PrependReactor("list", "foos",
 				func(action testing.Action) (handled bool, ret runtime.Object, err error) {
@@ -332,7 +335,7 @@ var _ = Describe("Spec API Context", func() {
 				crd.SetName(gvr.GroupResource().String())
 				objs = append(objs, crd)
 			}
-			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), objs...)
+			client := fake.NewSimpleDynamicClient(scheme(objs...), objs...)
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil)
 			typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(gvr, nil)
 
@@ -614,7 +617,10 @@ var _ = Describe("Spec API Context", func() {
 			}
 			sb.SetGroupVersionKind(specapi.GroupVersionKind)
 			u, _ := converter.ToUnstructured(&sb)
-			client = fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			s := runtime.NewScheme()
+			Expect(specapi.AddToScheme(s)).NotTo(HaveOccurred())
+			Expect(corev1.AddToScheme(s)).NotTo(HaveOccurred())
+			client = fake.NewSimpleDynamicClient(s, u)
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
@@ -874,3 +880,14 @@ var _ = Describe("Spec API Context", func() {
 
 	})
 })
+
+func scheme(objs ...runtime.Object) *runtime.Scheme {
+	schema := runtime.NewScheme()
+	Expect(olmv1alpha1.AddToScheme(schema)).NotTo(HaveOccurred())
+	for _, o := range objs {
+		gvk := o.GetObjectKind().GroupVersionKind()
+		gvk.Kind = gvk.Kind + "List"
+		schema.AddKnownTypeWithName(gvk, &unstructured.UnstructuredList{})
+	}
+	return schema
+}

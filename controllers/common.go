@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	ctx "context"
+	"context"
 	"flag"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 
@@ -75,9 +75,8 @@ func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
-func (r *BindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("serviceBinding", req.NamespacedName)
-	var ctx = ctx.Background()
 	serviceBinding := r.ReconcilingObject()
 
 	err := r.Get(ctx, req.NamespacedName, serviceBinding)
@@ -120,4 +119,5 @@ func (r *BindingReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 	return result, nil
 }
+
 // end::reconcile-func[]

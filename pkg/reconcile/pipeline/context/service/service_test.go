@@ -2,12 +2,14 @@ package service
 
 import (
 	"errors"
+	corev1 "k8s.io/api/core/v1"
 	"strings"
 
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +42,7 @@ var _ = Describe("Service", func() {
 
 	DescribeTable("CRD exist", func(version string, gr schema.GroupResource) {
 		crd := crd(version, gr)
-		client = fake.NewSimpleDynamicClient(runtime.NewScheme(), crd)
+		client = fake.NewSimpleDynamicClient(scheme(crd), crd)
 		gvr := gr.WithVersion(version)
 		typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(&gvr, nil)
 
@@ -63,7 +65,7 @@ var _ = Describe("Service", func() {
 		err := unstructured.SetNestedField(crd.Object, gvk.Kind, "spec", "names", "kind")
 		Expect(err).NotTo(HaveOccurred())
 
-		client = fake.NewSimpleDynamicClient(runtime.NewScheme(), crd)
+		client = fake.NewSimpleDynamicClient(scheme(crd), crd)
 		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
 
 		builer := NewBuilder(typeLookup).WithClient(client)
@@ -121,7 +123,10 @@ var _ = Describe("Service", func() {
 
 			var children []interface{}
 
-			client = fake.NewSimpleDynamicClient(runtime.NewScheme())
+			s := runtime.NewScheme()
+			Expect(corev1.AddToScheme(s)).NotTo(HaveOccurred())
+			s.AddKnownTypeWithName(schema.GroupVersionKind{Group: "route.openshift.io", Version: "v1", Kind: "RouteList"}, &unstructured.UnstructuredList{})
+			client = fake.NewSimpleDynamicClient(s)
 
 			for i := range bindableResourceGVRs {
 				gvr := bindableResourceGVRs[i]
@@ -167,7 +172,7 @@ var _ = Describe("Service", func() {
 			u.SetNamespace(ns)
 			u.SetUID(id)
 
-			client = fake.NewSimpleDynamicClient(runtime.NewScheme())
+			client = fake.NewSimpleDynamicClient(scheme())
 			expectedErr := errors.New("foo")
 
 			for _, gvr := range bindableResourceGVRs {
@@ -227,6 +232,18 @@ func crd(version string, gr schema.GroupResource) *unstructured.Unstructured {
 	return u
 }
 
+func scheme(objs ...runtime.Object) *runtime.Scheme {
+	schema := runtime.NewScheme()
+	Expect(olmv1alpha1.AddToScheme(schema)).NotTo(HaveOccurred())
+	Expect(corev1.AddToScheme(schema)).NotTo(HaveOccurred())
+	for _, o := range objs {
+		gvk := o.GetObjectKind().GroupVersionKind()
+		gvk.Kind = gvk.Kind + "List"
+		schema.AddKnownTypeWithName(gvk, &unstructured.UnstructuredList{})
+	}
+	return schema
+}
+
 var _ = Describe("Builder", func() {
 	var (
 		mockCtrl   *gomock.Controller
@@ -243,15 +260,15 @@ var _ = Describe("Builder", func() {
 	})
 
 	It("should use custom CRD reader set on builder", func() {
-		gvk := schema.GroupVersionKind{Kind: "Foo"}
-		gvr := schema.GroupVersionResource{Resource: "foo"}
+		gvk := schema.GroupVersionKind{Group: "g1", Version: "v1", Kind: "Foo"}
+		gvr := gvk.GroupVersion().WithResource("foo")
 		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
 		crdResource := &unstructured.Unstructured{}
 		crdResource.SetName("crdfoo1")
 		u := &unstructured.Unstructured{}
 		u.SetName("foo1")
 		u.SetGroupVersionKind(gvk)
-		client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+		client := fake.NewSimpleDynamicClient(scheme(u))
 		builder := NewBuilder(typeLookup).WithClient(client).WithCrdReader(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
 			return crdResource, nil
 		})
@@ -265,15 +282,15 @@ var _ = Describe("Builder", func() {
 	})
 
 	It("should use custom CRD reader set on build", func() {
-		gvk := schema.GroupVersionKind{Kind: "Foo"}
-		gvr := schema.GroupVersionResource{Resource: "foo"}
+		gvk := schema.GroupVersionKind{Group: "g", Version: "v1", Kind: "Foo"}
+		gvr := gvk.GroupVersion().WithResource("foo")
 		typeLookup.EXPECT().ResourceForKind(gvk).Return(&gvr, nil)
 		crdResource := &unstructured.Unstructured{}
 		crdResource.SetName("crdfoo1")
 		u := &unstructured.Unstructured{}
 		u.SetName("foo1")
 		u.SetGroupVersionKind(gvk)
-		client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+		client := fake.NewSimpleDynamicClient(scheme(u))
 		builder := NewBuilder(typeLookup).WithClient(client)
 
 		s, err := builder.Build(u, CrdReaderOption(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {

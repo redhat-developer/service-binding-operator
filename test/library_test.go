@@ -17,7 +17,7 @@ func TestAPIUsageAsLibrary(t *testing.T) {
 
 var _ = DescribeTable("Using service binding API as library", func(projectPath string) {
 
-	cmd := exec.Command("sh", "-c", "go mod download && go mod tidy && go build -o main")
+	cmd := exec.Command("sh", "-c", "go mod tidy && go build -mod=mod -o main")
 	absProjectPath, err := filepath.Abs(projectPath)
 	Expect(err).NotTo(HaveOccurred())
 

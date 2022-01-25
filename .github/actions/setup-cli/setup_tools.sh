@@ -9,13 +9,6 @@ if [ "$OPERATOR_SDK" == true ]; then
     mv -v operator-sdk $GITHUB_WORKSPACE/bin/
 fi
 
-if [ "$OPM" == true ]; then
-    echo "Downloading opm..."
-    curl -Lo opm https://github.com/operator-framework/operator-registry/releases/download/v${OPM_VERSION}/linux-amd64-opm
-    chmod +x opm
-    mv -v opm $GITHUB_WORKSPACE/bin/
-fi
-
 if [ "$KUBECTL" == true ] || [ "$START_MINIKUBE" == true ]; then
     echo "Downloading kubectl..."
     curl -Lo kubectl https://storage.googleapis.com/kubernetes-release/release/v${K8S_VERSION}/bin/linux/amd64/kubectl

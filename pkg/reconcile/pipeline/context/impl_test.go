@@ -217,7 +217,7 @@ var _ = Describe("Context", func() {
 			gvr := &schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
 			typeLookup.EXPECT().ResourceForReferable(&ref).Return(gvr, nil)
 
-			client := fake.NewSimpleDynamicClient(runtime.NewScheme())
+			client := fake.NewSimpleDynamicClientWithCustomListKinds(runtime.NewScheme(), map[schema.GroupVersionResource]string{*gvr: "FooList"})
 			expectedError := "Error listing foo"
 			client.PrependReactor("list", "foos",
 				func(action testing.Action) (handled bool, ret runtime.Object, err error) {
@@ -311,7 +311,7 @@ var _ = Describe("Context", func() {
 						objs = append(objs, crd)
 					}
 				}
-				client := fake.NewSimpleDynamicClient(runtime.NewScheme(), objs...)
+				client := fake.NewSimpleDynamicClient(scheme(objs...), objs...)
 				authClient := &fakeauth.FakeAuthorizationV1{}
 
 				typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil).Times(len(tc.serviceGVKs))
@@ -642,7 +642,10 @@ var _ = Describe("Context", func() {
 			}
 			sb.SetGroupVersionKind(bindingapi.GroupVersionKind)
 			u, _ := converter.ToUnstructured(&sb)
-			client = fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			s := runtime.NewScheme()
+			Expect(bindingapi.AddToScheme(s)).NotTo(HaveOccurred())
+			Expect(corev1.AddToScheme(s)).NotTo(HaveOccurred())
+			client = fake.NewSimpleDynamicClient(s, u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
 			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)

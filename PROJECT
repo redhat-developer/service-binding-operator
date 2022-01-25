@@ -4,21 +4,38 @@ multigroup: true
 projectName: service-binding-operator
 repo: github.com/redhat-developer/service-binding-operator
 resources:
-- crdVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: operators.coreos.com
   group: binding
   kind: ServiceBinding
+  path: github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1
   version: v1alpha1
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: operators.coreos.com
   group: spec
   kind: ServiceBinding
+  path: github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3
   version: v1alpha3
-  webhookVersion: v1
-- crdVersion: v1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+  domain: operators.coreos.com
   group: binding
   kind: BindableKinds
+  path: github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1
   version: v1alpha1
-version: 3-alpha
+version: "3"
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}

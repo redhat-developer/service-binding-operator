@@ -25,6 +25,9 @@ var _ = Describe("CRD", func() {
 
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
+		schema := runtime.NewScheme()
+		Expect(olmv1alpha1.AddToScheme(schema)).NotTo(HaveOccurred())
+		client = fake.NewSimpleDynamicClient(schema)
 	})
 
 	AfterEach(func() {
@@ -37,7 +40,7 @@ var _ = Describe("CRD", func() {
 			binding.ProvisionedServiceAnnotationKey: "true",
 		}
 		u.SetAnnotations(annotations)
-		crd := &customResourceDefinition{resource: u, client: fake.NewSimpleDynamicClient(runtime.NewScheme())}
+		crd := &customResourceDefinition{resource: u, client: client}
 
 		Expect(crd.IsBindable()).To(BeTrue())
 	})
@@ -49,7 +52,7 @@ var _ = Describe("CRD", func() {
 			"foo":  "bar",
 		}
 		u.SetAnnotations(annotations)
-		crd := &customResourceDefinition{resource: u, client: fake.NewSimpleDynamicClient(runtime.NewScheme())}
+		crd := &customResourceDefinition{resource: u, client: client}
 
 		Expect(crd.IsBindable()).To(BeTrue())
 	},
@@ -57,7 +60,7 @@ var _ = Describe("CRD", func() {
 		Entry("service.binding/foo", "service.binding/foo"),
 	)
 	It("should not be bindable if there are no annotations", func() {
-		crd := &customResourceDefinition{resource: &unstructured.Unstructured{}, client: fake.NewSimpleDynamicClient(runtime.NewScheme())}
+		crd := &customResourceDefinition{resource: &unstructured.Unstructured{}, client: client}
 		Expect(crd.IsBindable()).To(BeFalse())
 	})
 
@@ -67,7 +70,7 @@ var _ = Describe("CRD", func() {
 			"foo": "bar",
 		}
 		u.SetAnnotations(annotations)
-		crd := &customResourceDefinition{resource: u, client: fake.NewSimpleDynamicClient(runtime.NewScheme())}
+		crd := &customResourceDefinition{resource: u, client: client}
 		Expect(crd.IsBindable()).To(BeFalse())
 	})
 

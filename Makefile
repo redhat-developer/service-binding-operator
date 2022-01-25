@@ -20,9 +20,6 @@ CSV_PACKAGE_NAME ?= service-binding-operator
 
 BUNDLE_METADATA_OPTS ?= --channels=$(OPERATOR_CHANNELS) --default-channel=$(DEFAULT_OPERATOR_CHANNEL)
 
-# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
-CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false"
-
 CGO_ENABLED ?= 0
 GO111MODULE ?= on
 GOCACHE ?= "$(shell echo ${PWD})/out/gocache"
@@ -81,7 +78,7 @@ lint-go-code: $(GOLANGCI_LINT_BIN) fmt vet
 	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" $(OUTPUT_DIR)/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
-	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.18.0
+	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.44.0
 
 .PHONY: lint-python-code
 ## Check the python code
@@ -99,12 +96,9 @@ lint-conflicts:
 	$(Q)./hack/check-conflicts.sh
 
 .PHONY: test
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
 ## Run unit and integration tests
 test: generate fmt vet manifests
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.0/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -covermode=atomic -coverprofile cover.out
+	$(GO) test ./... -covermode=atomic -coverprofile cover.out
 
 .PHONY: build
 ## Build operator binary
@@ -145,7 +139,7 @@ undeploy:
 .PHONY: manifests
 ## Generate manifests e.g. CRD, RBAC etc.
 manifests: controller-gen
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 # Run go fmt against code
 fmt:
@@ -157,12 +151,13 @@ vet:
 
 .PHONY: bundle
 # Generate bundle manifests and metadata, then validate generated files.
-bundle: manifests kustomize yq push-image
+bundle: manifests kustomize yq kubectl-slice push-image
 #	operator-sdk generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) e -i '.metadata.annotations.containerImage="$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)"' bundle/manifests/service-binding-operator.clusterserviceversion.yaml
-	rm bundle/manifests/service-binding-operator_v1_serviceaccount.yaml
+	# this is needed because operator-sdk 1.16 filters out aggregated cluster role and the accompanied binding
+	$(KUSTOMIZE) build config/manifests | $(YQ) e 'select((.kind == "ClusterRole" and .metadata.name == "service-binding-controller-role") or (.kind == "ClusterRoleBinding" and .metadata.name == "service-binding-controller-rolebinding"))' - | $(KUBECTL_SLICE) -o bundle/manifests
 	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
 
 .PHONY: setup-venv
@@ -257,8 +252,8 @@ push-bundle-image: bundle-image registry-login
 	$(Q)operator-sdk bundle validate --select-optional name=operatorhub -b $(CONTAINER_RUNTIME) $(OPERATOR_BUNDLE_IMAGE_REF)
 
 .PHONY: index-image
-index-image: push-bundle-image
-	$(Q)opm index add -u $(CONTAINER_RUNTIME) -p $(CONTAINER_RUNTIME) --bundles $(OPERATOR_BUNDLE_IMAGE_REF) --tag $(OPERATOR_INDEX_IMAGE_REF)
+index-image: opm push-bundle-image
+	$(OPM) index add -u $(CONTAINER_RUNTIME) -p $(CONTAINER_RUNTIME) --bundles $(OPERATOR_BUNDLE_IMAGE_REF) --tag $(OPERATOR_INDEX_IMAGE_REF)
 
 .PHONY: push-index-image
 # push index image

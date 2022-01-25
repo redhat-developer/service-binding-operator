@@ -6,10 +6,6 @@ inputs:
     description: "Install Operator SDK"
     required: false
     default: false
-  opm:
-    description: "Install opm"
-    required: false
-    default: false
   kubectl:
     description: "Install kubectl"
     required: false
