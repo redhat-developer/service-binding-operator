@@ -8,11 +8,12 @@ class CrunchyPostgresOperator(Operator):
     def __init__(self, name="pgo"):
         self.name = name
         if ctx.cli == "oc":
-            self.operator_catalog_source_name = "community-operators"
+            self.operator_catalog_source_name = "certified-operators"
+            self.package_name = "crunchy-postgres-operator"
         else:
             self.operator_catalog_source_name = "operatorhubio-catalog"
+            self.package_name = "postgresql"
         self.operator_catalog_channel = "v5"
-        self.package_name = "postgresql"
 
 
 @given(u'Crunchy Data Postgres operator is running')
