@@ -267,8 +267,8 @@ release-operator: push-image push-bundle-image push-index-image
 .PHONY: prepare-operatorhub-pr
 ## prepare files for OperatorHub PR
 ## use this target when the operator needs to be released as upstream operator
-prepare-operatorhub-pr:
-	./hack/prepare-operatorhub-pr.sh $(VERSION) $(OPERATOR_BUNDLE_IMAGE_REF)
+prepare-operatorhub-pr: yq
+	PATH=$(PWD)/bin:$(PATH) ./hack/prepare-operatorhub-pr.sh $(VERSION) $(OPERATOR_BUNDLE_IMAGE_REF)
 
 .PHONY: deploy-from-index-image
 ## deploy the operator from a given index image

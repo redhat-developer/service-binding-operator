@@ -3,6 +3,7 @@
 # Required CLIs
 # - https://github.com/opencontainers/umoci
 # - https://github.com/containers/skopeo
+# - github.com/mikefarah/yq
 
 # Usage:
 # prepare-operatorhu-pr.sh <version> <bundle-image-ref>
@@ -15,6 +16,9 @@ umoci unpack --image $TMP_OCI_PATH:bundle --rootless ${TMP_OCI_PATH}-unpacked
 rm -rf out/operatorhub-pr-files
 mkdir out/operatorhub-pr-files/service-binding-operator -p
 mv ${TMP_OCI_PATH}-unpacked/rootfs out/operatorhub-pr-files/service-binding-operator/$1
+
+yq eval -i '.annotations."operators.operatorframework.io.bundle.channel.default.v1" |= "stable"' out/operatorhub-pr-files/service-binding-operator/$1/metadata/annotations.yaml
+yq eval -i '.annotations."operators.operatorframework.io.bundle.channels.v1" |= "stable"' out/operatorhub-pr-files/service-binding-operator/$1/metadata/annotations.yaml
 
 cat <<'EOD'
 Done.
