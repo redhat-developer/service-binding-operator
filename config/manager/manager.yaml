@@ -21,6 +21,8 @@ spec:
     metadata:
       labels:
         control-plane: service-binding-controller-manager
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
     spec:
       serviceAccountName: operator
       containers:

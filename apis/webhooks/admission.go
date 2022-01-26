@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/go-logr/logr"
 	"github.com/redhat-developer/service-binding-operator/apis"
-	"k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"net/http"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -18,8 +18,8 @@ func SetupWithManager(mgr ctrl.Manager, serviceAccountName string) {
 	})
 }
 
-// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=binding.operators.coreos.com,resources=servicebindings,verbs=create;update,versions=v1alpha1,name=mservicebinding.kb.io,admissionReviewVersions={v1beta1}
-// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=create;update,versions=v1alpha3,name=mspec-servicebinding.kb.io,admissionReviewVersions={v1beta1}
+// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=binding.operators.coreos.com,resources=servicebindings,verbs=create;update,versions=v1alpha1,name=mservicebinding.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=create;update,versions=v1alpha3,name=mspec-servicebinding.kb.io,admissionReviewVersions=v1
 
 type admissionHandler struct {
 	decoder            *admission.Decoder
@@ -38,7 +38,7 @@ func (ah *admissionHandler) Handle(ctx context.Context, req admission.Request) a
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-	if req.Operation == v1beta1.Create || req.Operation == v1beta1.Update {
+	if req.Operation == admissionv1.Create || req.Operation == admissionv1.Update {
 		apis.SetRequester(sb, req.UserInfo)
 	} else {
 		return admission.Allowed("ok")

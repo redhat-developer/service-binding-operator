@@ -1,5 +1,8 @@
-# It's necessary to set this because some environments don't link sh -> bash.
-SHELL := /bin/bash
+SHELL = /usr/bin/env bash -o pipefail
+SHELLFLAGS = -ec
+
+OS = $(shell go env GOOS)
+ARCH = $(shell go env GOARCH)
 
 ## Print help message for all Makefile targets
 ## Run `make` or `make help` to see the help
@@ -85,7 +88,7 @@ gen-mocks: mockgen
 # Download controller-gen locally if necessary
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
 
 # Download kustomize locally if necessary
 KUSTOMIZE = $(shell pwd)/bin/kustomize
@@ -109,6 +112,28 @@ YQ = $(shell pwd)/bin/yq
 yq:
 	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@v4.9.8)
 
+KUBECTL_SLICE = $(shell pwd)/bin/kubectl-slice
+kubectl-slice:
+	$(call go-get-tool,$(KUBECTL_SLICE),github.com/patrickdappollonio/kubectl-slice@v1.1.0)
+
 MOCKGEN = $(shell pwd)/bin/mockgen
 mockgen:
 	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
+
+.PHONY: opm
+OPM =  $(shell pwd)/bin/opm
+opm:
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.19.1/$(OS)-$(ARCH)-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else
+OPM = $(shell which opm)
+endif
+endif
+
+all: build

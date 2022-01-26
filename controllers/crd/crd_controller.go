@@ -17,7 +17,7 @@ limitations under the License.
 package binding
 
 import (
-	ctx "context"
+	"context"
 	"fmt"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"sync"
@@ -55,7 +55,7 @@ type CrdReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-func (r *CrdReconciler) Reconcile(req ctrl.Request) (reconcileResult ctrl.Result, reconcileError error) {
+func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconcileResult ctrl.Result, reconcileError error) {
 	defer func() {
 		if err := recover(); err != nil {
 			reconcileResult = ctrl.Result{}
@@ -63,7 +63,6 @@ func (r *CrdReconciler) Reconcile(req ctrl.Request) (reconcileResult ctrl.Result
 		}
 	}()
 	log := r.Log.WithValues("CRD", req.NamespacedName)
-	ctx := ctx.Background()
 	crd := &v1apiextensions.CustomResourceDefinition{}
 	err := r.Get(ctx, req.NamespacedName, crd)
 	if err != nil {
