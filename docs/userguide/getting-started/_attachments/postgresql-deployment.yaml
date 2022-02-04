@@ -1,0 +1,77 @@
+---
+# tag::db-secret[]
+apiVersion: v1
+kind: Secret
+metadata:
+  name: spring-petclinic-postgresql
+stringData:
+  database: spring-petclinic-postgresql-db
+  username: spring-petclinic-postgresql-user
+  password: spring-petclinic-postgresql-passwd
+# end::db-secret[]
+---
+# tag::db-deployment[]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-postgresql
+  labels:
+    app: spring-petclinic-postgresql
+  annotations:
+    # tag::db-annotations[]
+    service.binding/type: "postgresql"
+    service.binding/host: "path={.metadata.name}.{.metadata.namespace}"
+    service.binding/port: "path={.spec.template.spec.containers[0].ports[0].containerPort}"
+    service.binding: "path={.spec.template.spec.volumes[0].secret.secretName},objectType=Secret"
+    # end::db-annotations[]
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-petclinic-postgresql
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:13
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB_FILE
+              value: /secrets/database
+            - name: POSTGRES_PASSWORD_FILE
+              value: /secrets/password
+            - name: POSTGRES_USER_FILE
+              value: /secrets/username
+            - name: PGDATA
+              value: /tmp/data
+          volumeMounts:
+            - name: spring-petclinic-postgresql
+              mountPath: "/secrets"
+              readOnly: true
+          ports:
+            - name: postgresql
+              containerPort: 5432
+      volumes:
+        - name: spring-petclinic-postgresql
+          secret:
+            secretName: spring-petclinic-postgresql
+# end::db-deployment[]
+---
+# tag::db-service[]
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: spring-petclinic-postgresql
+  name: spring-petclinic-postgresql
+spec:
+  ports:
+    - port: 5432
+      protocol: TCP
+      targetPort: 5432
+  selector:
+    app: spring-petclinic-postgresql
+# end::db-service[]
