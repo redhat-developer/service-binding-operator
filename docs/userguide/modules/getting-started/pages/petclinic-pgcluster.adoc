@@ -1,0 +1,6 @@
+= Connecting PetClinic application to an Operator-backed PostgreSQL database
+:quickstart-namespace: my-petclinic
+:quickstart-db: pgcluster
+:quickstart-db-showname: an Operator-backed PostgreSQL database
+
+include::partial$petclinic-db.adoc[]

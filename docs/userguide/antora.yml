@@ -4,6 +4,7 @@ asciidoc:
     crd: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions[CRD]
     secret-generation-extension: https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension]
     experimental: true
+    servicebinding-title: Service Binding Operator
 name: userguide
 version: master
 title: User Guide

@@ -1,0 +1,28 @@
+== Introduction
+The goal of this quick start guide is to:
+
+* Provide an overview of the {servicebinding-title}.
+* Provide a list of prerequisites to be configured on your Kubernetes cluster.
+* Create a PostgreSQL database service.
+* Deploy the Spring Petclinic application.
+* Connect the application to the database service using {servicebinding-title}.
+
+For this quick start, we are using a PostgreSQL database and a simple application using the
+https://github.com/spring-projects/spring-petclinic[Spring PetClinic Sample Application]
+enriched by https://github.com/spring-cloud/spring-cloud-bindings[Spring Cloud Bindings]
+library. This will allow you to understand how you can use the {servicebinding-title} to
+simplify the connection between a service, like database and the application.
+
+In this configuration, we leverage the {servicebinding-title}, to
+collect the binding data from the PostgreSQL database and project them
+into the sample application.
+
+Before you start, refer to the
+xref:#prerequisites[] section to make sure you have all the
+needed components configured on your K8s cluster.
+
+The quick start consists of three main steps:
+
+. Creating a PostgreSQL database service.
+. Deploying the Spring Petclinic application.
+. Connecting the application to the database service using {servicebinding-title}.

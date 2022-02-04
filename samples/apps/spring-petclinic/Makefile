@@ -1,7 +1,7 @@
 PETCLINIC_REPO ?= quay.io/service-binding/spring-petclinic
 PETCLINIC_APP_IMAGE ?= $(PETCLINIC_REPO):latest
 
-NAMESPACE ?= my-postgresql
+NAMESPACE ?= my-petclinic
 
 MULTIARCH_PLATFORMS ?= linux/amd64,linux/arm64,linux/s390x,linux/ppc64le
 
@@ -17,17 +17,13 @@ else ifeq ($(KUBERNETES_RUNTIME), minikube)
 	kubectl config set-context --current --namespace=$(NAMESPACE)
 endif
 
-.PHONY: deploy-database
-deploy-database:
-	kubectl apply -f db-deployment.yaml -n $(NAMESPACE)
+.PHONY: deploy-postgresql
+deploy-postgresql:
+	kubectl apply -f postgresql-deployment.yaml -n $(NAMESPACE)
 
-.PHONY: annotate-database
-annotate-database:
-	kubectl annotate --overwrite=true deployment -n ${NAMESPACE} spring-petclinic-postgresql \
-	service.binding/type="postgresql" \
-    service.binding/host="path={.metadata.name}.{.metadata.namespace}" \
-    service.binding/port="path={.spec.template.spec.containers[0].ports[0].containerPort}" \
-    service.binding="path={.spec.template.spec.volumes[0].secret.secretName},objectType=Secret"
+.PHONY: deploy-pgcluster
+deploy-pgcluster:
+	kubectl apply -f pgcluster-deployment.yaml -n $(NAMESPACE)
 
 .PHONY: build-app
 build-app:
@@ -47,14 +43,21 @@ push-app-multiarch:
 
 .PHONY: deploy-app
 deploy-app:
-	PETCLINIC_APP_IMAGE=$(PETCLINIC_APP_IMAGE) \
-	NAMESPACE=$(NAMESPACE) \
-	$(KUBERNETES_RUNTIME)/deploy-app.sh
+	sed -e 's,quay.io/service-binding/spring-petclinic:latest,'$(PETCLINIC_APP_IMAGE)',g' petclinic-deployment.yaml | \
+	kubectl apply -f - -n $(NAMESPACE) --wait
 
-.PHONY: bind
-bind:
-	kubectl apply -f service-binding.yaml -n $(NAMESPACE)
+.PHONY: bind-postgresql
+bind-postgresql:
+	kubectl apply -f petclinic-postgresql-binding.yaml -n $(NAMESPACE)
 
-.PHONY: unbind
-unbind:
-	kubectl delete -f service-binding.yaml -n $(NAMESPACE)
+.PHONY: bind-pgcluster
+bind-pgcluster:
+	kubectl apply -f petclinic-pgcluster-binding.yaml -n $(NAMESPACE)
+
+.PHONY: unbind-postgresql
+unbind-postgresql:
+	kubectl delete -f petclinic-postgresql-binding.yaml -n $(NAMESPACE)
+
+.PHONY: unbind-pgcluster
+unbind-pgcluster:
+	kubectl delete -f petclinic-pgcluster-binding.yaml -n $(NAMESPACE)

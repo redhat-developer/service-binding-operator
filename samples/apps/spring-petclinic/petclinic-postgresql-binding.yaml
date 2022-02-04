@@ -2,7 +2,8 @@
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
-  name: spring-petclinic
+  name:
+    spring-petclinic-postgresql
 spec:
   services:
     - group: apps

@@ -1,0 +1,6 @@
+= Connecting PetClinic application to PostgreSQL database
+:quickstart-namespace: my-petclinic
+:quickstart-db: postgresql
+:quickstart-db-showname: a PostgreSQL database
+
+include::partial$petclinic-db.adoc[]
