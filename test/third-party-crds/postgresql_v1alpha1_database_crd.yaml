@@ -24,26 +24,28 @@ spec:
     shortNames:
       - db
   scope: Namespaced
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this
-            representation of an object. Servers should convert recognized
-            schemas to the latest internal value, and may reject unrecognized
-            values.'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource
-            this object represents. Servers may infer this from the endpoint the
-            client submits requests to.'
-          type: string
-        metadata:
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
           type: object
-        spec:
-          type: object
-        status:
-          type: object
-  version: v1alpha1
+          properties:
+            apiVersion:
+              description: 'APIVersion defines the versioned schema of this
+                representation of an object. Servers should convert recognized
+                schemas to the latest internal value, and may reject unrecognized
+                values.'
+              type: string
+            kind:
+              description: 'Kind is a string value representing the REST resource
+                this object represents. Servers may infer this from the endpoint the
+                client submits requests to.'
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+            status:
+              type: object
