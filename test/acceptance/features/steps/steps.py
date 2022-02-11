@@ -12,14 +12,10 @@ import yaml
 import json
 
 from behave import given, register_type, then, when, step
-from dboperator import DbOperator
-from etcdcluster import EtcdCluster
-from etcdoperator import EtcdOperator
 from knative_serving import KnativeServing
 from namespace import Namespace
 from nodejs_application import NodeJSApp
 from openshift import Openshift
-from postgres_db import PostgresDB
 from quarkus_application import QuarkusApplication
 from serverless_operator import ServerlessOperator
 from servicebindingoperator import Servicebindingoperator
@@ -95,18 +91,6 @@ def sbo_is_running(context):
 
 
 # STEP
-@given(u'PostgreSQL DB operator is installed')
-def given_db_operator_is_installed(context):
-    db_operator = DbOperator()
-    if not db_operator.is_running():
-        print("DB operator is not installed, installing...")
-        assert db_operator.install_catalog_source(), "Unable to install DB catalog source"
-        assert db_operator.install_operator_subscription(), "Unable to install DB operator subscription"
-        assert db_operator.is_running(wait=True), "Unable to launch DB operator"
-    print("PostgresSQL DB operator is running!!!")
-
-
-# STEP
 nodejs_app_imported_from_image_is_running_step = u'Nodejs application "{application_name}" imported from "{application_image}" image is running'
 
 
@@ -157,24 +141,6 @@ def imported_nodejs_app_is_not_running(context, application_name):
     namespace = context.namespace
     application = NodeJSApp(application_name, namespace.name)
     assert application.is_running() is False, "Application is running already"
-
-
-# STEP
-db_instance_is_running_step = u'DB "{db_name}" is running'
-
-
-@given(db_instance_is_running_step)
-@when(db_instance_is_running_step)
-@given(u'DB "{db_name}" is running in "{namespace}" namespace')
-def db_instance_is_running(context, db_name, namespace=None):
-    if namespace is None:
-        namespace = context.namespace.name
-
-    db = PostgresDB(db_name, namespace)
-    if not db.is_running():
-        assert db.create(), f"Unable to create DB '{db_name}'"
-        assert db.is_running(wait=True), f"Unable to launch DB '{db_name}'"
-    print(f"DB {db_name} is running!!!")
 
 
 # STEP
@@ -355,34 +321,6 @@ def verify_injected_secretRef(context, cr_name, crd_name, json_path):
     secret = polling2.poll(lambda: sb.get_secret_name(), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
     polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path) == secret,
                   step=5, timeout=400)
-
-
-@given(u'Etcd operator running')
-def etcd_operator_is_running(context):
-    """
-    Ensures that the etcd operator is up and running
-    """
-    openshift = Openshift()
-    openshift.create_catalog_source("operatorhubio-catalog", "quay.io/operatorhubio/catalog:latest")
-    etcd_operator = EtcdOperator()
-    if not etcd_operator.is_running():
-        print("Etcd operator is not installed, installing...")
-        assert etcd_operator.install_operator_subscription() is True, "etcd operator subscription is not installed"
-        assert etcd_operator.is_running(wait=True) is True, "etcd operator not installed"
-    context.etcd_operator = etcd_operator
-
-
-@given(u'Etcd cluster "{etcd_name}" is running')
-def etc_cluster_is_running(context, etcd_name):
-    """
-    Checks if the etcd cluster is created
-    """
-    namespace = context.namespace
-    etcd_cluster = EtcdCluster(etcd_name, namespace.name)
-    if not etcd_cluster.is_present():
-        print("etcd cluster not present, creating etcd cluster")
-        assert etcd_cluster.create() is True, "etcd cluster is not created"
-        assert etcd_cluster.is_present() is True, "etcd cluster is not present"
 
 
 @then(u'Error message is thrown')
