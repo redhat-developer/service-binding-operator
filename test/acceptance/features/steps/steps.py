@@ -12,7 +12,6 @@ import yaml
 import json
 
 from behave import given, register_type, then, when, step
-from dboperator import DbOperator
 from knative_serving import KnativeServing
 from namespace import Namespace
 from nodejs_application import NodeJSApp
@@ -89,18 +88,6 @@ def sbo_is_running(context):
     else:
         assert context.namespace is not None, "Namespace is not set in context"
         sbo_is_running_in_namespace(context, context.namespace.name)
-
-
-# STEP
-@given(u'PostgreSQL DB operator is installed')
-def given_db_operator_is_installed(context):
-    db_operator = DbOperator()
-    if not db_operator.is_running():
-        print("DB operator is not installed, installing...")
-        assert db_operator.install_catalog_source(), "Unable to install DB catalog source"
-        assert db_operator.install_operator_subscription(), "Unable to install DB operator subscription"
-        assert db_operator.is_running(wait=True), "Unable to launch DB operator"
-    print("PostgresSQL DB operator is running!!!")
 
 
 # STEP
