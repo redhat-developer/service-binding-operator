@@ -169,18 +169,17 @@ Feature: Support a number of existing operator-backed services out of the box
     And Application can connect to the projected Postgres database
 
 
-  @crdv1beta1
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
     Given Percona Mysql operator is running
     * Generic test application is running
     * The Custom Resource is present
           """
-          apiVersion: pxc.percona.com/v1-8-0
+          apiVersion: pxc.percona.com/v1-10-0
           kind: PerconaXtraDBCluster
           metadata:
             name: minimal-cluster
           spec:
-            crVersion: 1.8.0
+            crVersion: 1.10.0
             secretsName: minimal-cluster-secrets
             allowUnsafeConfigurations: true
             upgradeOptions:
@@ -226,9 +225,17 @@ Feature: Support a number of existing operator-backed services out of the box
            """
            mysql
            """
+    And Content of file "/bindings/$scenario_id/database" in application pod is
+           """
+           mysql
+           """|
     And Content of file "/bindings/$scenario_id/host" in application pod is
            """
-           minimal-cluster-haproxy.$NAMESPACE
+           minimal-cluster-haproxy.$NAMESPACE.svc
+           """
+    And Content of file "/bindings/$scenario_id/port" in application pod is
+           """
+           3306
            """
     And Content of file "/bindings/$scenario_id/username" in application pod is
            """
