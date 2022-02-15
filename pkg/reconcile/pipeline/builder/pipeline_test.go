@@ -1,9 +1,10 @@
 package builder_test
 
 import (
+	"errors"
 	"fmt"
+
 	"github.com/golang/mock/gomock"
-	"github.com/pkg/errors"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder"

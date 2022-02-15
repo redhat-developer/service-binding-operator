@@ -5,8 +5,6 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-
-	"github.com/pkg/errors"
 )
 
 type UnstructuredResourceReader func(namespace string, name string) (*unstructured.Unstructured, error)
@@ -92,7 +90,7 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 
 	mod, err := newModel(m.value)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not create binding model for annotation key %s and value %s", m.name, m.value)
+		return nil, fmt.Errorf("could not create binding model for annotation key %s and value %s: %w", m.name, m.value, err)
 	}
 
 	switch {
