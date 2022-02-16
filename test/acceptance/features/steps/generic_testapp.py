@@ -13,7 +13,7 @@ class GenericTestApp(App):
 
     deployment_name_pattern = "{name}"
 
-    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20211221"):
+    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20220216"):
         App.__init__(self, name, namespace, app_image, "8080")
 
     def get_env_var_value(self, name):
@@ -97,6 +97,11 @@ def check_file_value(context, file_path):
 @step(u'Application can connect to the projected Postgres database')
 def postgres_can_connect(context):
     check_file_exists(context, "/postgres-ready")
+
+
+@step(u'Application can connect to the projected MySQL database')
+def mysql_can_connect(context):
+    check_file_exists(context, "/mysql-ready")
 
 
 @step(u'File "{file_path}" exists in application pod')
