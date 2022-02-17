@@ -4,6 +4,7 @@ import base64
 import json
 from environment import ctx
 from command import Command
+from behave import step
 
 
 class Openshift(object):
@@ -509,3 +510,14 @@ spec:
         output, exit_status = self.cmd.run(f'{ctx.cli} {cmd} -n {namespace}')
         assert exit_status == 0, "Exit should be zero"
         return output
+
+    def check_for_condition(self, resource, name, namespace, condition, value, timeout=0):
+        output, exit_code = self.cmd.run(f'{ctx.cli} wait --for=condition={condition}={value} {resource}/{name} --timeout={timeout}s -n {namespace}')
+        assert exit_code == 0, f"Condition {condition}={value} for {resource}/{name} in {namespace} namespace was not met\n: {output}"
+
+
+@step(u"Condition {condition}={value} for {resource}/{name} resource is met")
+@step(u"Condition {condition}={value} for {resource}/{name} resource is met in less then {timeout} seconds")
+def condition_is_met_for_resource(context, condition, value, resource, name, timeout=600):
+    openshift = Openshift()
+    openshift.check_for_condition(resource, name, context.namespace.name, condition, value, timeout=timeout)

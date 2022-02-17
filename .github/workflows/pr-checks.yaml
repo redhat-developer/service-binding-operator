@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=~@supported-operator"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=~@supported-operator --tags=~@disable-github-actions"
       TEST_RUN: Acceptance_tests_Kubernetes_with_OLM
 
     steps:
@@ -138,7 +138,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=@supported-operator"
+      EXTRA_BEHAVE_ARGS: "--tags=@supported-operator --tags=~@disable-github-actions"
       TEST_RUN: Supported_Operators_Acceptance_tests_Kubernetes_with_OLM
 
     steps:
@@ -209,7 +209,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm --tags=~@disable-github-actions"
       TEST_RUN: Acceptance_tests_Kubernetes_without_OLM
       UMOCI_VERSION: "0.4.5"
 
