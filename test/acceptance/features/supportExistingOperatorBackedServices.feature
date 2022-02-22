@@ -500,3 +500,80 @@ Feature: Support a number of existing operator-backed services out of the box
             """
             mongo-cluster-rs0.$NAMESPACE.svc.cluster.local
             """
+
+  Scenario: Bind test application to MongoDB provisioned by MongoDB Community operator
+    Given MongoDB Community operator is running
+    * Generic test application is running
+    * The Custom Resource is present
+          """
+          ---
+          apiVersion: mongodbcommunity.mongodb.com/v1
+          kind: MongoDBCommunity
+          metadata:
+            name: example-mongodb
+          spec:
+            members: 1
+            type: ReplicaSet
+            version: "4.2.6"
+            security:
+              authentication:
+                modes: ["SCRAM"]
+            users:
+              - name: my-user
+                db: admin
+                passwordSecretRef: # a reference to the secret that will be used to generate the user's password
+                  name: my-user-password
+                roles:
+                  - name: clusterAdmin
+                    db: admin
+                  - name: userAdminAnyDatabase
+                    db: admin
+                scramCredentialsSecretName: my-scram
+            additionalMongodConfig:
+              storage.wiredTiger.engineConfig.journalCompressor: zlib
+
+          # the user credentials will be generated from this secret
+          # once the credentials are generated, this secret is no longer required
+          ---
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: my-user-password
+          type: Opaque
+          stringData:
+            password: secret123
+          """
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: mongodbcommunity.mongodb.com
+                version: v1
+                kind: MongoDBCommunity 
+                name: example-mongodb
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then Service Binding is ready
+    And Kind MongoDBCommunity with apiVersion mongodbcommunity.mongodb.com/v1 is listed in bindable kinds
+    And Content of file "/bindings/$scenario_id/type" in application pod is
+           """
+           mongodb
+           """
+    And Content of file "/bindings/$scenario_id/username" in application pod is
+           """
+           my-user
+           """
+    And File "/bindings/$scenario_id/password" exists in application pod
+    And Content of file "/bindings/$scenario_id/connectionString" in application pod is
+            """
+            mongodb+srv://my-user:secret123@example-mongodb-svc.$NAMESPACE.svc.cluster.local/admin?ssl=false
+            """
+

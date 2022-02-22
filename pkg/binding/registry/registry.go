@@ -85,6 +85,14 @@ func New() Registry {
 			schema.GroupVersionKind{Group: "rabbitmq.com", Version: "v1beta1", Kind: "RabbitmqCluster"}: {
 				"servicebinding.io/provisioned-service": "true",
 			},
+			schema.GroupVersionKind{Group: "mongodbcommunity.mongodb.com", Version: "v1", Kind: "MongoDBCommunity"}: {
+				"service.binding/type":             "mongodb",
+				"service.binding/provider":         "community",
+				"service.binding":                  "path={.metadata.name}-{.spec.users[0].db}-{.spec.users[0].name},objectType=Secret",
+				"service.binding/connectionString": "path={.metadata.name}-{.spec.users[0].db}-{.spec.users[0].name},objectType=Secret,sourceKey=connectionString.standardSrv",
+				"service.binding/username":         "path={.metadata.name}-{.spec.users[0].db}-{.spec.users[0].name},objectType=Secret,sourceKey=username",
+				"service.binding/password":         "path={.metadata.name}-{.spec.users[0].db}-{.spec.users[0].name},objectType=Secret,sourceKey=password",
+			},
 		},
 	}
 }
