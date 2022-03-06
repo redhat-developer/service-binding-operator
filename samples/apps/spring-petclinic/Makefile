@@ -17,6 +17,10 @@ else ifeq ($(KUBERNETES_RUNTIME), minikube)
 	kubectl config set-context --current --namespace=$(NAMESPACE)
 endif
 
+.PHONY: deploy-keycloak
+deploy-keycloak:
+	kubectl apply -f keycloak-deployment.yaml -n $(NAMESPACE)
+
 .PHONY: deploy-postgresql
 deploy-postgresql:
 	kubectl apply -f postgresql-deployment.yaml -n $(NAMESPACE)
@@ -46,6 +50,10 @@ deploy-app:
 	sed -e 's,quay.io/service-binding/spring-petclinic:latest,'$(PETCLINIC_APP_IMAGE)',g' petclinic-deployment.yaml | \
 	kubectl apply -f - -n $(NAMESPACE) --wait
 
+.PHONY: bind-keycloak
+bind-keycloak:
+	kubectl apply -f petclinic-keycloak-binding.yaml -n $(NAMESPACE)
+
 .PHONY: bind-postgresql
 bind-postgresql:
 	kubectl apply -f petclinic-postgresql-binding.yaml -n $(NAMESPACE)
@@ -53,6 +61,10 @@ bind-postgresql:
 .PHONY: bind-pgcluster
 bind-pgcluster:
 	kubectl apply -f petclinic-pgcluster-binding.yaml -n $(NAMESPACE)
+
+.PHONY: unbind-keycloak
+unbind-keycloak:
+	kubectl delete -f petclinic-keycloak-binding.yaml -n $(NAMESPACE)
 
 .PHONY: unbind-postgresql
 unbind-postgresql:

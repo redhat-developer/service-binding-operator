@@ -17,7 +17,7 @@ WORKDIR ${PETCLINIC_DIR}
 RUN mvn package -DskipTests -Dmaven.artifact.threads=4
 
 # ---
-FROM registry.redhat.io/ubi8/openjdk-11-runtime as runtime
+FROM registry.access.redhat.com/ubi8/openjdk-11-runtime as runtime
 
 COPY --from=builder /petclinic/target/spring-petclinic-*.jar /tmp/petclinic.jar
 
