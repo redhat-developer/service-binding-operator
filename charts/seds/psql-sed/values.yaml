@@ -1,0 +1,7 @@
+postgresql:
+  sed:
+    hostname: myhostname
+    port: 5432
+    username: myuser
+    password: mypassword
+    databasename: mydatabase

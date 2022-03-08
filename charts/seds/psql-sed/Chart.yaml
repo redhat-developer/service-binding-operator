@@ -1,0 +1,19 @@
+apiVersion: v2
+name: psql-sed
+description: A Helm chart for PostgreSQL Service Endpoint Definition (SED)
+
+
+type: application
+
+version: 1.0.0
+
+
+appVersion: "1.0.0"
+
+kubeVersion: ">=1.20.0"
+
+annotations:
+  charts.openshift.io/provider: RedHat
+  charts.openshift.io/name: PostgreSQL Service Endpoint Definition (SED)
+  charts.openshift.io/supportURL: https://github.com/dperaza4dustbit/helm-chart
+  charts.openshift.io/archs: x86_64
