@@ -6,6 +6,8 @@ Feature: Discover bindable resources in a cluster
     Background:
         Given Namespace [TEST_NAMESPACE] is used
         And Service Binding Operator is running
+
+    @external-feedback
     Scenario: Discover the list of bindable kinds by reading status part of cluster-scoped BindableKinds resource
         Given OLM Operator "provisioned_backend_with_annotations" is running
         And OLM Operator "backend_with_annotations" is running
@@ -15,6 +17,7 @@ Feature: Discover bindable resources in a cluster
         And Kind BindableBackend with apiVersion stable.example.com/v1 is listed in bindable kinds
 
     @crdv1beta1
+    @external-feedback
     Scenario: Discover bindable service when defined by v1beta1 CRD API
         Given OLM Operator "provisioned_backend_crdv1beta1" is running
         Then bindablekinds/bindable-kinds is available in the cluster

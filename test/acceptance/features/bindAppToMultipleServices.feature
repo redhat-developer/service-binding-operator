@@ -8,6 +8,7 @@ Feature: Bind a single application to multiple services
         * Service Binding Operator is running
         * CustomResourceDefinition backends.stable.example.com is available
 
+    @external-feedback
     Scenario: Bind two backend services by creating 2 SBRs to a single application
         Given Generic test application is running
         * The Custom Resource is present
@@ -79,6 +80,7 @@ Feature: Bind a single application to multiple services
         And The application got redeployed 2 times so far
         And The application does not get redeployed again with 5 minutes
 
+    @external-feedback
     Scenario: Bind two backend services by creating 1 SBR to a single application
         Given Generic test application is running
         * The Custom Resource is present

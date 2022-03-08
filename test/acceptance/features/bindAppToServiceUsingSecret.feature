@@ -515,6 +515,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
+    @external-feedback
     Scenario: Inject into app all keys from a secret existing in a same namespace with service and different from the service binding
         Given The Custom Resource Definition is present
             """
@@ -606,6 +607,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
+    @external-feedback
     Scenario: Inject data from secret referred in field belonging to list
         Given The Secret is present
             """
@@ -745,6 +747,7 @@ Feature: Bind values from a secret referred in backing service resource
             bar
             """
 
+    @external-feedback
     Scenario: Inject binding to an application from a Secret resource referred as service with mappings
         Given The Secret is present
             """
@@ -795,6 +798,7 @@ Feature: Bind values from a secret referred in backing service resource
             foo:bar
             """
 
+    @external-feedback
     Scenario: Inject binding to an application from a Secret resource created later referred as service 
         Given Generic test application is running
         When Service Binding is applied
@@ -837,6 +841,7 @@ Feature: Bind values from a secret referred in backing service resource
             bar
             """
 
+    @external-feedback
     Scenario: Inject binding to an application from two Secret resources referred as services
         Given Generic test application is running
         * The Secret is present
@@ -899,7 +904,9 @@ Feature: Bind values from a secret referred in backing service resource
             bar2
 
             """
+
     @spec
+    @external-feedback
     Scenario: SPEC Inject binding to an application from a Secret resource referred as service
         Given The Secret is present
             """

@@ -20,5 +20,6 @@ As the author of this PR, please check off the items in this checklist:
   included if any changes are user facing
 - [ ] [Tests](https://github.com/redhat-developer/service-binding-operator/blob/master/CONTRIBUTING.md#tests)
   included if any functionality added or changed. For bugfixes please include tests that can catch regressions
+- [ ] All acceptance test scenarios included in the PR which verifies a bugfix or a requested feature reported by a non-member are tagged with `@external-feedback` tag.
 - [ ] Follows the [commit message standard](https://github.com/redhat-developer/service-binding-operator/blob/master/CONTRIBUTING.md#commits)
 

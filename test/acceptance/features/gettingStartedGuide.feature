@@ -7,6 +7,7 @@ Feature: Getting Started Guide
     Given Namespace [TEST_NAMESPACE] is used
     * Service Binding Operator is running
 
+  @external-feedback
   Scenario: Connecting PetClinic application to PostgreSQL database
     Given PetClinic sample application is installed
     * PostgreSQL database is running
