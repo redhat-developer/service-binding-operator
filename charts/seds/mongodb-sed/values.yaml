@@ -1,0 +1,8 @@
+mongodb:
+  sed:
+    hostname: mymongo-mongodb
+    port: 27017
+    username: root
+    password: PCfT5MLN4Q
+    databasename: admin
+
