@@ -1,8 +1,0 @@
-mysql:
-  sed:
-    host: mysqlrelease.default.svc.cluster.local
-    port: 3306
-    username: root
-    password: IILzfpWekl
-    databasename: my_database
-
