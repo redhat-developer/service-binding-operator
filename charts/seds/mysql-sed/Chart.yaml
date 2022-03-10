@@ -1,0 +1,15 @@
+annotations:
+  charts.openshift.io/archs: x86_64
+  charts.openshift.io/name: MYSQL Service Endpoint Definition (SED)
+  charts.openshift.io/provider: RedHat
+  charts.openshift.io/supportURL: https://github.com/dperaza4dustbit/helm-chart
+apiVersion: v2
+appVersion: 0.1.0
+description: A Helm chart for MySQL Service Endpoint Definition (SED)
+kubeVersion: '>=1.20.0'
+name: mysql-sed
+type: application
+version: 0.1.0
+
+
+
