@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-sed-test"
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: "{{ .Release.Name }}-sed-test"
+      image: "quay.io/opencloudio/ibm-mongodb@sha256:d8af61f68bce9ce744dd0b6b1734ba9a6cd4d85cd28baa5798b7470256be6dce"
+      imagePullPolicy: "IfNotPresent"
+      env:
+        - name: MONGODB_HOST
+          valueFrom:
+            secretKeyRef:
+              name: "io.servicebinding.{{ .Release.Name }}"
+              key: host
+        - name: MONGODB_USER
+          valueFrom:
+            secretKeyRef:
+              name: "io.servicebinding.{{ .Release.Name }}"
+              key: username
+        - name: MONGODB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: "io.servicebinding.{{ .Release.Name }}"
+              key: password
+        - name: MONGODB_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: "io.servicebinding.{{ .Release.Name }}"
+              key: database
+        - name: MONGODB_PORT
+          valueFrom:
+            secretKeyRef:
+              name: "io.servicebinding.{{ .Release.Name }}"
+              key: port
+      command:
+        - /bin/bash
+        - -ec
+        - |
+          mongo admin --host $MONGODB_HOST --authenticationDatabase $MONGODB_DATABASE -u $MONGODB_USER -p $MONGODB_PASSWORD
+  restartPolicy: Never
