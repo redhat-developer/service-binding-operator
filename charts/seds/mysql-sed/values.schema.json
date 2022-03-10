@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/schema#",
+  "type": "object",
+  "required": [
+    "mysql"
+  ],
+  "properties": {
+    "mysql": {
+      "type": "object",
+      "required": [
+        "sed"
+      ],
+      "properties": {
+        "sed": {
+          "type": "object",
+          "required": [
+            "host",
+            "port",
+            "username",
+            "password",
+            "databasename"
+          ],
+          "properties": {
+            "host": {
+              "type": "string",
+              "pattern": "^[a-z0-9-_./]+$"
+            },
+            "port": {
+              "type": "integer"
+            },
+            "username": {
+              "type": "string",
+              "pattern": "^[a-z0-9-_./]+$"
+            },
+            "password": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9-_./]+$"
+            },
+            "databasename": {
+              "type": "string",
+              "pattern": "^[a-z0-9-_./]+$"
+            }
+          }
+        }
+      }
+    }
+  }
+}
