@@ -283,3 +283,22 @@ jobs:
           name: kubernetes-without-olm-test-results
           path: ${{ env.TEST_RESULTS }}
         if: always()
+
+  single-commit:
+    name: Single commit PR
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Verify number of commits in the PR is 1
+        run: |
+          COMMIT_COUNT="$(git log --oneline ${{github.event.pull_request.base.sha}}..${{github.event.pull_request.head.sha}} | wc -l)"
+          if ! [ $COMMIT_COUNT -eq 1 ]; then
+            echo "Number of commits in the PR ($COMMIT_COUNT) must not be greater than one."
+            echo "Please squash all PR commits into a single one (https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History#_squashing)"
+            exit 1
+          fi
