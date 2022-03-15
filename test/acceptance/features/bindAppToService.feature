@@ -566,6 +566,7 @@ Feature: Bind an application to a service
         And The application env var "BACKEND_PORTS_FTP" has value "22"
         And The application env var "BACKEND_PORTS_TCP" has value "8080"
 
+    @external-feedback
     Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
         Given Generic test application is running
         * CustomResourceDefinition backends.stable.example.com is available
@@ -924,6 +925,7 @@ Feature: Bind an application to a service
         And The application env var "SECRET_WORD" has value "aGVsbG8="
 
     @negative
+    @external-feedback
     Scenario: Do not bind as env if there is no binding data is collected from the service
         Given Generic test application is running
         * The Service is present

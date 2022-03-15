@@ -59,6 +59,7 @@ Feature: Successful Service Binding are Immutable
                     name: service-immutable
             """
 
+    @external-feedback
     Scenario: Can update metadata on a ready Service Binding
         Given Generic test application is running
         And Service Binding is applied

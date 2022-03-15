@@ -561,6 +561,7 @@ Feature: Bind an application to a service using annotations
         Then Service Binding is ready
         And The application env var "BACKEND_HOST_INTERNAL_DB" has value "internal.db.stable.example.com"
 
+    @external-feedback
     Scenario: Application cannot be bound to service containing annotation with an invalid sourceValue value
         Given Generic test application is running
         And CustomResourceDefinition backends.stable.example.com is available

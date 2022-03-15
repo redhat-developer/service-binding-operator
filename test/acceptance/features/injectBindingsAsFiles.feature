@@ -158,6 +158,7 @@ Feature: Bindings get injected as files in application
         * Service Binding InjectionReady.reason is "NoBindingData"
 
     @spec
+    @external-feedback
     Scenario: SPEC Inject bindings gathered through annotations into application at default location
         Given Generic test application is running
         * The Custom Resource is present
@@ -206,6 +207,7 @@ Feature: Bindings get injected as files in application
             mysql
             """
 
+    @external-feedback
     Scenario: SERVICE_BINDING_ROOT is not defined twice in the deployment after binding two services
         Given Generic test application is running
         * The env var "SERVICE_BINDING_ROOT" is not available to the application

@@ -89,6 +89,7 @@ Feature: Support a number of existing operator-backed services out of the box
            redisSecret!
            """
 
+  @external-feedback
   Scenario: Bind test application to Postgres provisioned by Crunchy Data Postgres operator
     Given Crunchy Data Postgres operator is running
     * Generic test application is running
@@ -319,6 +320,7 @@ Feature: Support a number of existing operator-backed services out of the box
            """
     And File "/bindings/$scenario_id/password" exists in application pod
 
+  @external-feedback
   Scenario: Bind test application to Postgres instance provisioned by Cloud Native Postgres operator
     Given Cloud Native Postgres operator is running
     * Generic test application is running
