@@ -107,6 +107,7 @@ Feature: Unbind an application from a service
         * The env var "BACKEND_USERNAME" is not available to the application
         * Service Binding secret is not present
 
+    @external-feedback
     Scenario: Remove bindings projected as files from generic test application
         Given Generic test application is running
         * The Custom Resource is present
@@ -195,6 +196,7 @@ Feature: Unbind an application from a service
 
     @smoke
     @spec
+    @external-feedback
     Scenario: SPEC Remove bindings from test application
         Given Generic test application is running
         * The Custom Resource is present

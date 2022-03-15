@@ -52,6 +52,7 @@ Feature: Bind application to provisioned service
                     name: provisioned-secret-2
             """
 
+  @external-feedback
   Scenario: Bind application to provisioned service
     Given Generic test application is running
     When Service Binding is applied
@@ -84,6 +85,7 @@ Feature: Bind application to provisioned service
             """
 
   @openshift
+  @external-feedback
   Scenario: Bind provisioned service to application deployed as deployment config
     Given Generic test application is running as deployment config
     When Service Binding is applied
@@ -117,6 +119,7 @@ Feature: Bind application to provisioned service
 
 
   @negative
+  @external-feedback
   Scenario: Fail binding to provisioned service if secret name is not provided
     Given The Custom Resource Definition is present
             """
@@ -187,6 +190,7 @@ Feature: Bind application to provisioned service
     And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding should be changed to "False"
     And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding should be changed to "ErrorReadingBinding"
 
+  @external-feedback
   Scenario: Bind application to provisioned service that has binding annotations as well
     Given OLM Operator "provisioned_backend_with_annotations" is running
     * The Custom Resource is present
@@ -238,6 +242,7 @@ Feature: Bind application to provisioned service
 
   @spec
   @smoke
+  @external-feedback
   Scenario: SPEC Bind application to provisioned service
     Given Generic test application is running
     When Service Binding is applied
@@ -272,6 +277,7 @@ Feature: Bind application to provisioned service
             """
 
   @spec
+  @external-feedback
   Scenario: SPEC Bind application to provisioned service and inject type/provider from values set on service binding
     Given Generic test application is running
     When Service Binding is applied
@@ -311,6 +317,7 @@ Feature: Bind application to provisioned service
             """
 
   @spec
+  @external-feedback
   Scenario: SPEC Bind application to provisioned service and inject binding into folder specified by .spec.name
     Given Generic test application is running
     When Service Binding is applied
@@ -382,6 +389,7 @@ Feature: Bind application to provisioned service
 
 
   @spec
+  @external-feedback
   Scenario: SPEC Inject specified bindings as env vars
     Given Generic test application is running
     When Service Binding is applied
