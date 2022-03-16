@@ -1,5 +1,8 @@
 @olm
 @supported-operator
+@disable.arch.ppc64le
+@disable.arch.s390x
+@disable.arch.arm64
 Feature: Support a number of existing operator-backed services out of the box
 
   As a user of Service Binding operator
