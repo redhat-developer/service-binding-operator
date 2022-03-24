@@ -238,7 +238,47 @@ put us into an unreleasable state
 * Unit tests:
   * Coverage should remain the same or increase
  
-## Pull Request Workflow
+## Running Acceptance Tests
+
+1. Set KUBECONFIG for both minikube and acceptance tests (it will be generated at minikube's start if it does not exist):
+
+```
+export KUBECONFIG=/tmp/minikubeconfig
+```
+
+2. Start minikube:
+
+```
+minikube start
+```
+
+3. Enable olm on minikube:
+
+
+```
+minikube addons enable olm
+```
+
+4. Deploy operator to the minikube cluster
+
+```
+eval $(minikube docker-env)
+make deploy OPERATOR_REPO_REF=$(minikube ip):5000/sbo
+```
+
+5. Execute all acceptance tests tagged with `@dev` using `kubectl` CLI:
+
+```
+make test-acceptance TEST_ACCEPTANCE_TAGS="@dev" TEST_ACCEPTANCE_START_SBO=remote TEST_ACCEPTANCE_CLI=kubectl
+```
+
+To run a specific test:
+
+```
+make test-acceptance TEST_ACCEPTANCE_START_SBO=remote TEST_ACCEPTANCE_CLI=kubectl EXTRA_BEHAVE_ARGS='-n "Specify path of secret in the Service Binding"'
+```
+
+# Pull Request Workflow
 
 - Fork the repository and clone it your work directory
 - Create a topic branch from where you want to base your work
