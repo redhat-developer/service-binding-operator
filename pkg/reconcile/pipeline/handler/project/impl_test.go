@@ -3,6 +3,8 @@ package project_test
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -12,10 +14,10 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/handler/project"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
-	"strings"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/mocks"
 )
@@ -76,9 +78,24 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 				deploymentsUnstructured = append(deploymentsUnstructured, res)
 				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
 				app := mocks.NewMockApplication(mockCtrl)
-				app.EXPECT().SecretPath().Return("")
 				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
-				app.EXPECT().BindableContainers().Return(containers, nil)
+				var metaContainers []pipeline.MetaContainer
+				for _, c := range containers {
+					name, _, _ := unstructured.NestedString(c, "name")
+					metaContainers = append(metaContainers, pipeline.MetaContainer{
+						Data:        c,
+						Name:        name,
+						Env:         []string{"env"},
+						EnvFrom:     []string{"envFrom"},
+						VolumeMount: []string{"volumeMounts"},
+					})
+				}
+				template := pipeline.MetaPodSpec{
+					Containers: metaContainers,
+					Volume:     strings.Split("spec.template.spec.volumes", "."),
+					Data:       u,
+				}
+				app.EXPECT().BindablePods().Return(&template, nil)
 				apps = append(apps, app)
 			}
 
@@ -105,8 +122,10 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 					},
 				},
 			})
-			u, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&expected)
-			Expect(deploymentsUnstructured[0]).To(Equal(&unstructured.Unstructured{Object: u}))
+			var d appsv1.Deployment
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[0].Object, &d)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(&d).To(Equal(expected))
 			expected = deployment("d2", []corev1.Container{
 				{
 					Image: "foo2",
@@ -128,12 +147,13 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 					},
 				},
 			})
-			u, _ = runtime.DefaultUnstructuredConverter.ToUnstructured(&expected)
-			Expect(deploymentsUnstructured[1]).To(Equal(&unstructured.Unstructured{Object: u}))
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[1].Object, &d)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(&d).To(Equal(expected))
 		})
 	})
 
-	Context("emv bindings are set", func() {
+	Context("env bindings are set", func() {
 		var (
 			deploymentsUnstructured    []*unstructured.Unstructured
 			deploymentsUnstructuredOld []*unstructured.Unstructured
@@ -158,11 +178,13 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 			d1 := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
+					Name:  "d1",
 				},
 			})
 			d2 := deployment("d2", []corev1.Container{
 				{
 					Image: "foo2",
+					Name:  "d2",
 					Env: []corev1.EnvVar{
 						{
 							Name:  "foo",
@@ -181,9 +203,24 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 				deploymentsUnstructured = append(deploymentsUnstructured, res)
 				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
 				app := mocks.NewMockApplication(mockCtrl)
-				app.EXPECT().SecretPath().Return("")
 				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
-				app.EXPECT().BindableContainers().Return(containers, nil)
+				var metaContainers []pipeline.MetaContainer
+				for _, c := range containers {
+					name, _, _ := unstructured.NestedString(c, "name")
+					metaContainers = append(metaContainers, pipeline.MetaContainer{
+						Data:        c,
+						Name:        name,
+						Env:         []string{"env"},
+						EnvFrom:     []string{"envFrom"},
+						VolumeMount: []string{"volumeMounts"},
+					})
+				}
+				template := pipeline.MetaPodSpec{
+					Containers: metaContainers,
+					Volume:     strings.Split("spec.template.spec.volumes", "."),
+					Data:       u,
+				}
+				app.EXPECT().BindablePods().Return(&template, nil)
 				apps = append(apps, app)
 			}
 
@@ -198,6 +235,7 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 			expected := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
+					Name:  "d1",
 					Env: []corev1.EnvVar{
 						{
 							Name: "e1",
@@ -224,11 +262,14 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 					},
 				},
 			})
-			u, _ := runtime.DefaultUnstructuredConverter.ToUnstructured(&expected)
-			Expect(deploymentsUnstructured[0]).To(Equal(&unstructured.Unstructured{Object: u}))
+			var d appsv1.Deployment
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[0].Object, &d)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(&d).To(Equal(expected))
 			expected = deployment("d2", []corev1.Container{
 				{
 					Image: "foo2",
+					Name:  "d2",
 					Env: []corev1.EnvVar{
 						{
 							Name:  "foo",
@@ -259,8 +300,9 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 					},
 				},
 			})
-			u, _ = runtime.DefaultUnstructuredConverter.ToUnstructured(&expected)
-			Expect(deploymentsUnstructured[1]).To(Equal(&unstructured.Unstructured{Object: u}))
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[1].Object, &d)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(&d).To(Equal(expected))
 		})
 	})
 
@@ -466,10 +508,24 @@ var _ = Describe("Inject bindings as files", func() {
 				deploymentsUnstructured = append(deploymentsUnstructured, res)
 				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
 				app := mocks.NewMockApplication(mockCtrl)
-				app.EXPECT().Resource().Return(res)
-				app.EXPECT().SecretPath().Return("")
 				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
-				app.EXPECT().BindableContainers().Return(containers, nil)
+				var metaContainers []pipeline.MetaContainer
+				for _, c := range containers {
+					name, _, _ := unstructured.NestedString(c, "name")
+					metaContainers = append(metaContainers, pipeline.MetaContainer{
+						Data:        c,
+						Name:        name,
+						Env:         []string{"env"},
+						EnvFrom:     []string{"envFrom"},
+						VolumeMount: []string{"volumeMounts"},
+					})
+				}
+				template := pipeline.MetaPodSpec{
+					Containers: metaContainers,
+					Volume:     strings.Split("spec.template.spec.volumes", "."),
+					Data:       u,
+				}
+				app.EXPECT().BindablePods().Return(&template, nil)
 				apps = append(apps, app)
 			}
 
@@ -710,6 +766,7 @@ var _ = Describe("Unbind handler", func() {
 			bindingName = "binding1"
 			ctx.EXPECT().BindingSecretName().Return(secretName)
 			ctx.EXPECT().BindingName().Return(bindingName)
+			ctx.EXPECT().EnvBindings().Return([]*pipeline.EnvBinding{})
 			d1 := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
@@ -823,9 +880,24 @@ var _ = Describe("Unbind handler", func() {
 				deploymentsUnstructured = append(deploymentsUnstructured, res)
 				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
 				app := mocks.NewMockApplication(mockCtrl)
-				app.EXPECT().Resource().Return(res)
 				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
-				app.EXPECT().BindableContainers().Return(containers, nil)
+				var metaContainers []pipeline.MetaContainer
+				for _, c := range containers {
+					name, _, _ := unstructured.NestedString(c, "name")
+					metaContainers = append(metaContainers, pipeline.MetaContainer{
+						Data:        c,
+						Name:        name,
+						Env:         []string{"env"},
+						EnvFrom:     []string{"envFrom"},
+						VolumeMount: []string{"volumeMounts"},
+					})
+				}
+				template := pipeline.MetaPodSpec{
+					Containers: metaContainers,
+					Volume:     strings.Split("spec.template.spec.volumes", "."),
+					Data:       u,
+				}
+				app.EXPECT().BindablePods().Return(&template, nil)
 				apps = append(apps, app)
 			}
 
@@ -856,12 +928,14 @@ var _ = Describe("Unbind handler", func() {
 			})
 			d3 := deployment("d2", []corev1.Container{
 				{
-					Image: "foo2",
+					Image:   "foo2",
+					EnvFrom: []v1.EnvFromSource{},
 				},
 			})
 			d4 := deployment("d1", []corev1.Container{
 				{
-					Image: "foo",
+					Image:        "foo",
+					VolumeMounts: []v1.VolumeMount{},
 				},
 			})
 			d5 := deployment("d1", []corev1.Container{
@@ -880,6 +954,7 @@ var _ = Describe("Unbind handler", func() {
 					Image: "foo",
 				},
 			})
+			d6.Spec.Template.Spec.Volumes = []corev1.Volume{}
 			d7 := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
@@ -902,7 +977,7 @@ var _ = Describe("Unbind handler", func() {
 				d := &appsv1.Deployment{}
 				err := runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[i].Object, d)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(d).To(Equal(expectedDeployment))
+				Expect(d.Spec.Template).To(Equal(expectedDeployment.Spec.Template))
 			}
 		})
 	})

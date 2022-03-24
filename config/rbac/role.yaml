@@ -1,3 +1,4 @@
+
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -145,6 +146,12 @@ rules:
   verbs:
   - get
   - list
+- apiGroups:
+  - servicebinding.io
+  resources:
+  - clusterworkloadresourcemappings
+  verbs:
+  - get
 - apiGroups:
   - servicebinding.io
   resources:

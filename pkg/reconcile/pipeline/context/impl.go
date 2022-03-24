@@ -5,14 +5,16 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"sort"
+
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
 	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/authorization/v1"
 	clientauthzv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
-	"sort"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -23,6 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
@@ -39,7 +42,7 @@ type impl struct {
 	//nolint
 	services []pipeline.Service
 
-	applications []*application
+	applications []pipeline.Application
 
 	bindingItems pipeline.BindingItems
 
@@ -66,6 +69,8 @@ type impl struct {
 	requester func() *authv1.UserInfo
 
 	serviceBuilder service.Builder
+
+	resourceMapping *pipeline.WorkloadMapping
 }
 
 type bindingImpl struct {
@@ -224,6 +229,15 @@ func (i *bindingImpl) Applications() ([]pipeline.Application, error) {
 		if err != nil {
 			return nil, err
 		}
+		containerPath := ""
+		if i.serviceBinding != nil && i.serviceBinding.Spec.Application.BindingPath != nil {
+			containerPath = i.serviceBinding.Spec.Application.BindingPath.ContainersPath
+		}
+		mappingTemplate, err := i.WorkloadResourceTemplate(gvr, containerPath)
+		if err != nil {
+			return nil, err
+		}
+
 		if i.serviceBinding.Spec.Application.Name != "" {
 			if !i.canPerform(gvr, ref.Name, i.serviceBinding.Namespace, "get") {
 				return nil, fmt.Errorf("cannot read application %s in namespace %s", ref.Name, i.serviceBinding.Namespace)
@@ -235,7 +249,13 @@ func (i *bindingImpl) Applications() ([]pipeline.Application, error) {
 			if err != nil {
 				return nil, emptyApplicationsErr{err}
 			}
-			i.applications = append(i.applications, &application{gvr: gvr, persistedResource: u, bindingPath: i.serviceBinding.Spec.Application.BindingPath})
+
+			i.applications = append(i.applications, &application{
+				gvr:               gvr,
+				persistedResource: u,
+				bindingPath:       i.serviceBinding.Spec.Application.BindingPath,
+				resourceMapping:   *mappingTemplate,
+			})
 		}
 		if i.serviceBinding.Spec.Application.LabelSelector != nil && i.serviceBinding.Spec.Application.LabelSelector.MatchLabels != nil {
 			matchLabels := i.serviceBinding.Spec.Application.LabelSelector.MatchLabels
@@ -261,15 +281,18 @@ func (i *bindingImpl) Applications() ([]pipeline.Application, error) {
 					return nil, fmt.Errorf("cannot update application resource %s in namespace %s", name, i.serviceBinding.Namespace)
 				}
 
-				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindingPath: i.serviceBinding.Spec.Application.BindingPath})
+				i.applications = append(i.applications, &application{
+					gvr:               gvr,
+					persistedResource: &(objList.Items[index]),
+					bindingPath:       i.serviceBinding.Spec.Application.BindingPath,
+					resourceMapping:   *mappingTemplate,
+				})
 			}
 		}
 	}
 
 	result := make([]pipeline.Application, len(i.applications))
-	for l, a := range i.applications {
-		result[l] = a
-	}
+	copy(result, i.applications)
 	return result, nil
 }
 
@@ -425,9 +448,26 @@ func (i *impl) Close() error {
 	}
 	for _, app := range i.applications {
 		if app.IsUpdated() {
-			_, err = i.client.Resource(*app.gvr).Namespace(i.bindingMeta.Namespace).Update(context.Background(), app.Resource(), metav1.UpdateOptions{})
+			// We explicitly want to clone our app object here.  This is because we need to pass this
+			// object through DeepCopyJSON(), which currently doesn't allow []map[string]interface{}
+			// objects.  To fix this, we have to normalize them into []interface{} slices, where
+			// every element of that slice is of type map[string]interface{}.
+			clone, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&app.Resource().Object)
 			if err != nil {
-				i.SetCondition(apis.Conditions().NotBindingReady().Reason("ApplicationUpdateError").Msg(err.Error()).Build())
+				return err
+			}
+
+			resource := &unstructured.Unstructured{Object: clone}
+			_, err = i.client.
+				Resource(app.GroupVersionResource()).
+				Namespace(i.bindingMeta.Namespace).
+				Update(context.Background(), resource, metav1.UpdateOptions{})
+			if err != nil {
+				i.SetCondition(apis.Conditions().
+					NotBindingReady().
+					Reason("ApplicationUpdateError").
+					Msg(err.Error()).
+					Build())
 				_ = i.persistBinding()
 				return err
 			}
@@ -459,4 +499,75 @@ func (i *impl) ReadSecret(namespace string, name string) (*unstructured.Unstruct
 
 func (i *impl) AddBindings(bindings pipeline.Bindings) {
 	i.bindings = append(i.bindings, bindings)
+}
+
+func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, containerPath string) (*pipeline.WorkloadMapping, error) {
+	if i.resourceMapping != nil {
+		return i.resourceMapping, nil
+	}
+
+	defaultTemplate := v1alpha3.DefaultTemplate()
+	mappingGVR := v1alpha3.WorkloadResourceMappingGroupVersionResource
+
+	if !i.canPerform(&mappingGVR, gvr.GroupResource().String(), "", "get") {
+		return nil, errors.NewBadRequest(fmt.Sprintf("Unable to retrieve ClusterWorkloadResourceMapping for type %q", gvr))
+	}
+
+	var mappingTemplate *v1alpha3.ClusterWorkloadResourceMappingTemplate = nil
+	mappingObj, err := i.client.Resource(mappingGVR).
+		Get(context.Background(),
+			gvr.GroupResource().String(),
+			metav1.GetOptions{})
+	if errors.IsNotFound(err) {
+		mappingTemplate = &defaultTemplate
+	} else if mappingObj != nil {
+		var mapping v1alpha3.ClusterWorkloadResourceMapping
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(mappingObj.Object, &mapping)
+		if err != nil {
+			return nil, err
+		}
+
+		wildcardTemplate := defaultTemplate.DeepCopy()
+		for _, template := range mapping.Spec.Versions {
+			if template.Version == gvr.Version {
+				mappingTemplate = &template
+				break
+			} else if template.Version == "*" {
+				wildcardTemplate = &template
+			}
+		}
+		if mappingTemplate == nil {
+			mappingTemplate = wildcardTemplate
+		}
+	} else {
+		return nil, err
+	}
+
+	if len(mappingTemplate.Containers) == 0 {
+		mappingTemplate.Containers = defaultTemplate.Containers
+	}
+
+	if containerPath != "" {
+		path := fmt.Sprintf(".%v[*]", containerPath)
+		found := false
+		for _, container := range mappingTemplate.Containers {
+			if path != container.Path {
+				found = true
+				break
+			}
+		}
+		if found {
+			mappingTemplate.Containers = append(mappingTemplate.Containers, v1alpha3.ClusterWorkloadResourceMappingContainer{
+				Path: path,
+			})
+		}
+	}
+
+	workloadMapping, err := pipeline.FromWorkloadResourceMappingTemplate(*mappingTemplate)
+	if err != nil {
+		return nil, err
+	}
+
+	i.resourceMapping = workloadMapping
+	return workloadMapping, nil
 }
