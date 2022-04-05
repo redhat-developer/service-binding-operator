@@ -25,6 +25,10 @@ deploy-postgresql:
 deploy-pgcluster:
 	kubectl apply -f pgcluster-deployment.yaml -n $(NAMESPACE)
 
+.PHONY: deploy-mysqlcluster
+deploy-mysqlcluster:
+	kubectl apply -f mysqlcluster-deployment.yaml -n $(NAMESPACE)
+
 .PHONY: build-app
 build-app:
 	docker build -f Dockerfile.app -t $(PETCLINIC_APP_IMAGE) .
@@ -46,6 +50,11 @@ deploy-app:
 	sed -e 's,quay.io/service-binding/spring-petclinic:latest,'$(PETCLINIC_APP_IMAGE)',g' petclinic-deployment.yaml | \
 	kubectl apply -f - -n $(NAMESPACE) --wait
 
+.PHONY: deploy-app-mysql
+deploy-app-mysql:
+	sed -e 's,quay.io/service-binding/spring-petclinic:latest,'$(PETCLINIC_APP_IMAGE)',g' petclinic-mysql-deployment.yaml | \
+	kubectl apply -f - -n $(NAMESPACE) --wait
+
 .PHONY: bind-postgresql
 bind-postgresql:
 	kubectl apply -f petclinic-postgresql-binding.yaml -n $(NAMESPACE)
@@ -54,6 +63,10 @@ bind-postgresql:
 bind-pgcluster:
 	kubectl apply -f petclinic-pgcluster-binding.yaml -n $(NAMESPACE)
 
+.PHONY: bind-mysqlcluster
+bind-mysqlcluster:
+	kubectl apply -f petclinic-mysqlcluster-binding.yaml -n $(NAMESPACE)
+
 .PHONY: unbind-postgresql
 unbind-postgresql:
 	kubectl delete -f petclinic-postgresql-binding.yaml -n $(NAMESPACE)
@@ -61,3 +74,7 @@ unbind-postgresql:
 .PHONY: unbind-pgcluster
 unbind-pgcluster:
 	kubectl delete -f petclinic-pgcluster-binding.yaml -n $(NAMESPACE)
+
+.PHONY: unbind-mysqlcluster
+unbind-mysqlcluster:
+	kubectl delete -f petclinic-mysqlcluster-binding.yaml -n $(NAMESPACE)

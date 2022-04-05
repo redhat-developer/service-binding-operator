@@ -1,0 +1,18 @@
+# tag::service-binding[]
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name:
+    spring-petclinic-mysqlcluster
+spec:
+  services:
+    - group: pxc.percona.com
+      version: v1-10-0
+      kind: PerconaXtraDBCluster
+      name: minimal-cluster
+  application:
+    name: spring-petclinic
+    group: apps
+    version: v1
+    resource: deployments
+# end::service-binding[]
