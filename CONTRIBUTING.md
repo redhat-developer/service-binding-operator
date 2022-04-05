@@ -249,7 +249,7 @@ export KUBECONFIG=/tmp/minikubeconfig
 2. Start minikube:
 
 ```
-minikube start
+./hack/start-minikube.sh
 ```
 
 3. Enable olm on minikube:
