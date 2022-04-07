@@ -1,0 +1,41 @@
+---
+# tag::app-deployment[]
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: productsearch
+spec:
+  selector:
+    matchLabels:
+      app: productsearch
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: productsearch
+    spec:
+      containers:
+        - name: productsearch
+          image: quay.io/service-binding/spring-productsearch:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+# end::app-deployment[]
+---
+# tag::app-service[]
+apiVersion: v1
+kind: Service
+metadata:
+  name: productsearch
+spec:
+  ports:
+    - port: 8080
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: productsearch
+  type: ClusterIP
+# tag::app-service[]

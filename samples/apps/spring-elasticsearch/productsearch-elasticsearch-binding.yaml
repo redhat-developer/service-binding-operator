@@ -1,0 +1,17 @@
+# tag::service-binding[]
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: productsearch-elasticsearch
+spec:
+  application:
+    group: apps
+    name: productsearch
+    resource: deployments
+    version: v1
+  services:
+  - group: elasticsearch.k8s.elastic.co
+    kind: Elasticsearch
+    name: productsearch-es
+    version: v1
+# end::service-binding[]

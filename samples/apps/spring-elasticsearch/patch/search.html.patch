@@ -1,0 +1,22 @@
+diff --git a/spring-boot/spring-boot-elasticsearch/src/main/resources/templates/search.html b/spring-boot/spring-boot-elasticsearch/src/main/resources/templates/search.html
+index 2d45516..17fa012 100644
+--- a/spring-boot/spring-boot-elasticsearch/src/main/resources/templates/search.html
++++ b/spring-boot/spring-boot-elasticsearch/src/main/resources/templates/search.html
+@@ -34,7 +34,7 @@
+     $(document).ready(function() {
+         $('#productNamedesc').autocomplete({
+ 	           source: function (request, response){
+-	               $.get("http://localhost:8080/suggestions?",{q : request.term},function(data, status){
++	               $.get("/suggestions?",{q : request.term},function(data, status){
+ 	                  $("#results").html("");
+ 	                  if(status=='success'){
+ 	                    response(data);
+@@ -52,7 +52,7 @@
+              var response = '';
+ 	         $.ajax({
+ 	            type: "GET",
+-	            url: "http://localhost:8080/products?q="+inputText,
++	            url: "/products?q="+inputText,
+ 	            async: true,
+ 	            success: function(resp) {
+ 	                var len = resp.length;

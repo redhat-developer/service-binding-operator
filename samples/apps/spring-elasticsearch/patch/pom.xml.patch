@@ -1,0 +1,17 @@
+diff --git a/spring-boot/spring-boot-elasticsearch/pom.xml b/spring-boot/spring-boot-elasticsearch/pom.xml
+index b0dcb44..1473b7b 100644
+--- a/spring-boot/spring-boot-elasticsearch/pom.xml
++++ b/spring-boot/spring-boot-elasticsearch/pom.xml
+@@ -32,6 +32,12 @@
+ 			<groupId>org.springframework.boot</groupId>
+ 			<artifactId>spring-boot-starter-web</artifactId>
+ 		</dependency>
++		<dependency>
++			<groupId>com.nebhale.bindings</groupId>
++			<artifactId>client-java</artifactId>
++			<version>1.0.0</version>
++		</dependency>
++
+ 
+ 		<dependency>
+ 			<groupId>org.projectlombok</groupId>

@@ -1,0 +1,103 @@
+diff --git a/spring-boot/spring-boot-elasticsearch/src/main/java/io/pratik/elasticsearch/productsearchapp/ElasticsearchClientConfig.java b/spring-boot/spring-boot-elasticsearch/src/main/java/io/pratik/elasticsearch/productsearchapp/ElasticsearchClientConfig.java
+index b922200..7c4d793 100644
+--- a/spring-boot/spring-boot-elasticsearch/src/main/java/io/pratik/elasticsearch/productsearchapp/ElasticsearchClientConfig.java
++++ b/spring-boot/spring-boot-elasticsearch/src/main/java/io/pratik/elasticsearch/productsearchapp/ElasticsearchClientConfig.java
+@@ -3,7 +3,14 @@
+  */
+ package io.pratik.elasticsearch.productsearchapp;
+ 
++import com.nebhale.bindings.Binding;
++import com.nebhale.bindings.Bindings;
++import org.apache.http.conn.ssl.NoopHostnameVerifier;
++import org.apache.http.conn.ssl.TrustAllStrategy;
++import org.apache.http.ssl.SSLContexts;
+ import org.elasticsearch.client.RestHighLevelClient;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
+ import org.springframework.context.annotation.Bean;
+ import org.springframework.context.annotation.ComponentScan;
+ import org.springframework.context.annotation.Configuration;
+@@ -14,6 +21,13 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+ import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+ import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
+ 
++import javax.net.ssl.SSLContext;
++import java.security.KeyManagementException;
++import java.security.KeyStoreException;
++import java.security.NoSuchAlgorithmException;
++import java.util.Locale;
++
++
+ /**
+  * @author Pratik Das
+  *
+@@ -23,15 +37,64 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
+ @ComponentScan(basePackages = { "io.pratik.elasticsearch" })
+ public class ElasticsearchClientConfig extends AbstractElasticsearchConfiguration {
+ 
++	Logger log = LoggerFactory.getLogger(ElasticsearchClientConfig.class);
++
+ 	@Override
+ 	@Bean
+ 	public RestHighLevelClient elasticsearchClient() {
++		if (System.getenv("SERVICE_BINDING_ROOT") == null) {
++			log.error("SERVICE_BINDING_ROOT environment variable is not set");
++			return null;
++		}
++		final Binding[] bindings = Bindings.filter(Bindings.fromServiceBindingRoot(), "elasticsearch");
++
++		if (bindings.length != 1) {
++			log.error("Unable to find 'elasticsearch` binding under SERVICE_BINDING_ROOT=%s", System.getenv("SERVICE_BINDING_ROOT"));
++			return null;
++		}
++		final Binding config = bindings[0];
++		String hostname = config.get("hostname");
++		if (hostname == null){
++			hostname = config.get("host");
++		}
++		String uri = String.format("%s:%s", hostname, config.get("port"));
++
++		String username = config.get("username");
++		if (username == null) {
++			username = config.get("user");
++		}
++
++		String password = config.get("password");
++
++		SSLContext sslContext = null;
+ 
+-		final ClientConfiguration clientConfiguration = 
+-				ClientConfiguration
+-				.builder()
+-				.connectedTo("localhost:9200")
+-				.build();
++		try {
++			sslContext = SSLContexts.custom().loadTrustMaterial(new TrustAllStrategy()).build();
++		} catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
++			log.error("Unable to setup SSL Context", e);
++		}
++		boolean useSsl = false;
++		String useSslValue = config.get("useSsl");
++		if(useSslValue != null) {
++			if(useSslValue.toLowerCase(Locale.ROOT).equals("yes")){
++				useSsl = true;
++			}
++		}
++		ClientConfiguration clientConfiguration = null;
++		if(useSsl) {
++			clientConfiguration = ClientConfiguration
++					.builder()
++					.connectedTo(uri)
++					.usingSsl(sslContext, NoopHostnameVerifier.INSTANCE)
++					.withBasicAuth(username, password)
++					.build();
++		} else {
++			clientConfiguration = ClientConfiguration
++					.builder()
++					.connectedTo(uri)
++					.withBasicAuth(username, password)
++					.build();
++		}
+ 
+ 		return RestClients
+ 				.create(clientConfiguration)
