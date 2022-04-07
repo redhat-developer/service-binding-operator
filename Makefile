@@ -78,7 +78,7 @@ lint-go-code: $(GOLANGCI_LINT_BIN) fmt vet
 	$(Q)GOFLAGS="$(GOFLAGS)" GOCACHE="$(GOCACHE)" $(OUTPUT_DIR)/golangci-lint ${V_FLAG} run --deadline=30m
 
 $(GOLANGCI_LINT_BIN):
-	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.44.0
+	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.45.2
 
 .PHONY: lint-python-code
 ## Check the python code
