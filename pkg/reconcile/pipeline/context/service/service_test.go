@@ -139,7 +139,7 @@ var _ = Describe("Service", func() {
 				}
 				ul := &unstructured.UnstructuredList{}
 				// compute kind
-				kind := strings.Title(gvr.Resource)[:len(gvr.Resource)-1]
+				kind := strings.Title(gvr.Resource)[:len(gvr.Resource)-1] //nolint
 
 				gvk := gvr.GroupVersion().WithKind(kind)
 				ou := resource(gvk, "child1", ns, id)
@@ -178,7 +178,7 @@ var _ = Describe("Service", func() {
 			for _, gvr := range bindableResourceGVRs {
 				ul := &unstructured.UnstructuredList{}
 				// compute kind
-				kind := strings.Title(gvr.Resource)[:len(gvr.Resource)-1]
+				kind := strings.Title(gvr.Resource)[:len(gvr.Resource)-1] //nolint
 				// fix for ConfigMap
 				if kind == "Configmap" {
 					kind = "ConfigMap"

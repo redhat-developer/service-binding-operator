@@ -88,37 +88,37 @@ gen-mocks: mockgen
 # Download controller-gen locally if necessary
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen:
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.8.0)
+	$(call go-install-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.7.0)
 
 # Download kustomize locally if necessary
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize:
-	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v3@v3.8.7)
+	$(call go-install-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.4)
 
-# go-get-tool will 'go get' any package $2 and install it to $1.
-define go-get-tool
+# go-install-tool will 'go install' any package $2 and install it to $1.
+define go-install-tool
 @[ -f $(1) ] || { \
 set -e ;\
 TMP_DIR=$$(mktemp -d) ;\
 cd $$TMP_DIR ;\
 go mod init tmp ;\
 echo "Downloading $(2)" ;\
-GOBIN=$(PROJECT_DIR)/bin go get $(2) ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
 rm -rf $$TMP_DIR ;\
 }
 endef
 
 YQ = $(shell pwd)/bin/yq
 yq:
-	$(call go-get-tool,$(YQ),github.com/mikefarah/yq/v4@v4.9.8)
+	$(call go-install-tool,$(YQ),github.com/mikefarah/yq/v4@v4.9.8)
 
 KUBECTL_SLICE = $(shell pwd)/bin/kubectl-slice
 kubectl-slice:
-	$(call go-get-tool,$(KUBECTL_SLICE),github.com/patrickdappollonio/kubectl-slice@v1.1.0)
+	$(call go-install-tool,$(KUBECTL_SLICE),github.com/patrickdappollonio/kubectl-slice@v1.1.0)
 
 MOCKGEN = $(shell pwd)/bin/mockgen
 mockgen:
-	$(call go-get-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
+	$(call go-install-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
 
 .PHONY: opm
 OPM =  $(shell pwd)/bin/opm
