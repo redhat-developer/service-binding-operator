@@ -50,3 +50,74 @@ func TestUnstructuredToUnstructuredAsGVK(t *testing.T) {
 	assert.Equal(t, "Secret", u.GetKind())
 	assert.Equal(t, "v1", u.GetAPIVersion())
 }
+
+func TestValidNestedResources(t *testing.T) {
+	resource1 := map[string]interface{}{
+		"foo": []map[string]interface{}{
+			{
+				"name":  "bar",
+				"value": "baz",
+			},
+		},
+	}
+	resource2 := map[string]interface{}{
+		"foo": []interface{}{
+			map[string]interface{}{
+				"name":  "bar",
+				"value": "baz",
+			},
+		},
+	}
+
+	result, found, err := NestedResources(&corev1.EnvVar{}, resource1, "foo")
+	assert.Equal(t, true, found)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, []map[string]interface{}{{"name": "bar", "value": "baz"}}, result)
+
+	result, found, err = NestedResources(&corev1.EnvVar{}, resource2, "foo")
+	assert.Equal(t, true, found)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, []map[string]interface{}{{"name": "bar", "value": "baz"}}, result)
+}
+
+func TestInvalidNestedResources(t *testing.T) {
+	resource1 := map[string]interface{}{
+		"foo": map[string]interface{}{"name": "bar", "value": "baz"},
+	}
+	resource2 := map[string]interface{}{
+		"foo": []map[string]interface{}{
+			{
+				"name":  "bar",
+				"value": "baz",
+			},
+		},
+	}
+	resource3 := map[string]interface{}{"foo": "bar"}
+	resource4 := map[string]interface{}{
+		"foo": []interface{}{"bar", "baz"},
+	}
+
+	// not a slice
+	result, found, err := NestedResources(&corev1.EnvVar{}, resource1, "foo")
+	assert.Equal(t, true, found)
+	assert.Nil(t, result)
+	assert.NotNil(t, err)
+
+	// nonexistant path
+	result, found, err = NestedResources(&corev1.EnvVar{}, resource2, "bar")
+	assert.Equal(t, false, found)
+	assert.Nil(t, result)
+	assert.Nil(t, err)
+
+	// not a slice
+	result, found, err = NestedResources(&corev1.EnvVar{}, resource3, "foo")
+	assert.Equal(t, true, found)
+	assert.Nil(t, result)
+	assert.Error(t, err)
+
+	// not a slice of maps
+	result, found, err = NestedResources(&corev1.EnvVar{}, resource4, "foo")
+	assert.Equal(t, true, found)
+	assert.Nil(t, result)
+	assert.Error(t, err)
+}

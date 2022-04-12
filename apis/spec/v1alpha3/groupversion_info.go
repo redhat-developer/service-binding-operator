@@ -32,6 +32,10 @@ var (
 
 	GroupVersionKind = GroupVersion.WithKind("ServiceBinding")
 
+	WorkloadResourceMappingGroupVersionResource = GroupVersion.WithResource("clusterworkloadresourcemappings")
+
+	WorkloadResourceMappingGroupVersionKind = GroupVersion.WithKind("ClusterWorkloadResourceMapping")
+
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 

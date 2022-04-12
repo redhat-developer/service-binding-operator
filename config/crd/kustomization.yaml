@@ -5,6 +5,7 @@ resources:
 - bases/binding.operators.coreos.com_servicebindings.yaml
 - bases/servicebinding.io_servicebindings.yaml
 - bases/binding.operators.coreos.com_bindablekinds.yaml
+- bases/servicebinding.io_clusterworkloadresourcemappings.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

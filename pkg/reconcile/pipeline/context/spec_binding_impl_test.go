@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/base64"
 	e "errors"
+	"strings"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -81,7 +83,6 @@ var _ = Describe("Spec API Context", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(applications).To(HaveLen(1))
 			Expect(applications[0].Resource()).To(Equal(u))
-			Expect(applications[0].ContainersPath()).To(Equal(defaultContainerPath))
 		})
 		It("should return slice of size 2 if 2 applications are specified through label selector", func() {
 			ls := &metav1.LabelSelector{
@@ -131,8 +132,6 @@ var _ = Describe("Spec API Context", func() {
 			Expect(applications[0].Resource().GetName()).NotTo(Equal(applications[1].Resource().GetName()))
 			Expect(applications[0].Resource()).Should(BeElementOf(u1, u2))
 			Expect(applications[1].Resource()).Should(BeElementOf(u1, u2))
-			Expect(applications[0].ContainersPath()).To(Equal(defaultContainerPath))
-			Expect(applications[1].ContainersPath()).To(Equal(defaultContainerPath))
 		})
 		It("should return error if no application is matching through label selector", func() {
 			ls := &metav1.LabelSelector{
@@ -282,6 +281,27 @@ var _ = Describe("Spec API Context", func() {
 			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 
+			mct := pipeline.MetaPodSpec{
+				Data:   u.Object,
+				Volume: strings.Split("spec.template.spec.volumes", "."),
+				Containers: []pipeline.MetaContainer{
+					{
+						Data:        cu2.Object,
+						Name:        "c2",
+						Env:         []string{"env"},
+						EnvFrom:     []string{"envFrom"},
+						VolumeMount: []string{"volumeMounts"},
+					},
+					{
+						Data:        cu3.Object,
+						Name:        "c3",
+						Env:         []string{"env"},
+						EnvFrom:     []string{"envFrom"},
+						VolumeMount: []string{"volumeMounts"},
+					},
+				},
+			}
+
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
 			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
@@ -290,9 +310,10 @@ var _ = Describe("Spec API Context", func() {
 			applications, err := ctx.Applications()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(applications).To(HaveLen(1))
-			containers, err := applications[0].BindableContainers()
+			applications[0].SetMapping(deploymentWorkloadMapping)
+			containers, err := applications[0].BindablePods()
 			Expect(err).NotTo(HaveOccurred())
-			Expect(containers).To(ConsistOf(cu2.Object, cu3.Object))
+			Expect(*containers).To(Equal(mct))
 		})
 	})
 

@@ -1,6 +1,9 @@
 package context
 
 import (
+	"fmt"
+	"strings"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -11,7 +14,37 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/util/jsonpath"
 )
+
+func jsonPath(path string) *jsonpath.JSONPath {
+	jp := jsonpath.New("")
+	str := fmt.Sprintf("{%s}", path)
+	if err := jp.Parse(str); err != nil {
+		Fail(fmt.Sprintf("Couldn't parse jsonpath {%s}: %v", path, err))
+	}
+	return jp
+}
+
+var deploymentWorkloadMapping pipeline.WorkloadMapping = pipeline.WorkloadMapping{
+	Volume: strings.Split("spec.template.spec.volumes", "."),
+	Containers: []pipeline.WorkloadContainer{
+		{
+			Path:         jsonPath(".spec.template.spec.containers[*]"),
+			Name:         []string{"name"},
+			Env:          []string{"env"},
+			EnvFrom:      []string{"envFrom"},
+			VolumeMounts: []string{"volumeMounts"},
+		},
+		{
+			Path:         jsonPath(".spec.template.spec.initContainers[*]"),
+			Name:         []string{"name"},
+			Env:          []string{"env"},
+			EnvFrom:      []string{"envFrom"},
+			VolumeMounts: []string{"volumeMounts"},
+		},
+	},
+}
 
 var _ = Describe("Application", func() {
 	var (
@@ -25,21 +58,6 @@ var _ = Describe("Application", func() {
 	It("should return secret path by provided binding path", func() {
 		app = &application{bindingPath: &v1alpha1.BindingPath{SecretPath: "foo"}}
 		Expect(app.SecretPath()).To(Equal("foo"))
-	})
-
-	It("should return default container path if binding path not set", func() {
-		app = &application{}
-		Expect(app.ContainersPath()).To(Equal(defaultContainerPath))
-	})
-
-	It("should return default container path if binding path container path is set to empty", func() {
-		app = &application{bindingPath: &v1alpha1.BindingPath{}}
-		Expect(app.ContainersPath()).To(Equal(defaultContainerPath))
-	})
-
-	It("should return container path set through binding path", func() {
-		app = &application{bindingPath: &v1alpha1.BindingPath{ContainersPath: "foo"}}
-		Expect(app.ContainersPath()).To(Equal("foo"))
 	})
 
 	It("should flag resource as updated if modified", func() {
@@ -61,18 +79,40 @@ var _ = Describe("Application", func() {
 	It("should return all containers if bindable position are not specified", func() {
 		c1 := corev1.Container{
 			Image: "foo",
+			Name:  "c1",
 		}
 		c2 := corev1.Container{
 			Image: "foo2",
+			Name:  "c2",
 		}
 		d1 := deployment("d1", []corev1.Container{c1, c2})
 		u, _ := converter.ToUnstructured(&d1)
 		cu1, _ := converter.ToUnstructured(&c1)
 		cu2, _ := converter.ToUnstructured(&c2)
-		app := &application{persistedResource: u}
-		containers, err := app.BindableContainers()
+		mct := pipeline.MetaPodSpec{
+			Data:   u.Object,
+			Volume: strings.Split("spec.template.spec.volumes", "."),
+			Containers: []pipeline.MetaContainer{
+				{
+					Data:        cu1.Object,
+					Name:        "c1",
+					Env:         []string{"env"},
+					EnvFrom:     []string{"envFrom"},
+					VolumeMount: []string{"volumeMounts"},
+				},
+				{
+					Data:        cu2.Object,
+					Name:        "c2",
+					Env:         []string{"env"},
+					EnvFrom:     []string{"envFrom"},
+					VolumeMount: []string{"volumeMounts"},
+				},
+			},
+		}
+		app := &application{persistedResource: u, resourceMapping: deploymentWorkloadMapping}
+		containers, err := app.BindablePods()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(containers).To(ConsistOf(cu1.Object, cu2.Object))
+		Expect(*containers).To(Equal(mct))
 	})
 
 	It("should return only containers which names are specified in bindable names", func() {
@@ -91,10 +131,30 @@ var _ = Describe("Application", func() {
 		u, _ := converter.ToUnstructured(&d1)
 		cu2, _ := converter.ToUnstructured(&c2)
 		cu3, _ := converter.ToUnstructured(&c3)
-		app := &application{persistedResource: u, bindableContainerNames: sets.NewString("c2", "c3", "c1")}
-		containers, err := app.BindableContainers()
+		mct := pipeline.MetaPodSpec{
+			Data:   u.Object,
+			Volume: strings.Split("spec.template.spec.volumes", "."),
+			Containers: []pipeline.MetaContainer{
+				{
+					Data:        cu2.Object,
+					Name:        "c2",
+					Env:         []string{"env"},
+					EnvFrom:     []string{"envFrom"},
+					VolumeMount: []string{"volumeMounts"},
+				},
+				{
+					Data:        cu3.Object,
+					Name:        "c3",
+					Env:         []string{"env"},
+					EnvFrom:     []string{"envFrom"},
+					VolumeMount: []string{"volumeMounts"},
+				},
+			},
+		}
+		app := &application{persistedResource: u, bindableContainerNames: sets.NewString("c2", "c3", "c1"), resourceMapping: deploymentWorkloadMapping}
+		containers, err := app.BindablePods()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(containers).To(ConsistOf(cu2.Object, cu3.Object))
+		Expect(*containers).To(Equal(mct))
 	})
 })
 

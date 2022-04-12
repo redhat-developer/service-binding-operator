@@ -12,6 +12,7 @@ import (
 	pipeline "github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // MockContext is a mock of Context interface.
@@ -309,6 +310,21 @@ func (mr *MockContextMockRecorder) UnbindRequested() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnbindRequested", reflect.TypeOf((*MockContext)(nil).UnbindRequested))
 }
 
+// WorkloadResourceTemplate mocks base method.
+func (m *MockContext) WorkloadResourceTemplate(arg0 *schema.GroupVersionResource, arg1 string) (*pipeline.WorkloadMapping, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WorkloadResourceTemplate", arg0, arg1)
+	ret0, _ := ret[0].(*pipeline.WorkloadMapping)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WorkloadResourceTemplate indicates an expected call of WorkloadResourceTemplate.
+func (mr *MockContextMockRecorder) WorkloadResourceTemplate(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WorkloadResourceTemplate", reflect.TypeOf((*MockContext)(nil).WorkloadResourceTemplate), arg0, arg1)
+}
+
 // MockService is a mock of Service interface.
 type MockService struct {
 	ctrl     *gomock.Controller
@@ -521,33 +537,47 @@ func (m *MockApplication) EXPECT() *MockApplicationMockRecorder {
 	return m.recorder
 }
 
-// BindableContainers mocks base method.
-func (m *MockApplication) BindableContainers() ([]map[string]interface{}, error) {
+// BindablePods mocks base method.
+func (m *MockApplication) BindablePods() (*pipeline.MetaPodSpec, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BindableContainers")
-	ret0, _ := ret[0].([]map[string]interface{})
+	ret := m.ctrl.Call(m, "BindablePods")
+	ret0, _ := ret[0].(*pipeline.MetaPodSpec)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// BindableContainers indicates an expected call of BindableContainers.
-func (mr *MockApplicationMockRecorder) BindableContainers() *gomock.Call {
+// BindablePods indicates an expected call of BindablePods.
+func (mr *MockApplicationMockRecorder) BindablePods() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindableContainers", reflect.TypeOf((*MockApplication)(nil).BindableContainers))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindablePods", reflect.TypeOf((*MockApplication)(nil).BindablePods))
 }
 
-// ContainersPath mocks base method.
-func (m *MockApplication) ContainersPath() string {
+// GroupVersionResource mocks base method.
+func (m *MockApplication) GroupVersionResource() schema.GroupVersionResource {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ContainersPath")
-	ret0, _ := ret[0].(string)
+	ret := m.ctrl.Call(m, "GroupVersionResource")
+	ret0, _ := ret[0].(schema.GroupVersionResource)
 	return ret0
 }
 
-// ContainersPath indicates an expected call of ContainersPath.
-func (mr *MockApplicationMockRecorder) ContainersPath() *gomock.Call {
+// GroupVersionResource indicates an expected call of GroupVersionResource.
+func (mr *MockApplicationMockRecorder) GroupVersionResource() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ContainersPath", reflect.TypeOf((*MockApplication)(nil).ContainersPath))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GroupVersionResource", reflect.TypeOf((*MockApplication)(nil).GroupVersionResource))
+}
+
+// IsUpdated mocks base method.
+func (m *MockApplication) IsUpdated() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsUpdated")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsUpdated indicates an expected call of IsUpdated.
+func (mr *MockApplicationMockRecorder) IsUpdated() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsUpdated", reflect.TypeOf((*MockApplication)(nil).IsUpdated))
 }
 
 // Resource mocks base method.
@@ -576,6 +606,18 @@ func (m *MockApplication) SecretPath() string {
 func (mr *MockApplicationMockRecorder) SecretPath() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SecretPath", reflect.TypeOf((*MockApplication)(nil).SecretPath))
+}
+
+// SetMapping mocks base method.
+func (m *MockApplication) SetMapping(arg0 pipeline.WorkloadMapping) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetMapping", arg0)
+}
+
+// SetMapping indicates an expected call of SetMapping.
+func (mr *MockApplicationMockRecorder) SetMapping(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetMapping", reflect.TypeOf((*MockApplication)(nil).SetMapping), arg0)
 }
 
 // MockContextProvider is a mock of ContextProvider interface.

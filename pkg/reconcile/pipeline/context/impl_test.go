@@ -3,14 +3,17 @@ package context
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	e "errors"
 	"fmt"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -46,7 +49,7 @@ var _ = Describe("Context", func() {
 
 	Describe("Applications", func() {
 
-		DescribeTable("should return slice of size 1 if application is specified", func(bindingPath *bindingapi.BindingPath, expectedContainerPath string) {
+		DescribeTable("should return slice of size 1 if application is specified", func(bindingPath *bindingapi.BindingPath) {
 			ref := bindingapi.Application{
 				Ref: bindingapi.Ref{
 					Group:   "app",
@@ -83,12 +86,11 @@ var _ = Describe("Context", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(applications).To(HaveLen(1))
 			Expect(applications[0].Resource()).To(Equal(u))
-			Expect(applications[0].ContainersPath()).To(Equal(expectedContainerPath))
 		},
-			Entry("no binding path specified", nil, defaultContainerPath),
-			Entry("binding path specified", &bindingapi.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+			Entry("no binding path specified", nil),
+			Entry("binding path specified", &bindingapi.BindingPath{ContainersPath: "foo.bar"}),
 		)
-		DescribeTable("should return slice of size 2 if 2 applications are specified through label seclector", func(bindingPath *bindingapi.BindingPath, expectedContainerPath string) {
+		DescribeTable("should return slice of size 2 if 2 applications are specified through label seclector", func(bindingPath *bindingapi.BindingPath) {
 			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
@@ -139,13 +141,11 @@ var _ = Describe("Context", func() {
 			Expect(applications[0].Resource().GetName()).NotTo(Equal(applications[1].Resource().GetName()))
 			Expect(applications[0].Resource()).Should(BeElementOf(u1, u2))
 			Expect(applications[1].Resource()).Should(BeElementOf(u1, u2))
-			Expect(applications[0].ContainersPath()).To(Equal(expectedContainerPath))
-			Expect(applications[1].ContainersPath()).To(Equal(expectedContainerPath))
 		},
-			Entry("no binding path specified", nil, defaultContainerPath),
-			Entry("binding path specified", &bindingapi.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+			Entry("no binding path specified", nil),
+			Entry("binding path specified", &bindingapi.BindingPath{ContainersPath: "foo.bar"}),
 		)
-		DescribeTable("should return slice of size 0 if no application is matching through label seclector", func(bindingPath *bindingapi.BindingPath, expectedContainerPath string) {
+		DescribeTable("should return slice of size 0 if no application is matching through label seclector", func(bindingPath *bindingapi.BindingPath) {
 			ls := &metav1.LabelSelector{
 				MatchLabels: map[string]string{"env": "prod"},
 			}
@@ -186,8 +186,8 @@ var _ = Describe("Context", func() {
 			_, err = ctx.Applications()
 			Expect(err).To(HaveOccurred())
 		},
-			Entry("no binding path specified", nil, defaultContainerPath),
-			Entry("binding path specified", &bindingapi.BindingPath{ContainersPath: "foo.bar"}, "foo.bar"),
+			Entry("no binding path specified", nil),
+			Entry("binding path specified", &bindingapi.BindingPath{ContainersPath: "foo.bar"}),
 		)
 
 		It("should return error if application list returns error", func() {
@@ -906,6 +906,138 @@ var _ = Describe("Context", func() {
 			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo1", "val1"))
 			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo2", "val2"))
 			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo3", "val3"))
+		})
+	})
+
+	Describe("Mapping template", func() {
+		It("should not use a wildcard when a matching version is specified", func() {
+			ref := bindingapi.Application{
+				Ref: bindingapi.Ref{
+					Group:   "app",
+					Version: "v1",
+					Kind:    "Foo",
+					Name:    "app1",
+				},
+			}
+
+			sb := bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: bindingapi.ServiceBindingSpec{
+					Application: ref,
+				},
+			}
+			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
+
+			mappingSpec := v1alpha3.ClusterWorkloadResourceMapping{
+				Spec: v1alpha3.ClusterWorkloadResourceMappingSpec{
+					Versions: []v1alpha3.ClusterWorkloadResourceMappingTemplate{
+						{
+							Version: "v1",
+							Volumes: ".spec.volumeSpec",
+						},
+						{
+							Version: "*",
+							Volumes: ".spec.volumes",
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foos.app",
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       v1alpha3.WorkloadResourceMappingGroupVersionKind.Kind,
+					APIVersion: "servicebinding.io/v1alpha3",
+				},
+			}
+
+			bytes, err := json.Marshal(mappingSpec)
+			Expect(err).NotTo(HaveOccurred())
+
+			var data map[string]interface{}
+			err = json.Unmarshal(bytes, &data)
+			Expect(err).NotTo(HaveOccurred())
+
+			u := &unstructured.Unstructured{}
+			u.SetGroupVersionKind(v1alpha3.WorkloadResourceMappingGroupVersionKind)
+			u.SetName("foos.app")
+			u.SetUnstructuredContent(data)
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+
+			mapping, err := ctx.WorkloadResourceTemplate(&gvr, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(mapping.Volume).To(Equal([]string{"spec", "volumeSpec"}))
+		})
+
+		It("should use defaults when none are specified", func() {
+			ref := bindingapi.Application{
+				Ref: bindingapi.Ref{
+					Group:   "app",
+					Version: "v1",
+					Kind:    "Foo",
+					Name:    "app1",
+				},
+			}
+
+			sb := bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: bindingapi.ServiceBindingSpec{
+					Application: ref,
+				},
+			}
+			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
+
+			mappingSpec := v1alpha3.ClusterWorkloadResourceMapping{
+				Spec: v1alpha3.ClusterWorkloadResourceMappingSpec{
+					Versions: []v1alpha3.ClusterWorkloadResourceMappingTemplate{
+						{
+							Version: "*",
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foos.app",
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       v1alpha3.WorkloadResourceMappingGroupVersionKind.Kind,
+					APIVersion: "servicebinding.io/v1alpha3",
+				},
+			}
+
+			bytes, err := json.Marshal(mappingSpec)
+			Expect(err).NotTo(HaveOccurred())
+
+			var data map[string]interface{}
+			err = json.Unmarshal(bytes, &data)
+			Expect(err).NotTo(HaveOccurred())
+
+			u := &unstructured.Unstructured{}
+			u.SetGroupVersionKind(v1alpha3.WorkloadResourceMappingGroupVersionKind)
+			u.SetName("foos.app")
+			u.SetUnstructuredContent(data)
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+
+			mapping, err := ctx.WorkloadResourceTemplate(&gvr, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(mapping.Volume).To(Equal([]string{"spec", "template", "spec", "volumes"}))
+			Expect(mapping.Containers).To(HaveLen(2))
+			Expect(mapping.Containers[0].Env).To(Equal([]string{"env"}))
+			Expect(mapping.Containers[0].EnvFrom).To(Equal([]string{"envFrom"}))
+			Expect(mapping.Containers[0].Name).To(Equal([]string{"name"}))
+			Expect(mapping.Containers[0].VolumeMounts).To(Equal([]string{"volumeMounts"}))
 		})
 	})
 })
