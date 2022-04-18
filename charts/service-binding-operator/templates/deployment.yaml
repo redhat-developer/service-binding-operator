@@ -1,0 +1,66 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    control-plane: service-binding-controller-manager
+  name: service-binding-operator
+  namespace: {{.Release.Namespace}}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      control-plane: service-binding-controller-manager
+  template:
+    metadata:
+      annotations:
+        kubectl.kubernetes.io/default-container: manager
+      labels:
+        control-plane: service-binding-controller-manager
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - args:
+        - --leader-elect
+        - --zap-encoder=json
+        - --zap-log-level=info
+        command:
+        - /manager
+        image: "{{.Values.image.repository}}/servicebinding-operator@sha256:de1881753e82c51b31e958fcf383cb35b0f70f6ec99d402d42243e595d00c6dd"
+        imagePullPolicy: {{.Values.image.pullPolicy}}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        name: manager
+        ports:
+        - containerPort: 9443
+          name: webhook-server
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - mountPath: /tmp/k8s-webhook-server/serving-certs
+          name: cert
+          readOnly: true
+      serviceAccountName: service-binding-operator
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: cert
+        secret:
+          defaultMode: 420
+          secretName: service-binding-operator-service-cert

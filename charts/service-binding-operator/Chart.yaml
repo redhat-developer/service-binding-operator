@@ -1,0 +1,25 @@
+apiVersion: v2
+name: service-binding-operator
+description: A Helm chart to deploy service binding operator
+type: application
+version: 1.0.0
+appVersion: "1.0.1"
+kubeVersion: ">= 1.19.2-0"
+keywords:
+  - ""
+links:
+  - name: Documentation
+    url: https://redhat-developer.github.io/service-binding-operator
+maintainers:
+  - name: Kartikey-star
+    email: kmamgain@redhat.com
+  - name: pmacik
+    email: pmacik@redhat.com
+  - name: jasperchui
+    email: jchui@redhat.com
+  - name: dperaza4dustbit
+    email: dperaza@redhat.com
+annotations:
+  charts.openshift.io/name: service-binding-operator
+  charts.openshift.io/provider: RedHat
+  charts.openshift.io/supportURL: https://github.com/redhat-developer/service-binding-operator.git

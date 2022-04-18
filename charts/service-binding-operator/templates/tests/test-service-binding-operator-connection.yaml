@@ -1,0 +1,37 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test"
+  namespace: {{.Release.Namespace}}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  securityContext:
+    runAsNonRoot: false
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: "{{ .Release.Name }}-test"
+      image: "{{.Values.image.testRepository}}/helm-chart-test@sha256:c050d71294c14b1a61ba9b71122bc82dd5f5cbf20a68c7ac07677e781a0b69a0"
+      imagePullPolicy: "Always"
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+      env:
+        - name: KUBECONFIG
+          value: /k-cfg/kubeconfig
+        - name: TEST_NAMESPACE
+          value: {{.Release.Namespace}}
+        - name: KEEP_TEST_RESOURCES
+          value: "{{.Values.keepTestResources}}"
+      volumeMounts:
+      - name: k-config
+        mountPath: /k-cfg
+  restartPolicy: Never
+  volumes:
+  - name: k-config
+    secret:
+      secretName: my-k-config

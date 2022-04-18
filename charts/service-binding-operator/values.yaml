@@ -1,0 +1,6 @@
+image:
+  pullPolicy: IfNotPresent
+  repository: quay.io/redhat-developer
+  testRepository: quay.io/service-binding
+keepTestResources: false
+# As part of helm test we clear up the deploymemt,service binding resource and secret created. If a user is interested to view them , then he has to install the chart with keepTestResources set to true.

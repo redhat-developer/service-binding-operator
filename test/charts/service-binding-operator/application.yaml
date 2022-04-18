@@ -1,0 +1,39 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+  labels:
+    app: test-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      containers:
+        - name: test-app
+          image: "quay.io/service-binding/generic-test-app:20220216"
+          imagePullPolicy: IfNotPresent
+          ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: test-app
+  name: test-app
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: test-app

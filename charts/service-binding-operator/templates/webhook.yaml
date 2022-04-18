@@ -1,0 +1,100 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    cert-manager.io/inject-ca-from: service-binding-operator/service-binding-service-cert
+  name: service-binding-mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: service-binding-webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-servicebinding
+  failurePolicy: Fail
+  name: mservicebinding.kb.io
+  rules:
+  - apiGroups:
+    - binding.operators.coreos.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: service-binding-webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /mutate-servicebinding
+  failurePolicy: Fail
+  name: mspec-servicebinding.kb.io
+  rules:
+  - apiGroups:
+    - servicebinding.io
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  labels:
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    cert-manager.io/inject-ca-from: service-binding-operator/service-binding-service-cert
+  name: service-binding-validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: service-binding-webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-binding-operators-coreos-com-v1alpha1-servicebinding
+  failurePolicy: Fail
+  name: vservicebinding.kb.io
+  rules:
+  - apiGroups:
+    - binding.operators.coreos.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: service-binding-webhook-service
+      namespace: {{.Release.Namespace}}
+      path: /validate-servicebinding-io-v1alpha3-servicebinding
+  failurePolicy: Fail
+  name: vspecservicebinding.kb.io
+  rules:
+  - apiGroups:
+    - servicebinding.io
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None
