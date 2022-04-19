@@ -46,6 +46,15 @@ spec:
                               properties:
                                 containerPort:
                                   type: integer
+                          volumeMounts:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                mountPath:
+                                  type: string
+                                name:
+                                  type: string
                           envFrom:
                             type: array
                             items:
@@ -58,6 +67,20 @@ spec:
                                       type: string
                     secret:
                       type: string
+                    volumes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                          secret:
+                            type: object
+                            properties:
+                              defaultMode:
+                                type: integer
+                              secretName:
+                                type: string
                 template:
                   type: object
                   properties:
@@ -100,6 +123,20 @@ spec:
                                       type: string
                                     name:
                                       type: string
+                        volumes:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name:
+                                type: string
+                              secret:
+                                type: object
+                                properties:
+                                  defaultMode:
+                                    type: integer
+                                  secretName:
+                                    type: string
   scope: Namespaced
   names:
     plural: appconfigs

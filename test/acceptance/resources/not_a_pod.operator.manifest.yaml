@@ -1,0 +1,150 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: notpodspecs.stable.example.com
+spec:
+  group: stable.example.com
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              type: object
+              properties:
+                volumeData:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      secret:
+                        type: object
+                        properties:
+                          defaultMode:
+                            type: integer
+                          secretName:
+                            type: string
+                initContainerSpecs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      image:
+                        type: string
+                      id:
+                        type: string
+                      envFrom:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                      envData:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                      volumeEntries:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            name:
+                              type: string
+                containerSpecs:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      image:
+                        type: string
+                      id:
+                        type: string
+                      envFrom:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            secretRef:
+                              type: object
+                              properties:
+                                name:
+                                  type: string
+                      envData:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            value:
+                              type: string
+                            valueFrom:
+                              type: object
+                              properties:
+                                secretKeyRef:
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    name:
+                                      type: string
+                      volumeEntries:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            name:
+                              type: string
+
+  scope: Namespaced
+  names:
+    plural: notpodspecs
+    singular: notpodspec
+    kind: NotPodSpec
+    shortNames:
+      - npc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admin-to-notpodspec
+  labels:
+    servicebinding.io/controller: "true"
+rules:
+  - apiGroups: ["stable.example.com"]
+    resources: ["notpodspecs"]
+    verbs: ["get", "list", "update", "patch"]

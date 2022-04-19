@@ -2,12 +2,14 @@ package pipeline
 
 import (
 	"fmt"
+
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 //go:generate mockgen -destination=mocks/mocks_pipeline.go -package=mocks . Context,Service,CRD,Application,ContextProvider,Handler
@@ -20,6 +22,21 @@ type Pipeline interface {
 	// and optional error if occurred
 	// important: even if error occurred it might not be needed to retry processing
 	Process(binding interface{}) (bool, error)
+}
+
+// A container-like object.  EnvFrom is optional; all other fields are required.
+type MetaContainer struct {
+	Name        string
+	Env         []string
+	EnvFrom     []string
+	VolumeMount []string
+	Data        map[string]interface{}
+}
+
+type MetaPodSpec struct {
+	Containers []MetaContainer
+	Volume     []string
+	Data       map[string]interface{}
 }
 
 // A pipeline stage
@@ -74,16 +91,21 @@ type Application interface {
 	// Application resource
 	HasResource
 
-	// dot-separated path inside the application resource locating container resources
-	// the returned value follows foo.bar.bla convention
-	// it cannot be empty
-	ContainersPath() string
-
 	// optional dot-separated path inside the application resource locating field where intermediate binding secret ref should be injected
 	// the returns value follows foo.bar.bla convention, but it can be empty
 	SecretPath() string
 
-	BindableContainers() ([]map[string]interface{}, error)
+	// Returns a container-like interface.
+	BindablePods() (*MetaPodSpec, error)
+
+	// A flag indicating if changes have been propogated
+	IsUpdated() bool
+
+	// GroupVersionResource of the application
+	GroupVersionResource() schema.GroupVersionResource
+
+	// Use a different mapping
+	SetMapping(WorkloadMapping)
 }
 
 type CRDDescription olmv1alpha1.CRDDescription
@@ -162,6 +184,8 @@ type Context interface {
 	kubernetes.SecretReader
 
 	FlowStatus() FlowStatus
+
+	WorkloadResourceTemplate(gvr *schema.GroupVersionResource, containerPath string) (*WorkloadMapping, error)
 }
 
 // Provides context for a given service binding

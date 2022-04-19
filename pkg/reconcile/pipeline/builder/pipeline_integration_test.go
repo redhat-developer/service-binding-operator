@@ -2,10 +2,12 @@ package builder_test
 
 import (
 	c "context"
+	"reflect"
+
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	fakeauth "k8s.io/client-go/kubernetes/typed/authorization/v1/fake"
-	"reflect"
 
 	"github.com/golang/mock/gomock"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
@@ -15,6 +17,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -155,6 +158,12 @@ var _ = Describe("Default Pipeline", func() {
 
 		u, err = client.Resource(appGVR).Namespace(sb.Namespace).Get(c.Background(), appName, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())
+
+		_, err = client.
+			Resource(v1alpha3.WorkloadResourceMappingGroupVersionResource).
+			Get(c.Background(), serviceGVK.GroupKind().String(), metav1.GetOptions{})
+		Expect(err).To(Equal(errors.NewNotFound(v1alpha3.WorkloadResourceMappingGroupVersionResource.GroupResource(), serviceGVK.GroupKind().String())), "Binding should occur without a workload resource mapping")
+
 		updatedApp := &appsv1.Deployment{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, updatedApp)
 		Expect(err).NotTo(HaveOccurred())

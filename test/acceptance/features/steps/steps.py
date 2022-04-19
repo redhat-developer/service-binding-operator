@@ -276,6 +276,7 @@ def check_secret_key_with_ip_value(context, secret_key):
 @given(u'The Secret is present')
 @when(u'The Secret is present')
 @step(u'The Service is present')
+@step(u'The Workload Resource Mapping is present')
 def apply_yaml(context, user=None):
     openshift = Openshift()
     resource = substitute_scenario_id(context, context.text)
@@ -297,6 +298,7 @@ def apply_yaml(context, user=None):
 # STEP
 @given(u'BackingService is deleted')
 @when(u'BackingService is deleted')
+@step(u'The Workload Resource Mapping is deleted')
 def delete_yaml(context):
     openshift = Openshift()
     text = substitute_scenario_id(context, context.text)
@@ -317,9 +319,10 @@ def delete_yaml(context):
 @then(u'Secret has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
 def verify_injected_secretRef(context, cr_name, crd_name, json_path):
     sb = list(context.bindings.values())[0]
+    name = substitute_scenario_id(context, cr_name)
     openshift = Openshift()
     secret = polling2.poll(lambda: sb.get_secret_name(), step=100, timeout=1000, ignore_exceptions=(ValueError,), check_success=lambda v: v is not None)
-    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, cr_name, context.namespace.name, json_path) == secret,
+    polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crd_name, name, context.namespace.name, json_path) == secret,
                   step=5, timeout=400)
 
 

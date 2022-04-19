@@ -25,6 +25,7 @@ import (
 // +kubebuilder:rbac:groups="",resources=pods;secrets;services;endpoints;configmaps,verbs=get;list
 // +kubebuilder:rbac:groups="",resources=pods;secrets,verbs=update;patch
 // +kubebuilder:rbac:groups="",resources=secrets,verbs=create
+// +kubebuilder:rbac:groups=servicebinding.io,resources=clusterworkloadresourcemappings,verbs=get
 
 var (
 	MaxConcurrentReconciles int

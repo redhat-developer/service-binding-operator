@@ -148,6 +148,12 @@ rules:
 - apiGroups:
   - servicebinding.io
   resources:
+  - clusterworkloadresourcemappings
+  verbs:
+  - get
+- apiGroups:
+  - servicebinding.io
+  resources:
   - servicebindings
   verbs:
   - create
