@@ -297,6 +297,33 @@ var _ = Describe("Mapping workloads", func() {
 			}))
 		})
 
+		It("should not set service binding environment variables more than once", func() {
+			envVars := []v1.EnvVar{
+				{
+					Name:  "FOO",
+					Value: "foo",
+				},
+			}
+
+			envs, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&map[string]interface{}{"env": envVars})
+			Expect(err).NotTo(HaveOccurred())
+			container := pipeline.MetaContainer{
+				Data: envs,
+				Env:  []string{"env"},
+			}
+
+			err = container.AddEnvVars(envVars)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(container.Data).To(Equal(map[string]interface{}{
+				"env": []map[string]interface{}{
+					{
+						"name":  "FOO",
+						"value": "foo",
+					},
+				},
+			}))
+		})
+
 		It("should add new environment variables from a secret", func() {
 			container := pipeline.MetaContainer{
 				Data:    map[string]interface{}{},
@@ -317,6 +344,30 @@ var _ = Describe("Mapping workloads", func() {
 			Expect(container.Data).To(Equal(map[string]interface{}{"envFrom": []map[string]interface{}{env}}))
 		})
 
+		It("should not set environment variables from a secret more than once", func() {
+			container := pipeline.MetaContainer{
+				Data:    map[string]interface{}{},
+				EnvFrom: []string{"envFrom"},
+			}
+			envFromVars := v1.EnvFromSource{
+				SecretRef: &v1.SecretEnvSource{
+					LocalObjectReference: v1.LocalObjectReference{
+						Name: "spam",
+					},
+				},
+			}
+			env, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&envFromVars)
+			Expect(err).NotTo(HaveOccurred())
+
+			err = container.AddEnvFromVar(envFromVars)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(container.Data).To(Equal(map[string]interface{}{"envFrom": []map[string]interface{}{env}}))
+
+			err = container.AddEnvFromVar(envFromVars)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(container.Data).To(Equal(map[string]interface{}{"envFrom": []map[string]interface{}{env}}))
+		})
+
 		It("should not add new environment variables from a secret when envFrom is not set", func() {
 			container := pipeline.MetaContainer{}
 			envFromVars := v1.EnvFromSource{
@@ -328,7 +379,6 @@ var _ = Describe("Mapping workloads", func() {
 			}
 			err := container.AddEnvFromVar(envFromVars)
 			Expect(err).To(HaveOccurred())
-
 		})
 
 		It("should remove environment variables from a secret", func() {

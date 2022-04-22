@@ -263,6 +263,66 @@ var _ = Describe("Context", func() {
 			_, err = ctx.Applications()
 			Expect(err).To(HaveOccurred())
 		})
+		It("should report labels on service bindings when they exist", func() {
+			sb := bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: bindingapi.ServiceBindingSpec{
+					Application: bindingapi.Application{
+						Ref: bindingapi.Ref{
+							Group:   "app",
+							Version: "v1",
+							Kind:    "Foo",
+						},
+						LabelSelector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"foo": "bar"},
+						},
+					},
+				},
+			}
+
+			u := &unstructured.Unstructured{}
+			u.SetName("app1")
+			u.SetNamespace(sb.Namespace)
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.HasLabelSelector()).To(BeTrue())
+		})
+		It("should not report labels on service bindings when they don't exist", func() {
+			sb := bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: bindingapi.ServiceBindingSpec{
+					Application: bindingapi.Application{
+						Ref: bindingapi.Ref{
+							Group:   "app",
+							Version: "v1",
+							Kind:    "Foo",
+							Name:    "app1",
+						},
+					},
+				},
+			}
+
+			u := &unstructured.Unstructured{}
+			u.SetName("app1")
+			u.SetNamespace(sb.Namespace)
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.HasLabelSelector()).To(BeFalse())
+		})
 	})
 
 	Describe("Services", func() {

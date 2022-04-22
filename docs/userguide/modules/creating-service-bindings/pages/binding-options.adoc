@@ -183,3 +183,58 @@ spec:
 <1>  Database service
 <2> Optional "id" field
 <3>  Translation service
+
+== Binding workloads from a label selector
+
+Sometimes, it may be useful to specify the workload being bound by using a label selector.  For
+instance, you may want to bind a service to every workload with the label `environment: production`
+set.  SBO is able to support this kind of binding by being able to bind with label selectors.  As an
+example, to project a single secret into multiple workloads, set up your application field like so:
+[source,yaml]
+----
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: multi-application-binding
+  namespace: service-binding-demo
+spec:
+  application:
+    labelSelector:
+      matchLabels:
+        environment: production
+    group: apps
+    version: v1
+    resource: deployments
+  services:
+    group: ""
+    version: v1
+    kind: Secret
+    name: super-secret-data
+----
+
+Or, using the spec API:
+[source,yaml]
+----
+apiVersion: servicebindings.io/v1alpha3
+kind: ServiceBinding
+metadata:
+  name: multi-application-binding
+  namespace: service-binding-demo
+spec:
+  workload:
+    selector:
+      matchLabels:
+        environment: production
+    apiVersion: app/v1
+    kind: Deployment
+  service:
+    apiVersion: v1
+    kind: Secret
+    name: super-secret-data
+----
+
+If a service binding is declared using these label selectors to pick up workloads, SBO will
+periodically attempt to find and bind new workloads that match the given label selector.
+
+As a note: it is currently forbidden to attempt a binding with both `name:` and `labelSelector`
+defined (or `selector` in the spec API).  Any attempt to do so will result in a error.

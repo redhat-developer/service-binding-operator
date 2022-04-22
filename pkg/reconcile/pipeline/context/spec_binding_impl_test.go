@@ -315,6 +315,60 @@ var _ = Describe("Spec API Context", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(*containers).To(Equal(mct))
 		})
+		It("should report labels on service bindings when they exist", func() {
+			sb := specapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: specapi.ServiceBindingSpec{
+					Workload: specapi.ServiceBindingWorkloadReference{
+						APIVersion: "foo/v1",
+						Kind:       "Foo",
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{"foo": "bar"},
+						},
+					},
+				},
+			}
+
+			u := &unstructured.Unstructured{}
+			u.SetName("app1")
+			u.SetNamespace(sb.Namespace)
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.HasLabelSelector()).To(BeTrue())
+		})
+		It("should not report labels on service bindings when they don't exist", func() {
+			sb := specapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+				},
+				Spec: specapi.ServiceBindingSpec{
+					Workload: specapi.ServiceBindingWorkloadReference{
+						APIVersion: "app/v1",
+						Kind:       "Foo",
+						Name:       "app1",
+					},
+				},
+			}
+
+			u := &unstructured.Unstructured{}
+			u.SetName("app1")
+			u.SetNamespace(sb.Namespace)
+			u.SetGroupVersionKind(schema.GroupVersionKind{Group: "app", Version: "v1", Kind: "Foo"})
+			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ctx.HasLabelSelector()).To(BeFalse())
+		})
 	})
 
 	Describe("Services", func() {

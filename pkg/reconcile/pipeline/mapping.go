@@ -209,6 +209,10 @@ func addRaw(obj map[string]interface{}, resource interface{}, data []map[string]
 }
 
 func (container *MetaContainer) AddEnvVars(vars []corev1.EnvVar) error {
+	for _, v := range vars {
+		// ignore errors, we could be projecting env vars that don't exist yet
+		_ = container.RemoveEnvVars(v.Name)
+	}
 	var data []map[string]interface{}
 	for _, variable := range vars {
 		x, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&variable)
@@ -241,6 +245,8 @@ func (container *MetaContainer) RemoveEnvVars(name string) error {
 
 func (container *MetaContainer) AddEnvFromVar(envVar corev1.EnvFromSource) error {
 	if len(container.EnvFrom) != 0 {
+		// ignore errors, we could be projecting env vars that don't exist yet
+		_ = container.RemoveEnvFromVars(envVar.SecretRef.Name)
 		data, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&envVar)
 		if err != nil {
 			return err

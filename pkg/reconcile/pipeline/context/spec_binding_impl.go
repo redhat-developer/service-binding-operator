@@ -3,6 +3,7 @@ package context
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
@@ -10,6 +11,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
+	"golang.org/x/time/rate"
 	"k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,6 +20,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/dynamic"
 	authv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
+	"k8s.io/client-go/util/workqueue"
 )
 
 var _ pipeline.Context = &specImpl{}
@@ -64,6 +67,12 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 							return apis.Requester(sb.ObjectMeta)
 						},
 						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client),
+						labelSelectionRateLimiter: workqueue.NewMaxOfRateLimiter(
+							workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 2*time.Minute),
+							&workqueue.BucketRateLimiter{
+								Limiter: rate.NewLimiter(rate.Limit(10), 100),
+							},
+						),
 					},
 					serviceBinding: sb,
 				}
@@ -164,7 +173,7 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 				resourceMapping:        *mappingTemplate,
 			})
 		}
-		if i.serviceBinding.Spec.Workload.Selector != nil && i.serviceBinding.Spec.Workload.Selector.MatchLabels != nil {
+		if i.HasLabelSelector() {
 			matchLabels := i.serviceBinding.Spec.Workload.Selector.MatchLabels
 			opts := metav1.ListOptions{
 				LabelSelector: labels.Set(matchLabels).String(),
@@ -208,4 +217,8 @@ func (s *specImpl) NamingTemplate() string {
 
 func (s *specImpl) Mappings() map[string]string {
 	return make(map[string]string)
+}
+
+func (i *specImpl) HasLabelSelector() bool {
+	return i.serviceBinding != nil && i.serviceBinding.Spec.Workload.Selector != nil
 }

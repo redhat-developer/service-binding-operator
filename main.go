@@ -19,11 +19,12 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
+	"sync"
+
 	"github.com/redhat-developer/service-binding-operator/apis/webhooks"
 	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1beta1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"os"
-	"sync"
 
 	crdcontrollers "github.com/redhat-developer/service-binding-operator/controllers/crd"
 

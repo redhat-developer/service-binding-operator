@@ -147,6 +147,18 @@ func (mr *MockContextMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockContext)(nil).Close))
 }
 
+// DelayReprocessing mocks base method.
+func (m *MockContext) DelayReprocessing(arg0 error) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "DelayReprocessing", arg0)
+}
+
+// DelayReprocessing indicates an expected call of DelayReprocessing.
+func (mr *MockContextMockRecorder) DelayReprocessing(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DelayReprocessing", reflect.TypeOf((*MockContext)(nil).DelayReprocessing), arg0)
+}
+
 // EnvBindings mocks base method.
 func (m *MockContext) EnvBindings() []*pipeline.EnvBinding {
 	m.ctrl.T.Helper()
@@ -185,6 +197,20 @@ func (m *MockContext) FlowStatus() pipeline.FlowStatus {
 func (mr *MockContextMockRecorder) FlowStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlowStatus", reflect.TypeOf((*MockContext)(nil).FlowStatus))
+}
+
+// HasLabelSelector mocks base method.
+func (m *MockContext) HasLabelSelector() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HasLabelSelector")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// HasLabelSelector indicates an expected call of HasLabelSelector.
+func (mr *MockContextMockRecorder) HasLabelSelector() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasLabelSelector", reflect.TypeOf((*MockContext)(nil).HasLabelSelector))
 }
 
 // Mappings mocks base method.

@@ -10,6 +10,7 @@ import parse
 import binascii
 import yaml
 import json
+import time
 
 from behave import given, register_type, then, when, step
 from knative_serving import KnativeServing
@@ -316,7 +317,7 @@ def delete_yaml(context):
     assert result is not None, f"Unable to delete CR '{metadata_name}': {output}"
 
 
-@then(u'Secret has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
+@step(u'Secret has been injected in to CR "{cr_name}" of kind "{crd_name}" at path "{json_path}"')
 def verify_injected_secretRef(context, cr_name, crd_name, json_path):
     sb = list(context.bindings.values())[0]
     name = substitute_scenario_id(context, cr_name)
@@ -463,3 +464,8 @@ def check_service_account_bound(context, cluster_role_name, cluster_rolebinding_
             continue
 
     assert subject_found, f"Could not find rolebinding for the role '{cluster_role_name}'"
+
+
+@step(u'{time_min} minutes have passed')
+def step_impl(context, time_min):
+    time.sleep(60 * int(time_min))

@@ -3,6 +3,7 @@ package builder_test
 import (
 	c "context"
 	"reflect"
+	"time"
 
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -128,9 +129,10 @@ var _ = Describe("Default Pipeline", func() {
 
 		p := builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), typeLookup)).Build()
 
-		retry, err := p.Process(sb)
+		retry, delay, err := p.Process(sb)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(retry).To(BeFalse())
+		Expect(delay).To(Equal(time.Duration(0)))
 
 		u, err := client.Resource(v1alpha1.GroupVersionResource).Namespace(sb.Namespace).Get(c.Background(), sb.Name, metav1.GetOptions{})
 		Expect(err).NotTo(HaveOccurred())

@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"flag"
+
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 
 	"github.com/go-logr/logr"
@@ -103,7 +104,7 @@ func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	} else {
 		log.Info("Deleted, unbind the application")
 	}
-	retry, err := r.pipeline.Process(serviceBinding) // <.>
+	retry, delay, err := r.pipeline.Process(serviceBinding) // <.>
 	if !retry && err == nil {
 		if serviceBinding.HasDeletionTimestamp() {
 			if apis.MaybeRemoveFinalizer(serviceBinding) {
@@ -113,7 +114,7 @@ func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}
 	}
-	result := ctrl.Result{Requeue: retry}
+	result := ctrl.Result{Requeue: retry, RequeueAfter: delay}
 	log.Info("Done", "retry", retry, "error", err)
 	if retry {
 		return result, err

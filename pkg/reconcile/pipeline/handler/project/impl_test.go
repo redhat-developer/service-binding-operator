@@ -151,6 +151,7 @@ var _ = Describe("Inject Bindings as Env vars handler", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(&d).To(Equal(expected))
 		})
+
 	})
 
 	Context("env bindings are set", func() {
@@ -356,6 +357,35 @@ var _ = Describe("Injection Preflight checks", func() {
 		ctx.EXPECT().BindingItems().Return(pipeline.BindingItems{&pipeline.BindingItem{Name: "foo", Value: "val1"}, &pipeline.BindingItem{Name: "bar", Value: "val2"}})
 		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
 		project.PreFlightCheck("foo", "bar")(ctx)
+	})
+})
+
+var _ = Describe("Injection Postflight checks", func() {
+	var (
+		mockCtrl *gomock.Controller
+		ctx      *mocks.MockContext
+	)
+
+	BeforeEach(func() {
+		mockCtrl = gomock.NewController(GinkgoT())
+		ctx = mocks.NewMockContext(mockCtrl)
+	})
+
+	AfterEach(func() {
+		mockCtrl.Finish()
+	})
+
+	It("should trigger rebinding when labels are present", func() {
+		ctx.EXPECT().SetCondition(apis.Conditions().InjectionReady().Reason("ApplicationUpdated").Build())
+		ctx.EXPECT().HasLabelSelector().Return(true)
+		ctx.EXPECT().DelayReprocessing(nil)
+		project.PostFlightCheck(ctx)
+	})
+
+	It("should not trigger rebinding when labels are not present", func() {
+		ctx.EXPECT().SetCondition(apis.Conditions().InjectionReady().Reason("ApplicationUpdated").Build())
+		ctx.EXPECT().HasLabelSelector().Return(false)
+		project.PostFlightCheck(ctx)
 	})
 })
 
