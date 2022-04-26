@@ -13,6 +13,7 @@ class CrunchyPostgresOperator(Operator):
         else:
             self.operator_catalog_source_name = "operatorhubio-catalog"
             self.package_name = "postgresql"
+            self.operator_subscription_csv_version = "postgresoperator.v5.0.5"
         self.operator_catalog_channel = "v5"
 
 
