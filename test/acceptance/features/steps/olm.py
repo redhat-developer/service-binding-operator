@@ -14,6 +14,7 @@ class Operator(object):
     operator_catalog_source_name = ""
     operator_catalog_image = ""
     operator_catalog_channel = ""
+    operator_subscription_csv_version = None
     package_name = ""
 
     def is_running(self, wait=False):
@@ -36,8 +37,10 @@ class Operator(object):
                 return False
         return self.openshift.wait_for_package_manifest(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
 
-    def install_operator_subscription(self):
-        install_sub_output = self.openshift.create_operator_subscription(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
+    def install_operator_subscription(self, csv_version=None):
+        install_sub_output = self.openshift.create_operator_subscription(
+            self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel,
+            self.operator_subscription_csv_version if csv_version is None else csv_version)
         if re.search(r'.*subscription.operators.coreos.com/%s\s(unchanged|created)' % self.package_name, install_sub_output) is None:
             print("Failed to create {} operator subscription".format(self.package_name))
             return False

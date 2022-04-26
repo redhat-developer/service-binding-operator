@@ -381,14 +381,14 @@ spec:
         last_revision_status = output.split(" ")[-1]
         return last_revision_status
 
-    def create_operator_subscription_to_namespace(self, package_name, namespace, operator_source_name, channel):
+    def create_operator_subscription_to_namespace(self, package_name, namespace, operator_source_name, channel, csv_version=None):
         operator_subscription = self.operator_subscription_to_namespace_yaml_template.format(
             name=package_name, namespace=namespace, operator_source_name=operator_source_name, olm_namespace=self.olm_namespace,
-            channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel))
+            channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel) if csv_version is None else csv_version)
         return self.apply(operator_subscription)
 
-    def create_operator_subscription(self, package_name, operator_source_name, channel):
-        return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name, channel)
+    def create_operator_subscription(self, package_name, operator_source_name, channel, csv_version=None):
+        return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name, channel, csv_version)
 
     def get_resource_list_in_namespace(self, resource_plural, name_pattern, namespace):
         print(f"Searching for {resource_plural} that matches {name_pattern} in {namespace} namespace")
