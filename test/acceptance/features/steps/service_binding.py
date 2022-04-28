@@ -107,8 +107,12 @@ def sbo_is_ready(context, sbr_name=None):
     sbo_jq_is(context, '.status.conditions[] | select(.type=="Ready").status', sbr_name, 'True')
     sb = context.bindings[sbr_name]
     if sb.crdName == "servicebindings.servicebinding.io":
-        assert sb.get_info_by_jsonpath("{.metadata.generation") == sb.get_info_by_jsonpath("{.status.observedGeneration"), \
-            f"Service binding {sb.name} observed generation not equal to generation"
+        generation = sb.get_info_by_jsonpath("{.metadata.generation}")
+        assert generation is not None, f"Unable to get Service Binding {sb.name} generation"
+        observedGeneration = sb.get_info_by_jsonpath("{.status.observedGeneration}")
+        assert observedGeneration is not None, f"Unable to get Service Binding {sb.name} observed generation"
+        assert generation == observedGeneration, \
+            f"Service binding {sb.name} observed generation ({observedGeneration}) not equal to generation ({generation})"
     context.sb_secret = context.bindings[sbr_name].get_secret_name()
 
 
