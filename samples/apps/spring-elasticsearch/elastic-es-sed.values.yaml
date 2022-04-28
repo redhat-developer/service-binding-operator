@@ -1,0 +1,8 @@
+elasticsearch:
+  sed:
+    hostname: elastic-es-master.product-search.svc.cluster.local
+    port: 9200
+    cluster: elastic-es
+    user: 'elastic'
+    password: 'passwhat?'
+clusterHealthCheckParams: "wait_for_status=green&timeout=1s"

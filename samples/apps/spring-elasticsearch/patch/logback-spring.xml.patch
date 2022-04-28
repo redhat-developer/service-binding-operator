@@ -1,0 +1,39 @@
+diff --git a/spring-boot/spring-boot-elasticsearch/src/main/resources/logback-spring.xml b/spring-boot/spring-boot-elasticsearch/src/main/resources/logback-spring.xml
+index 08c4ef8..5c49517 100644
+--- a/spring-boot/spring-boot-elasticsearch/src/main/resources/logback-spring.xml
++++ b/spring-boot/spring-boot-elasticsearch/src/main/resources/logback-spring.xml
+@@ -11,26 +11,6 @@
+ 	</appender>
+ 
+ 
+-	<appender name="FILE"
+-		class="ch.qos.logback.core.rolling.RollingFileAppender">
+-		<file>app.log</file>
+-		<rollingPolicy
+-			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+-			<fileNamePattern>${app.logPathPrefix}/myproject.%d{yyyy-MM-dd}.%i.log.gz
+-			</fileNamePattern>
+-			<timeBasedFileNamingAndTriggeringPolicy
+-				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+-				<maxFileSize>50MB</maxFileSize>
+-			</timeBasedFileNamingAndTriggeringPolicy>
+-			<maxHistory>30</maxHistory>
+-		</rollingPolicy>
+-
+-		<encoder>
+-			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%level] [%thread]
+-				[%logger:%line] %msg%n
+-			</pattern>
+-		</encoder>
+-	</appender>
+ 
+ 	<logger name="org.springframework" level="ERROR" />
+ 	<logger name="io.pratik" level="INFO" />
+@@ -38,7 +18,6 @@
+ 
+ 	<root level="info">
+ 		<appender-ref ref="STDOUT" />
+-		<appender-ref ref="FILE" />
+ 	</root>
+ 	<springProfile name="dev">
+ 		<logger name="io.pratik" level="info" />

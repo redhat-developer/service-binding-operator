@@ -1,0 +1,17 @@
+# tag::service-binding[]
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: productsearch-elastic-es-sed
+spec:
+  application:
+    group: apps
+    name: productsearch
+    resource: deployments
+    version: v1
+  services:
+  - group: ''
+    kind: Secret
+    name: io.servicebinding.elastic-es-sed
+    version: v1
+# end::service-binding[]
