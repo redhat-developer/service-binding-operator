@@ -83,6 +83,7 @@ Here are some more places to read about SBO in use:
 * [How to use service binding with RabbitMQ](https://developers.redhat.com/articles/2021/11/03/how-use-service-binding-rabbitmq)
 * [Bind workloads to services easily with the Service Binding Operator and Red Hat OpenShift](https://developers.redhat.com/articles/2022/03/11/binding-workloads-services-made-easier-service-binding-operator-red-hat)
 * [Drag&Drop JAR and Service Binding](https://www.youtube.com/watch?v=zb1m31i7EYA)
+* [Bind a Kafka cluster to a Node.js application the easy way](https://developers.redhat.com/articles/2022/04/21/bind-kafka-cluster-nodejs-application-easy-way)
 
 ## Known bindable operators
 
