@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -169,6 +170,7 @@ type BindingPath struct {
 	SecretPath string `json:"secretPath"`
 }
 
+// +genclient
 // ServiceBinding expresses intent to bind a service with an application
 // workload.
 // +kubebuilder:subresource:status

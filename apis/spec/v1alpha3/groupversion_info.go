@@ -25,19 +25,19 @@ import (
 )
 
 var (
-	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "servicebinding.io", Version: "v1alpha3"}
+	// SchemeGroupVersion is group version used to register these objects
+	SchemeGroupVersion = schema.GroupVersion{Group: "servicebinding.io", Version: "v1alpha3"}
 
-	GroupVersionResource = GroupVersion.WithResource("servicebindings")
+	GroupVersionResource = SchemeGroupVersion.WithResource("servicebindings")
 
-	GroupVersionKind = GroupVersion.WithKind("ServiceBinding")
+	GroupVersionKind = SchemeGroupVersion.WithKind("ServiceBinding")
 
-	WorkloadResourceMappingGroupVersionResource = GroupVersion.WithResource("clusterworkloadresourcemappings")
+	WorkloadResourceMappingGroupVersionResource = SchemeGroupVersion.WithResource("clusterworkloadresourcemappings")
 
-	WorkloadResourceMappingGroupVersionKind = GroupVersion.WithKind("ClusterWorkloadResourceMapping")
+	WorkloadResourceMappingGroupVersionKind = SchemeGroupVersion.WithKind("ClusterWorkloadResourceMapping")
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
-	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
+	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme

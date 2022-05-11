@@ -27,6 +27,8 @@ type BindableKindsStatus struct {
 	Kind    string `json:"kind"`
 }
 
+// +genclient
+// +genclient:nonNamespaced
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
 
