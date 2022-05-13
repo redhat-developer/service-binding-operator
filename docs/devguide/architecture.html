@@ -251,7 +251,7 @@ func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	} else {
 		log.Info("Deleted, unbind the application")
 	}
-	retry, err := r.pipeline.Process(serviceBinding) <i class="conum" data-value="1"></i><b>(1)</b>
+	retry, delay, err := r.pipeline.Process(serviceBinding) <i class="conum" data-value="1"></i><b>(1)</b>
 	if !retry &amp;&amp; err == nil {
 		if serviceBinding.HasDeletionTimestamp() {
 			if apis.MaybeRemoveFinalizer(serviceBinding) {
@@ -261,7 +261,7 @@ func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 			}
 		}
 	}
-	result := ctrl.Result{Requeue: retry}
+	result := ctrl.Result{Requeue: retry, RequeueAfter: delay}
 	log.Info("Done", "retry", retry, "error", err)
 	if retry {
 		return result, err
