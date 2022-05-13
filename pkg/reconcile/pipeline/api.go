@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"fmt"
+	"time"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
@@ -21,7 +22,7 @@ type Pipeline interface {
 	// Returns true if processing should be repeated
 	// and optional error if occurred
 	// important: even if error occurred it might not be needed to retry processing
-	Process(binding interface{}) (bool, error)
+	Process(binding interface{}) (bool, time.Duration, error)
 }
 
 // A container-like object.  EnvFrom is optional; all other fields are required.
@@ -49,6 +50,7 @@ type FlowStatus struct {
 	Retry bool
 	Stop  bool
 	Err   error
+	Delay time.Duration
 }
 
 type HasResource interface {
@@ -167,6 +169,10 @@ type Context interface {
 	// The current processing stops and context gets closed
 	RetryProcessing(reason error)
 
+	// Indicates that the binding should be retried with a delay.  The context will determine the
+	// appropriate delay to add.  This will close the context, and is similar to RetryProcessing
+	DelayReprocessing(reason error)
+
 	// Indicates that en error has occurred while processing the binding
 	Error(err error)
 
@@ -186,6 +192,9 @@ type Context interface {
 	FlowStatus() FlowStatus
 
 	WorkloadResourceTemplate(gvr *schema.GroupVersionResource, containerPath string) (*WorkloadMapping, error)
+
+	// Is this service binding getting its workloads from a label selector?
+	HasLabelSelector() bool
 }
 
 // Provides context for a given service binding

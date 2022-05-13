@@ -49,6 +49,10 @@ func PreFlightCheck(mandatoryBindingKeys ...string) func(pipeline.Context) {
 
 func PostFlightCheck(ctx pipeline.Context) {
 	ctx.SetCondition(apis.Conditions().InjectionReady().Reason("ApplicationUpdated").Build())
+	if ctx.HasLabelSelector() {
+		// Force periodic reprocessing of this service binding to catch new workloads
+		ctx.DelayReprocessing(nil)
+	}
 }
 
 func InjectSecretRef(ctx pipeline.Context) {

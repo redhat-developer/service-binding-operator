@@ -6,15 +6,18 @@ import (
 	"encoding/hex"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
+	"golang.org/x/time/rate"
 	authv1 "k8s.io/api/authentication/v1"
 	v1 "k8s.io/api/authorization/v1"
 	clientauthzv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
+	"k8s.io/client-go/util/workqueue"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -71,6 +74,8 @@ type impl struct {
 	serviceBuilder service.Builder
 
 	resourceMapping *pipeline.WorkloadMapping
+
+	labelSelectionRateLimiter workqueue.RateLimiter
 }
 
 type bindingImpl struct {
@@ -128,6 +133,12 @@ var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientau
 							return apis.Requester(sb.ObjectMeta)
 						},
 						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client).LookOwnedResources(sb.Spec.DetectBindingResources),
+						labelSelectionRateLimiter: workqueue.NewMaxOfRateLimiter(
+							workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 2*time.Minute),
+							&workqueue.BucketRateLimiter{
+								Limiter: rate.NewLimiter(rate.Limit(10), 100),
+							},
+						),
 					},
 					serviceBinding: sb,
 				}, nil
@@ -257,7 +268,7 @@ func (i *bindingImpl) Applications() ([]pipeline.Application, error) {
 				resourceMapping:   *mappingTemplate,
 			})
 		}
-		if i.serviceBinding.Spec.Application.LabelSelector != nil && i.serviceBinding.Spec.Application.LabelSelector.MatchLabels != nil {
+		if i.HasLabelSelector() {
 			matchLabels := i.serviceBinding.Spec.Application.LabelSelector.MatchLabels
 			opts := metav1.ListOptions{
 				LabelSelector: labels.Set(matchLabels).String(),
@@ -570,4 +581,13 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 
 	i.resourceMapping = workloadMapping
 	return workloadMapping, nil
+}
+
+func (i *bindingImpl) HasLabelSelector() bool {
+	return i.serviceBinding.Spec.Application.LabelSelector != nil
+}
+
+func (i *impl) DelayReprocessing(err error) {
+	delay := i.labelSelectionRateLimiter.When(i.bindingMeta)
+	i.RetryProcessingWithDelay(err, delay)
 }

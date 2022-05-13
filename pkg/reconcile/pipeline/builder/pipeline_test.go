@@ -3,6 +3,7 @@ package builder_test
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/golang/mock/gomock"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -42,9 +43,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().Close().Return(nil)
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{}).Times(2)
 
-		retry, err := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, err := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(retry).To(BeFalse())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("should report error in case of ctx closing error", func() {
@@ -58,9 +60,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().Close().Return(err)
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{}).Times(2)
 
-		retry, err := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, err := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(err).To(Equal(err))
 		Expect(retry).To(BeTrue())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("should stop processing if retry requested and propagate error back to caller", func() {
@@ -79,9 +82,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{})
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{Retry: true, Stop: true, Err: err})
 
-		retry, err := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, err := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(err).To(Equal(err))
 		Expect(retry).To(BeTrue())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("should retry processing if panic occurred in a handler", func() {
@@ -100,9 +104,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{})
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{Retry: true, Stop: true, Err: err})
 
-		retry, rerr := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, rerr := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(rerr).To(Equal(err))
 		Expect(retry).To(BeTrue())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("should stop without retry and error and propagate that back to caller", func() {
@@ -119,9 +124,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{})
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{Retry: false, Stop: true, Err: nil})
 
-		retry, err := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, err := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(retry).To(BeFalse())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("error on closing context should be propagated back to caller even if handlers did not report any", func() {
@@ -135,9 +141,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().Close().Return(err)
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{}).Times(2)
 
-		retry, err := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, err := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(err).To(Equal(err))
 		Expect(retry).To(BeTrue())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("should retry processing if panic occurs when closing context", func() {
@@ -149,9 +156,10 @@ var _ = Describe("Pipeline", func() {
 		ctx.EXPECT().Close().DoAndReturn(func() { panic("foo") })
 		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{}).Times(1)
 
-		retry, perr := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, perr := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(perr).To(Equal(err))
 		Expect(retry).To(BeTrue())
+		Expect(delay).To(Equal(time.Duration(0)))
 	})
 
 	It("should retry processing if panic occurs when calling context provider", func() {
@@ -161,9 +169,33 @@ var _ = Describe("Pipeline", func() {
 		provider.EXPECT().Get(&v1alpha1.ServiceBinding{}).DoAndReturn(func(b interface{}) { panic("foo") })
 		p := builder.Builder().WithContextProvider(provider).WithHandlers(h1).Build()
 
-		retry, perr := p.Process(&v1alpha1.ServiceBinding{})
+		retry, delay, perr := p.Process(&v1alpha1.ServiceBinding{})
 		Expect(perr).To(Equal(err))
 		Expect(retry).To(BeTrue())
+		Expect(delay).To(Equal(time.Duration(0)))
+	})
+
+	It("should retry processing with a delay if the pipeline requests it", func() {
+		err := errors.New("foo")
+		delay := 2 * time.Minute
+
+		h1 := defHandler()
+		h1.EXPECT().Handle(ctx)
+		h2 := func(c pipeline.Context) {
+			c.RetryProcessing(err)
+		}
+		h3 := defHandler()
+		p := builder.Builder().WithContextProvider(&ctxProvider{ctx: ctx}).WithHandlers(h1, pipeline.HandlerFunc(h2), h3).Build()
+
+		ctx.EXPECT().RetryProcessing(err)
+		ctx.EXPECT().Close().Return(nil)
+		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{})
+		ctx.EXPECT().FlowStatus().Return(pipeline.FlowStatus{Retry: true, Stop: true, Err: err, Delay: delay})
+
+		retry, rdelay, err := p.Process(&v1alpha1.ServiceBinding{})
+		Expect(err).To(Equal(err))
+		Expect(retry).To(BeTrue())
+		Expect(rdelay).To(Equal(delay))
 	})
 })
 

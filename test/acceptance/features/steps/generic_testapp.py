@@ -117,13 +117,15 @@ def check_file_unavailable(context, file_path):
 
 @step(u'Test applications "{first_app_name}" and "{second_app_name}" is running')
 def are_two_apps_running(context, first_app_name, second_app_name, bindingRoot=None):
-    application1 = GenericTestApp(first_app_name, context.namespace.name)
+    first = substitute_scenario_id(context, first_app_name)
+    application1 = GenericTestApp(first, context.namespace.name)
     if not application1.is_running():
         print("application1 is not running, trying to import it")
         application1.install(bindingRoot=bindingRoot)
     context.application1 = application1
 
-    application2 = GenericTestApp(second_app_name, context.namespace.name)
+    second = substitute_scenario_id(context, second_app_name)
+    application2 = GenericTestApp(second, context.namespace.name)
     if not application2.is_running():
         print("application2 is not running, trying to import it")
         application2.install(bindingRoot=bindingRoot)
