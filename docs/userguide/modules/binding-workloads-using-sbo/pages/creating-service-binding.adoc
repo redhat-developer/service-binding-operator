@@ -1,0 +1,62 @@
+[#binding-workloads-using-sbo]
+= Binding workloads using Service Binding Operator
+
+[#creating-service-binding]
+== Creating service binding
+
+[IMPORTANT]
+====
+
+* Binding services or workloads defined by {crd} requires adding appropriate rights to the Operator service account, either by cluster administrators or Operator providers. Please check the xref:exposing-binding-data:rbac-requirements.adoc[] section for further details.
+* If the users do not have permissions to read binding data or modify workload resource, the {servicebinding-title} prevents such users to bind services to workload. Adhering to the RBAC requirements avoids unnecessary permission elevation for the user and prevents access to unauthorized services or workloads.
+====
+
+Application developers must bind a workload to one or more backing services by using a binding secret. This secret is generated for the purpose of storing information to be consumed by the workload.
+
+As an example, consider that the service you want to connect to is already exposing the binding data. In this case, you would also need a workload to be used along with the `ServiceBinding` custom resource (CR). By using this `ServiceBinding` CR, the workload sends a binding request with the details of the services to bind with.
+
+.Example of `ServiceBinding` CR in the `binding.operators.coreos.com/v1alpha1` API:
+[source,yaml]
+----
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: account-service
+spec:
+  application: <1>
+    version: v1
+    group: apps
+    kind: Deployment
+    name: online-banking
+  services: <2>
+  - version: v1alpha1 
+    group: example.com 
+    kind: AccountService 
+    name: prod-account-service 
+----
+<1> Specifies a list of service resources.
+<2> The sample application that points to a Deployment or any other similar resource with an embedded PodSpec.
+
+.Example of `ServiceBinding` CR in the `servicebinding.io` API:
+[source,yaml]
+----
+apiVersion: servicebinding.io/v1alpha3
+kind: ServiceBinding
+metadata:
+  name: account-service
+spec:
+  application:  <1>
+    apiVersion: apps/v1
+    kind: Deployment
+    name: online-banking
+
+  service:
+    apiVersion: example.com/v1alpha1
+    kind: AccountService
+    name: prod-account-service
+----
+<1> The application resource is a deployment resource with the name `online-banking`.
+
+As shown in the previous examples, you can also directly use a `ConfigMap` or a `Secret` itself as a service resource to be used as a source of binding data.
+
+

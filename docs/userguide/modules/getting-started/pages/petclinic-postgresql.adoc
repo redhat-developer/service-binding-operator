@@ -1,3 +1,4 @@
+[#connecting-petclinic-app-to-postgresql-db]
 = Connecting PetClinic application to PostgreSQL database
 :quickstart-namespace: my-petclinic
 :quickstart-db: postgresql

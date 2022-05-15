@@ -12,4 +12,5 @@ rules:
       - perconaservermongodbs/status
     verbs:
       - get
+      - watch
       - list

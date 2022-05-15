@@ -1,7 +1,7 @@
+[#deploying-spring-petclinic-app]
 == Deploying the Spring PetClinic application
 
-To deploy the Spring PetClinic application on our
-Kubernetes cluster, use a deployment configuration consisting of the following resources:
+To deploy the Spring PetClinic application on our Kubernetes cluster, use a deployment configuration consisting of the following resources:
 
 +++ <details><summary> +++
 `Deployment` resource to run the actual application instance

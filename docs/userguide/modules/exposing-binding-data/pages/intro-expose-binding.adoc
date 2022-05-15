@@ -1,84 +1,121 @@
+[#introduction-exposing-binding-data]
 = Introduction
 
-Connecting applications to backing services is always a challenge as
-each service provider suggests a different way to access their secrets
-and consume them in an application. Service Binding helps the developers
-by providing a consistent and predictable experience and removes
-error-prone usual manual steps to configure the binding between an
-application and backing services.
+Application developers need access to backing services to build and connect workloads. Connecting workloads to backing services is always a challenge because each service provider requires a different way to access their secrets and consume them in a workload.
 
-For the Service Binding Operator to provide the binding data, the
-backing services must expose the binding data in a way that can be
-detected by Service Binding Operator.
+The {servicebinding-title} enables application developers to easily bind workloads together with operator-managed backing services, without any manual procedures to configure the binding connection. For the {servicebinding-title} to provide the binding data, as an Operator provider or user who creates backing services, you must expose the binding data to be automatically detected by the {servicebinding-title}. Then, the {servicebinding-title} automatically collects the binding data from the backing service and shares it with a workload to provide a consistent and predictable experience.
 
-Binding data is exposed for the following scenarios:
+[#methods-of-exposing-binding-data]
+== Methods of exposing binding data
 
-* *The backing service is considered as a
-xref:provisioned-service.adoc[Provisioned
-Service]* resource: The service you intend to connect to, is compliant
-with the Service Binding specification and the detection of all the
-binding data values is automatic.
-* *The backing service is not a
-xref:provisioned-service.adoc[Provisioned
-Service]* resource: You must expose the binding data from the backing
-service. You can expose the binding data using any of the following
-methods:
-** *xref:direct-secret-reference.adoc[Direct
-Secret Reference]*: When all the required binding values are available
-in a `Secret` that you can reference in your Service Binding definition.
-** *Generate Secret through CRD or CR annotations*: When you can
-annotate the resources of the backing service, to expose the binding
-data with specific annotations.
-** *Generate Secret through OLM descriptors*: when you can provide OLM
-descriptors, if the backing service is provided by an Operator.
-** *Detect Binding data through owned resources*: when the backing
-service owns Kubernetes resources such as `Service`, `Route`,
-`ConfigMap` or `Secret` that you can use to detect the binding data.
+This section describes the methods you can use to expose the binding data.
 
-Service Binding Operator implements support for https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension]
-and hence provides the ability to expose the values from
-the backing service resources. You can use the following methods to map
-and expose the binding data:
+Ensure that you know and understand your workload requirements and environment, and how it works with the provided services.
 
-* Expose a string from a resource
-* Expose a constant value
-* Expose an entire ConfigMap or Secret that is referenced from a
+Binding data is exposed under the following circumstances:
+
+* Backing service is available as a xref:provisioned-service.adoc[provisioned service] resource.
++
+The service you intend to connect to is compliant with the Service Binding specification. You must create a `Secret` resource with all the required binding data values and reference it in the backing service custom resource (CR). The detection of all the binding data values is automatic.
+
+* Backing service is not available as a xref:provisioned-service.adoc[provisioned service] resource.
++
+You must expose the binding data from the backing service. Depending on your workload requirements and environment, you can choose any of the following methods to expose the binding data:
++
+** xref:direct-secret-reference.adoc[Direct secret reference]
+** xref:adding-annotation.adoc[Declaring binding data through custom resource definition (CRD) or CR annotations]
+** xref:olm-descriptors.adoc[Declaring binding data through Operator Lifecycle Manager (OLM) descriptors]
+** xref:detect-bindings.adoc[Detection of binding data through owned resources]
+
+
+Service Binding Operator implements support for https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension] and hence provides the ability to expose the binding data values from the backing service resources and CRDs. You can use the following categories of binding data to map and expose the values:
+
+* A string from a resource
+* A constant value
+* An entire config map or secret that is referenced from a
 resource
-* Expose a specific entry from a ConfigMap or Secret that is referenced
+* A specific entry from a config map or secret that is referenced
 from a resource
-* Expose entries from a collection of objects, mapping keys and values
-from entries in a ConfigMap or Secret that is referenced from a resource
-* Expose a collection of specific entry values in a resource’s
+* A resource definition value
+* Entries of a collection of objects with the mapping keys and values from entries in a config map or secret that is referenced from a resource
+* A collection of specific entry values in a resource’s
 collection of objects
-* Map each value to a specific key
-* Map each value of a collection to a key with a generated name
+* A value to a specific key
+* A value of a collection to a key with a generated name
 
-== Data Model
+
+[#data-model]
+== Data model
 
 This section explains the data model used in the annotation and OLM
 descriptors. The data model is same for CRD or CR annotations and OLM
 descriptors, but the syntax is different, which is explained in the
 respective sections.
 
-* `path`: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.
-The behaviour matches https://kubernetes.io/docs/reference/kubectl/jsonpath[kubectl JSONPath support]
-* `elementType`: Specifies whether the value of the element referenced
-in `path` complies with any one of the following types `string` or
-`sliceOfStrings` or `sliceOfMaps`. Defaults to `string` if `elementType`
-is not specified.
-* `objectType`: Specifies whether the value of the element indicated in
-`path` refers to a `ConfigMap`, `Secret` or a plain string in the
-current namespace. Defaults to `Secret` if `objectType` is not specified
-and `elementType` is non-string.
-* `sourceKey`: Specifies the key in the ConfigMap or Secret that is to
-be added to the binding Secret. When used in conjunction with
-`elementType`=`sliceOfMaps`, `sourceKey` specifies the key in the slice
-of maps whose value would be used as a key in the binding Secret. This
-optional field can be used if the operator author intends to express
-that when a specific field in the referenced `Secret` or `ConfigMap` is
-bindable. All values from `Secret` or `ConfigMap` are exposed if
-`sourceKey` is not specified.
-* `sourceValue`: Specifies the key in the slice of maps whose value
-would be used as the value, corresponding to the value of the
-`sourceKey` that is added as the key, in the binding Secret. Mandatory
-only if `elementType` is `sliceOfMaps`.
+* `path`: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.The data model used in the annotations and OLM descriptors follow specific conventions.
+
+Service binding annotations must use the following convention:
+
+[source,yaml]
+----
+service.binding(/<NAME>)?:
+    "<VALUE>|(path=<JSONPATH_TEMPLATE>(,objectType=<OBJECT_TYPE>)?(,elementType=<ELEMENT_TYPE>)?(,sourceKey=<SOURCE_KEY>)?(,sourceValue=<SOURCE_VALUE>)?)"
+----
+where:
+[horizontal]
+`<NAME>`:: Specifies the name under which the binding value is to be exposed. You can exclude it only when the `objectType` parameter is set to `Secret` or `ConfigMap`.
+`<VALUE>`:: Specifies the constant value exposed when no `path` is set.
+
+Although, the data model is the same for custom resource definitions (CRD), custom resource (CR) annotations, and Operator Lifecycle Manager (OLM) descriptors, the syntax for each one differs.
+
+The data model provides the details on the allowed values and semantic for the `path`, `elementType`, `objectType`, `sourceKey`, and `sourceValue` parameters.
+
+.Parameters and their descriptions
+[cols="3,6,4",options="header"]
+|===
+|Parameter
+|Description
+|Default value
+
+|`path`
+|JSONPath template that consists JSONPath expressions enclosed by curly braces {}. The behaviour matches https://kubernetes.io/docs/reference/kubectl/jsonpath[kubectl JSONPath support].
+|N/A
+
+|`elementType`
+a|Specifies whether the value of the element referenced in the `path` parameter complies with any one of the following types:
+
+* `string`
+* `sliceOfStrings`
+* `sliceOfMaps`
+|`string`
+
+|`objectType`
+|Specifies whether the value of the element indicated in the `path` parameter refers to a `ConfigMap`, `Secret`, or plain string in the current namespace.
+|`Secret`, if `elementType` is non-string.
+
+
+|`sourceKey`
+a|Specifies the key in the `ConfigMap` or `Secret` resource to be added to the binding secret when collecting the binding data. +
+
+Note:
+
+* When used in conjunction with `elementType`=`sliceOfMaps`, the `sourceKey` parameter specifies the key in the slice of maps whose value is used as a key in the binding secret.
+* Use this optional parameter to expose a specific entry in the referenced `Secret` or `ConfigMap` resource as binding data.
+* When not specified, all keys and values from the `Secret` or `ConfigMap` resource are exposed and are added to the binding secret.
+|N/A
+
+|`sourceValue`
+a|Specifies the key in the slice of maps. +
+
+Note:
+
+* The value of this key is used as the base to generate the value of the entry for the key-value pair to be added to the binding secret.
+* In addition, the value of the `sourceKey` is used as the key of the entry for the key-value pair to be added to the binding secret.
+* It is mandatory only if `elementType`=`sliceOfMaps`.
+|N/A
+|===
+
+[NOTE]
+====
+The `sourceKey` and `sourceValue` parameters are applicable only if the element indicated in the `path` parameter refers to a `ConfigMap` or `Secret` resource.
+====

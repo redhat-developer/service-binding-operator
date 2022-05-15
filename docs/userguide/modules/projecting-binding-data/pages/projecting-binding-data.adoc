@@ -1,0 +1,139 @@
+[#projecting-binding-data]
+= Projecting binding data
+
+This section provides information on how you can consume the binding data.
+
+[#consumption-of-binding-data]
+== Consumption of binding data
+After the backing service exposes the binding data, for a workload to access and consume this data, you must project it into the workload from a backing service. {servicebinding-title} automatically projects this set of data into the workload in the following methods:
+
+. By default, as files.
+. As environment variables, after you configure the `.spec.bindAsFiles` parameter from the `ServiceBinding` resource.
+
+[#configuration-of-directory-path-to-project-binding-data-inside-workload-container]
+== Configuration of the directory path to project the binding data inside workload container
+
+By default, {servicebinding-title} mounts the binding data as files at a specific directory in your workload resource. You can configure the directory path using the `SERVICE_BINDING_ROOT` environment variable setup in the container where your workload runs.
+
+Within this service binding root directory, there can be multiple binding metadata projected through different `ServiceBinding` resource reconciliations. For example, a workload requires a connection to a database and a cache server. In that case, one `Service Binding` resource could provide the database, and the other `Service Binding` resource could provide the binding data to the cache server.
+
+.Example: Binding data mounted as files
+----
+$SERVICE_BINDING_ROOT <1>
+├── account-database <2>
+│   ├── type <3>
+│   ├── provider <4>
+│   ├── uri
+│   ├── username
+│   └── password
+└── transaction-event-stream <2>
+    ├── type
+    ├── connection-count
+    ├── uri
+    ├── certificates
+    └── private-key
+----
+<1> Root directory.
+<2> Directory that stores the binding data.
+<3> Mandatory identifier that identifies the type of the binding data projected into the corresponding directory.
+<4> Optional: Identifier to identify the provider so that the application can identify the type of backing service it can connect to.
+
+[IMPORTANT]
+====
+Retrieving the binding data through the binding data directory name is not a good practice. It makes your workload less portable. Always use the `type` field and, if necessary, the `provider` field to look up the binding data.
+====
+
+[WARNING]
+====
+**For using the binding data directory name to look up the binding data:** The {servicebinding-title} uses the `ServiceBinding` resource name (.`metadata.name`) as the binding data directory name, but the spec also provides a way to override that name through the `.spec.name` field. Hence there is a chance for binding data name collision. However, due to the nature of the volume mount in Kubernetes, the binding data directory will contain values from only one of the `Secret` resources. 
+====
+
+.Environment variables
+The {servicebinding-title} supports projecting environment variables. To consume the binding data as environment variables, use the built-in language feature of your programming language of choice that can read environment variables.
+
+.Example: Python client usage
+[source,python]
+----
+import os
+
+username = os.getenv("USERNAME")
+password = os.getenv("PASSWORD")
+----
+
+[NOTE]
+====
+The container must restart to update the values of environment variables if there is a change in the `Secret` resource.
+====
+
+
+[#computation-of-final-path-for-projecting-binding-data-as-files]
+== Computation of the final path for projecting the binding data as files
+
+The following table summarizes the configuration of how the final path for the binding data projection is computed when files are mounted at a specific directory:
+
+.Summary of the final path computation
+[cols="1,1",options="header"]
+|===
+| `SERVICE_BINDING_ROOT` | Final path
+
+| Not available
+| `/bindings/<ServiceBinding_ResourceName>`
+
+| `dir/path/root`
+| `dir/path/root/<ServiceBinding_ResourceName>`
+|===
+
+In the previous table, the `<ServiceBinding_ResourceName>` entry specifies the name of the `ServiceBinding` resource that you configure in the `.metadata.name` section of the custom resource (CR).
+
+To access and consume the binding data within the existing `SERVICE_BINDING_ROOT` environment variable, use the built-in language feature of your programming language of choice that can read environment variables.
+
+.Example: Python client usage
+[source,python]
+----
+from pyservicebinding import binding
+try:
+    sb = binding.ServiceBinding()
+except binding.ServiceBindingRootMissingError as msg:
+    # log the error message and retry/exit
+    print("SERVICE_BINDING_ROOT env var not set")
+
+sb = binding.ServiceBinding()
+
+bindings_list = sb.bindings("postgresql")
+----
+
+In the previous example, the `bindings_list` variable contains the binding data for the `postgresql` database service type. For full API, see the https://github.com/baijum/pyservicebinding[documentation].
+
+Following are the language or framework specific programs that you can use for accessing the binding data within the existing `SERVICE_BINDING_ROOT` environment variable:
+
+* Python: https://github.com/baijum/pyservicebinding
+* Go: https://github.com/baijum/servicebinding
+* Java/Spring: https://github.com/spring-cloud/spring-cloud-bindings
+* Quarkus:
+https://quarkus.io/guides/deploying-to-kubernetes#service-binding
+* JS/Node: https://github.com/nodeshift/kube-service-bindings
+* .NET: https://github.com/donschenck/dotnetservicebinding
+
+[NOTE]
+====
+All these libraries expect `SERVICE_BINDING_ROOT` to be set.
+====
+
+[#projecting-the-binding-data]
+== Projecting the binding data
+
+Depending on your workload requirements and environment, you can choose to project the binding data either as files or environment variables.
+
+.Prerequisites
+
+* You understand the following concepts:
+** Environment and requirements of your workload, and how it works with the provided services.
+** Consumption of the binding data in your workload resource.
+** Configuration of how the final path for data projection is computed for the default method.
+* The binding data is exposed from the backing service.
+
+[#procedure-projecting-binding-data]
+=== Procedure
+
+. To project the binding data as files, determine the destination folder by ensuring that the existing `SERVICE_BINDING_ROOT` environment variable is present in the container where your workload runs.
+. To project the binding data as environment variables, set the value for the `.spec.bindAsFiles` parameter to `false` from the `ServiceBinding` resource in the custom resource (CR).

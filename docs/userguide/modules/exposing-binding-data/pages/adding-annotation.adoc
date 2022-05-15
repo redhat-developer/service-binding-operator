@@ -1,78 +1,106 @@
-= Declare Binding Data with Resource Annotations
+[#declaring-binding-data-through-CRD-or-CR-annotations]
+= Declaring binding data through CRD or CR annotations
 
-If your backing service is not compliant with the Service Binding
-specification as a {provisioned-service} resource, you can annotate the
-resources of the backing service and/or its {crd} declaring what data are exposed
-as binding.
+If your backing service is not compliant with the Service Binding specification as a {provisioned-service} resource, you can annotate the
+resources of the backing service to expose the binding data with specific annotations. Adding annotations under the `metadata` section alters the CR and {crd} of the backing services.
 
-The Service Binding Operator implements support for {secret-generation-extension}.
-It detects the annotations added to the {crd} and/or service resource and creates a Secret
-resource with the values extracted based on the annotations. The Service Binding Operator
-then projects these bindings into the application.
+The {servicebinding-title} implements support for {secret-generation-extension}. The {servicebinding-title} detects the annotations added to the CRs and CRDs and then creates a `Secret` resource with the values extracted based on the annotations.
 
-Service binding annotations follow the convention:
+The following examples show the annotations that are added under the `metadata` section and a referenced `ConfigMap` object and `Secret` object from a resource:
 
+.Example: Exposing binding data from a `Secret` object defined in the CR annotations
 [source,yaml]
-....
-service.binding(/<NAME>)?: "<VALUE>|(path=<JSONPATH_TEMPLATE>(,objectType=<OBJECT_TYPE)?(,elementType=<ELEMENT_TYPE>)?(,sourceKey=<SOURCE_KEY>)?(,sourceValue=<SOURCE_VALUE>)?)"
-....
+----
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: db
+  namespace: my-petclinic
+  annotations:
+    service.binding: 'path={.metadata.name}-cred,objectType=Secret'
+    ...
+----
 
-where:
+The previous example places the name of the secret name in the `{.metadata.name}-cred` template that resolves to `db-cred`. The template can contain multiple JSONPath expressions.
 
-* `<NAME>` specifies the name under which the binding value is going to be exposed. It can omitted only
-when `objectType` is set to `Secret` or `ConfigMap`
-* `<VALUE>` specifies the constant value exposed, when no `path` is set
-
-[NOTE]
-Please check xref:intro-expose-binding.adoc#_data_model[Data Model] for more details on allowed values
-and semantic for `path`, `elementType`, `objectType`, `sourceKey`, and `sourceValue`.
-
-== Examples
-
-The following examples assume existence of `Secret` `db-cred`:
-
-.Secret `db-cred`
+.Example: Referenced `Secret` object from a resource
 [source,yaml]
-....
+----
 apiVersion: v1
 kind: Secret
 metadata:
   name: db-cred
 data:
   password: "foo"
-  username: "guest"
-....
+  user: "guest"
+----
 
-and `ConfigMap` `db-conf`:
-
-.ConfigMap `db-conf`
+.Example: Exposing binding data from a `ConfigMap` object defined in the CR annotations
 [source,yaml]
-....
+----
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: db
+  namespace: my-petclinic
+  annotations:
+    service.binding: 'path={.metadata.name}-config,objectType=ConfigMap'
+    ...
+----
+
+The previous example places the name of the config map in the `{.metadata.name}-config` template that resolves to `db-config`. The template can contain multiple JSONPath expressions.
+
+.Example: Referenced `ConfigMap` object from a resource
+[source,yaml]
+----
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: db-conf
+  name: db-config
 data:
-  timeout: 10s
-  database: db1
-....
+  db_timeout: "10s"
+  user: "db1"
+----
 
-.Expose constant value as the binding item
+[#exposing-a-string-from-a-resource]
+== Exposing a string from a resource
+The following example shows how to expose the string from the `metadata.name` field of the `Database` custom resource (CR) as a username:
+
+.Example
 [source,yaml]
-....
+----
 apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
+  namespace: my-petclinic
   annotations:
-    "service.binding/type": "foo" # <1>
-spec:
-  ...
+    service.binding/username: path={.metadata.name}
+    ...
+----
 
-....
-<1> exposed binding `type` with value `foo`
+[#exposing-a-constant-value-as-the-binding-item]
+== Exposing a constant value as the binding item
+The following example shows how to expose a constant value from the `Database` custom resource (CR):
 
-.Expose all secret entries as binding data
+.Example: Exposing a constant value
+[source,yaml]
+----
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  namespace: my-petclinic
+  annotations:
+    "service.binding/type": "foo" <1>
+----
+<1> Binding `type` to be exposed with the `foo` value.
+
+[#exposing-all-secret-entries-as-binding-data]
+== Exposing all secret entries as binding data
+The following example shows how to expose all secret entries constant valueas binding data from the `Database` CR:
+
+.Example: Exposing all secret entries as binding data
 [source,yaml]
 ....
 apiVersion: apps.example.org/v1beta1
@@ -86,30 +114,42 @@ spec:
 
 status:
   data:
-    dbCredentials: db-cred # <1>
+    dbCredentials: db-cred <1>
 ....
 <1> Secret name
 
-.Expose all entries from a secret not referred by the service
+[#exposing-a-specific-entry-from-a-config-map-or-secret-referenced-from-a-resource]
+== Exposing a specific entry from a config map or secret that is referenced from a resource
+The following example shows how to expose a specific entry from a config map through annotations:
+
+.Example: Exposing `db_timeout` entry from a config map through annotations
 [source,yaml]
-....
+----
 apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
-  name: db
+  name: my-db
+  namespace: my-petclinic
   annotations:
-    "service.binding": "path={.metadata.name}-cred,objectType=Secret" # <1>
-spec:
-  ...
+    service.binding: 'path={.metadata.name}-config,objectType=ConfigMap,sourceKey=db_timeout'
+----
 
-....
+.Example: The referenced config map from the backing service resource
+The binding data should have a key with name as `db_timeout` and value as `10s`:
+[source,yaml]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-config
+data:
+  db_timeout: "10s"
+  user: "db1"
+----
 
-<1> Secret name is constructed from `{.metadata.name}-cred` template that resolved to `db-cred` eventually.
-Multiple JSONPath can be contained in the template.
-
-.Exposing `username` entry from a Secret as `user` binding item
+.Example: Exposing `username` entry from a secret as `user` binding item
 [source, yaml]
-....
+----
 apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
@@ -121,50 +161,17 @@ spec:
 
 status:
   data:
-    dbCredentials: db-cred # <1>
-....
+    dbCredentials: db-cred <1>
+----
 <1> Secret name
 
-.Expose all entries from ConfigMap
+[#exposing-a-resource-definition-value]
+== Exposing a resource definition value
+The following example shows how to expose a resource definition value through annotations:
+
+.Example: Exposing `status.data.connectionURL` resource value as `uri` binding item
 [source,yaml]
-....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding": "path={.status.data.dbConfiguration},objectType=ConfigMap"
-spec:
-  ...
-
-status:
-  data:
-    dbConfiguration: db-conf # <1>
-....
-<1> ConfigMap name
-
-
-.Exposing `db_timeout` entry from a ConfigMap as `timeout` binding
-[source,yaml]
-....
-apiVersion: apps.example.org/v1beta1
-kind: Database
-metadata:
-  name: my-db
-  annotations:
-    "service.binding/timeout": "path={.status.data.dbConfiguration},objectType=ConfigMap,sourceKey=db_timeout"
-spec:
-  ...
-
-status:
-  data:
-    dbConfiguration: db-conf # <1>
-....
-<1> ConfigMap name
-
-.Expose `status.data.connectionURL` resource value as `uri` binding item
-[source,yaml]
-....
+----
 apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
@@ -177,51 +184,113 @@ spec:
 status:
   data:
     connectionURL: "http://guest:secret123@192.168.1.29/db"
-....
+----
 
-.Exposing the collection entries as the binding data by selecting the key and value from each entry
+The previous example uses the `connectionURL` attribute that points to the required resource definition value that is to be projected as `uri`.
+
+[#exposing-entries-of-a-collection-with-the-key-and-value-from-each-entry]
+== Exposing entries of a collection with the key and value from each entry
+The following example shows how to expose the entries of a collection with the key and value from each entry through annotations:
+
+.Example: Exposing the entries of a collection through annotations
 [source,yaml]
-....
+----
 apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
+  namespace: my-petclinic
   annotations:
     "service.binding/uri": "path={.status.connections},elementType=sliceOfMaps,sourceKey=type,sourceValue=url"
 spec:
   ...
-
 status:
   connections:
-    - type: primary # <1>
+    - type: primary
       url: primary.example.com
-    - type: secondary # <2>
+    - type: secondary
       url: secondary.example.com
-    - type: '404' # <3>
+    - type: '404'
       url: black-hole.example.com
-....
-<1> exposed as `uri_primary` with value `primary.example.com`
-<2> exposed as `uri_secondary` with value `secondary.example.com`
-<3> exposed as `uri_404` with value `black-hole.example.com`
+----
 
-.Exposing the collection of strings
+The following example shows how the previous entries of a collection in annotations are projected into the bound application.
+
+.Example: Binding data files
+[source,text]
+----
+/bindings/<binding-name>/uri_primary => primary.example.com
+/bindings/<binding-name>/uri_secondary => secondary.example.com
+/bindings/<binding-name>/uri_404 => black-hole.example.com
+----
+
+The previous example helps you to project all those values with keys such as `primary`, `secondary`, and so on.
+
+[#exposing-items-of-a-collection-with-one-key-per-item]
+== Exposing items of a collection with one key per item
+The following example shows how to expose the items of a collection with one key per item through annotations:
+
+.Example: Exposing the items of a collection through annotations
 [source,yaml]
-....
+----
 apiVersion: apps.example.org/v1beta1
 kind: Database
 metadata:
   name: my-db
+  namespace: my-petclinic
   annotations:
     "service.binding/tags": "path={.spec.tags},elementType=sliceOfStrings"
-
 spec:
     tags:
-      - knowledge # <1>
-      - is # <2>
-      - power # <3>
-....
-<1> exposed as `tags_0` with value `knowledge`
-<2> exposed as `tags_1` with value `is`
-<3> exposed as `tags_2` with value `power`
+      - knowledge
+      - is
+      - power
+----
 
+The following example shows how the previous entries of a collection in annotations are projected into the bound application.
 
+.Example: Binding data files
+[source,text]
+----
+/bindings/<binding-name>/tags_0 => knowledge
+/bindings/<binding-name>/tags_1 => is
+/bindings/<binding-name>/tags_2 => power
+----
+
+The previous example helps you project all those values with key such as `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the resource `kind:`.
+
+[#exposing-values-of-collection-entries-with-one-key-per-entry-value]
+== Exposing values of collection entries with one key per entry value
+The following example shows how to expose the values of collection entries with one key per entry value through annotations:
+
+.Example: Exposing the values of collection entries through annotations
+[source,yaml]
+----
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  namespace: my-petclinic
+  annotations:
+    "service.binding/url": "path={.spec.connections},elementType=sliceOfStrings,sourceValue=url"
+spec:
+  connections:
+    - type: primary
+      url: primary.example.com
+    - type: secondary
+      url: secondary.example.com
+    - type: '404'
+      url: black-hole.example.com
+----
+
+The following example shows how the previous values of a collection in annotations are projected into the bound application.
+
+.Example: Binding data files
+[source,text]
+----
+/bindings/<binding-name>/url_0 => primary.example.com
+/bindings/<binding-name>/url_1 => secondary.example.com
+/bindings/<binding-name>/url_2 => black-hole.example.com
+----
+
+The previous example helps you project all those values with key such as `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the resource `kind:`.

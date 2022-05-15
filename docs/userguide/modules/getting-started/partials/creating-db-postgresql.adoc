@@ -1,3 +1,4 @@
+[#creating-postgresql-dbinstance]
 == Creating a PostgreSQL database instance
 
 For the application to use a PostgreSQL database service, you must create a PostgreSQL database instance.
@@ -41,8 +42,7 @@ include::attachment$postgresql-deployment.yaml[tag=db-service]
 kubectl apply -f link:{attachmentsdir}/postgresql-deployment.yaml[pass:a[{site-url}/{page-component-name}/{page-module}/{attachmentsdir}/postgresql-deployment.yaml]] -n {quickstart-namespace}
 ----
 +
-. After you have created the database instance, verify that the respective pod in the `{quickstart-namespace}` namespace
-is up and running (it will take less than a minute):
+. After you have created the database instance, verify that the respective pod in the `{quickstart-namespace}` namespace is up and running (it will take less than a minute):
 +
 [source,bash,subs="attributes"]
 ----
@@ -56,8 +56,7 @@ NAME                                          READY  STATUS   RESTARTS  AGE
 spring-petclinic-postgresql-6db5594876-4556g  1/1    Running  0         16m
 ----
 +
-The previous output verifies that the setup of the database for the application is complete.
-You can deploy the sample application and connect it to the database service.
+The previous output verifies that the setup of the database for the application is complete. You can deploy the sample application and connect it to the database service.
 
 [IMPORTANT]
 ====
@@ -81,5 +80,5 @@ These annotations are necessary to be set on the `Deployment` resource of the da
 Based on the type of the resource, there are many ways to expose binding data from the backing service.
 
 * For more information on service binding annotations, see the xref:exposing-binding-data:adding-annotation.adoc[] section.
-* For more information on the possible methods of exposing binding data, see the xref:exposing-binding-data:intro-expose-binding.adoc[Exposing Binding Data] section.
+* For more information on the possible methods of exposing binding data, see the xref:exposing-binding-data:intro-expose-binding.adoc[Exposing binding data] section.
 ====

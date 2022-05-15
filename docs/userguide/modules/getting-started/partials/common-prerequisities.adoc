@@ -1,7 +1,7 @@
+[#prerequisites-quickstart]
 == Prerequisites
 
-In order to follow the quick start, you will need the following tools
-installed and configured:
+In order to follow the quick start, you will need the following tools installed and configured:
 
 * Kubernetes cluster
 +

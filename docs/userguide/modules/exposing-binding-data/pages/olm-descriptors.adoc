@@ -1,178 +1,119 @@
-= Adding Binding Data as OLM Descriptors
+[#declaring-binding-data-through-OLM-descriptors]
+= Declaring binding data through OLM descriptors
 
-Use this method if you are distributing operators not created by you.
-You can distribute the operator as an
-https://github.com/operator-framework/operator-registry/blob/master/docs/design/operator-bundle.md[Operator
-Bundle]. You can add
-https://github.com/openshift/console/blob/master/frontend/packages/operator-lifecycle-manager/src/components/descriptors/reference/reference.md[OLM
-descriptors] to describe the binding data that is to be exposed. The OLM
-descriptors are part of
-https://docs.openshift.com/container-platform/4.7/operators/operator_sdk/osdk-generating-csvs.html[Cluster
-Service Version] files. You can expose the binding data by using
-`specDescriptors` array and StatusDescriptors. The `specDescriptors`
-array specifies a path under the `.spec` section of a custom resource.
-The `statusDescriptors` array specifies a path under the `.status`
-section of a custom resource.
+You can use this method if your backing service is provided by an Operator. If your Operator is distributed as an https://github.com/operator-framework/operator-registry/blob/master/docs/design/operator-bundle.md[Operator Bundle], you can add https://github.com/openshift/console/blob/master/frontend/packages/operator-lifecycle-manager/src/components/descriptors/reference/reference.md[Operator Lifecycle Manager (OLM) descriptors] to describe the binding data that is to be exposed. The OLM descriptors are part of https://docs.openshift.com/container-platform/4.7/operators/operator_sdk/osdk-generating-csvs.html[Cluster Service Version] resources. The {servicebinding-title} detects the OLM descriptors and then creates a `Secret` resource with the values extracted based on the detected OLM descriptors.
 
-The Service Binding Operator detects the OLM descriptors and project the
-values into the application.
+You can expose the binding data by using the `specDescriptors` array and `statusDescriptors` array. The `specDescriptors` array specifies a path under the `.spec` section of a CR. The `statusDescriptors` array specifies a path under the `.status` section of a CR.
 
-Following are the only two fields that are used for binding the
-metadata:
+Following are the only two fields that are used for binding the data:
 
-* Path: A dot-delimited path of the field on the object as described by
-the descriptor.
-* X-Descriptors: Defines the binding data.
+* `Path`: A dot-delimited path of the field on the object as described by the descriptor.
+*  `X-Descriptors`: Defines the binding data.
 
-The following examples show how to define an X-Descriptor depending on
-the resource to which you point the path:
+The following examples show how to define an X-Descriptor depending on the resource to which you point the path:
 
-.X-Descriptor definition for the path pointing to a Secret service resource
+.Example: X-Descriptor definition for exposing a secret
 [source,yaml]
-....
+----
 - path: data.dbCredentials
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:Secret
   - service.binding
-....
+----
 
-Similary, if the path is pointing to a `ConfigMap` resource, there
-should be an X-Descriptors defined like this:
-
+.Example: X-Descriptor definition for exposing a config map
 [source,yaml]
-....
+----
 - path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:ConfigMap
   - service.binding
-....
+----
 
 [NOTE]
 ====
-* You must have a `service.binding` entry in the X-Descriptors to
-identify that it is a configuration for service binding.
-* Absence of the `Secret` or `ConfigMap` specific X-Descriptors
-indicates that the descriptor is referencing the binding data value at
-the given path.
+* You must have a `service.binding` entry in the X-Descriptors to identify that it is a configuration for service binding.
+* The absence of the `Secret` or `ConfigMap` specific X-Descriptors indicates that the descriptor is referencing the binding data value at the given path.
 ====
 
-== Exposing an entire Secret as the binding Secret
+[#exposing-entire-configmap-or-secret-referenced-from-resource]
+== Exposing an entire config map or secret that is referenced from a resource
+The following example shows how to expose an entire config map through OLM descriptors:
 
-If you are projecting all the values from a `Secret` service resource,
-you must specify it as an attribute in the backing service custom
-resource. For example, if the attribute is part of the `.spec` section,
-you can create and use a `specDescriptors` array. Or, if the attribute
-is part of the `.status` section, you can create and use a
-`statusDescriptors` array.
-
-Using the `path` attribute, create an entry to indicate that the path
-points to the `Secret` service resource.
-
-.Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry
+.Example: Exposing an entire config map through OLM descriptors
 [source,yaml]
-....
-- path: data.dbCredentials
-  x-descriptors:
-  - urn:alm:descriptor:io.kubernetes:Secret
-  - service.binding
-....
-
-== Exposing an entire ConfigMap as the binding Secret
-
-If you are projecting all the values from a `ConfigMap` service
-resource, you must specify it as an attribute in the backing service
-custom resource. For example, if the attribute is part of the `.spec`
-section, you can create and use a `specDescriptors` array. Or, if the
-attribute is part of the `.status` section, you can create and use a
-`statusDescriptors` array.
-
-Using the `path` attribute, create an entry to indicate that the path
-points to the `ConfigMap` service resource.
-
-.Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry
-[source,yaml]
-....
+----
 - path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:ConfigMap
   - service.binding
-....
+----
 
-== Exposing an entry from a ConfigMap into the binding Secret
+This example uses the `path` attribute with a `urn:alm:descriptor:io.kubernetes:ConfigMap` entry to indicate that the path points to the `ConfigMap` service resource.
 
-Using the `path` attribute, update `X-Descriptors` for
-`service.binding` and `sourceKey` by providing the following
-information:
+If you intend to project all the values from a `ConfigMap` service resource, you must specify it as an attribute in the backing service CR. For example, if the attribute is part of the `.spec` section, you can create and use a `specDescriptors` array. Or, if the attribute is part of the `.status` section, you can create and use a `statusDescriptors` array.
 
-* name of the binding key that is to be projected
-* name of the key in the Secret service resource
+[#exposing-specific-entry-from-config-map-or-secret-referenced-from-resource]
+== Exposing a specific entry from a config map or secret that is referenced from a resource
+The following examples show how to expose a specific entry from a config map  or secret through OLM descriptors:
 
-.Configuration with a urn:alm:descriptor:io.kubernetes:ConfigMap entry
+.Example: Exposing an entry from a config map through OLM descriptors
 [source,yaml]
-....
+----
 - path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:ConfigMap
   - service.binding:my_certificate:sourceKey=certificate
-....
+----
 
-In the previous example, `sourceKey` points to the name of the key in
-the Secret resource, which is `certificate`. And `my_certificate` is the
-name of the binding key that is going to be projected.
-
-== Exposing an entry from a Secret into the binding Secret
-
-Using the `path` attribute, update `X-Descriptors` for
-`service.binding` and `sourceKey` by providing the following
-information:
-
-* name of the binding key that is to be projected
-* name of the key in the Secret service resource
-
-.Configuration with a urn:alm:descriptor:io.kubernetes:Secret entry
+.Example: Exposing an entry from a secret through OLM descriptors
 [source,yaml]
-....
+----
 - path: data.dbConfiguration
   x-descriptors:
   - urn:alm:descriptor:io.kubernetes:Secret
   - service.binding:my_certificate:sourceKey=certificate
-....
+----
 
-In the previous example, `sourceKey` points to the name of the key in
-the Secret resource, which is `certificate`. And `my_certificate` is the
-name of the binding key that is going to be projected.
+The previous examples use the `path` attribute with an `X-Descriptors` update for `service.binding` and `sourceKey` by providing the following information:
 
-== Exposing a resource definition value into the binding Secret
+* Name of the binding key that is to be projected
+* Name of the key in the Secret service resource
 
-If values required for binding to the backing service are available as
-attributes of its resources, you can annotate these values, using
-`X-Descriptors`.
+[#exposing-resource-definition-value]
+== Exposing a resource definition value
+The following example shows how to expose a resource definition value through OLM descriptors:
 
-* Annotating the values identifies them as the binding data.
-* Content for Procedure:
-
- Using the `path` attribute, update `X-Descriptors` with the required
-resource definition value.
-
-.The connectionURL attribute pointing to the uri value
+.Example: Exposing a resource definition value through OLM descriptors
 [source,yaml]
-....
+----
 - path: data.connectionURL
   x-descriptors:
   - service.binding:uri
-....
+----
 
-In the previous example, the `connectionURL` attribute points to the
-required value that is to be projected as `uri`.
+The previous example uses the `connectionURL` attribute that points to the required resource definition value that is to be projected as `uri`.
 
-== Exposing the entries of a collection into the binding Secret selecting the key and value from each entry
+If required values are available as attributes of backing service resources, annotating these values using `X-Descriptors` identifies them as the binding data.
 
-Using the `path` attribute, update `X-Descriptors` for the required
-entries of a collection.
 
-.Configuration from a backing service resource
+[#exposing-entries-of-collection-with-key-and-value-from-each-entry]
+== Exposing entries of a collection with the key and value from each entry
+The following example shows how to expose the entries of a collection with the key and value from each entry through OLM descriptors:
+
+.Example: Exposing the entries of a collection through OLM descriptors
 [source,yaml]
-....
+----
+- path: bootstrap
+  x-descriptors:
+  - service.binding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url
+----
+
+The previous example uses the `path` attribute with an `X-Descriptors` update for the required entries of a collection.
+
+.Example: Configuration from a backing service resource
+[source,yaml]
+----
 status:
   connections:
     - type: primary
@@ -181,72 +122,60 @@ status:
       url: secondary.example.com
     - type: '404'
       url: black-hole.example.com
-....
+----
 
-The previous example helps you to project all those values with key such
-as `primary`, `secondary`, and so on.
+The previous example helps you to project all those values with keys such as `primary`,
+`secondary`, and so on.
 
-.Configuration for the required entries of a collection
+
+[#exposing-items-of-collection-with-one-key-per-item]
+== Exposing items of a collection with one key per item
+The following example shows how to expose the items of a collection with one key per item through OLM descriptors:
+
+.Example: Exposing the items of a collection through OLM descriptors
 [source,yaml]
-....
-- path: bootstrap
-  x-descriptors:
-  - service.binding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url
-....
-
-== Exposing the items of a collection into the binding Secret with one key per item
-
-Using the `path` attribute, update `X-Descriptors` for the required
-items of a collection.
-
-.Configuration from a backing service resource
-[source,yaml]
-....
-spec:
-    tags:
-      - knowledge
-      - is
-      - power
-....
-
-The previous example helps you project all those values with key such as
-`prefix_0`, `prefix_1`, and so on. The default prefix is the name of the
-resource kind:
-
-.Configuration for the required items of a collection
-[source,yaml]
-....
+----
 - path: spec.tags
   x-descriptors:
   - service.binding:tags:elementType=sliceOfStrings
-....
+----
 
-== Exposing the values of collection entries into the binding Secret with one key per entry value
+The previous example uses the `path` attribute with an `X-Descriptors` update for the required items of a collection.
 
-Using the `path` attribute, update `X-Descriptors` for the required
-values of collection entries.
-
-.Configuration from a backing service resource
+.Example: Configuration from a backing service resource
 [source,yaml]
-....
+----
 spec:
-    connections:
-      - type: primary
-        url: primary.example.com
-      - type: secondary
-        url: secondary.example.com
-      - type: '404'
-        url: black-hole.example.com
-....
+  tags:
+  - knowledge
+  - is
+  - power
+----
 
-The previous example helps you project all those values with key such as
-`prefix_0`, `prefix_1`, and so on. The default prefix is the name of the
-resource kind:
+The previous example helps you project all those values with key such as `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the resource `kind:`.
 
-.Configuration for the required values of collection entries
+[#exposing-values-of-collection-entries-with-one-key-per-entry-value]
+== Exposing values of collection entries with one key per entry value
+The following example shows how to expose the values of collection entries with one key per entry value through OLM descriptors:
+
+.Example: Exposing the values of collection entries through OLM descriptors
 [source,yaml]
-....
+----
 - path: bootstrap
   x-descriptors:
   - service.binding:endpoints:elementType=sliceOfStrings:sourceValue=url
-....
+----
+
+The previous example uses the `path` attribute with an `X-Descriptors` update for the required values of a collection.
+
+The following example shows how the previous values of a collection are projected into the bound application.
+
+.Example: Binding data files
+[source,text]
+----
+/bindings/<binding-name>/url_0 => primary.example.com
+/bindings/<binding-name>/url_1 => secondary.example.com
+/bindings/<binding-name>/url_2 => black-hole.example.com
+----
+
+The previous example helps you project all those values with key such as `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the resource `kind:`.

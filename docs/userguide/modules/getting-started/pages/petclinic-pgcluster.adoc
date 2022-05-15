@@ -1,3 +1,4 @@
+[#connecting-petclinic-app-to-oprtr-backd-postgresql-db]
 = Connecting PetClinic application to an Operator-backed PostgreSQL database
 :quickstart-namespace: my-petclinic
 :quickstart-db: pgcluster

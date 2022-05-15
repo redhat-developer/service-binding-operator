@@ -1,11 +1,11 @@
+[#creating-postgresql-db-instance]
 == Creating a PostgreSQL database instance
 
 This scenario uses a PostgreSQL database service, which you must install using the Operator Lifecycle Manager (OLM).
 
 [discrete]
 .Prerequisites
-* You have installed the https://operatorhub.io/operator/postgresql[Crunchy Postgres Operator
-from Crunchy Data available at OperatorHub.io] and the Operator is available in the `{quickstart-namespace}` namespace.
+* You have installed the https://operatorhub.io/operator/postgresql[Crunchy Postgres Operator from Crunchy Data available at OperatorHub.io] and the Operator is available in the `{quickstart-namespace}` namespace.
 
 The installation of the Crunchy PostgreSQL Operator does not create a database instance. To create a database service instance, you must create the following custom resource (CR), which will be processed by the Operator:
 

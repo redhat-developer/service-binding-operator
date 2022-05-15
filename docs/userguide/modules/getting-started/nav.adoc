@@ -1,4 +1,4 @@
-* Getting Started
+* Getting started
 ** xref:installing-service-binding.adoc[]
 ** xref:quick-start.adoc[]
 ** xref:petclinic-postgresql.adoc[]

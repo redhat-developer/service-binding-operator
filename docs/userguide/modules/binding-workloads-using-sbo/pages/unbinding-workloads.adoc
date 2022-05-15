@@ -1,0 +1,80 @@
+[#unbinding-workloads]
+= Unbinding workloads
+
+[#for-the-binding-operators-coreos-com-api]
+== For the `binding.operators.coreos.com/v1alpha1` API:
+
+You can unbind a workload from a backing service by using the `kubectl` or `oc` command line tool.
+
+[discreet]
+.Procedure
+
+* To unbind a workload from a backing service, delete the `ServiceBinding` custom resource (CR) linked to it:
++
+[source,terminal]
+----
+$ kubectl delete ServiceBinding <.metadata.name>
+----
++
+OR
++
+[source,terminal]
+----
+$ oc delete ServiceBinding <.metadata.name>
+----
++
+where `<.metadata.name>` is the name of the `ServiceBinding` resource.
++
+.Examples
+[source,terminal]
+----
+$ kubectl delete ServiceBinding spring-petclinic-pgcluster
+----
++
+[source,terminal]
+----
+$ oc delete ServiceBinding spring-petclinic-pgcluster
+----
++
+where:
+[horizontal]
+`spring-petclinic-pgcluster`:: Specifies the name of the `ServiceBinding` CR.
+
+
+
+[#for-the-servicebinding.io-api]
+== For the `servicebinding.io/v1alpha3` API:
+
+You can unbind a workload from a backing service bound using a `ServiceBinding` custom resource (CR) from the `servicebinding.io/v1alpha3` API:
+
+[discreet]
+.Procedure
+
+* To unbind a workload from a backing service, delete the `ServiceBinding` custom resource (CR) linked to it:
++
+[source,terminal]
+----
+$ kubectl delete servicebindings.servicebinding.io <.metadata.name>
+----
++
+OR
++	
+[source,terminal]
+----
+$ oc delete servicebindings.servicebinding.io <.metadata.name>
+----
++
+.Examples
+[source,terminal]
+----
+$ kubectl delete servicebindings.servicebinding.io spring-petclinic-pgcluster
+----
++
+[source,terminal]
+----
+$ oc delete servicebindings.servicebinding.io spring-petclinic-pgcluster
+----
++
+where:
+[horizontal]
+`spring-petclinic-pgcluster`:: Specifies the name of the `ServiceBinding` CR.
