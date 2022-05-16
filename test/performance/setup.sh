@@ -22,7 +22,7 @@ cd $WSTC
 git reset --hard
 git checkout $TOOLCHAIN_E2E_BRANCH
 git pull
-make dev-deploy-e2e
+make deploy-e2e MEMBER_NS=toolchain-member-operator SECOND_MEMBER_MODE=false HOST_NS=toolchain-host-operator REGISTRATION_SERVICE_NS=toolchain-host-operator ENVIRONMENT=dev E2E_TEST_EXECUTION=false IS_OSD=false DEPLOY_LATEST=true
 
 wait_for_deployment() {
     deployment=$1
