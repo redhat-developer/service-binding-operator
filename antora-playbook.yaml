@@ -4,9 +4,15 @@ site:
   start_page: userguide::intro.adoc
 content:
   sources:
-    - url: .
-      branches: HEAD
+    - branches: HEAD
       start_paths: docs/userguide, docs/devguide
+      url: ./
+    - branches: v1.0.1
+      start_paths: docs/userguide, docs/devguide
+      url: ./
+    - branches: v1.0.0
+      start_paths: docs/userguide
+      url: ./
 ui:
   bundle:
     url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
