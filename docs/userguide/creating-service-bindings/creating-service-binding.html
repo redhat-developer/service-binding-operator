@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Creating Service Binding :: Service Binding Operator Documentation</title>
     <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/creating-service-bindings/creating-service-binding.html">
-    <meta name="generator" content="Antora 2.3.4">
+    <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <script>var uiRootPath = '../../_'</script>
   </head>
@@ -288,7 +288,7 @@ vars</p></td>
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-Service Binding Operator performs requests against Kubernetes API using a dedicated service account. By default the account has permissions to bind services to applications, both represented by standard Kubernetes Deployments, DaemonSets, ReplicaSets, StatefulSets and <a href="https://docs.openshift.com/container-platform/latest/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are">OpenShift DeploymentConfigs</a>. Binding services/application defined by <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> requires adding appropriate rights to the service account, either by cluster admins or operator vendors. Please check <a href="../exposing-binding-data/rbac-requirements.html" class="page">RBAC Requirements</a> Section for further details.
+Service Binding Operator performs requests against Kubernetes API using a dedicated service account. By default the account has permissions to bind services to applications, both represented by standard Kubernetes Deployments, DaemonSets, ReplicaSets, StatefulSets and <a href="https://docs.openshift.com/container-platform/latest/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are">OpenShift DeploymentConfigs</a>. Binding services/application defined by <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> requires adding appropriate rights to the service account, either by cluster admins or operator vendors. Please check <a href="../exposing-binding-data/rbac-requirements.html" class="xref page">RBAC Requirements</a> Section for further details.
 </td>
 </tr>
 </table>

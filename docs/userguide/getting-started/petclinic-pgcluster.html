@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Connecting PetClinic application to an Operator-backed PostgreSQL database :: Service Binding Operator Documentation</title>
     <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/petclinic-pgcluster.html">
-    <meta name="generator" content="Antora 2.3.4">
+    <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <script>var uiRootPath = '../../_'</script>
   </head>
@@ -422,7 +422,7 @@ spec:
 <div class="listingblock">
 <div class="title">Example output:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code>NAME                                 READY  STATUS            RESTARTS    AGE
+<pre class="highlightjs highlight"><code class="language-none hljs">NAME                                 READY  STATUS            RESTARTS    AGE
 spring-petclinic-5d47b7dbcd-7zd8v    0/1    CrashLoopBackOff  1 (7s ago)  28s</code></pre>
 </div>
 </div>
@@ -511,7 +511,7 @@ spec:
 <div class="ulist">
 <ul>
 <li>
-<p>The first section is a list of service resources (<code>.spec.services</code>). The services resources point to the database service resources. For more information on how the values are exposed from the service resources, see the <a href="../exposing-binding-data/intro-expose-binding.html" class="page">Exposing Binding Data</a> section.</p>
+<p>The first section is a list of service resources (<code>.spec.services</code>). The services resources point to the database service resources. For more information on how the values are exposed from the service resources, see the <a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Exposing Binding Data</a> section.</p>
 </li>
 <li>
 <p>The second section is the application (<code>.spec.application</code>). The application points to a <code>Deployment</code> or any resource that is compliant with PodSpec.</p>
@@ -539,7 +539,7 @@ spec:
 <div class="listingblock">
 <div class="title">Example output:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code>NAME                          READY   REASON              AGE
+<pre class="highlightjs highlight"><code class="language-none hljs">NAME                          READY   REASON              AGE
 spring-petclinic-pgcluster   True    ApplicationsBound   28s</code></pre>
 </div>
 </div>
@@ -569,7 +569,7 @@ find the location of the <code>/bindings</code> directory. The Spring Boot appli
 used here uses the <a href="https://github.com/spring-cloud/spring-cloud-bindings">Spring Cloud Bindings</a> library
 and it looks for the <code>SERVICE_BINDING_ROOT</code> environment variable to get the projected
 binding data. For more information on how an application uses these values,
-see the <a href="../using-projected-bindings/using-projected-bindings.html" class="page">Using Projected Bindings</a> section.</p>
+see the <a href="../using-projected-bindings/using-projected-bindings.html" class="xref page">Using Projected Bindings</a> section.</p>
 </div>
 </td>
 </tr>
@@ -587,7 +587,7 @@ from the application port to access the sample application from your local envir
 <div class="listingblock">
 <div class="title">Example output:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code>Forwarding from 0.0.0.0:8080 -> 8080</code></pre>
+<pre class="highlightjs highlight"><code class="language-none hljs">Forwarding from 0.0.0.0:8080 -> 8080</code></pre>
 </div>
 </div>
 </li>
@@ -602,7 +602,7 @@ that the application is now connected to the database service.</p>
 </div>
 <div class="paragraph">
 <p>For more information on creating requests for service binding,
-see the <a href="../creating-service-bindings/creating-service-binding.html" class="page">Creating Service Binding</a> section.</p>
+see the <a href="../creating-service-bindings/creating-service-binding.html" class="xref page">Creating Service Binding</a> section.</p>
 </div>
 </div>
 </div>
@@ -632,13 +632,13 @@ and error-prone configuration.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><a href="../creating-service-bindings/creating-service-binding.html" class="page">Creating Service Binding</a></p>
+<p><a href="../creating-service-bindings/creating-service-binding.html" class="xref page">Creating Service Binding</a></p>
 </li>
 <li>
-<p><a href="../using-projected-bindings/using-projected-bindings.html" class="page">Using Projected Bindings</a></p>
+<p><a href="../using-projected-bindings/using-projected-bindings.html" class="xref page">Using Projected Bindings</a></p>
 </li>
 <li>
-<p><a href="../exposing-binding-data/intro-expose-binding.html" class="page">Exposing Binding Data</a></p>
+<p><a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Exposing Binding Data</a></p>
 </li>
 </ul>
 </div>
