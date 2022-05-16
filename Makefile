@@ -334,7 +334,7 @@ clean:
 .PHONY: site
 ## render site
 site:
-	$(CONTAINER_RUNTIME) run -u $(shell id -u) -e CI=true -e HOME=/antora -v ${PWD}:/antora:Z --rm -t antora/antora:2.3.4 antora-playbook.yaml
+	$(CONTAINER_RUNTIME) run -u $(shell id -u) -e CI=true -e HOME=/antora -v ${PWD}:/antora:Z --rm -t antora/antora:3.0.1 antora-playbook.yaml
 
 .PHONY: test-performance-setup
 ## Setup OpenShift cluster for performance test
