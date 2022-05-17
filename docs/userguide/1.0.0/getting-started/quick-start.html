@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Quick Start Guide :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/quick-start.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.0.0">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="quick-start.html">Quick Start Guide</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../using-projected-bindings/using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Expose Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declare Binding Data with Resource Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC Requirements</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.0.0</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Getting Started</li>
+    <li><a href="quick-start.html">Quick Start Guide</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.0.0</button>
+  <div class="version-menu">
+    <a class="version" href="../../getting-started/quick-start.html">master</a>
+    <a class="version" href="../../1.0.1/getting-started/quick-start.html">1.0.1</a>
+    <a class="version is-current" href="quick-start.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.0.0/docs/userguide/modules/getting-started/pages/quick-start.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Quick Start Guide</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The goal of this quick start guide is to:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Provide an overview of Service Binding Operator.</p>
+</li>
+<li>
+<p>Provide a list of prerequisites to be configured on your Kubernetes
+cluster.</p>
+</li>
+<li>
+<p>Create a PostgreSQL database instance</p>
+</li>
+<li>
+<p>Deploy the application</p>
+</li>
+<li>
+<p>Connect the application to the database with Service Binding</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>For this quick start, we are using a PostgreSQL database and a simple
+application using the
+<a href="https://github.com/spring-petclinic/spring-petclinic-rest">Spring Boot
+REST API server</a> sample. This will allow you to understand how Service
+Binding Operator can be used to simplify the connection between a
+service, like a database and the application.</p>
+</div>
+<div class="paragraph">
+<p>To illustrate what we are going to do, here is a visual representation
+of the application we are going to setup.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/postgresql-spring-boot.png" alt="postgresql-spring-boot"></span></p>
+</div>
+<div class="paragraph">
+<p>In this configuration, we leverage the service binding operator, to
+collect the binding data from the PostgreSQL database and project them
+into the sample application.</p>
+</div>
+<div class="paragraph">
+<p>Before starting, we invite you to refer to the
+<a href="#prerequisites">Prerequisites</a> section to make sure you have all the
+needed components configured on your K8s cluster.</p>
+</div>
+<div class="paragraph">
+<p>The quick start consists of three main steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#create-a-postgresql-database-instance">Create a PostgreSQL
+database instance</a></p>
+</li>
+<li>
+<p><a href="#deploy-the-sample-application">Deploy the application</a></p>
+</li>
+<li>
+<p><a href="#connect-the-application-to-the-database">Connect the application
+to the database with Service Binding</a></p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="prerequisites"><a class="anchor" href="#prerequisites"></a>Prerequisites</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to follow the quick start, you’ll need the following tools
+installed and configured:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Kubernetes cluster</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+You can use
+<a href="https://minikube.sigs.k8s.io/">minikube</a> or
+<a href="https://kind.sigs.k8s.io/">kind</a>, locally
+</td>
+</tr>
+</table>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="https://kubernetes.io/docs/tasks/tools/#kubectl">kubectl</a></p>
+</li>
+<li>
+<p>PostgreSQL client (<code>psql</code> CLI tool)</p>
+</li>
+<li>
+<p><a href="installing-service-binding.html" class="xref page">Installing Service Binding Operator</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="create-a-postgresql-database-instance"><a class="anchor" href="#create-a-postgresql-database-instance"></a>Create a PostgreSQL database instance</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The application is going to use to a PostgreSQL database backend which
+can be setup using the <code>v5</code> channel of
+<a href="https://operatorhub.io/operator/postgresql">Crunchy PostgreSQL operator
+from OperatorHub.io</a>. We just need to make sure that the operator is
+availabe in our <code>my-postgresql</code> namespace.</p>
+</div>
+<div class="paragraph">
+<p>The installation of the operator doesn’t create a database instance
+itself, so we need to create one.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>To create a database instance, you need to create custom resource
+<code>PostgresCluster</code> and that will trigger the operator reconciliation. For
+convenience, run this command to create <code>PostgresCluster</code> custom
+resource:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/pgcluster.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/pgcluster.yaml</a></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Once the database is created, we need to ensure all the pods in
+<code>my-postgresql</code> namespace are running (it will take few minutes):</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pod -n my-postgresql</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see output something like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                                     READY   STATUS      RESTARTS   AGE
+hippo-backup-6th6--1-28849               0/1     Completed   0          1m
+hippo-instance1-sl4r-0                   2/2     Running     0          2m
+hippo-pgbouncer-8454474bc7-lhcn9         2/2     Running     0          2m
+pgo-84b9679484-79c6m                     1/1     Running     0          3m</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The database has been created and is empty at this stage. We now need to
+set its schema and we will also project a sample data set, so we can
+play around with the application.</p>
+</div>
+</li>
+<li>
+<p>You can initialize the database with the schema and sample data using
+this command:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -sL <a href="_attachments/init-database.sh">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/init-database.sh</a> | bash</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We have now finished to configured the database for the application. We
+are ready to deploy the sample application and connect it to the
+database.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="deploy-the-sample-application"><a class="anchor" href="#deploy-the-sample-application"></a>Deploy the sample application</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this section, we are going to deploy the application on our
+kubernetes cluster. For that, we will use a deployment configuration and
+do the configuration of our local environment to be able to test the
+application.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Deploy the <code>spring-petclinic-rest</code> app with this <code>Deployment</code>
+configuration:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/app-deployment.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/app-deployment.yaml</a></code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Let’s now setup the port forwarding from the application port so we
+can access it from our local environment</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>You should be able to open <a href="http://localhost:9966/petclinic" class="bare">http://localhost:9966/petclinic</a> and see a
+<a href="https://swagger.io">Swagger UI</a> where you can play with the API.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>At this stage, the application is not yet connected to the database. So,
+if you try to play around the APIs, you’ll see errors returned by the
+application.</p>
+</div>
+<div class="paragraph">
+<p>For example, if you try to access the list of all pets, you can see an
+error like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
+
+{"className":"org.springframework.transaction.CannotCreateTransactionException","exMessage":"Could
+not open JPA EntityManager for transaction; nested exception is
+org.hibernate.exception.JDBCConnectionException: Unable to acquire JDBC
+Connection"}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Now, we are going to see how you can use Service Binding to easily
+connect the application to the database.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="connect-the-application-to-the-database"><a class="anchor" href="#connect-the-application-to-the-database"></a>Connect the application to the database</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Suppose the Service Binding operator is not present. In that case, the
+application’s admin needs to extract all the configuration details and
+create a Secret resource and expose it to the application through volume
+mount in Kubernetes. The steps would be something like this:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Identify the required values for connecting the application to the
+database</p>
+</li>
+<li>
+<p>Locate the resources where the values are present</p>
+</li>
+<li>
+<p>Take the values from different resources and create a Secret resource</p>
+</li>
+<li>
+<p>Mount the Secret resource into the application</p>
+</li>
+<li>
+<p>Depending on the application requirement the values should be exposed
+as env var or file.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>In this quick start, we are going to leverage Service Binding as a way
+to easily and safely connect the application to the database service. In
+order to do that, we’ll need to create a Service Binding resource which
+will trigger the Service Binding Operator to project the binding datas
+into the application.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create the ServiceBinding resource to project the binding data:</p>
+<div class="paragraph">
+<p>The <code>.spec</code> has two sections. The first is a list of service
+resources (<code>.spec.services</code>), and the second one is the application
+(<code>.spec.application</code>). The services resources points to the database’s
+service resources. How the values are exposed from service resources are
+explained <a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Introduction</a>
+section. The application points to a <code>Deployment</code>
+or any resource that is PodSpec compatible.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: spring-petclinic-rest
+  namespace: my-postgresql
+spec:
+  services:
+    - group: postgres-operator.crunchydata.com
+      version: v1beta1
+      kind: PostgresCluster
+      name: hippo
+  application:
+    name: spring-petclinic-rest
+    group: apps
+    version: v1
+    resource: deployments</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>For simplicity, you can copy/paste the following command to create the
+resource:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/service-binding.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/service-binding.yaml</a></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To check if the binding was successful you can check the binding
+resource status conditions by the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get servicebindings spring-petclinic-rest -n my-postgresql -o jsonpath-as-json='{.status.conditions}'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see output something like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">[
+  [
+    {
+      "lastTransitionTime": "2021-09-06T13:42:28Z",
+      "message": "",
+      "reason": "DataCollected",
+      "status": "True",
+      "type": "CollectionReady",
+    },
+    {
+      "lastTransitionTime": "2021-09-06T13:42:28Z",
+      "message": "",
+      "reason": "ApplicationUpdated",
+      "status": "True",
+      "type": "InjectionReady",
+    },
+    {
+      "lastTransitionTime": "2021-09-06T13:42:28Z",
+      "message": "",
+      "reason": "ApplicationsBound",
+      "status": "True",
+      "type": "Ready",
+    },
+  ],
+]</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To learn more about creating service bindings, you can find more
+information on the following <a href="../creating-service-bindings/creating-service-binding.html" class="xref page">document</a></p>
+</div>
+<div class="paragraph">
+<p>By creating this <code>Service Binding</code> resource, we now have values from the
+database’s binding data projected into the application container as
+files (that’s the default behavior, but you can also project environment
+variables if you prefer). If you check under
+<code>/bindings/spring-petclinic-rest</code> directory you’ll see all the values
+from the secret resource projected there. In the above example, you’ll
+find <code>username</code> and <code>password</code>. And the values pointed out through the
+annotation are also projected which includes <code>database</code>, <code>host</code>, and
+<code>port</code>. Finally <code>type</code> is also projected which is required for
+connectity.. The application looks for <code>SERVICE_BINDING_ROOT</code> env var to
+find the location of <code>/bindings</code> directory. The Spring Boot application
+used here is built using
+<a href="https://github.com/spring-cloud/spring-cloud-bindings">Spring Cloud
+Bindings</a> and it looks for <code>SERVICE_BINDING_ROOT</code> to get the projected
+binding data. See the using projected binding data section about how the
+values can be used from the application.</p>
+</div>
+<div class="paragraph">
+<p>To verify that binding was successful and that the files in the
+application contain the expected content, you can use the following script to
+inspect the deployment:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">for i in username password host port type; do
+  kubectl exec -it deploy/spring-petclinic-rest -n my-postgresql -- /bin/bash -c 'find /bindings/*/'$i' -exec echo -n {}:" " \; -exec cat {} \;';
+  echo
+done</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You should see output something like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">/bindings/spring-petclinic-rest/username: hippo
+/bindings/spring-petclinic-rest/password: w0ZB&lt;0j1W|K;+4*TlK7-w^z/
+/bindings/spring-petclinic-rest/host: hippo-pgbouncer
+/bindings/spring-petclinic-rest/port: 5432
+/bindings/spring-petclinic-rest/type: postgresql</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Let’s now check how the application is behaving and setup the port
+forwarding of the application port to access it from our local
+environment</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl port-forward --address 0.0.0.0 svc/spring-petclinic-rest 9966:80 -n my-postgresql</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Open <a href="http://localhost:9966/petclinic" class="bare">http://localhost:9966/petclinic</a>, you should see a
+<a href="https://swagger.io">Swagger UI</a> where you can play with the API.</p>
+<div class="paragraph">
+<p>If you try to access list of all pets, you can see the application is
+now connected to the database and see the sample data initially
+configured:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">$ curl -X GET "http://localhost:9966/petclinic/api/pets" -H "accept: application/json"
+[{"id":1,"name":"Leo","birthDate":"2000/09/07","type":{"id":1,"name":"cat"},
+"owner":{"id":1,"firstName":"George","lastName":"Franklin","address":"110...</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_next_steps"><a class="anchor" href="#_next_steps"></a>Next Steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this sample, we setup a database and connected it to an application
+using the Service Binding operator to collect the connection metadata
+and expose them to the application.</p>
+</div>
+<div class="paragraph">
+<p>By using service bindings, developers are able to more easily leverage
+the services available to them on a Kubernetes cluster. This method
+provides consistency accross different services and is repeatable for
+the developers. By remove the usual manual and error prone
+configuration, they benefit from a unified way to do
+application-to-service linkage.</p>
+</div>
+<div class="paragraph">
+<p>You can continue to learn more about Service Binding by:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../creating-service-bindings/creating-service-binding.html" class="xref page">Creating Service Binding</a></p>
+</li>
+<li>
+<p><a href="../using-projected-bindings/using-projected-bindings.html" class="xref page">Using Projected Bindings</a></p>
+</li>
+<li>
+<p><a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Expose Binding Data</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../../_/js/site.js"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

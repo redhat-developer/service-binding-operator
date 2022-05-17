@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>General Concept :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/using-projected-bindings/using-projected-bindings.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.0.1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick Start Guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declare Binding Data with Resource Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC Requirements</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.0.1</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Using Projected Bindings</li>
+    <li><a href="using-projected-bindings.html">General Concept</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.0.1</button>
+  <div class="version-menu">
+    <a class="version" href="../../using-projected-bindings/using-projected-bindings.html">master</a>
+    <a class="version is-current" href="using-projected-bindings.html">1.0.1</a>
+    <a class="version" href="../../1.0.0/using-projected-bindings/using-projected-bindings.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.0.1/docs/userguide/modules/using-projected-bindings/pages/using-projected-bindings.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">General Concept</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>When using the Service Binding operator, a set of binding data are
+projected into your application using the following methods:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>By default, as files.</p>
+</li>
+<li>
+<p>As environment variables, if the value for the <code>.spec.bindAsFiles</code>
+parameter is set to <code>false</code> in the <code>ServiceBinding</code> resource.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_understanding_the_consumption_of_binding_data"><a class="anchor" href="#_understanding_the_consumption_of_binding_data"></a>Understanding the consumption of binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The primary mechanism of projection is through files mounted at a
+specific directory. The binding data directory path can be discovered
+through <code>SERVICE_BINDING_ROOT</code> environment variable injected in your
+application.</p>
+</div>
+<div class="paragraph">
+<p>Within this service binding root directory, there can be multiple
+binding metadata projected through different ServiceBinding resource
+reconciliations. For example, an application requires a connection to a database and a cache
+server.  In that case, one Service Binding could provide the database, and the
+other Service Binding could provide binding data to the cache server.</p>
+</div>
+<div class="paragraph">
+<p>Let’s take a look at the example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">$SERVICE_BINDING_ROOT
+├── account-database
+│   ├── type
+│   ├── provider
+│   ├── uri
+│   ├── username
+│   └── password
+└── transaction-event-stream
+    ├── type
+    ├── connection-count
+    ├── uri
+    ├── certificates
+    └── private-key</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the previous example, there are two binding data directories under
+the <code>SERVICE_BINDING_ROOT</code> directory. The <code>account-database</code> and
+<code>transaction-event-stream</code> are the names of the binding data. Files
+within each binding data directory has a special file named <code>type</code>, and
+you can rely on the value of that file to identify the type of the
+binding projected into that directory. In certain directories, you can
+also see another file named <code>provider</code>. The provider is an additional
+identifier to narrow down the type further. Retrieving the binding data
+through the binding data directory name is not a good practice – it
+makes your application less portable. Always use the <code>type</code> field and,
+if necessary, <code>provider</code> to look up the binding data.</p>
+</div>
+<div class="paragraph">
+<p>The Service Binding Operators uses <code>ServiceBinding</code> resource name
+(<code>.metadata.name</code>) as the binding data directory name, but the spec also
+provides a way to override that name through the <code>.spec.name</code> field. So,
+there is a chance for binding data name collision. However, due to the
+nature of the volume mount in Kubernetes, the binding data directory
+will contain values from only one of the Secret resources. This is a
+caveat of using the binding data directory name to look up the binding
+data.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_using_binding_data_projected_as_files"><a class="anchor" href="#_using_binding_data_projected_as_files"></a>Using Binding data projected as files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For determining the folder where binding data are projected, you can set
+the <code>SERVICE_BINDING_ROOT</code> environment variable in the application
+resource.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_table_summary_of_the_final_path_computation"><a class="anchor" href="#_table_summary_of_the_final_path_computation"></a>Table: Summary of the final path computation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following table summarizes how the final bind path is computed:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">SERVICE_BINDING_ROOT</th>
+<th class="tableblock halign-left valign-top">Final Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">non-existent</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/bindings/ServiceBinding_Name</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/some/path/root</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">/some/path/root/</p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>You can use the built-in language feature of your programming language
+of choice to read environment variables.</p>
+</div>
+<div class="paragraph">
+<p>For accessing binding data within <code>SERVICE_BINDING_ROOT</code>, there are
+language or framework specific programs:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Python: <a href="https://github.com/baijum/pyservicebinding" class="bare">https://github.com/baijum/pyservicebinding</a></p>
+</li>
+<li>
+<p>Go: <a href="https://github.com/baijum/servicebinding" class="bare">https://github.com/baijum/servicebinding</a></p>
+</li>
+<li>
+<p>Java/Spring: <a href="https://github.com/spring-cloud/spring-cloud-bindings" class="bare">https://github.com/spring-cloud/spring-cloud-bindings</a></p>
+</li>
+<li>
+<p>Quarkus:
+<a href="https://quarkus.io/guides/deploying-to-kubernetes#service-binding" class="bare">https://quarkus.io/guides/deploying-to-kubernetes#service-binding</a></p>
+</li>
+<li>
+<p>JS/Node: <a href="https://github.com/nodeshift/kube-service-bindings" class="bare">https://github.com/nodeshift/kube-service-bindings</a></p>
+</li>
+<li>
+<p>.NET: <a href="https://github.com/donschenck/dotnetservicebinding" class="bare">https://github.com/donschenck/dotnetservicebinding</a></p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+All these libraries expect <code>SERVICE_BINDING_ROOT</code> to be set.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_example_python_client_usage"><a class="anchor" href="#_example_python_client_usage"></a>Example: Python client usage</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">from pyservicebinding import binding
+try:
+    sb = binding.ServiceBinding()
+except binding.ServiceBindingRootMissingError as msg:
+    # log the error message and retry/exit
+    print("SERVICE_BINDING_ROOT env var not set")
+
+sb = binding.ServiceBinding()
+
+bindings_list = sb.bindings("postgresql")</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the previous example, the <code>bindings_list</code> parameter contains the
+binding metadata for the <code>postgresql</code> type. For full API, see the
+<a href="https://github.com/baijum/pyservicebinding">documentation</a>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_environment_variables"><a class="anchor" href="#_environment_variables"></a>Environment Variables</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service Binding operator supports projecting environment variables. You
+can use the built-in language feature of your programming language of
+choice to read environment variables. The container must restart to
+update the values of environment variables if there is a change in the
+Secret resource.</p>
+</div>
+<div class="paragraph">
+<p>Here is example Python client usage:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import os
+
+username = os.getenv("USERNAME")
+password = os.getenv("PASSWORD")</code></pre>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../../_/js/site.js"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
