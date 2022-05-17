@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/schema#",
+    "type": "object",
+    "required": [
+      "image"
+    ],
+    "properties": {
+      "image": {
+          "type": "object",
+          "required": [
+            "pullPolicy",
+            "repository",
+            "testRepository"
+          ],
+          "properties": {
+            "pullPolicy": {
+              "type": "string"
+            },
+            "repository": {
+              "type": "string"
+            },
+            "testRepository": {
+              "type": "string"
+            }
+          }
+        },
+        "keepTestResources":{
+          "type": "boolean"
+        }
+      }
+  }
+  

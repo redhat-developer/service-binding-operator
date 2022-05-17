@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: service-binding-service-cert
+  namespace: {{.Release.Namespace}}
+spec:
+  dnsNames:
+  - service-binding-webhook-service.service-binding-operator.svc
+  - service-binding-webhook-service.service-binding-operator.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: service-binding-selfsigned-issuer
+  secretName: service-binding-operator-service-cert

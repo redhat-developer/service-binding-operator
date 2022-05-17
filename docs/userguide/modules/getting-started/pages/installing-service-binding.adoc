@@ -19,20 +19,22 @@ methods:
 https://operatorhub.io/operator/service-binding-operator[OperatorHub.io].
 .. Click on the blue btn:[Install] button.
 .. Follow the instructions to install the Service Binding Operator.
+. Installing the Service Binding Operator using Helm chart
 . Installing the Service Binding Operator without OLM
 
-If you do not have Operator Lifecycle Manager, you can install the
-Operator using the released resources:
+[Note]
+If you do not have OLM,  install the Operator using the released resources:
 
 [source,bash]
 ....
 kubectl apply -f https://github.com/redhat-developer/service-binding-operator/releases/latest/download/release.yaml
 ....
 
+
 [#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui]
 == Installing the Service Binding Operator from the OpenShift Container Platform web UI
 
-Prerequisites:
+. Prerequisites:
 
 . https://docs.openshift.com/container-platform/4.8/welcome/index.html[Red
 Hat OpenShift Container Platform] installed.
@@ -59,3 +61,180 @@ image:sbo_install_options.png[sbo_install_options]
 displayed with the Operator details.
 +
 image:sbo_post_install.png[sbo_post_install]
+
+[#installing-the-sbo-using-helm-chart]
+== Installing the Service Binding Operator using Helm chart
+
+The helm chart installation involves the following steps:
+
+1. Adding the `service-binding-operator-helm-chart` repository.
+2. Installing the Service Binding Operator Helm chart.
+3. Running a Helm test.
+
+[Note]
+If you are not installing the Service Binding Operator through Operator Lifecycle Manager (OLM), you must install cert-manager on the cluster. Installing the cert-manager automates 
+TLS certificates for Kubernetes and OpenShift workloads. Cert-manager ensures that the certificates are valid and up-to-date, and attempts to renew certificates at a configured time before expiry. 
+You can install cert-manager by running the following command:
+
+[source,bash]
+----
+kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
+----
+.Prerequisites:
+
+. You have access to a Kubernetes or an OpenShift Container Platform cluster using an account with cluster-admin permissions.
+. You have the cert-manager installed on the cluster if you are not installing the Service Binding Operator through Operator Lifecycle Manager (OLM).
+. You have Helm CLI installed.
+. You have installed the kubectl or oc CLI.
+
+[## Adding the Helm chart repository]
+== Adding the Helm chart repository
+
+Add the `service-binding-operator-helm-chart` repository to your local repository and name the repository: 
+
+[source,bash]
+----
+helm repo add service-binding-operator-helm-chart https://redhat-developer.github.io/service-binding-operator-helm-chart/
+----
+.Example output
+[source,terminal]
+----
+"service-binding-operator-helm-chart" has been added to your repositories
+----
+
+Verify your Helm repository by listing it:
+
+[source,bash]
+----
+helm repo list
+----
+.Example output
+[source,terminal]
+----
+NAME                 	                        URL                                                                                                        
+service-binding-operator-helm-chart          	https://redhat-developer.github.io/service-binding-operator-helm-chart/
+----
+The output verifies that the `service-binding-operator-helm-chart` repository is added to your local helm repository.
+
+[## Installing the Helm chart]
+== Installing the Helm chart
+
+In order to install the chart you need to search the repository, with the following command:
+
+[source,bash]
+----
+helm search repo  service-binding-operator-helm-chart
+----
+
+.Example output
+[source,terminal]
+NAME                             	                            CHART VERSION	APP VERSION	DESCRIPTION                                    
+service-binding-operator-helm-chart/service-binding-operator	1.0.0        	1.0.1      	A Helm chart to deploy service binding operator
+
+Create a Helm chart release and specify the namespace you will like to create with --create-namespace 
+flag.
+[source,bash]
+----
+helm install service-binding-operator-release \
+service-binding-operator-helm-chart/service-binding-operator \
+--namespace service-binding-operator --create-namespace
+----
+
+Remove --namespace and --create-namespace flag if you wish to install the chart on default namespace.
+
+As part of Helm test we delete the deploymemt,service binding resource and secret created for testing the operator.
+
+Optional: To view the  resources created for testing, install the chart with the `keepTestResources` flag value set to `true`:
+[source,bash]
+----
+helm install service-binding-operator-release \
+service-binding-operator-helm-chart/service-binding-operator \
+--namespace service-binding-operator --create-namespace \
+--set keepTestResources=true
+----
+
+.Example output
+[source,terminal]
+NAME: service-binding-operator-release
+LAST DEPLOYED: Mon May 16 09:15:16 2022
+NAMESPACE: service-binding-operator
+STATUS: deployed
+REVISION: 1
+
+You can check whether the chart is succesfully installed by running the following command
+
+[source,bash]
+----
+kubectl get pods --namespace service-binding-operator
+----
+
+[## Testing the  chart]
+== Testing the chart 
+In order to test the chart the user is expected to create a secret (specify the namespace if applicable), named my-k-config from his kubeconfig .
+
+NOTE:
+In case you are installing the chart on AWS eks cluster then you need to modify the aws-auth configmap.
+----
+kubectl edit -n kube-system cm/aws-auth 
+----
+. Add `-system:masters` to mapRoles and save.
+. After editing the config map, update the eks kubeconfig:
+----
+aws eks update-kubeconfig --name <cluster-name>
+----
+
+
+Then Continue with the following steps.
+
+----
+kubectl create secret generic my-k-config --from-file=kubeconfig=<PATH TO YOUR KUBECONFIG> --namespace service-binding-operator
+----
+
+.Example output
+[source,terminal]
+----
+secret/my-k-config created
+----
+
+The previous output verifies that the `my-k-config` secret is created.
+
+Run the Helm test (specify the namespace if applicable) using :
+
+```
+helm test service-binding-operator-release --namespace service-binding-operator
+```
+.Example output
+[source,terminal]
+----
+NAME: service-binding-operator-release
+LAST DEPLOYED: Mon May 16 10:44:53 2022
+NAMESPACE: service-binding-operator
+STATUS: deployed
+REVISION: 1
+TEST SUITE:     service-binding-operator-release-test
+Last Started:   Mon May 16 11:01:10 2022
+Last Completed: Mon May 16 11:01:22 2022
+Phase:          Succeeded
+----
+The `Succeeded` phase from the output indicates that the Helm test has run successfully. 
+
+Verify that the Helm test has run successfully:
+
+[source,bash]
+----
+kubectl get pods --namespace service-binding-operator
+----
+
+.Example output
+[source,terminal]
+----
+NAME                                              READY   STATUS      RESTARTS   AGE
+service-binding-operator-release-test             0/1     Completed   0          4m28s
+----
+
+This implies that you have successfully installed the service binding operator using a Helm chart and are able to bind your workload to backing services.
+
+Please ensure to delete the secret (specify the namespace if applicable) created :
+----
+kubectl delete secret my-k-config  --namespace service-binding-operator
+----
