@@ -81,6 +81,8 @@ jobs:
         uses: actions/checkout@v2
 
       - name: generate website
+        env:
+          SITE_SOURCE: github
         run: |
           make site
           touch ./out/site/.nojekyll
