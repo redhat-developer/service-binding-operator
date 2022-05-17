@@ -1,0 +1,22 @@
+site:
+  title: Service Binding Operator Documentation
+  url: https://redhat-developer.github.io/service-binding-operator
+  start_page: userguide::intro.adoc
+content:
+  sources:
+    - branches: HEAD
+      start_paths: docs/userguide, docs/devguide
+      url: https://github.com/redhat-developer/service-binding-operator
+    - branches: v1.0.1
+      start_paths: docs/userguide, docs/devguide
+      url: https://github.com/redhat-developer/service-binding-operator
+    - branches: v1.0.0
+      start_paths: docs/userguide
+      url: https://github.com/redhat-developer/service-binding-operator
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/master/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+  supplemental_files: ./hack/antora
+output:
+  dir: ./out/site
