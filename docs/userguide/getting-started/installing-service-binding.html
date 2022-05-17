@@ -232,13 +232,15 @@ methods:</p>
 </div>
 </li>
 <li>
+<p>Installing the Service Binding Operator using Helm chart</p>
+</li>
+<li>
 <p>Installing the Service Binding Operator without OLM</p>
 </li>
 </ol>
 </div>
 <div class="paragraph">
-<p>If you do not have Operator Lifecycle Manager, you can install the
-Operator using the released resources:</p>
+<p>If you do not have OLM,  install the Operator using the released resources:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -250,11 +252,11 @@ Operator using the released resources:</p>
 <div class="sect1">
 <h2 id="installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui"><a class="anchor" href="#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui"></a>Installing the Service Binding Operator from the OpenShift Container Platform web UI</h2>
 <div class="sectionbody">
-<div class="paragraph">
-<p>Prerequisites:</p>
-</div>
 <div class="olist arabic">
 <ol class="arabic">
+<li>
+<p>Prerequisites:</p>
+</li>
 <li>
 <p><a href="https://docs.openshift.com/container-platform/4.8/welcome/index.html">Red
 Hat OpenShift Container Platform</a> installed.</p>
@@ -293,6 +295,257 @@ displayed with the Operator details.</p>
 </div>
 </li>
 </ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installing-the-sbo-using-helm-chart"><a class="anchor" href="#installing-the-sbo-using-helm-chart"></a>Installing the Service Binding Operator using Helm chart</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The helm chart installation involves the following steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Adding the <code>service-binding-operator-helm-chart</code> repository.</p>
+</li>
+<li>
+<p>Installing the Service Binding Operator Helm chart.</p>
+</li>
+<li>
+<p>Running a Helm test.</p>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>If you are not installing the Service Binding Operator through Operator Lifecycle Manager (OLM), you must install cert-manager on the cluster. Installing the cert-manager automates
+TLS certificates for Kubernetes and OpenShift workloads. Cert-manager ensures that the certificates are valid and up-to-date, and attempts to renew certificates at a configured time before expiry.
+You can install cert-manager by running the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml</code></pre>
+</div>
+</div>
+<div class="olist arabic">
+<div class="title">Prerequisites:</div>
+<ol class="arabic">
+<li>
+<p>You have access to a Kubernetes or an OpenShift Container Platform cluster using an account with cluster-admin permissions.</p>
+</li>
+<li>
+<p>You have the cert-manager installed on the cluster if you are not installing the Service Binding Operator through Operator Lifecycle Manager (OLM).</p>
+</li>
+<li>
+<p>You have Helm CLI installed.</p>
+</li>
+<li>
+<p>You have installed the kubectl or oc CLI.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_adding_the_helm_chart_repository"><a class="anchor" href="#_adding_the_helm_chart_repository"></a>Adding the Helm chart repository</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Add the <code>service-binding-operator-helm-chart</code> repository to your local repository and name the repository:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm repo add service-binding-operator-helm-chart https://redhat-developer.github.io/service-binding-operator-helm-chart/</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">"service-binding-operator-helm-chart" has been added to your repositories</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify your Helm repository by listing it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm repo list</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                 	                        URL
+service-binding-operator-helm-chart          	https://redhat-developer.github.io/service-binding-operator-helm-chart/</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output verifies that the <code>service-binding-operator-helm-chart</code> repository is added to your local helm repository.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_installing_the_helm_chart"><a class="anchor" href="#_installing_the_helm_chart"></a>Installing the Helm chart</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to install the chart you need to search the repository, with the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm search repo  service-binding-operator-helm-chart</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                             	                            CHART VERSION	APP VERSION	DESCRIPTION
+service-binding-operator-helm-chart/service-binding-operator	1.0.0        	1.0.1      	A Helm chart to deploy service binding operator</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Create a Helm chart release and specify the namespace you will like to create with --create-namespace
+flag.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm install service-binding-operator-release \
+service-binding-operator-helm-chart/service-binding-operator \
+--namespace service-binding-operator --create-namespace</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Remove --namespace and --create-namespace flag if you wish to install the chart on default namespace.</p>
+</div>
+<div class="paragraph">
+<p>As part of Helm test we delete the deploymemt,service binding resource and secret created for testing the operator.</p>
+</div>
+<div class="paragraph">
+<p>Optional: To view the  resources created for testing, install the chart with the <code>keepTestResources</code> flag value set to <code>true</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm install service-binding-operator-release \
+service-binding-operator-helm-chart/service-binding-operator \
+--namespace service-binding-operator --create-namespace \
+--set keepTestResources=true</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME: service-binding-operator-release
+LAST DEPLOYED: Mon May 16 09:15:16 2022
+NAMESPACE: service-binding-operator
+STATUS: deployed
+REVISION: 1</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can check whether the chart is succesfully installed by running the following command</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pods --namespace service-binding-operator</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_testing_the_chart"><a class="anchor" href="#_testing_the_chart"></a>Testing the chart</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In order to test the chart the user is expected to create a secret (specify the namespace if applicable), named my-k-config from his kubeconfig .</p>
+</div>
+<div class="paragraph">
+<p>NOTE:
+In case you are installing the chart on AWS eks cluster then you need to modify the aws-auth configmap.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>kubectl edit -n kube-system cm/aws-auth</pre>
+</div>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Add <code>-system:masters</code> to mapRoles and save.</p>
+</li>
+<li>
+<p>After editing the config map, update the eks kubeconfig:</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>aws eks update-kubeconfig --name &lt;cluster-name&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Then Continue with the following steps.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>kubectl create secret generic my-k-config --from-file=kubeconfig=&lt;PATH TO YOUR KUBECONFIG&gt; --namespace service-binding-operator</pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">secret/my-k-config created</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous output verifies that the <code>my-k-config</code> secret is created.</p>
+</div>
+<div class="paragraph">
+<p>Run the Helm test (specify the namespace if applicable) using :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">helm test service-binding-operator-release --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME: service-binding-operator-release
+LAST DEPLOYED: Mon May 16 10:44:53 2022
+NAMESPACE: service-binding-operator
+STATUS: deployed
+REVISION: 1
+TEST SUITE:     service-binding-operator-release-test
+Last Started:   Mon May 16 11:01:10 2022
+Last Completed: Mon May 16 11:01:22 2022
+Phase:          Succeeded</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Succeeded</code> phase from the output indicates that the Helm test has run successfully.</p>
+</div>
+<div class="paragraph">
+<p>Verify that the Helm test has run successfully:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pods --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                                              READY   STATUS      RESTARTS   AGE
+service-binding-operator-release-test             0/1     Completed   0          4m28s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This implies that you have successfully installed the service binding operator using a Helm chart and are able to bind your workload to backing services.</p>
+</div>
+<div class="paragraph">
+<p>Please ensure to delete the secret (specify the namespace if applicable) created :</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>kubectl delete secret my-k-config  --namespace service-binding-operator</pre>
+</div>
 </div>
 </div>
 </div>
