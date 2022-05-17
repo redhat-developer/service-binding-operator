@@ -1,6 +1,10 @@
 domain: operators.coreos.com
-layout: go.kubebuilder.io/v3
+layout:
+- go.kubebuilder.io/v3
 multigroup: true
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
 projectName: service-binding-operator
 repo: github.com/redhat-developer/service-binding-operator
 resources:
@@ -30,12 +34,20 @@ resources:
     webhookVersion: v1
 - api:
     crdVersion: v1
+  controller: true
+  domain: operators.coreos.com
+  group: spec
+  kind: ClusterWorkloadResourceMapping
+  path: github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3
+  version: v1alpha3
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
   domain: operators.coreos.com
   group: binding
   kind: BindableKinds
   path: github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1
   version: v1alpha1
 version: "3"
-plugins:
-  manifests.sdk.operatorframework.io/v2: {}
-  scorecard.sdk.operatorframework.io/v2: {}

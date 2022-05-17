@@ -92,9 +92,13 @@ type ClusterWorkloadResourceMappingList struct {
 	Items []ClusterWorkloadResourceMapping `json:"items"`
 }
 
+func init() {
+	SchemeBuilder.Register(&ClusterWorkloadResourceMapping{}, &ClusterWorkloadResourceMappingList{})
+}
+
 var DefaultTemplate = ClusterWorkloadResourceMappingTemplate{
 	Version:     "*",
-	Annotations: "",
+	Annotations: ".spec.template.spec.annotations",
 	Volumes:     ".spec.template.spec.volumes",
 	Containers: []ClusterWorkloadResourceMappingContainer{
 		{
