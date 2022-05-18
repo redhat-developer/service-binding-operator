@@ -17,7 +17,8 @@ ddiff_sec() {
 resource_counts() {
     echo -n "$1;"
     # All resource counts from user namespaces
-    echo -n "$(oc get $1 --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace --ignore-not-found=true | grep $USER_NS_PREFIX | wc -l)"
+    regex=$(echo $2 | sed -e 's,\([^ ]\) \([^ ]\),\1|\2,g')
+    echo -n "$(oc get $1 --all-namespaces -o custom-columns=NAMESPACE:.metadata.namespace --ignore-not-found=true | grep -E "$regex"| wc -l)"
     echo -n ";"
     # All resource counts from all namespaces
     echo "$(oc get $1 --all-namespaces -o name --ignore-not-found=true | wc -l)"
@@ -141,7 +142,7 @@ timestamps() {
         RESOURCE_COUNTS_OUT=$RESULTS/resource-count.csv
         echo "Resource;UserNamespaces;AllNamespaces" >$RESOURCE_COUNTS_OUT
         for i in $(cat resource-list.namespaced resource-list.cluster | sort); do
-            echo resource_counts $i >>$RESOURCE_COUNTS_OUT
+            resource_counts $i "$USER_NS_PREFIXES" >>$RESOURCE_COUNTS_OUT
         done
     fi
 } &
