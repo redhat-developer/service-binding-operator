@@ -347,6 +347,7 @@ test-performance-setup:
 
 .PHONY: test-performance
 ## Run performance test
+test-performance: export CATSRC_NAME=sbo-test-performance
 test-performance: test-performance-setup deploy-from-index-image
 	OUTPUT_DIR=$(TEST_PERFORMANCE_OUTPUT_DIR) ./test/performance/run.sh $(TEST_PERFORMANCE_NS_PREFIX) $(TEST_PERFORMANCE_USERS_PER_SCENARIO)
 
