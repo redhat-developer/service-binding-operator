@@ -4,6 +4,28 @@ SHELLFLAGS = -ec
 OS = $(shell go env GOOS)
 ARCH = $(shell go env GOARCH)
 
+CGO_ENABLED ?= 0
+GO111MODULE ?= on
+GOCACHE ?= "$(PROJECT_DIR)/out/gocache"
+GOFLAGS ?= -mod=vendor
+
+ARTIFACT_DIR ?= $(PROJECT_DIR)/out
+HACK_DIR ?= $(PROJECT_DIR)/hack
+OUTPUT_DIR ?= $(PROJECT_DIR)/out
+PYTHON_VENV_DIR = $(OUTPUT_DIR)/venv3
+
+CONTAINER_RUNTIME ?= docker
+
+QUAY_USERNAME ?= redhat-developer+travis
+REGISTRY_USERNAME ?= $(QUAY_USERNAME)
+REGISTRY_NAMESPACE ?= $(QUAY_USERNAME)
+QUAY_TOKEN ?= ""
+REGISTRY_PASSWORD ?= $(QUAY_TOKEN)
+
+GO ?= CGO_ENABLED=$(CGO_ENABLED) GOCACHE=$(GOCACHE) GOFLAGS="$(GOFLAGS)" GO111MODULE=$(GO111MODULE) go
+
+.DEFAULT_GOAL := help
+
 ## Print help message for all Makefile targets
 ## Run `make` or `make help` to see the help
 .PHONY: help
@@ -77,6 +99,18 @@ ifeq ($(VERBOSE),3)
 	VERBOSE_FLAG = --verbose
 	X_FLAG = -x
 endif
+
+.PHONY: setup-venv
+# Setup virtual environment
+setup-venv:
+	$(Q)python3 -m venv $(PYTHON_VENV_DIR)
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade setuptools
+	$(Q)$(PYTHON_VENV_DIR)/bin/pip install --upgrade pip
+
+.PHONY: clean
+## Removes temp directories
+clean:
+	$(Q)-rm -rf ${V_FLAG} $(OUTPUT_DIR)
 
 # Generate code
 generate: controller-gen
