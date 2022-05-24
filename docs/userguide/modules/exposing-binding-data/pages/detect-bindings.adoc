@@ -1,15 +1,13 @@
-= Detect Bindings through owned resources
+[#detection-of-binding-data-through-owned-resources]
+= Detection of binding data through owned resources
 
-The Service Bindings Operator can detect binding data from resources
-owned by the backing service custom resource such as Route, Service,
-ConfigMap, and Secret resources.
+You can use this method if your backing service owns one or more Kubernetes resources such as route, service, config map, or secret that you can use to detect the binding data. In this method, the {servicebinding-title} detects the binding data from resources owned by the backing service CR.
 
-Set this `detectBindingResources` API option to `true` in the
-`ServiceBinding` custom resource.
+The following examples show the `detectBindingResources` API option set to `true` in the `ServiceBinding` CR:
 
 .Example
 [source,yaml]
-....
+----
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
@@ -17,17 +15,18 @@ metadata:
   namespace: service-binding-demo
 spec:
   detectBindingResources: true
+  services:
+    - group: etcd.database.coreos.com
+      version: v1beta2
+      kind: EtcdCluster
+      name: etcd-cluster-example
   application:
     name: java-app
     group: apps
     version: v1
     resource: deployments
-  services:
-  - group: etcd.database.coreos.com
-    version: v1beta2
-    kind: EtcdCluster
-    name: etcd-cluster-example
-....
+----
 
-The Service Binding Operator automatically detects the binding
-connections and exposes the binding data.
+In the previous example, `EtcdCluster` custom service resource owns one or more Kubernetes resources such as route, service, config map, or secret.
+
+The {servicebinding-title} automatically detects the binding data exposed on each of the owned resources.

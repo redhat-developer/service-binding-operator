@@ -1,1 +1,4 @@
-NOTE: The PostgreSQL database in this scenario is deployed using the `PostgresCluster` resource provided by the https://operatorhub.io/operator/postgresql[Crunchy Postgres Operator from Crunchy Data] that requires the Operator Lifecycle Manager (OLM) to install and manage.
+[NOTE]
+====
+The PostgreSQL database in this scenario is deployed using the `PostgresCluster` resource provided by the https://operatorhub.io/operator/postgresql[Crunchy Postgres Operator from Crunchy Data] that requires the Operator Lifecycle Manager (OLM) to install and manage.
+====

@@ -1,0 +1,2 @@
+* Projecting binding data
+** xref:projecting-binding-data.adoc[]

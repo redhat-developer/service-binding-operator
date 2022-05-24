@@ -1,4 +1,5 @@
-= Quick Start Guide
+[#quick-start-guide]
+= Quick start guide
 :quickstart-namespace: my-petclinic
 
 [#intro]
@@ -7,10 +8,9 @@ include::partial$introduction.adoc[]
 [#prerequisites]
 include::partial$common-prerequisities.adoc[]
 
-== Getting started with Service Binding 
-Depending on your requirements you can follow the procedures described in any one of the following scenarios
-to experience how you can use the {servicebinding-title} to
-simplify the connection between a service such as a database and an application:
+[#getting-started-with-service-binding]
+== Getting started with service binding 
+Depending on your requirements you can follow the procedures described in any one of the following scenarios to experience how you can use the {servicebinding-title} to simplify the connection between a service such as a database and an application:
 
 * xref:getting-started:petclinic-postgresql.adoc[] - basic scenario
 * xref:getting-started:petclinic-pgcluster.adoc[] - requires Operator Lifecycle Manager (OLM)

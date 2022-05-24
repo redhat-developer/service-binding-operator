@@ -23,11 +23,12 @@ You can now use the {servicebinding-title} to connect the application to the dat
 [#connecting-the-application-to-the-database]
 include::partial$connecting-petclinic-db.adoc[]
 
+[#conclusion]
 == Conclusion
 
-In this scenario, we set up {quickstart-db-showname} and connected it 
-to the Spring PetClinic application using the {servicebinding-title} to collect the binding data and expose them to the application.
+In this scenario, we set up {quickstart-db-showname} and connected it to the Spring PetClinic application using the {servicebinding-title} to collect the binding data and expose them to the application.
 
+[#next-steps]
 == Next Steps
 
 include::partial$next-steps.adoc[]

@@ -1,24 +1,15 @@
-= Provisioned Service
+[#provisioned-service]
+= Provisioned service
 
-As a backing service author or provider, you can use this method to be
-compliant with the Service Binding specification.
+https://github.com/k8s-service-bindings/spec#provisioned-service[Provisioned service] represents a backing service CR with a reference to a `Secret` resource placed in the `.status.binding.name` field of the backing service CR.
 
-https://github.com/k8s-service-bindings/spec#provisioned-service[Provisioned
-Service] represents a backing service custom resource with a reference
-to a Secret resource. The Secret resource provides all the binding data
-values required for an application to connect to the backing service.
-You must provide the reference to the Secret service resource in the
-`.status.binding.name` attribute of the custom resource.
+As an Operator provider or the user who creates backing services, you can use this method to be compliant with the Service Binding specification, by creating a `Secret` resource and referencing it in the `.status.binding.name` section of the backing service CR. This `Secret` resource must provide all the binding data values required for a workload to connect to the backing service.
 
-The following examples show an `AccountService` resource that represents
-a backing service and a `Secret` service resource. As a backing service
-author, you can create a `Secret` service resource with all the
-necessary connection details and refer them using the
-`.status.binding.name` field.
+The following examples show an `AccountService` CR that represents a backing service and a `Secret` resource referenced from the CR.
 
-.Example: AccountService resource
+.Example: `AccountService` CR
 [source,yaml]
-....
+----
 apiVersion: example.com/v1alpha1
 kind: AccountService
 name: prod-account-service
@@ -27,28 +18,26 @@ spec:
 status:
   binding:
     name: production-db-secret
-....
+----
 
-This is the referenced Secret:
-
+.Example: Referenced `Secret` resource
 [source,yaml]
-....
+----
 apiVersion: v1
 kind: Secret
 metadata:
   name: production-db-secret
 data:
   password: "MTBz"
-  username: "Z3Vlc3Q="
-....
+  user: "Z3Vlc3Q="
+  ...
+----
 
-When creating service binding, directly give the details of the
-`AccountService` resource in the following `ServiceBinding`
-specifications:
+When creating a service binding resource, you can directly give the details of the `AccountService` resource in the `ServiceBinding` specification as follows:
 
-.Example: Specification with the binding.operators.coreos.com API
+.Example: `ServiceBinding` resource
 [source,yaml]
-....
+----
 apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
@@ -65,16 +54,15 @@ spec:
     group: apps
     version: v1
     resource: deployments
-....
+----
 
-.Example: Specification that is compliant with the service.binding API
+.Example: `ServiceBinding` resource in Specification API
 [source,yaml]
-....
+----
 apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding
 metadata:
   name: account-service
-
 spec:
   ...
   service:
@@ -85,7 +73,6 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: nodejs-app
-....
+----
 
-All the keys in the `Secret` resource are exposed as binding data and
-projected into the application.
+This method exposes all the keys in the `production-db-secret` referenced `Secret` resource as binding data that is to be projected into the workload.

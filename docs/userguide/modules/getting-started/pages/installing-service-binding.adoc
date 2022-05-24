@@ -1,65 +1,59 @@
+[#installing-service-binding-operator]
 = Installing Service Binding Operator
 
-The {servicebinding-title} can be installed on the following version
-of Kubernetes and OpenShift:
+The {servicebinding-title} can be installed on the following version of Kubernetes and OpenShift:
 
-* xref:#installing-on-kubernetes[Kubernetes
-version 1.19 or above].
-* xref:#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui[OpenShift
-version 4.6 or above].
+* xref:#installing-on-kubernetes[Kubernetes version 1.19 or above].
+* xref:#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui[OpenShift version 4.6 or above].
 
 [#installing-on-kubernetes]
 == Installing on Kubernetes
 
-You can install the {servicebinding-title} using the following
-methods:
+You can install the {servicebinding-title} using one of the following methods:
 
-. Installing the {servicebinding-title} using OLM
-.. Go to
-https://operatorhub.io/operator/service-binding-operator[OperatorHub.io].
+. Installing the {servicebinding-title} using Operator Lifecycle Manager (OLM) 
++
+[discreet]
+.Procedure
+.. Go to https://operatorhub.io/operator/service-binding-operator[OperatorHub.io].
 .. Click on the blue btn:[Install] button.
 .. Follow the instructions to install the {servicebinding-title}.
-. Installing the {servicebinding-title} using Helm chart
+. xref:#installing-the-sbo-using-helm-chart[Installing the {servicebinding-title} using Helm chart]
 . Installing the {servicebinding-title} without OLM
 +
-[NOTE]
-====
-If you do not have OLM, install the Operator using the released resources:
+[discreet]
+.Procedure
+* Install the {servicebinding-title} using the released resources:
++
 [source,bash]
 ----
 kubectl apply -f https://github.com/redhat-developer/service-binding-operator/releases/latest/download/release.yaml
 ----
-==== 
 
 [#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui]
 == Installing the Service Binding Operator from the OpenShift Container Platform web UI
 
 .Prerequisites:
+
 * https://docs.openshift.com/container-platform/4.8/welcome/index.html[Red Hat OpenShift Container Platform] installed.
 
-[#procedure-install-sbo-web-ui]
-=== Procedure
+[discreet]
+.Procedure
 
-. Navigate in the web console to the *OperatorHub* page and type `Service
-Binding` into the `Filter by keyword` box:
+. Navigate in the web console to the *OperatorHub* page and type `Service Binding` into the `Filter by keyword` box:
 +
 image:ocp_operathub.png[ocp_operathub]
 
-. Click *Service Binding Operator* from the result. A page to install
-the Operator is displayed with additional information about the
-Operator.
+. Click *Service Binding Operator* from the result. A page to install the Operator is displayed with additional information about the Operator.
 +
 image:sbo_intall_landing.png[sbo_intall_landing]
 
 . Click btn:[Install]. The *Install Operator* page is displayed.
-. Select the options as per your requirements and click btn:[Install]. After
-the installation is complete, a page with the *Installed Operator –
-ready for use* message is displayed.
+. Select the options as per your requirements and click btn:[Install]. After the installation is complete, a page with the *Installed Operator – ready for use* message is displayed.
 +
 image:sbo_install_options.png[sbo_install_options]
 
-. Click btn:[View Operator]. The *Service Binding Operator* page is
-displayed with the Operator details.
+. Click btn:[View Operator]. The *Service Binding Operator* page is displayed with the Operator details.
 +
 image:sbo_post_install.png[sbo_post_install]
 
@@ -69,13 +63,15 @@ image:sbo_post_install.png[sbo_post_install]
 The Helm chart installation involves the following steps:
 
 1. xref:#adding-the-helm-chart-repository[Adding the `service-binding-operator-helm-chart` repository].
-2. xref:#installing-the-helm-chart[Installing the Service Binding Operator Helm chart].
+2. xref:#installing-the-helm-chart[Installing the {servicebinding-title} Helm chart].
 3. xref:#running-a-helm-test[Running a Helm test].
-
 
 [NOTE]
 ====
-If you are not installing the {servicebinding-title} through Operator Lifecycle Manager (OLM), you must install cert-manager on the cluster. Installing the cert-manager automates TLS certificates for Kubernetes and OpenShift workloads. Cert-manager ensures that the certificates are valid and up-to-date, and attempts to renew certificates at a configured time before expiry. You can install cert-manager by running the following command:
+If you are not installing the {servicebinding-title} through Operator Lifecycle Manager (OLM), you must install cert-manager on the cluster. Installing the cert-manager automates 
+TLS certificates for Kubernetes and OpenShift workloads. Cert-manager ensures that the certificates are valid and up-to-date, and attempts to renew certificates at a configured time before expiry. 
+You can install cert-manager by running the following command:
+
 [source,bash]
 ----
 kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
@@ -91,7 +87,11 @@ kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6
 
 [#adding-the-helm-chart-repository]
 == Adding the Helm chart repository
-. Add the `service-binding-operator-helm-chart` repository to your local repository and name the repository as per your convenience:
+
+[discreet]
+.Procedure
+
+. Add the `service-binding-operator-helm-chart` repository to your local repository and name the repository as per your convenience: 
 +
 [source,bash]
 ----
@@ -118,10 +118,14 @@ NAME                 	                        URL
 service-binding-operator-helm-chart          	https://redhat-developer.github.io/service-binding-operator-helm-chart/
 ----
 +
-The output verifies that the `service-binding-operator-helm-chart` repository is added to your local Helm repository.
+The output verifies that the `service-binding-operator-helm-chart` repository is added to your local helm repository.
 
 [#installing-the-helm-chart]
 == Installing the Helm chart
+
+[discreet]
+.Procedure
+
 . Search the repository:
 +
 [source,bash]
@@ -186,9 +190,13 @@ service-binding-operator-78c6444b4d-kswhk   1/1     Running   0          21s
 
 [#running-a-helm-test]
 == Running a Helm test
+
 [NOTE]
 ====
-If you are installing the chart on the Amazon Elastic Kubernetes Service (Amazon EKS) cluster, then perform the following steps:
+If you are installing the chart on the Amazon Elastic Kubernetes Service (Amazon EKS) cluster, then perform the following steps to get appropriate `kubeconfig` file required by the Helm test:
+
+[discreet]
+.Procedure
 
 . Modify the `aws-auth` config map:
 +
@@ -198,7 +206,7 @@ kubectl edit -n kube-system cm/aws-auth
 ----
 +
 . Add `-system:masters` to mapRoles and save.
-. After editing the config map, update the EKS `kubeConfig` file:
+. After editing the config map, update the EKS `kubeconfig` file:
 +
 [source,bash]
 ----
@@ -207,7 +215,11 @@ aws eks update-kubeconfig --name <cluster-name>
 +
 . Continue with the following steps.
 ====
-. Create a `my-k-config` secret and specify the required namespace from your `kubeconfig` file:
+
+[discreet]
+.Procedure
+
+. Create a `my-k-config` secret from your `kubeconfig` file and specify the required namespace:
 +
 [source,bash]
 ----
