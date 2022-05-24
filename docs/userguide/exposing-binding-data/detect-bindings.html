@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Detect Bindings through owned resources :: Service Binding Operator Documentation</title>
+    <title>Detection of binding data through owned resources :: Service Binding Operator Documentation</title>
     <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/detect-bindings.html">
     <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
@@ -52,13 +52,13 @@
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <span class="nav-text">Getting Started</span>
+    <span class="nav-text">Getting started</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../getting-started/quick-start.html">Quick Start Guide</a>
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick start guide</a>
   </li>
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
@@ -74,63 +74,63 @@
 <ul class="nav-list">
   <li class="nav-item" data-depth="1">
     <button class="nav-item-toggle"></button>
-    <span class="nav-text">Creating Service Binding</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../creating-service-bindings/binding-options.html">Advanced Binding Options</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
-  </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../creating-service-bindings/unbind-application.html">Unbind Application</a>
-  </li>
-</ul>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="0">
-<ul class="nav-list">
-  <li class="nav-item" data-depth="1">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Using Projected Bindings</span>
-<ul class="nav-list">
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../using-projected-bindings/using-projected-bindings.html">General Concept</a>
-  </li>
-</ul>
-  </li>
-</ul>
-  </li>
-  <li class="nav-item" data-depth="0">
-<ul class="nav-list">
-  <li class="nav-item" data-depth="1">
-    <button class="nav-item-toggle"></button>
-    <span class="nav-text">Exposing Binding Data</span>
+    <span class="nav-text">Exposing binding data</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
     <a class="nav-link" href="intro-expose-binding.html">Introduction</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="provisioned-service.html">Provisioned Service</a>
+    <a class="nav-link" href="rbac-requirements.html">RBAC requirements</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="direct-secret-reference.html">Direct Secret Reference</a>
+    <a class="nav-link" href="provisioned-service.html">Provisioned service</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="adding-annotation.html">Declare Binding Data with Resource Annotations</a>
+    <a class="nav-link" href="direct-secret-reference.html">Direct secret reference</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+    <a class="nav-link" href="adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="olm-descriptors.html">Declaring binding data through OLM descriptors</a>
   </li>
   <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="detect-bindings.html">Detect Bindings through owned resources</a>
+    <a class="nav-link" href="detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../projecting-binding-data/projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="rbac-requirements.html">RBAC Requirements</a>
+    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
   </li>
 </ul>
   </li>
@@ -182,8 +182,8 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../intro.html">User Guide</a></li>
-    <li>Exposing Binding Data</li>
-    <li><a href="detect-bindings.html">Detect Bindings through owned resources</a></li>
+    <li>Exposing binding data</li>
+    <li><a href="detect-bindings.html">Detection of binding data through owned resources</a></li>
   </ul>
 </nav>
 <div class="page-versions">
@@ -201,15 +201,12 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Detect Bindings through owned resources</h1>
+<h1 class="page">Detection of binding data through owned resources</h1>
 <div class="paragraph">
-<p>The Service Bindings Operator can detect binding data from resources
-owned by the backing service custom resource such as Route, Service,
-ConfigMap, and Secret resources.</p>
+<p>You can use this method if your backing service owns one or more Kubernetes resources such as route, service, config map, or secret that you can use to detect the binding data. In this method, the Service Binding Operator detects the binding data from resources owned by the backing service CR.</p>
 </div>
 <div class="paragraph">
-<p>Set this <code>detectBindingResources</code> API option to <code>true</code> in the
-<code>ServiceBinding</code> custom resource.</p>
+<p>The following examples show the <code>detectBindingResources</code> API option set to <code>true</code> in the <code>ServiceBinding</code> CR:</p>
 </div>
 <div class="listingblock">
 <div class="title">Example</div>
@@ -221,21 +218,23 @@ metadata:
   namespace: service-binding-demo
 spec:
   detectBindingResources: true
+  services:
+    - group: etcd.database.coreos.com
+      version: v1beta2
+      kind: EtcdCluster
+      name: etcd-cluster-example
   application:
     name: java-app
     group: apps
     version: v1
-    resource: deployments
-  services:
-  - group: etcd.database.coreos.com
-    version: v1beta2
-    kind: EtcdCluster
-    name: etcd-cluster-example</code></pre>
+    resource: deployments</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The Service Binding Operator automatically detects the binding
-connections and exposes the binding data.</p>
+<p>In the previous example, <code>EtcdCluster</code> custom service resource owns one or more Kubernetes resources such as route, service, config map, or secret.</p>
+</div>
+<div class="paragraph">
+<p>The Service Binding Operator automatically detects the binding data exposed on each of the owned resources.</p>
 </div>
 </article>
   </div>

@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Direct secret reference :: Service Binding Operator Documentation</title>
-    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/direct-secret-reference.html">
+    <title>Unbinding workloads :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/binding-workloads-using-sbo/unbinding-workloads.html">
     <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <script>var uiRootPath = '../../_'</script>
@@ -77,25 +77,25 @@
     <span class="nav-text">Exposing binding data</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="intro-expose-binding.html">Introduction</a>
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="rbac-requirements.html">RBAC requirements</a>
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC requirements</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="provisioned-service.html">Provisioned service</a>
-  </li>
-  <li class="nav-item is-current-page" data-depth="2">
-    <a class="nav-link" href="direct-secret-reference.html">Direct secret reference</a>
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned service</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct secret reference</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="detect-bindings.html">Detection of binding data through owned resources</a>
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detection of binding data through owned resources</a>
   </li>
 </ul>
   </li>
@@ -121,16 +121,16 @@
     <span class="nav-text">Binding workloads using Service Binding Operator</span>
 <ul class="nav-list">
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+    <a class="nav-link" href="creating-service-binding.html">Binding workloads using Service Binding Operator</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+    <a class="nav-link" href="binding-options.html">Advanced binding options</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+    <a class="nav-link" href="custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
   </li>
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="unbinding-workloads.html">Unbinding workloads</a>
   </li>
 </ul>
   </li>
@@ -182,58 +182,137 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../intro.html">User Guide</a></li>
-    <li>Exposing binding data</li>
-    <li><a href="direct-secret-reference.html">Direct secret reference</a></li>
+    <li>Binding workloads using Service Binding Operator</li>
+    <li><a href="unbinding-workloads.html">Unbinding workloads</a></li>
   </ul>
 </nav>
 <div class="page-versions">
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu">
-    <a class="version is-current" href="direct-secret-reference.html">master</a>
-    <a class="version" href="../1.0.1/exposing-binding-data/direct-secret-reference.html">1.0.1</a>
-    <a class="version" href="../1.0.0/exposing-binding-data/direct-secret-reference.html">1.0.0</a>
+    <a class="version is-current" href="unbinding-workloads.html">master</a>
+    <a class="version is-missing" href="../1.0.1/intro.html">1.0.1</a>
+    <a class="version is-missing" href="../1.0.0/intro.html">1.0.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/userguide/modules/exposing-binding-data/pages/direct-secret-reference.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/userguide/modules/binding-workloads-using-sbo/pages/unbinding-workloads.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Direct secret reference</h1>
+<h1 class="page">Unbinding workloads</h1>
+<div class="sect1">
+<h2 id="for-the-binding-operators-coreos-com-api"><a class="anchor" href="#for-the-binding-operators-coreos-com-api"></a>For the <code>binding.operators.coreos.com/v1alpha1</code> API:</h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>When a resource is not available as a Provisioned service, but all the required binding data values are available in a <code>Secret</code> resource that you can reference in your Service Binding definition, use the <a href="https://github.com/k8s-service-bindings/spec#direct-secret-reference">Direct secret reference</a> method. In this method, a <code>ServiceBinding</code> resource directly references a <code>Secret</code> resource to connect to a service. All the keys in the <code>Secret</code> resource are exposed as binding data.</p>
+<p>You can unbind a workload from a backing service by using the <code>kubectl</code> or <code>oc</code> command line tool.</p>
+</div>
+<div class="ulist discreet">
+<div class="title">Procedure</div>
+<ul class="discreet">
+<li>
+<p>To unbind a workload from a backing service, delete the <code>ServiceBinding</code> custom resource (CR) linked to it:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ kubectl delete ServiceBinding &lt;.metadata.name&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>OR</p>
 </div>
 <div class="listingblock">
-<div class="title">Example: Specification with the <code>binding.operators.coreos.com</code> API</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
-kind: ServiceBinding
-metadata:
-  name: account-service
-spec:
-  ...
-  services:
-  - group: ""
-    version: v1
-    kind: Secret
-    name: production-db-secret</code></pre>
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ oc delete ServiceBinding &lt;.metadata.name&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where <code>&lt;.metadata.name&gt;</code> is the name of the <code>ServiceBinding</code> resource.</p>
+</div>
+<div class="listingblock">
+<div class="title">Examples</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ kubectl delete ServiceBinding spring-petclinic-pgcluster</code></pre>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Example: Specification that is compliant with the <code>servicebinding.io</code> API</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
-kind: ServiceBinding
-metadata:
-  name: account-service
-spec:
-  ...
-  service:
-    apiVersion: v1
-    kind: Secret
-    name: production-db-secret</code></pre>
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ oc delete ServiceBinding spring-petclinic-pgcluster</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<code>spring-petclinic-pgcluster</code>
+</td>
+<td class="hdlist2">
+<p>Specifies the name of the <code>ServiceBinding</code> CR.</p>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1 io-api">
+<h2 id="for-the-servicebinding"><a class="anchor" href="#for-the-servicebinding"></a>For the <code>servicebinding.io/v1alpha3</code> API:</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can unbind a workload from a backing service bound using a <code>ServiceBinding</code> custom resource (CR) from the <code>servicebinding.io/v1alpha3</code> API:</p>
+</div>
+<div class="ulist discreet">
+<div class="title">Procedure</div>
+<ul class="discreet">
+<li>
+<p>To unbind a workload from a backing service, delete the <code>ServiceBinding</code> custom resource (CR) linked to it:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ kubectl delete servicebindings.servicebinding.io &lt;.metadata.name&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>OR</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ oc delete servicebindings.servicebinding.io &lt;.metadata.name&gt;</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Examples</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ kubectl delete servicebindings.servicebinding.io spring-petclinic-pgcluster</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">$ oc delete servicebindings.servicebinding.io spring-petclinic-pgcluster</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<code>spring-petclinic-pgcluster</code>
+</td>
+<td class="hdlist2">
+<p>Specifies the name of the <code>ServiceBinding</code> CR.</p>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ul>
+</div>
 </div>
 </div>
 </article>

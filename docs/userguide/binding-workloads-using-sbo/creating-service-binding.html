@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Creating Service Binding :: Service Binding Operator Documentation</title>
-    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/creating-service-bindings/creating-service-binding.html">
+    <title>Binding workloads using Service Binding Operator :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/binding-workloads-using-sbo/creating-service-binding.html">
     <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <script>var uiRootPath = '../../_'</script>
@@ -120,17 +120,17 @@
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Binding workloads using Service Binding Operator</span>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="creating-service-binding.html">Binding workloads using Service Binding Operator</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+    <a class="nav-link" href="binding-options.html">Advanced binding options</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+    <a class="nav-link" href="custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+    <a class="nav-link" href="unbinding-workloads.html">Unbinding workloads</a>
   </li>
 </ul>
   </li>
@@ -182,121 +182,29 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="../intro.html">User Guide</a></li>
-    <li><a href="creating-service-binding.html">Creating Service Binding</a></li>
+    <li>Binding workloads using Service Binding Operator</li>
+    <li><a href="creating-service-binding.html">Binding workloads using Service Binding Operator</a></li>
   </ul>
 </nav>
 <div class="page-versions">
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu">
     <a class="version is-current" href="creating-service-binding.html">master</a>
-    <a class="version" href="../1.0.1/creating-service-bindings/creating-service-binding.html">1.0.1</a>
-    <a class="version" href="../1.0.0/creating-service-bindings/creating-service-binding.html">1.0.0</a>
+    <a class="version is-missing" href="../1.0.1/intro.html">1.0.1</a>
+    <a class="version is-missing" href="../1.0.0/intro.html">1.0.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/userguide/modules/creating-service-bindings/pages/creating-service-binding.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/userguide/modules/binding-workloads-using-sbo/pages/creating-service-binding.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Creating Service Binding</h1>
-<div class="paragraph">
-<p>In this section, consider the case that the service you want to connect to is already
-exposing binding data by either:</p>
-</div>
-<div class="olist arabic">
-<ol class="arabic">
-<li>
-<p>Provisioned Service</p>
-</li>
-<li>
-<p>Direct Secret Reference</p>
-</li>
-<li>
-<p>Secret Generated through CRD/CR annotations</p>
-</li>
-<li>
-<p>Secret Generated through OLM Descriptors</p>
-</li>
-<li>
-<p>Detect Bindings through owned resources</p>
-</li>
-</ol>
-</div>
-<div class="paragraph">
-<p>You also need an application to be used along with the ServiceBinding
-resource.</p>
-</div>
-<div class="paragraph">
-<p>Service Binding Operator is providing and supporting two different APIs.</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><code>binding.operators.coreos.com/v1alpha1</code>: This API is compliant with
-the Service Binding specification. It is fully supported and considered
-as the mature API. It’s the API we recommend in production environments.</p>
-</li>
-<li>
-<p><code>servicebinding.io/v1alpha3</code> : This API is the one defined in the
-Service Binding specification. The specification is still evolving and
-maturing, as a result the API might change in the future. We recommend
-you to carefully use that API for testing purposes and preparing your
-integration to become fully compliant with the specification. It is
-available in Service Binding Operator 1.x, as Tech Preview.</p>
-</li>
-</ul>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-note" title="Note"></i>
-</td>
-<td class="content">
-We’ll consider supporting only the API from the specification, once
-the Service Binding specification will be officially GA. Of course, that
-will be a breaking change and handle in a safe way for you.
-</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>Some of the key difference between the APIs:</p>
-</div>
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 50%;">
-<col style="width: 50%;">
-</colgroup>
-<thead>
-<tr>
-<th class="tableblock halign-left valign-top">binding.operators.coreos.com API</th>
-<th class="tableblock halign-left valign-top">servicebinding.io API</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Support naming strategy</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support naming strategy</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Support custom mapping</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support custom mapping</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Support to auto-detect binding resources</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support
-auto-detecting binding resources</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Flag to bind as files or env vars</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">No flag switch between files and env
-vars</p></td>
-</tr>
-</tbody>
-</table>
+<h1 class="page">Binding workloads using Service Binding Operator</h1>
+<div class="sect1">
+<h2 id="creating-service-binding"><a class="anchor" href="#creating-service-binding"></a>Creating service binding</h2>
+<div class="sectionbody">
 <div class="admonitionblock important">
 <table>
 <tr>
@@ -304,69 +212,67 @@ vars</p></td>
 <i class="fa icon-important" title="Important"></i>
 </td>
 <td class="content">
-Service Binding Operator performs requests against Kubernetes API using a dedicated service account. By default the account has permissions to bind services to applications, both represented by standard Kubernetes Deployments, DaemonSets, ReplicaSets, StatefulSets and <a href="https://docs.openshift.com/container-platform/latest/applications/deployments/what-deployments-are.html#deployments-and-deploymentconfigs_what-deployments-are">OpenShift DeploymentConfigs</a>. Binding services/application defined by <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> requires adding appropriate rights to the service account, either by cluster admins or operator vendors. Please check <a href="../exposing-binding-data/rbac-requirements.html" class="xref page">RBAC requirements</a> Section for further details.
+<div class="ulist">
+<ul>
+<li>
+<p>Binding services or workloads defined by <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> requires adding appropriate rights to the Operator service account, either by cluster administrators or Operator providers. Please check the <a href="../exposing-binding-data/rbac-requirements.html" class="xref page">RBAC requirements</a> section for further details.</p>
+</li>
+<li>
+<p>If the users do not have permissions to read binding data or modify workload resource, the Service Binding Operator prevents such users to bind services to workload. Adhering to the RBAC requirements avoids unnecessary permission elevation for the user and prevents access to unauthorized services or workloads.</p>
+</li>
+</ul>
+</div>
 </td>
 </tr>
 </table>
 </div>
 <div class="paragraph">
-<p>+
-Equally important is to note that the Service Binding Operator prevent users to bind services to application if
-the user does not have permissions to read binding data or modify application resource. This check is added to prevent privilege escalation, i.e. get access to unauthorized services/applications.</p>
+<p>Application developers must bind a workload to one or more backing services by using a binding secret. This secret is generated for the purpose of storing information to be consumed by the workload.</p>
+</div>
+<div class="paragraph">
+<p>As an example, consider that the service you want to connect to is already exposing the binding data. In this case, you would also need a workload to be used along with the <code>ServiceBinding</code> custom resource (CR). By using this <code>ServiceBinding</code> CR, the workload sends a binding request with the details of the services to bind with.</p>
 </div>
 <div class="listingblock">
-<div class="title">Example servicebinding in <code>binding.operators.coreos.com/v1alpha1</code> API:</div>
+<div class="title">Example of <code>ServiceBinding</code> CR in the <code>binding.operators.coreos.com/v1alpha1</code> API:</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: account-service
 spec:
-  application:
+  application: <i class="conum" data-value="1"></i><b>(1)</b>
     version: v1
     group: apps
     kind: Deployment
     name: online-banking
-  services: <i class="conum" data-value="1"></i><b>(1)</b>
-  - version: v1alpha1 <i class="conum" data-value="2"></i><b>(2)</b>
-    group: example.com <i class="conum" data-value="3"></i><b>(3)</b>
-    kind: AccountService <i class="conum" data-value="4"></i><b>(4)</b>
-    name: prod-account-service <i class="conum" data-value="5"></i><b>(5)</b></code></pre>
+  services: <i class="conum" data-value="2"></i><b>(2)</b>
+  - version: v1alpha1
+    group: example.com
+    kind: AccountService
+    name: prod-account-service</code></pre>
 </div>
 </div>
 <div class="colist arabic">
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>is a list of resources related to a service</td>
+<td>Specifies a list of service resources.</td>
 </tr>
 <tr>
 <td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>service API version</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="3"></i><b>3</b></td>
-<td>service API group</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="4"></i><b>4</b></td>
-<td>serivce kind</td>
-</tr>
-<tr>
-<td><i class="conum" data-value="5"></i><b>5</b></td>
-<td>service name</td>
+<td>The sample application that points to a Deployment or any other similar resource with an embedded PodSpec.</td>
 </tr>
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Example with <code>servicebinding.io</code> API group:</div>
+<div class="title">Example of <code>ServiceBinding</code> CR in the <code>servicebinding.io</code> API:</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
 kind: ServiceBinding
 metadata:
   name: account-service
 spec:
-  application: <i class="conum" data-value="1"></i><b>(1)</b>
+  application:  <i class="conum" data-value="1"></i><b>(1)</b>
     apiVersion: apps/v1
     kind: Deployment
     name: online-banking
@@ -381,10 +287,14 @@ spec:
 <table>
 <tr>
 <td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The application resource is a deployment resource with the name
-<code>online-banking</code>.</td>
+<td>The application resource is a deployment resource with the name <code>online-banking</code>.</td>
 </tr>
 </table>
+</div>
+<div class="paragraph">
+<p>As shown in the previous examples, you can also directly use a <code>ConfigMap</code> or a <code>Secret</code> itself as a service resource to be used as a source of binding data.</p>
+</div>
+</div>
 </div>
 </article>
   </div>
