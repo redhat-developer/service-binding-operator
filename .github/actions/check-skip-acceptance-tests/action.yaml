@@ -1,0 +1,77 @@
+# action.yml
+name: 'Check if acceptance tests can be skipped'
+description: 'Check if acceptance tests can be skipped based on the PR content'
+outputs:
+  can_skip:
+    description: "true if acceptance teststests can be skipped"
+    value: ${{ steps.check-skip-test.outputs.result }}
+runs:
+  using: "composite"
+  steps:
+    - id: check-skip-test
+      uses: actions/github-script@v6.1.0
+      with:
+        result-encoding: string
+        script: |
+          let currentCount = 0;
+          let currentPage = 1;
+          let overallCount = 0;
+          let pageSize = 100;
+          let maxPages = 30;
+
+          do {
+            const result = await github.rest.pulls.listFiles({
+              owner: context.payload.repository.owner.login,
+              repo: context.payload.repository.name,
+              pull_number: context.payload.number,
+              per_page: pageSize,
+              page: currentPage
+            })
+
+            let fileSet = result.data.filter(f =>
+                f.filename.startsWith(".github/actions/collect-kube-resources") ||
+                f.filename.startsWith(".github/actions/setup-cli") ||
+                f.filename.startsWith(".github/actions/setup-podman") ||
+                f.filename.startsWith(".github/workflows/pr-checks") ||
+                f.filename.startsWith("apis") ||
+                f.filename.startsWith("build") ||
+                f.filename.startsWith("config") ||
+                f.filename.startsWith("controllers") ||
+                f.filename.startsWith("hack/get-test-namespace") ||
+                f.filename.startsWith("hack/remove-sbr-finalizers.sh") ||
+                f.filename.startsWith("hack/test-cleanup.sh") ||
+                f.filename.startsWith("controllers") ||
+                f.filename.startsWith("make/acceptance.mk") ||
+                f.filename.startsWith("make/build.mk") ||
+                f.filename.startsWith("make/common.mk") ||
+                f.filename.startsWith("make/release.mk") ||
+                f.filename.startsWith("make/version.mk") ||
+                f.filename.startsWith("pkg") ||
+                f.filename.startsWith("test/acceptance") ||
+                f.filename.startsWith("tools") ||
+                f.filename.startsWith("vendor") ||
+                f.filename.startsWith("go.mod") ||
+                f.filename.startsWith("go.sum") ||
+                f.filename.startsWith("install.sh") ||
+                f.filename.startsWith("main.go")
+              )
+            fileSet.forEach(i => console.log(" > " + i.status + ": " + i.filename))
+            overallCount = overallCount + fileSet.length
+            currentCount = result.data.length
+            if (currentCount == pageSize){
+              currentPage = currentPage + 1
+            }
+          } while (currentCount == pageSize && currentPage <= maxPages)
+
+          const canSkip = (overallCount == 0 && currentPage <= maxPages)
+          if(canSkip){
+            console.log("The PR changes neither SBO release, images nor manifests, nor the acceptance testing framework, nor the related CI. Execution of the acceptance tests CAN be skipped. (See https://issues.redhat.com/browse/APPSVC-1116)")
+          } else {
+            if (currentPage > maxPages) {
+              console.log("Overall the PR changes more than the maximum number of " + (pageSize * maxPages) + " files and so cannot be determined if any of those beyond effect SBO release, images or manifests, or the acceptance testing framework, or the related CI. The acceptance tests CAN NOT be skipped.")
+            } else {
+              console.log("The PR changes files that effect SBO release, images or manifests, or the acceptance testing framework, or the related CI. The acceptance tests CAN NOT be skipped.")
+            }
+          }
+
+          return canSkip
