@@ -1,7 +1,7 @@
 # Continuous Integration
 
-Service binding operator primarily uses [OpenShift CI][openshift-ci] for
-continuous integration.  The Openshift CI is built using
+Service binding operator uses [OpenShift CI][openshift-ci-docs] for
+continuous integration along with [GitHub Workflows][github-workflows].  The Openshift CI is built using
 [CI-Operator][ci-operator].  The Service Binding Operator specific configuration
 is located here:
 https://github.com/openshift/release/tree/master/ci-operator/config/redhat-developer/service-binding-operator
@@ -19,48 +19,24 @@ test:
 ```
 +--------+     +--------+     +--------+
 |        |     |        |     |        |
-|  root  +---->+  src   +---->+  bin   |
+|  root  +---->+  src   +---->+  test  |
 |        |     |        |     |        |
-+--------+     +--------+     +---+----+
-                                   |
-    ,------------------------------'
-    |
-    v
-+---+----+     +--------+
-|        |     |        |
-| images +---->+ tests  |
-|        |     |        |
-+--------+     +--------+
++--------+     +--------+     +--------+
 ```
-
-For lint and unit test, the schematic diagram is as follows:
-
-```
-+--------+     +--------+     +---------------------------+
-|        |     |        |     |                           |
-|  root  +---->+  src   +---->+ lint/unit/acceptance test |
-|        |     |        |     |                           |
-+--------+     +--------+     +---------------------------+
-```
-
 
 All the steps mentioned below are taking place inside a temporary work
 namespace.  When you click on the job details from your pull request, you can
-see the name of the work namespace in the dashboard UI.  The name starts with
-`ci-op-`.  The images created goes into this temporary work namespace.  At the
-end of every image build, the [work namespace name has set as an environment
-variable][namespace] called `OPENSHIFT_BUILD_NAMESPACE`.  This environment
-variable is used to refer the image URLs inside the configuration files.
+see the name of the work namespace in the dashboard UI. The name starts with
+`ci-op-`.
 
 ## root
 
 As part of the CI pipeline, the first step is to create the `root` image.  In
-fact, `root` is a tag created for the pipeline image.  This image contains all
+fact, `root` is a tag created for the `pipeline` image.  This image contains all
 the tools including but not limited to Go compiler, git, kubectl, oc, and
 Operator SDK.
 
-The `root` image tag is created using this Dockerfile:
-`openshift-ci/Dockerfile.tools`.
+The `root` image tag is created using a [Dockerfile](https://github.com/openshift/release/blob/master/ci-operator/config/redhat-developer/service-binding-operator/redhat-developer-service-binding-operator-master__4.11.yaml#L3).
 
 ## src
 
@@ -74,64 +50,28 @@ merged first.  As you can see from the above diagrams, the `src` image gets
 built after the `root` image, whereas the pull request branch gets merged in the
 `src` image.
 
-## bin
-
-This step runs the `build` Makefile target.  This step is taking place
-inside a container created from the `src` image created in the
-previous step.
-
-The `make build` produces an operator binary image available under `./out`
-directory.  As a result of this step, a container image named `bin` is going to
-be created.
-
-## tests
-
-### lint
-
-The lint runs the [GolangCI Lint][golangci], [YAML Lint][yaml-lint],
-[Operator Courier][operator-courier] and couple of Python code-checking tools.
-GolangCI is a Go program, whereas the other two are Python based.
-So, Python 3 is a prerequisite to run lint.
-
-The GolangCI Lint program runs multiple Go lint tools against the repository.
-GolangCI Lint runs lint concurrently and completes execution in a few seconds.
-As of now, there is no configuration provided to run GolangCI Lint.
-
-The YAML Lint tools validate all the YAML configuration files.  It
-excludes the `vendor` directory while running.  There is a
-configuration file at the top-level directory of the source code:
-`.yamllint`.
-
-The Python lint tools validate all python files.
-
-### unit
-
-The `unit` target runs the unit tests.  Some of the tests make use of mock
-objects. The unit tests don't require a dedicated OpenShift cluster, unlike
-end-to-end tests. It runs `test-unit` Makefile target.
-
+## test
 ### acceptance
 
-The `acceptance` run acceptance tests against an operator running localy 
-in the test container and connected to a freshly created temporary Openshift 4 cluster.
-It makes use of the `--up-local` option provided by the Operator SDK testing
-tool.  It runs `test-acceptance` Makefile target.
+The `4.x-acceptance` run acceptance tests against an operator installedin the freshly created temporary Openshift 4.x cluster.
+It runs `test-acceptance-with-bundle` Makefile target.
 
-## Debugging acceptance tests
+## Debugging acceptance tests in OpenShift CI
 
-1. Login to https://api.ci.openshift.org
-2. Copy login command from top-right corner
+1. Click on the `Details` link at respective PR check
+2. Log in with `RedHat_Internal_SSO` identity provider
 3. Note down the namespace from log.  As mentioned before, when you click on the
    job details from your pull request, you can see the name of the work
    namespace in the dashboard UI.  The name starts with `ci-op-`.
-4. Now you can check each container log or rsh into shell.
-5. In the container named `setup` in `acceptance` pod, you will get kubeconfig for the
-   temporary cluster.  You can use it to access the temporary cluster and
+4. Now you can check each container logs or rsh into shell.
+5. In the container named `test` in `acceptance-ipi-install-install` pod, you will get kubeconfig for the
+   temporary cluster in the `$KUBECONFIG` environment variable as well as the `kubeadmin` user password for accessing the OpenShift Console stored in a file mentioned in the `KUBEADMIN_PASSWORD_FILE`.  You can use it to access the temporary cluster and
    perform further debugging.
 
-[openshift-ci]: https://github.com/openshift/release
+[openshift-ci-docs]: https://docs.ci.openshift.org
 [ci-operator]: https://github.com/openshift/release/tree/master/ci-operator
 [golangci]: https://github.com/golangci/golangci-lint
 [yaml-lint]: https://github.com/adrienverge/yamllint
 [operator-courier]: https://github.com/operator-framework/operator-courier
 [namespace]: https://docs.okd.io/latest/dev_guide/builds/build_output.html#output-image-environment-variables
+[github-workflows]: https://github.com/redhat-developer/service-binding-operator/actions
