@@ -70,11 +70,19 @@ for rowmap in rows:
 
 metrics = {}
 metrics["name"] = y_header
-metrics["first"] = normalize_value(float(rows[0][y_header]))
-metrics["minimum"] = normalize_value(min)
-metrics["average"] = normalize_value(statistics.mean(values))
-metrics["median"] = normalize_value(statistics.median(values))
-metrics["maximum"] = normalize_value(max)
-metrics["last"] = normalize_value(float(rows[count - 1][y_header]))
+if count > 0:
+    metrics["first"] = normalize_value(float(rows[0][y_header]))
+    metrics["minimum"] = normalize_value(min)
+    metrics["average"] = normalize_value(statistics.mean(values))
+    metrics["median"] = normalize_value(statistics.median(values))
+    metrics["maximum"] = normalize_value(max)
+    metrics["last"] = normalize_value(float(rows[count - 1][y_header]))
+else:
+    metrics["first"] = "n/a"
+    metrics["minimum"] = "n/a"
+    metrics["average"] = "n/a"
+    metrics["median"] = "n/a"
+    metrics["maximum"] = "n/a"
+    metrics["last"] = "n/a"
 
 print(yaml.dump([metrics]))

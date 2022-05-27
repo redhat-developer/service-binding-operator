@@ -27,11 +27,13 @@ yes | go run setup/main.go --template=$WS/user-workloads/valid/sbo-test.with-sbr
 
 yes | go run setup/main.go --template=$WS/user-workloads/valid/sbo-test.without-sbr.user-workloads.yaml --users $USERS_PER_SCENARIO --default $DEFAULT_WORKLOADS --custom $USERS_PER_SCENARIO --operators-limit 0 --workloads $SBO_NAMESPACE:$SBO_DEPLOYMENT --username $USER_NS_PREFIX-nosb-val > $OUTPUT_DIR/$USER_NS_PREFIX-nosb-val.log
 $WS/deploy-sbr.sh $WS/user-workloads/valid/sbo-test.sbr.yaml $USER_NS_PREFIX-nosb-val > $OUTPUT_DIR/$USER_NS_PREFIX-nosb-val.deploy-sbr.log
+$WS/deploy-sbr.sh $WS/user-workloads/valid/sbo-test.sbr.spec.yaml $USER_NS_PREFIX-nosb-val >> $OUTPUT_DIR/$USER_NS_PREFIX-nosb-val.deploy-sbr.log
 
 yes | go run setup/main.go --template=$WS/user-workloads/invalid/sbo-test.with-sbr.user-workloads.yaml --users $USERS_PER_SCENARIO --default $DEFAULT_WORKLOADS --custom $USERS_PER_SCENARIO --operators-limit 0 --workloads $SBO_NAMESPACE:$SBO_DEPLOYMENT --username $USER_NS_PREFIX-sb-inv > $OUTPUT_DIR/$USER_NS_PREFIX-sb-inv.log
 
 yes | go run setup/main.go --template=$WS/user-workloads/invalid/sbo-test.without-sbr.user-workloads.yaml --users $USERS_PER_SCENARIO --default $DEFAULT_WORKLOADS --custom $USERS_PER_SCENARIO --operators-limit 0 --workloads $SBO_NAMESPACE:$SBO_DEPLOYMENT --username $USER_NS_PREFIX-nosb-inv > $OUTPUT_DIR/$USER_NS_PREFIX-nosb-inv.log
-  $WS/deploy-sbr.sh $WS/user-workloads/invalid/sbo-test.sbr.yaml $USER_NS_PREFIX-nosb-inv > $OUTPUT_DIR/$USER_NS_PREFIX-nosb-inv.deploy-sbr.log
+$WS/deploy-sbr.sh $WS/user-workloads/invalid/sbo-test.sbr.yaml $USER_NS_PREFIX-nosb-inv > $OUTPUT_DIR/$USER_NS_PREFIX-nosb-inv.deploy-sbr.log
+$WS/deploy-sbr.sh $WS/user-workloads/invalid/sbo-test.sbr.spec.yaml $USER_NS_PREFIX-nosb-inv >> $OUTPUT_DIR/$USER_NS_PREFIX-nosb-inv.deploy-sbr.log
 
 yes | go run setup/main.go --template=$WS/user-workloads/incomplete/sbo-test.with-sbr.user-workloads.yaml --users $USERS_PER_SCENARIO --default $DEFAULT_WORKLOADS --custom $USERS_PER_SCENARIO --operators-limit 0 --workloads $SBO_NAMESPACE:$SBO_DEPLOYMENT --username $USER_NS_PREFIX-sb-inc > $OUTPUT_DIR/$USER_NS_PREFIX-sb-inc.log
 

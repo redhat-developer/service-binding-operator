@@ -1,6 +1,5 @@
 
 import argparse
-import sys
 import yaml
 
 ap = argparse.ArgumentParser()
