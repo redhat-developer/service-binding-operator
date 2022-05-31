@@ -108,3 +108,49 @@ objects:
       to:
         kind: "Service"
         name: sbo-perf-svc-invalid
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: sbo-perf-cronjob-invalid
+    spec:
+      schedule: '@hourly'
+      jobTemplate:
+        spec:
+          template:
+            spec:
+              containers:
+                - name: wakeup
+                  image: busybox
+                  args:
+                    - /bin/sh
+                    - '-c'
+                    - date; echo 'Wake up!'
+              restartPolicy: Never
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: sbo-perf-cronjobs-view
+      labels:
+        servicebinding.io/controller: "true"
+    rules:
+      - apiGroups:
+          - batch
+        resources:
+          - cronjobs
+        verbs:
+          - get
+          - list
+          - watch
+          - update
+          - patch
+  - apiVersion: servicebinding.io/v1alpha3
+    kind: ClusterWorkloadResourceMapping
+    metadata:
+      name: cronjobs.batch
+    spec:
+      versions:
+        - version: "*"
+          volumes: .spec.jobTemplate.spec.template.spec.volumes
+          containers:
+            - path: .spec.jobTemplate.spec.template.spec.containers[*]
+            - path: .spec.jobTemplate.spec.template.spec.initContainers[*]

@@ -75,4 +75,20 @@ objects:
         name: sbo-perf-app-incomplete
         group: apps
         version: v1
-        resource: deployments
+        kind: Deployment
+  - apiVersion: servicebinding.io/v1alpha3
+    kind: ServiceBinding
+    metadata:
+      name: service-binding-incomplete
+    spec:
+      type: busybox
+      service:
+        apiVersion: v1
+        kind: Service
+        name: sbo-perf-svc-incomplete
+      workload:
+        selector:
+          matchLabels:
+            app-custom: sbo-perf-app-incomplete
+        apiVersion: apps/v1
+        kind: Deployment

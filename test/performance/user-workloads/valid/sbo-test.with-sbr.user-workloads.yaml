@@ -1,5 +1,5 @@
 kind: Template
-apiVersion: v1
+apiVersion: template.openshift.io/v1
 metadata:
   name: sbo-perf-with-sbr-valid
 objects:
@@ -126,4 +126,64 @@ objects:
         name: sbo-perf-app-valid
         group: apps
         version: v1
-        resource: deployments
+        kind: Deployment
+  - apiVersion: batch/v1
+    kind: CronJob
+    metadata:
+      name: sbo-perf-cronjob-valid
+    spec:
+      schedule: '@hourly'
+      jobTemplate:
+        spec:
+          template:
+            spec:
+              containers:
+                - name: wakeup
+                  image: busybox
+                  args:
+                    - /bin/sh
+                    - '-c'
+                    - date; echo 'Wake up!'
+              restartPolicy: Never
+  - apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRole
+    metadata:
+      name: sbo-perf-cronjobs-view
+      labels:
+        servicebinding.io/controller: "true"
+    rules:
+      - apiGroups:
+          - batch
+        resources:
+          - cronjobs
+        verbs:
+          - get
+          - list
+          - watch
+          - update
+          - patch
+  - apiVersion: servicebinding.io/v1alpha3
+    kind: ClusterWorkloadResourceMapping
+    metadata:
+      name: cronjobs.batch
+    spec:
+      versions:
+        - version: "*"
+          volumes: .spec.jobTemplate.spec.template.spec.volumes
+          containers:
+            - path: .spec.jobTemplate.spec.template.spec.containers[*]
+            - path: .spec.jobTemplate.spec.template.spec.initContainers[*]
+  - apiVersion: servicebinding.io/v1alpha3
+    kind: ServiceBinding
+    metadata:
+      name: service-binding-cron-valid
+    spec:
+      type: busybox
+      service:
+        apiVersion: v1
+        kind: Service
+        name: sbo-perf-svc-valid
+      workload:
+        apiVersion: batch/v1
+        kind: CronJob
+        name: sbo-perf-cronjob-valid

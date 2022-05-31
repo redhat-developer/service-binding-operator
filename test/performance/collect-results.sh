@@ -6,6 +6,7 @@ mkdir -p $RESULTS
 
 USER_NS_PREFIXES=${1:-entanglement}
 PROCESS_ONLY=${PROCESS_ONLY:-}
+SKIP_RESOURCE_COUNTS=${SKIP_RESOURCE_COUNTS:-}
 
 ddiff_sec() {
     secdiff=$(echo "$(date -d "$2" +%s) - $(date -d "$1" +%s)" | bc | sed -e 's,^\.\([0-9]\+\),0.\1,')
@@ -28,19 +29,20 @@ resource_counts() {
 timestamps() {
     NS_PREFIX=$1
     SBR_JSON=$2
-    DEPLOYMENTS_JSON=$3
-    SBO_LOG=$4
-    RESULTS=$5
+    SB_API=${3:-binding.operators.coreos.com}
+    WORKLOADS_JSON=$4
+    SBO_LOG=$5
+    RESULTS=$6
 
-    BINDING_TIMESTAMPS_CSV=${NS_PREFIX}.binding-timestamps.csv
-    SBR_TIMESTAMPS_CSV=${NS_PREFIX}.sbr-timestamps.csv
-    TMP_CSV=${NS_PREFIX}.tmp.csv
+    BINDING_TIMESTAMPS_CSV=${NS_PREFIX}.${SB_API}.binding-timestamps.csv
+    SBR_TIMESTAMPS_CSV=${NS_PREFIX}.${SB_API}.timestamps.csv
+    TMP_CSV=${NS_PREFIX}.${SB_API}.tmp.csv
 
     LOG_SEG_DIR=$RESULTS/sbo-log-segments
     mkdir -p $LOG_SEG_DIR
 
     rm -f $RESULTS/$TMP_CSV
-    jq -rc 'select(.metadata.namespace | startswith("'$NS_PREFIX'")) | ((.metadata.namespace) + ";" + (.metadata.name) + ";" + (.metadata.creationTimestamp) + ";" + (if (.status == null) then ("") else (.status.conditions[] | select(.type=="Ready").lastTransitionTime) end ))' $SBR_JSON >$RESULTS/$TMP_CSV
+    jq -rc 'select(.metadata.namespace | startswith("'$NS_PREFIX'")) | ((.metadata.namespace) + ";" + (.metadata.name) + ";" + (.metadata.creationTimestamp))' $SBR_JSON >$RESULTS/$TMP_CSV
     echo "ServiceBinding;Created;ReconciledTimestamp;Ready;AllDoneTimestamp;TimeToReconcile;ReconciledToDone;TimeToDone" >$RESULTS/$SBR_TIMESTAMPS_CSV
     for i in $(cat $RESULTS/$TMP_CSV); do
         ns=$(echo -n $i | cut -d ";" -f1)
@@ -60,11 +62,6 @@ timestamps() {
         cat $SBO_LOG | grep $ns >$log
         reconciled=$(date -d @$(cat $log | jq -rc 'if .serviceBinding != null then select(.serviceBinding | contains("'$ns/$name'")) | select(.msg | contains("Reconciling")).ts else empty end' | head -n1) "+%F %T.%N" | tr -d "\n")
         echo -n "$reconciled"
-        echo -n ";"
-
-        # Ready
-        ready=$(date -d $(echo -n $i | cut -d ";" -f4) "+%F %T")
-        echo -n "$ready"
         echo -n ";"
 
         # AllDoneTimestamp
@@ -94,18 +91,12 @@ timestamps() {
         >>$RESULTS/$SBR_TIMESTAMPS_CSV
 
     rm -f $RESULTS/$TMP_CSV
-    jq -rc 'select(.metadata.namespace | startswith("'$NS_PREFIX'")) | ((.metadata.namespace) + ";" + (.metadata.name) + ";" + (.metadata.creationTimestamp) + ";" + (.status.conditions[] | select(.type=="Available") | select(.status=="True").lastTransitionTime))' $DEPLOYMENTS_JSON >$RESULTS/$TMP_CSV
-    echo "Namespace;Deployment;Deployment_Created;Deployment_Available;SB_Name;SB_created;SB_ReconciledTimestamp;SB_Ready;SB_AllDoneTimestamp" >$RESULTS/$BINDING_TIMESTAMPS_CSV
+    jq -rc 'select(.metadata.namespace | startswith("'$NS_PREFIX'")) | ((.metadata.namespace) + ";" + (.metadata.name))' $WORKLOADS_JSON >$RESULTS/$TMP_CSV
+    echo "Namespace;Workload;SB_Name;SB_created;SB_ReconciledTimestamp;SB_Ready;SB_AllDoneTimestamp" >$RESULTS/$BINDING_TIMESTAMPS_CSV
     for i in $(cat $RESULTS/$TMP_CSV); do
+        echo -n $i
+        echo -n ";"
         NS=$(echo -n $i | cut -d ";" -f1)
-        echo -n $NS
-        echo -n ";"
-        echo -n $(echo -n $i | cut -d ";" -f2)
-        echo -n ";"
-        echo -n $(date -d $(echo -n $i | cut -d ";" -f3) "+%F %T")
-        echo -n ";"
-        echo -n $(date -d $(echo -n $i | cut -d ";" -f4) "+%F %T")
-        echo -n ";"
         cat $RESULTS/$SBR_TIMESTAMPS_CSV | grep $NS
     done >>$RESULTS/$BINDING_TIMESTAMPS_CSV
     rm -f $RESULTS/$TMP_CSV
@@ -119,23 +110,27 @@ timestamps() {
         oc logs $(oc get $(oc get pods -n openshift-operators -o name | grep service-binding-operator) -n openshift-operators -o jsonpath='{.metadata.name}') -n openshift-operators >$RESULTS/service-binding-operator.log
     fi
 
+    
     for ns_prefix in $USER_NS_PREFIXES; do
+        workloads_json=$RESULTS/$ns_prefix.workloads.json
         if [ -z "$PROCESS_ONLY" ]; then
+            # Workload resources in user namespaces
+            oc get deployment --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | startswith("'$ns_prefix'" )) | select(.metadata.name | contains("sbo-perf-app"))' > $workloads_json
+            oc get cronjobs --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | startswith("'$ns_prefix'" )) | select(.metadata.name | contains("sbo-perf-cronjob"))' >> $workloads_json
+            
             # ServiceBinding resources in user namespaces
-            oc get servicebindings --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | startswith("'$ns_prefix'"))' >$RESULTS/$ns_prefix.service-bindings.json
-
-            # Deployment resources in user namespaces
-            oc get deployment --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | startswith("'$ns_prefix'" )) | select(.metadata.name | contains("sbo-perf-app"))' >$RESULTS/$ns_prefix.deployments.json
+            for sb_api in binding.operators.coreos.com servicebinding.io; do
+                oc get servicebindings.$sb_api --all-namespaces -o json | jq -r '.items[] | select(.metadata.namespace | startswith("'$ns_prefix'"))' >$RESULTS/$ns_prefix.$sb_api.json
+                # Service Binding Timestamps 
+                timestamps $ns_prefix $RESULTS/$ns_prefix.$sb_api.json $sb_api $workloads_json $RESULTS/service-binding-operator.log $RESULTS
+            done
         fi
-
-        # Service Binding Timestamps
-        timestamps $ns_prefix $RESULTS/$ns_prefix.service-bindings.json $RESULTS/$ns_prefix.deployments.json $RESULTS/service-binding-operator.log $RESULTS
     done
 } &
 
 # Collect resource counts
 {
-    if [ -z "$PROCESS_ONLY" ]; then
+    if [ -z "$PROCESS_ONLY" ] && [ -z "$SKIP_RESOURCE_COUNTS" ]; then
         oc api-resources --verbs=list --namespaced -o name | sort >resource-list.namespaced
         oc api-resources --verbs=list --namespaced=false -o name | sort >resource-list.cluster
 

@@ -17,4 +17,4 @@ spec:
     name: sbo-perf-app-valid
     group: apps
     version: v1
-    resource: deployments
+    kind: Deployment
