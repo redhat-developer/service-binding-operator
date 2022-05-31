@@ -1,6 +1,11 @@
 # action.yml
 name: 'Check if acceptance tests can be skipped'
 description: 'Check if acceptance tests can be skipped based on the PR content'
+inputs:
+  set-label:
+    description: "Name of the label to be set/un-set on PRs. Label would not be set/unset if empty"
+    required: false
+    default: ""
 outputs:
   can_skip:
     description: "true if acceptance teststests can be skipped"
@@ -18,6 +23,9 @@ runs:
           let overallCount = 0;
           let pageSize = 100;
           let maxPages = 30;
+
+          const labelName = "${{ inputs.set-label }}"
+          const setLabel = labelName.length > 0
 
           do {
             const result = await github.rest.pulls.listFiles({
@@ -66,11 +74,37 @@ runs:
           const canSkip = (overallCount == 0 && currentPage <= maxPages)
           if(canSkip){
             console.log("The PR changes neither SBO release, images nor manifests, nor the acceptance testing framework, nor the related CI. Execution of the acceptance tests CAN be skipped. (See https://issues.redhat.com/browse/APPSVC-1116)")
+            if(setLabel){
+              console.log("Setting label: " + labelName)
+              const result = await github.rest.issues.addLabels({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+                issue_number: context.payload.number,
+                labels: [labelName]
+              })
+            }
           } else {
             if (currentPage > maxPages) {
               console.log("Overall the PR changes more than the maximum number of " + (pageSize * maxPages) + " files and so cannot be determined if any of those beyond effect SBO release, images or manifests, or the acceptance testing framework, or the related CI. The acceptance tests CAN NOT be skipped.")
             } else {
               console.log("The PR changes files that effect SBO release, images or manifests, or the acceptance testing framework, or the related CI. The acceptance tests CAN NOT be skipped.")
+            }
+            if(setLabel){
+              const labels = await github.rest.issues.listLabelsOnIssue({
+                owner: context.payload.repository.owner.login,
+                repo: context.payload.repository.name,
+                issue_number: context.payload.number,
+                per_page: 100
+              })
+              if(labels.data.filter(f => f.name == labelName).length > 0){
+                console.log("Removing label: " + labelName)
+                const result = await github.rest.issues.removeLabel({
+                  owner: context.payload.repository.owner.login,
+                  repo: context.payload.repository.name,
+                  issue_number: context.payload.number,
+                  name: labelName
+                })
+              }
             }
           }
 
