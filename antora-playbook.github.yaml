@@ -7,10 +7,10 @@ content:
     - branches: HEAD
       start_paths: docs/userguide, docs/devguide
       url: https://github.com/redhat-developer/service-binding-operator
-    - branches: v1.0.1
+    - branches: v1.0.1-docs
       start_paths: docs/userguide, docs/devguide
       url: https://github.com/redhat-developer/service-binding-operator
-    - branches: v1.0.0
+    - branches: v1.0.0-docs
       start_paths: docs/userguide
       url: https://github.com/redhat-developer/service-binding-operator
 ui:
