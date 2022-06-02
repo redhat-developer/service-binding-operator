@@ -294,3 +294,33 @@ The following example shows how the previous values of a collection in annotatio
 ----
 
 The previous example helps you project all those values with key such as `prefix_0`, `prefix_1`, and so on. The default prefix is the name of the resource `kind:`.
+
+[#setting-annotations-mapping-to-be-optional] 
+== Setting annotations mapping to be optional
+
+You can have optional fields in the annotations. For example, a link to the credentials might not be there if the service endpoint does not require authentication. In such cases, a field might not exist in the target path of the annotations. As a result, the {servicebinding-title} generates an error, by default. As a service provider, to indicate whether you require annotations mapping, you can set a value to the `optional` flag in your annotations while enabling services.
+
+{servicebinding-title} provides annotations mapping only if the target path is available. When the target path is not available the {servicebinding-title} skips providing the annotations mapping. 
+
+.Procedure
+
+. To enable {servicebinding-title} consider a new field in the annotations, provide the mapping by setting the `optional` flag value to `true`:
+
+.Example
+[source,yaml]
+----
+apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  namespace: my-petclinic
+  annotations:
+    service.binding/username: path={.spec.name},optional=true
+    ...
+----
+
+[NOTE]
+====
+* If you set the `optional` flag value to `false` and when the {servicebinding-title} is unable to find the target path, the Operator fails the annotations mapping.
+* If there is no value set for the `optional` flag, the {servicebinding-title} considers the value as `false`, by default and fails the annotations mapping. 
+====

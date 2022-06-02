@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=~@supported-operator --tags=~@disable-github-actions"
+      EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=~@supported-operator --tags=~@optional-annotations --tags=~@disable-github-actions"
       TEST_RUN: Acceptance_tests_Kubernetes_with_OLM
 
     steps:
@@ -141,6 +141,87 @@ jobs:
         with:
           name: kubernetes-with-olm-test-results
           path: ${{ env.TEST_RESULTS }}
+
+  acceptance-optional-annotations:
+    name: Optional Annotations Acceptance Tests with Kubernetes and using OLM
+    runs-on: ubuntu-20.04
+
+    env:
+      EXTRA_BEHAVE_ARGS: "--tags=@optional-annotations --tags=~@disable-github-actions"
+      TEST_RUN: Optional_Annotations_Acceptance_tests_Kubernetes_with_OLM
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Check if acceptance tests can be skipped
+        id: check-skip-acceptance
+        uses: ./.github/actions/check-skip-acceptance-tests
+
+      - name: Set up Python
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Setup-cli
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        uses: ./.github/actions/setup-cli
+        with:
+          start-minikube: true
+
+      - name: Wait for push
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "Push operator images (PR)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 60
+
+      - name: Extract image references
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        with:
+          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+
+      - name: Acceptance tests
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        timeout-minutes: 60
+        run: |
+          source ./operator.refs
+          export CATSRC_NAME=sbo-pr-checks
+
+          make SKIP_REGISTRY_LOGIN=true -o registry-login test-acceptance-with-bundle
+
+      - name: Collect Kube resources
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        continue-on-error: true
+        uses: ./.github/actions/collect-kube-resources
+        with:
+          operator-namespace: operators
+          olm-namespace: olm
+          test-namespace-file: out/test-namespace
+          output-path: ${{env.TEST_RESULTS}}
+
+      - name: Setup Testspace
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        uses: testspace-com/setup-testspace@v1
+        with:
+          domain: ${{ github.repository_owner }}
+
+      - name: Publish tests results to Testspace
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        run: |
+          testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        with:
+          name: supported-operators-kubernetes
+          path: ${{ env.TEST_RESULTS }}
+
 
   acceptance-supported-operators:
     name: Supported Operators Acceptance Tests with Kubernetes and using OLM
