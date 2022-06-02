@@ -173,14 +173,15 @@ spec:
 <1> Name of the backing service resource.
 <2> Optional identifier.
 <3> Name of the translation service.
-<4> Generated JSON name that is to be projected as the file content or environment value. The JSON name contains the attributes of the backing service custom resource. 
+<4> Generated JSON name that is to be projected as the file content or environment value. The JSON name contains the attributes of the backing service custom resource.
 <5> Generated JSON value that is to be projected as the file content or environment value. The JSON value contains the attributes of the backing service custom resource.
 
 [#binding-workloads-using-a-label-selector]
 == Binding workloads using a label selector
-You can use a label selector to specify the workload that is being bound. If you declare a service binding using these label selectors to pick up workloads, the {servicebinding-title} periodically attempts to find and bind new workloads that match the given label selector.
 
-For example, you may want to bind a service to every application with the `environment: production` label set in the `application` field. Doing so projects a single secret into multiple workloads.
+You can use a label selector to specify the workload that is being bound.  If you declare a service binding using the label selectors to pick up workloads, the {servicebinding-title} periodically attempts to find and bind new workloads that match the given label selector.
+
+For example, you may want to bind a service to every `Deployment` in a namespace with the `environment: production` label.  Setting an appropriate label selector, the {servicebinding-title} can bind each of these workloads with one `ServiceBinding` resource.
 
 .Example of `ServiceBinding` CR in the `binding.operators.coreos.com/v1alpha1` API:
 [source,yaml]
@@ -192,7 +193,7 @@ metadata:
   namespace: service-binding-demo
 spec:
   application:
-    labelSelector:
+    labelSelector: <1>
       matchLabels:
         environment: production
     group: apps
@@ -204,6 +205,7 @@ spec:
     kind: Secret
     name: super-secret-data
 ----
+<1> Specifies the workload that is being bound.
 
 .Example of `ServiceBinding` CR in the `servicebinding.io` API:
 [source,yaml]
@@ -215,7 +217,7 @@ metadata:
   namespace: service-binding-demo
 spec:
   workload:
-    selector:
+    selector: <1>
       matchLabels:
         environment: production
     apiVersion: app/v1
@@ -225,13 +227,15 @@ spec:
     kind: Secret
     name: super-secret-data
 ----
+<1> Specifies the workload that is being bound.
 
 [IMPORTANT]
 ====
 Currently, it is forbidden to attempt a binding with the following fields defined:
 
-* `name:` and `labelSelector` in the `binding.operators.coreos.com/v1alpha1` API
-* `name:` and `selector` in the `servicebinding.io` API (Spec API)
+. Both `name:` and `labelSelector` in the `binding.operators.coreos.com/v1alpha1` API
+. Both `name:` and `selector` in the `servicebinding.io` API (Spec API)
 
 Any attempt to do so will result in an error.
 ====
+
