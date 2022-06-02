@@ -495,10 +495,10 @@ spec:
 <h2 id="binding-workloads-using-a-label-selector"><a class="anchor" href="#binding-workloads-using-a-label-selector"></a>Binding workloads using a label selector</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>You can use a label selector to specify the workload that is being bound. If you declare a service binding using these label selectors to pick up workloads, the Service Binding Operator periodically attempts to find and bind new workloads that match the given label selector.</p>
+<p>You can use a label selector to specify the workload that is being bound.  If you declare a service binding using the label selectors to pick up workloads, the Service Binding Operator periodically attempts to find and bind new workloads that match the given label selector.</p>
 </div>
 <div class="paragraph">
-<p>For example, you may want to bind a service to every application with the <code>environment: production</code> label set in the <code>application</code> field. Doing so projects a single secret into multiple workloads.</p>
+<p>For example, you may want to bind a service to every <code>Deployment</code> in a namespace with the <code>environment: production</code> label.  Setting an appropriate label selector, the Service Binding Operator can bind each of these workloads with one <code>ServiceBinding</code> resource.</p>
 </div>
 <div class="listingblock">
 <div class="title">Example of <code>ServiceBinding</code> CR in the <code>binding.operators.coreos.com/v1alpha1</code> API:</div>
@@ -510,7 +510,7 @@ metadata:
   namespace: service-binding-demo
 spec:
   application:
-    labelSelector:
+    labelSelector: <i class="conum" data-value="1"></i><b>(1)</b>
       matchLabels:
         environment: production
     group: apps
@@ -523,6 +523,14 @@ spec:
     name: super-secret-data</code></pre>
 </div>
 </div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Specifies the workload that is being bound.</td>
+</tr>
+</table>
+</div>
 <div class="listingblock">
 <div class="title">Example of <code>ServiceBinding</code> CR in the <code>servicebinding.io</code> API:</div>
 <div class="content">
@@ -533,7 +541,7 @@ metadata:
   namespace: service-binding-demo
 spec:
   workload:
-    selector:
+    selector: <i class="conum" data-value="1"></i><b>(1)</b>
       matchLabels:
         environment: production
     apiVersion: app/v1
@@ -543,6 +551,14 @@ spec:
     kind: Secret
     name: super-secret-data</code></pre>
 </div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Specifies the workload that is being bound.</td>
+</tr>
+</table>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -554,15 +570,15 @@ spec:
 <div class="paragraph">
 <p>Currently, it is forbidden to attempt a binding with the following fields defined:</p>
 </div>
-<div class="ulist">
-<ul>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p><code>name:</code> and <code>labelSelector</code> in the <code>binding.operators.coreos.com/v1alpha1</code> API</p>
+<p>Both <code>name:</code> and <code>labelSelector</code> in the <code>binding.operators.coreos.com/v1alpha1</code> API</p>
 </li>
 <li>
-<p><code>name:</code> and <code>selector</code> in the <code>servicebinding.io</code> API (Spec API)</p>
+<p>Both <code>name:</code> and <code>selector</code> in the <code>servicebinding.io</code> API (Spec API)</p>
 </li>
-</ul>
+</ol>
 </div>
 <div class="paragraph">
 <p>Any attempt to do so will result in an error.</p>
