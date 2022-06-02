@@ -1,0 +1,21 @@
+name: "Manage acceptance-tests-skipped label"
+
+on:
+  pull_request_target:
+    branches:
+      - master
+
+jobs:
+  acceptance-tests-skipped-label:
+    name: "Manage acceptance-tests-skipped label"
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Check if acceptance tests can be skipped
+        id: check-skip-acceptance
+        uses: ./.github/actions/check-skip-acceptance-tests
+        with:
+          set-label: acceptance-tests-skipped
