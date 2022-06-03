@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Projecting binding data :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/projecting-binding-data/projecting-binding-data.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.1.0">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick start guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC requirements</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct secret reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.1.0</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.0/architecture.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Projecting binding data</li>
+    <li><a href="projecting-binding-data.html">Projecting binding data</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.1.0</button>
+  <div class="version-menu">
+    <a class="version" href="../../projecting-binding-data/projecting-binding-data.html">master</a>
+    <a class="version is-current" href="projecting-binding-data.html">1.1.0</a>
+    <a class="version is-missing" href="../../1.0.1/intro.html">1.0.1</a>
+    <a class="version is-missing" href="../../1.0.0/intro.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.1.0-docs/docs/userguide/modules/projecting-binding-data/pages/projecting-binding-data.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Projecting binding data</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section provides information on how you can consume the binding data.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="consumption-of-binding-data"><a class="anchor" href="#consumption-of-binding-data"></a>Consumption of binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>After the backing service exposes the binding data, for a workload to access and consume this data, you must project it into the workload from a backing service. Service Binding Operator automatically projects this set of data into the workload in the following methods:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>By default, as files.</p>
+</li>
+<li>
+<p>As environment variables, after you configure the <code>.spec.bindAsFiles</code> parameter from the <code>ServiceBinding</code> resource.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="configuration-of-directory-path-to-project-binding-data-inside-workload-container"><a class="anchor" href="#configuration-of-directory-path-to-project-binding-data-inside-workload-container"></a>Configuration of the directory path to project the binding data inside workload container</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By default, Service Binding Operator mounts the binding data as files at a specific directory in your workload resource. You can configure the directory path using the <code>SERVICE_BINDING_ROOT</code> environment variable setup in the container where your workload runs.</p>
+</div>
+<div class="paragraph">
+<p>Within this service binding root directory, there can be multiple binding metadata projected through different <code>ServiceBinding</code> resource reconciliations. For example, a workload requires a connection to a database and a cache server. In that case, one <code>Service Binding</code> resource could provide the database, and the other <code>Service Binding</code> resource could provide the binding data to the cache server.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Binding data mounted as files</div>
+<div class="content">
+<pre>$SERVICE_BINDING_ROOT <i class="conum" data-value="1"></i><b>(1)</b>
+├── account-database <i class="conum" data-value="2"></i><b>(2)</b>
+│   ├── type <i class="conum" data-value="3"></i><b>(3)</b>
+│   ├── provider <i class="conum" data-value="4"></i><b>(4)</b>
+│   ├── uri
+│   ├── username
+│   └── password
+└── transaction-event-stream <i class="conum" data-value="2"></i><b>(2)</b>
+    ├── type
+    ├── connection-count
+    ├── uri
+    ├── certificates
+    └── private-key</pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Root directory.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Directory that stores the binding data.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Mandatory identifier that identifies the type of the binding data projected into the corresponding directory.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Optional: Identifier to identify the provider so that the application can identify the type of backing service it can connect to.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Retrieving the binding data through the binding data directory name is not a good practice. It makes your workload less portable. Always use the <code>type</code> field and, if necessary, the <code>provider</code> field to look up the binding data.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-warning" title="Warning"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p><strong>For using the binding data directory name to look up the binding data:</strong> The Service Binding Operator uses the <code>ServiceBinding</code> resource name (.<code>metadata.name</code>) as the binding data directory name, but the spec also provides a way to override that name through the <code>.spec.name</code> field. Hence there is a chance for binding data name collision. However, due to the nature of the volume mount in Kubernetes, the binding data directory will contain values from only one of the <code>Secret</code> resources.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<div class="title">Environment variables</div>
+<p>The Service Binding Operator supports projecting environment variables. To consume the binding data as environment variables, use the built-in language feature of your programming language of choice that can read environment variables.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Python client usage</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">import os
+
+username = os.getenv("USERNAME")
+password = os.getenv("PASSWORD")</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The container must restart to update the values of environment variables if there is a change in the <code>Secret</code> resource.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="computation-of-final-path-for-projecting-binding-data-as-files"><a class="anchor" href="#computation-of-final-path-for-projecting-binding-data-as-files"></a>Computation of the final path for projecting the binding data as files</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following table summarizes the configuration of how the final path for the binding data projection is computed when files are mounted at a specific directory:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Summary of the final path computation</caption>
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top"><code>SERVICE_BINDING_ROOT</code></th>
+<th class="tableblock halign-left valign-top">Final path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Not available</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>/bindings/&lt;ServiceBinding_ResourceName&gt;</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dir/path/root</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>dir/path/root/&lt;ServiceBinding_ResourceName&gt;</code></p></td>
+</tr>
+</tbody>
+</table>
+<div class="paragraph">
+<p>In the previous table, the <code>&lt;ServiceBinding_ResourceName&gt;</code> entry specifies the name of the <code>ServiceBinding</code> resource that you configure in the <code>.metadata.name</code> section of the custom resource (CR).</p>
+</div>
+<div class="paragraph">
+<p>To access and consume the binding data within the existing <code>SERVICE_BINDING_ROOT</code> environment variable, use the built-in language feature of your programming language of choice that can read environment variables.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Python client usage</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-python hljs" data-lang="python">from pyservicebinding import binding
+try:
+    sb = binding.ServiceBinding()
+except binding.ServiceBindingRootMissingError as msg:
+    # log the error message and retry/exit
+    print("SERVICE_BINDING_ROOT env var not set")
+
+sb = binding.ServiceBinding()
+
+bindings_list = sb.bindings("postgresql")</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In the previous example, the <code>bindings_list</code> variable contains the binding data for the <code>postgresql</code> database service type. For full API, see the <a href="https://github.com/baijum/pyservicebinding">documentation</a>.</p>
+</div>
+<div class="paragraph">
+<p>Following are the language or framework specific programs that you can use for accessing the binding data within the existing <code>SERVICE_BINDING_ROOT</code> environment variable:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Python: <a href="https://github.com/baijum/pyservicebinding" class="bare">https://github.com/baijum/pyservicebinding</a></p>
+</li>
+<li>
+<p>Go: <a href="https://github.com/baijum/servicebinding" class="bare">https://github.com/baijum/servicebinding</a></p>
+</li>
+<li>
+<p>Java/Spring: <a href="https://github.com/spring-cloud/spring-cloud-bindings" class="bare">https://github.com/spring-cloud/spring-cloud-bindings</a></p>
+</li>
+<li>
+<p>Quarkus:
+<a href="https://quarkus.io/guides/deploying-to-kubernetes#service-binding" class="bare">https://quarkus.io/guides/deploying-to-kubernetes#service-binding</a></p>
+</li>
+<li>
+<p>JS/Node: <a href="https://github.com/nodeshift/kube-service-bindings" class="bare">https://github.com/nodeshift/kube-service-bindings</a></p>
+</li>
+<li>
+<p>.NET: <a href="https://github.com/donschenck/dotnetservicebinding" class="bare">https://github.com/donschenck/dotnetservicebinding</a></p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>All these libraries expect <code>SERVICE_BINDING_ROOT</code> to be set.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="projecting-the-binding-data"><a class="anchor" href="#projecting-the-binding-data"></a>Projecting the binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Depending on your workload requirements and environment, you can choose to project the binding data either as files or environment variables.</p>
+</div>
+<div class="ulist">
+<div class="title">Prerequisites</div>
+<ul>
+<li>
+<p>You understand the following concepts:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Environment and requirements of your workload, and how it works with the provided services.</p>
+</li>
+<li>
+<p>Consumption of the binding data in your workload resource.</p>
+</li>
+<li>
+<p>Configuration of how the final path for data projection is computed for the default method.</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>The binding data is exposed from the backing service.</p>
+</li>
+</ul>
+</div>
+<div class="sect2">
+<h3 id="procedure-projecting-binding-data"><a class="anchor" href="#procedure-projecting-binding-data"></a>Procedure</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>To project the binding data as files, determine the destination folder by ensuring that the existing <code>SERVICE_BINDING_ROOT</code> environment variable is present in the container where your workload runs.</p>
+</li>
+<li>
+<p>To project the binding data as environment variables, set the value for the <code>.spec.bindAsFiles</code> parameter to <code>false</code> from the <code>ServiceBinding</code> resource in the custom resource (CR).</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../../_/js/site.js"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
