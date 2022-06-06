@@ -437,6 +437,180 @@ spec:
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_workload_resource_mapping"><a class="anchor" href="#_workload_resource_mapping"></a>Workload resource mapping</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Workload resource mapping is available for the secondary workloads of the ServiceBinding custom resource (CR) for both the API groups: <code>binding.operators.coreos.com</code> and <code>servicebinding.io</code>.</p>
+</li>
+<li>
+<p>You must namespace <code>ClusterWorkloadResourceMapping</code> resources only under the <code>servicebinding.io</code> API group. However, the <code>ClusterWorkloadResourceMapping</code> resources interact with <code>ServiceBinding</code> resources under both the <code>binding.operators.coreos.com</code> and <code>servicebinding.io</code> API groups.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>The specification also provides a way to define exactly where binding data needs to be projected. Use this method when you are not able to configure custom path locations correctly by previous methods. You can define <code>ClusterWorkloadResourceMapping</code> resources only in the <code>servicebinding.io</code> API group, which specify where binding data is to be projected for a given workload kind.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Schema of the <code>ClusterWorkloadResourceMapping</code> resource</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
+kind: ClusterWorkloadResourceMapping
+metadata:
+  name: # string <i class="conum" data-value="1"></i><b>(1)</b>
+  ...
+spec:
+  versions: # required, at least one entry must be defined
+  - version: # string <i class="conum" data-value="2"></i><b>(2)</b>
+    annotations: # string (Fixed JSONPath), optional <i class="conum" data-value="3"></i><b>(3)</b>
+    containers: # optional
+    - path: # string (JSONPath) <i class="conum" data-value="4"></i><b>(4)</b>
+      name: # string (Fixed JSONPath), optional <i class="conum" data-value="5"></i><b>(5)</b>
+      env: # string (Fixed JSONPath), optional <i class="conum" data-value="6"></i><b>(6)</b>
+      volumeMounts: # string (Fixed JSONPath), optional <i class="conum" data-value="7"></i><b>(7)</b>
+    volumes: # string (Fixed JSONPath), optional <i class="conum" data-value="8"></i><b>(8)</b></code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Name of the <code>ClusterWorkloadResourceMapping</code> resource, which must be qualified as the <code>plural.group</code> of the mapped workload resource. For example, <code>cronjobs.batch</code> for CronJobs.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Version of the resource that is being mapped. Any version that is not specified can be matched with the "*" wildcard.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Optional: Identifier of the <code>.annotations</code> field in a pod, specified with a fixed JSONPath. The default value is <code>.spec.template.spec.annotations</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Identifier of the <code>.containers</code> and <code>.initContainers</code> fields in a pod, specified with a JSONPath. If no entries under the <code>containers</code> field are defined, the Service Binding Operator defaults to two paths: <code>.spec.template.spec.containers[<strong>]</code> and <code>.spec.template.spec.initContainers[</strong>]</code>, with all other fields set as their default. However, if you specify an entry, then you must define the <code>.path</code> field.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Optional: Identifier of the <code>.name</code> field in a container, specified with a fixed JSONPath. The default value is <code>.name</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="6"></i><b>6</b></td>
+<td>Optional: Identifier of the <code>.env</code> field in a container, specified with a fixed JSONPath. The default value is <code>.env</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="7"></i><b>7</b></td>
+<td>Optional: Identifier of the <code>.volumeMounts</code> field in a container, specified with a fixed JSONPath. The default value is <code>.volumeMounts</code>.</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="8"></i><b>8</b></td>
+<td>Optional: Identifier of the <code>.volumes</code> field in a pod, specified with a fixed JSONPath. The default value is <code>.spec.template.spec.volumes</code>.</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In this context, a "Fixed JSONPath" is a subset of the JSONPath grammar that accepts only the following operations:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Field lookup: <code>.spec.template</code></p>
+</li>
+<li>
+<p>Array indexing: <code>.spec['template']</code></p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>All other operations are forbidden.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>Most of these fields are optional. When they are not specified, the Service Binding Operator assumes defaults compatible with <code>PodSpec</code> resources.</p>
+</li>
+<li>
+<p>The Service Binding Operator requires that each of these fields is structurally equivalent to the corresponding field in a pod deployment. For example, the contents of the <code>.env</code> field in a workload resource must be able to accept the same structure of data that the <code>.env</code> field in a Pod resource would. Otherwise, projecting binding data into such a workload might result in unexpected behavior from the Service Binding Operator.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="listingblock">
+<div class="title">Example: Mapping for <code>CronJob.batch/v1</code> resources</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
+kind: ClusterWorkloadResourceMapping
+metadata:
+ name: cronjobs.batch
+spec:
+  versions:
+  - version: "v1"
+    annotations: .spec.jobTemplate.spec.template.metadata.annotations
+    containers:
+    - path: .spec.jobTemplate.spec.template.spec.containers[*]
+    - path: .spec.jobTemplate.spec.template.spec.initContainers[*]
+    volumes: .spec.jobTemplate.spec.template.spec.volumes</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The following behavior occurs only in the <code>binding.operators.coreos.com</code> API group:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>If a <code>ServiceBinding</code> resource with the <code>bindAsFiles: false</code> flag value is created together with one of these mappings, then environment variables are projected into the <code>.envFrom</code> field underneath each <code>path</code> field specified in the corresponding <code>ClusterWorkloadResourceMapping</code> resource.</p>
+</li>
+<li>
+<p>As a cluster administrator, you can specify both a <code>ClusterWorkloadResourceMapping</code> resource and the <code>.spec.application.bindingPath.containersPath</code> field in a <code>ServiceBinding.bindings.coreos.com</code> resource for binding purposes. The Service Binding Operator attempts to project binding data into the locations specified in both of these methods. This behavior is equivalent to adding a container entry to the corresponding <code>ClusterWorkloadResourceMapping</code> resource with the <code>path: $containersPath</code> attribute, with all other values taking their default value.</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
 </article>
   </div>
 </main>
