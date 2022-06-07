@@ -729,3 +729,51 @@ Feature: Bind services to workloads based on workload resource mapping
         And jsonpath "{.spec.spec.containers}" on "appconfigs/$scenario_id-appconfig" should return no value
         And jsonpath "{.spec.template.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+
+    @spec
+    @negative
+    Scenario: Multiple version entries with the same versions may not be specified
+        When Invalid Workload Resource Mapping is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: appconfigs.stable.example.com
+            spec:
+                versions:
+                  - version: "v1"
+                  - version: "v1"
+            """
+        Then Error message is thrown
+
+    @spec
+    @negative
+    Scenario: Invalid fixed jsonpaths may not be set
+        When Invalid Workload Resource Mapping is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: appconfigs.stable.example.com
+            spec:
+                versions:
+                  - version: "v1"
+                    annotations: .spec.template.spec.annotations[*]
+            """
+        Then Error message is thrown
+
+    @spec
+    @negative
+    Scenario: Required fields must be set
+        When Invalid Workload Resource Mapping is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: appconfigs.stable.example.com
+            spec:
+                versions:
+                  - containers:
+                      - name: .metadata.name
+            """
+        Then Error message is thrown

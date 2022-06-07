@@ -1,3 +1,4 @@
+
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
@@ -45,6 +46,7 @@ webhooks:
     resources:
     - servicebindings
   sideEffects: None
+
 ---
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
@@ -71,6 +73,26 @@ webhooks:
     - UPDATE
     resources:
     - servicebindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-servicebinding-io-v1alpha3-clusterworkloadresourcemapping
+  failurePolicy: Fail
+  name: vclusterworkloadresourcemapping.kb.io
+  rules:
+  - apiGroups:
+    - servicebinding.io
+    apiVersions:
+    - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterworkloadresourcemappings
   sideEffects: None
 - admissionReviewVersions:
   - v1

@@ -469,3 +469,10 @@ def check_service_account_bound(context, cluster_role_name, cluster_rolebinding_
 @step(u'{time_min} minutes have passed')
 def step_impl(context, time_min):
     time.sleep(60 * int(time_min))
+
+
+@step(u'Invalid Workload Resource Mapping is applied')
+def invalid_mapping_is_applied(context):
+    openshift = Openshift()
+    resource = substitute_scenario_id(context, context.text)
+    context.expected_error = openshift.apply_invalid(resource)
