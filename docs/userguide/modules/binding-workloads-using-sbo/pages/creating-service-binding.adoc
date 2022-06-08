@@ -29,10 +29,10 @@ spec:
     kind: Deployment
     name: online-banking
   services: <2>
-  - version: v1alpha1 
-    group: example.com 
-    kind: AccountService 
-    name: prod-account-service 
+  - version: v1alpha1
+    group: example.com
+    kind: AccountService
+    name: prod-account-service
 ----
 <1> Specifies a list of service resources.
 <2> The sample application that points to a Deployment or any other similar resource with an embedded PodSpec.
@@ -45,7 +45,7 @@ kind: ServiceBinding
 metadata:
   name: account-service
 spec:
-  application:  <1>
+  workload:  <1>
     apiVersion: apps/v1
     kind: Deployment
     name: online-banking
