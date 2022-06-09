@@ -1,0 +1,6 @@
+apiVersion: servicebinding.io/v1beta1
+kind: ServiceBinding
+metadata:
+  name: servicebinding-sample
+spec:
+  # TODO(user): Add fields here

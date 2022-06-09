@@ -10,7 +10,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
 	"golang.org/x/time/rate"
@@ -520,14 +520,14 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 		return i.resourceMapping, nil
 	}
 
-	defaultTemplate := v1alpha3.DefaultTemplate
-	mappingGVR := v1alpha3.WorkloadResourceMappingGroupVersionResource
+	defaultTemplate := v1beta1.DefaultTemplate
+	mappingGVR := v1beta1.WorkloadResourceMappingGroupVersionResource
 
 	if !i.canPerform(&mappingGVR, gvr.GroupResource().String(), "", "get") {
 		return nil, errors.NewBadRequest(fmt.Sprintf("Unable to retrieve ClusterWorkloadResourceMapping for type %q", gvr))
 	}
 
-	var mappingTemplate *v1alpha3.ClusterWorkloadResourceMappingTemplate = nil
+	var mappingTemplate *v1beta1.ClusterWorkloadResourceMappingTemplate = nil
 	mappingObj, err := i.client.Resource(mappingGVR).
 		Get(context.Background(),
 			gvr.GroupResource().String(),
@@ -535,7 +535,7 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 	if errors.IsNotFound(err) {
 		mappingTemplate = &defaultTemplate
 	} else if mappingObj != nil {
-		var mapping v1alpha3.ClusterWorkloadResourceMapping
+		var mapping v1beta1.ClusterWorkloadResourceMapping
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(mappingObj.Object, &mapping)
 		if err != nil {
 			return nil, err
@@ -571,7 +571,7 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 			}
 		}
 		if found {
-			mappingTemplate.Containers = append(mappingTemplate.Containers, v1alpha3.ClusterWorkloadResourceMappingContainer{
+			mappingTemplate.Containers = append(mappingTemplate.Containers, v1beta1.ClusterWorkloadResourceMappingContainer{
 				Path: path,
 			})
 		}

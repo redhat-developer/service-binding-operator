@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The Kubernetes Authors.
+ * Copyright 2021 Original Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package v1alpha3
+package v1beta1
 
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -26,15 +26,12 @@ type ClusterWorkloadResourceMappingTemplate struct {
 	// Annotations is a Restricted JSONPath that references the annotations map within the workload resource. These
 	// annotations must end up in the resulting Pod, and are generally not the workload resource's annotations.
 	// Defaults to `.spec.template.metadata.annotations`.
-	// +optional
 	Annotations string `json:"annotations,omitempty"`
 	// Containers is the collection of mappings to container-like fragments of the workload resource. Defaults to
 	// mappings appropriate for a PodSpecable resource.
-	// +optional
 	Containers []ClusterWorkloadResourceMappingContainer `json:"containers,omitempty"`
 	// Volumes is a Restricted JSONPath that references the slice of volumes within the workload resource. Defaults to
 	// `.spec.template.spec.volumes`.
-	// +optional
 	Volumes string `json:"volumes,omitempty"`
 }
 
@@ -49,17 +46,14 @@ type ClusterWorkloadResourceMappingContainer struct {
 	Path string `json:"path"`
 	// Name is a Restricted JSONPath that references the name of the container with the container-like workload resource
 	// fragment. If not defined, container name filtering is ignored.
-	// +optional
 	Name string `json:"name,omitempty"`
 	// Env is a Restricted JSONPath that references the slice of environment variables for the container with the
 	// container-like workload resource fragment. The referenced location is created if it does not exist. Defaults
 	// to `.envs`.
-	// +optional
 	Env string `json:"env,omitempty"`
 	// VolumeMounts is a Restricted JSONPath that references the slice of volume mounts for the container with the
 	// container-like workload resource fragment. The referenced location is created if it does not exist. Defaults
 	// to `.volumeMounts`.
-	// +optional
 	VolumeMounts string `json:"volumeMounts,omitempty"`
 }
 
@@ -71,6 +65,7 @@ type ClusterWorkloadResourceMappingSpec struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope=Cluster
+// +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="Age",type=date,JSONPath=`.metadata.creationTimestamp`
 
 // ClusterWorkloadResourceMapping is the Schema for the clusterworkloadresourcemappings API

@@ -40,6 +40,7 @@ webhooks:
     - servicebinding.io
     apiVersions:
     - v1alpha3
+    - v1beta1
     operations:
     - CREATE
     - UPDATE
@@ -108,6 +109,46 @@ webhooks:
     - servicebinding.io
     apiVersions:
     - v1alpha3
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - servicebindings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-servicebinding-io-v1beta1-clusterworkloadresourcemapping
+  failurePolicy: Fail
+  name: vclusterworkloadresourcemapping.kb.io
+  rules:
+  - apiGroups:
+    - servicebinding.io
+    apiVersions:
+    - v1beta1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - clusterworkloadresourcemappings
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-servicebinding-io-v1beta1-servicebinding
+  failurePolicy: Fail
+  name: vspecservicebinding.kb.io
+  rules:
+  - apiGroups:
+    - servicebinding.io
+    apiVersions:
+    - v1beta1
     operations:
     - CREATE
     - UPDATE
