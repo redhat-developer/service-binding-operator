@@ -232,6 +232,12 @@ rules:
 - apiGroups:
   - servicebinding.io
   resources:
+  - clusterworkloadresourcemappings
+  verbs:
+  - get
+- apiGroups:
+  - servicebinding.io
+  resources:
   - servicebindings
   verbs:
   - create
@@ -285,6 +291,7 @@ rules:
   - perconaservermongodbs/status
   verbs:
   - get
+  - watch
   - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
