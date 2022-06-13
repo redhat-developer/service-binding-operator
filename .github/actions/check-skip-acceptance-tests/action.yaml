@@ -45,23 +45,24 @@ runs:
                 f.filename.startsWith("build") ||
                 f.filename.startsWith("config") ||
                 f.filename.startsWith("controllers") ||
-                f.filename.startsWith("hack/get-test-namespace") ||
-                f.filename.startsWith("hack/remove-sbr-finalizers.sh") ||
-                f.filename.startsWith("hack/test-cleanup.sh") ||
+                f.filename === "hack/get-test-namespace" ||
+                f.filename === "hack/remove-sbr-finalizers.sh" ||
+                f.filename === "hack/test-cleanup.sh" ||
                 f.filename.startsWith("controllers") ||
-                f.filename.startsWith("make/acceptance.mk") ||
-                f.filename.startsWith("make/build.mk") ||
-                f.filename.startsWith("make/common.mk") ||
-                f.filename.startsWith("make/release.mk") ||
-                f.filename.startsWith("make/version.mk") ||
+                f.filename === "make/acceptance.mk" ||
+                f.filename === "make/build.mk" ||
+                f.filename === "make/common.mk" ||
+                f.filename === "make/release.mk" ||
+                f.filename === "make/version.mk" ||
                 f.filename.startsWith("pkg") ||
                 f.filename.startsWith("test/acceptance") ||
                 f.filename.startsWith("tools") ||
                 f.filename.startsWith("vendor") ||
-                f.filename.startsWith("go.mod") ||
-                f.filename.startsWith("go.sum") ||
-                f.filename.startsWith("install.sh") ||
-                f.filename.startsWith("main.go")
+                f.filename === "Dockerfile" ||
+                f.filename === "go.mod" ||
+                f.filename === "go.sum" ||
+                f.filename === "install.sh" ||
+                f.filename === "main.go"
               )
             fileSet.forEach(i => console.log(" > " + i.status + ": " + i.filename))
             overallCount = overallCount + fileSet.length
