@@ -13,9 +13,7 @@ COPY / /workspace/
 # Build
 RUN make build
 
-# Use distroless as minimal base image to package the manager binary
-# Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6
 WORKDIR /
 COPY --from=builder /workspace/bin/manager .
 USER 65532:65532
