@@ -7,6 +7,7 @@ Installing the Service Binding Operator Helm chart creates the following custom 
 - bindablekinds.binding.operators.coreos.com
 - servicebindings.binding.operators.coreos.com
 - servicebindings.servicebinding.io
+- clusterworkloadresourcemappings.servicebinding.io
 
 The resources required for the Service Binding Operator are also installed.
 
@@ -99,7 +100,7 @@ kubectl get pods --namespace service-binding-operator
 2. Create a `my-k-config` secret and specify the namespace if applicable from your `kubeconfig` file.
 
 ```
-kubectl create secret generic my-k-config --from-file=kubeconfig=<PATH TO YOUR KUBECONFIG> -namespace service-binding-operator
+kubectl create secret generic my-k-config --from-file=kubeconfig=<PATH TO YOUR KUBECONFIG> --namespace service-binding-operator
 ```
 
 3. Run the Helm test and specify the namespace if applicable:
