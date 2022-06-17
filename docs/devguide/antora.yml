@@ -7,7 +7,7 @@ asciidoc:
     secret-generation-extension: https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md[Secret Generation Extension]
     experimental: true
 name: devguide
-version: master
+version: 1.1.1
 title: Developer Guide
 start_page: architecture.adoc
 nav:

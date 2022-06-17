@@ -6,7 +6,7 @@ asciidoc:
     experimental: true
     servicebinding-title: Service Binding Operator
 name: userguide
-version: master
+version: 1.1.1
 title: User Guide
 start_page: intro.adoc
 nav:
