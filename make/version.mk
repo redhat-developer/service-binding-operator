@@ -2,7 +2,7 @@ SHELL = /usr/bin/env bash -o pipefail
 SHELLFLAGS = -ec
 
 # Current Operator version
-VERSION ?= 1.1.0
+VERSION ?= 1.1.1
 
 GIT_COMMIT_ID ?= $(shell git rev-parse --short=8 HEAD)
 

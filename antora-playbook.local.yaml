@@ -7,6 +7,9 @@ content:
     - branches: HEAD
       start_paths: docs/userguide, docs/devguide
       url: ./
+    - branches: v1.1.1-docs
+      start_paths: docs/userguide, docs/devguide
+      url: ./
     - branches: v1.1.0-docs
       start_paths: docs/userguide, docs/devguide
       url: ./
