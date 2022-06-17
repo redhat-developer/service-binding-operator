@@ -336,3 +336,43 @@ jobs:
             echo "Please squash all PR commits into a single one (https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History#_squashing)"
             exit 1
           fi
+
+  security-scan:
+    name: Security vulnerability scan
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Wait for push
+        uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-name: "Push operator images (PR)"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 60
+
+      - name: Download image references
+        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        with:
+          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+
+      - name: Extract operator image ref
+        id: operator-image-ref
+        run: |
+          source ./operator.refs
+          echo "::set-output name=operator-image-ref::${OPERATOR_IMAGE_REF}"
+
+      - name: Run Trivy vulnerability scanner in IaC mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.operator-image-ref.outputs.operator-image-ref }}
+          format: 'sarif'
+          severity: 'CRITICAL,HIGH'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
