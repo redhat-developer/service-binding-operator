@@ -8,6 +8,8 @@ resources:
 - servicebinding_viewer_role.yaml
 - bindablekinds_viewer_role.yaml
 - bindablekinds_viewer_rolebinding.yaml
+- clusterworkloadresourcemappings_viewer_role.yaml
+- clusterworkloadresourcemappings_viewer_rolebinding.yaml
 - servicebinding_controller_role.yaml
 - servicebinding_controller_rolebinding.yaml
 # operators supproted out of the box
