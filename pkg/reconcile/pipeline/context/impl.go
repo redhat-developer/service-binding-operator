@@ -18,6 +18,7 @@ import (
 	v1 "k8s.io/api/authorization/v1"
 	clientauthzv1 "k8s.io/client-go/kubernetes/typed/authorization/v1"
 	"k8s.io/client-go/util/workqueue"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -33,7 +34,10 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
-var _ pipeline.Context = &bindingImpl{}
+var (
+	_          pipeline.Context = &bindingImpl{}
+	contextLog                  = ctrl.Log.WithName("pipeline-context")
+)
 
 type impl struct {
 	client dynamic.Interface
@@ -188,6 +192,7 @@ func (i *impl) canPerform(gvr *schema.GroupVersionResource, name string, namespa
 		},
 	}, metav1.CreateOptions{})
 	if err != nil {
+		contextLog.Error(err, "unable to review subject access")
 		return false
 	}
 	return sar.Status.Allowed
