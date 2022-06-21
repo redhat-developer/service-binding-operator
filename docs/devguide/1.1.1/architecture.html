@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Architecture :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/devguide/architecture.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="devguide" data-version="1.1.1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="architecture.html">Developer Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="architecture.html">Architecture</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Developer Guide</span>
+    <span class="version">1.1.1</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../architecture.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="architecture.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../1.1.0/architecture.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <a class="title" href="../../userguide/intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../userguide/intro.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.1.1/intro.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.1.0/intro.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../userguide/intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="architecture.html">Developer Guide</a></li>
+    <li><a href="architecture.html">Architecture</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.1.1</button>
+  <div class="version-menu">
+    <a class="version" href="../architecture.html">master</a>
+    <a class="version is-current" href="architecture.html">1.1.1</a>
+    <a class="version" href="../1.1.0/architecture.html">1.1.0</a>
+    <a class="version" href="../1.0.1/architecture.html">1.0.1</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.1.1-docs/docs/devguide/modules/ROOT/pages/architecture.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Architecture</h1>
+<div class="ulist">
+<ul>
+<li>
+<p>Based on <a href="https://sdk.operatorframework.io">Operator SDK</a>, meanwhile a tiny wrapper around <a href="https://kubebuilder.io">Kubebuilder</a>, and therefore uses <a href="https://github.com/kubernetes-sigs/controller-runtime">controller-runtime</a> as the library under the hood</p>
+</li>
+<li>
+<p>Controller watches for changes on Service Binding resources and process them in reconcile loop</p>
+</li>
+<li>
+<p>Reconciliation logic is modeled as a pipeline, moving the incoming Service Binding instance through the following stages:</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Gather bindings from <a href="https://github.com/servicebinding/spec#provisioned-service">Provisioned Service</a></p>
+</li>
+<li>
+<p>Gather bindings from <a href="https://github.com/servicebinding/spec#direct-secret-reference">Direct Secret Reference</a></p>
+</li>
+<li>
+<p>Gather binding definitions (<a href="https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md">Secret Generation Extension</a>)</p>
+</li>
+<li>
+<p>Extract binding data from services and/or referred resources using binding definitions</p>
+</li>
+<li>
+<p>Generate synthetic binding data, whose definitions are part of Service Binding</p>
+</li>
+<li>
+<p>Adjust binding item names if required through submitted Service Binding</p>
+</li>
+<li>
+<p>If needed, create intermediate binding secret from the gathered binding data</p>
+</li>
+<li>
+<p>If requested, project binding data as a set of environment variables in application container</p>
+</li>
+<li>
+<p>If requested, project binding data as a set of files mounted inside application container</p>
+</li>
+<li>
+<p>Persist changes in cluster</p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/reconcile-pipeline.svg" alt="reconcile pipeline" title="Reconcile Pipeline"></span></p>
+</div>
+<div class="paragraph">
+<p>The pipeline implements a form of  <a href="https://www.oracle.com/java/technologies/intercepting-filter.html">Intercepting Filter</a> pattern to give a developer full control over how a change on Service Binding is handled and how the handlers in the pipeline interact with each other:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A handler can decide if processing stops or the context is passed down to the next handler</p>
+</li>
+<li>
+<p>Handlers communicate with each other only via reading/writing data to the context</p>
+</li>
+<li>
+<p>Communication with cluster is abstracted via context</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+For details around Pipeline API, please check <a href="https://github.com/redhat-developer/service-binding-operator/blob/master/pkg/reconcile/pipeline/api.go">github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline</a> package.
+</td>
+</tr>
+</table>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">Benefits</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Separation of concern - each stage does only one thing and does it good</p>
+</li>
+<li>
+<p>Improved code readability/maintainability</p>
+</li>
+<li>
+<p>Easy unit testing/integration testing</p>
+</li>
+<li>
+<p>Single communication point with cluster allow easy mocking of cluster API</p>
+</li>
+<li>
+<p>Possible reconciliation of service bindings outside of operator scope - use it as a library and allow tighter integration with other projects.</p>
+</li>
+<li>
+<p>Easy support for various similar service binding APIs - same pipeline can be reused, just a new context provider need to implemented</p>
+</li>
+<li>
+<p>Easy support for different environments - e.g. binding services and application on plain Docker engine is possible by just providing proper context provider</p>
+</li>
+<li>
+<p>Opens up an opportunity for better logging</p>
+</li>
+<li>
+<p>Opens up an opportunity for better error handling</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Both ServiceBinding APIs are supported using the same pipeline mechanism, but configured with a slightly different sets of stages and different context implementation. Pipelines reconciling <code>binding.operators.coreos.com</code> service bindings are instantiated with the help of <code>DefaultBuilder</code> from <a href="https://github.com/redhat-developer/service-binding-operator/blob/master/pkg/reconcile/pipeline/builder/pipeline.go">github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/builder</a> package, whereas <code>servicebinding.io</code> service bindings are processed by pipelines created by <code>SpecBuilder</code> from the same package. These pipelines are created during startup of the appropriate controllers and used within <a href="https://github.com/redhat-developer/service-binding-operator/blob/master/controllers/common.go"><code>Reconcile</code></a> functions.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-go hljs" data-lang="go">// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the ServiceBinding object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
+func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := r.Log.WithValues("serviceBinding", req.NamespacedName)
+	serviceBinding := r.ReconcilingObject()
+
+	err := r.Get(ctx, req.NamespacedName, serviceBinding)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			log.Info("ServiceBinding resource not found. Ignoring since object must be deleted", "name", req.NamespacedName, "err", err)
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to get ServiceBinding", "name", req.NamespacedName, "err", err)
+		return ctrl.Result{}, err
+	}
+	if !serviceBinding.HasDeletionTimestamp() &amp;&amp; apis.MaybeAddFinalizer(serviceBinding) {
+		if err = r.Update(ctx, serviceBinding); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+	if !serviceBinding.HasDeletionTimestamp() {
+		log.Info("Reconciling")
+	} else {
+		log.Info("Deleted, unbind the application")
+	}
+	retry, delay, err := r.pipeline.Process(serviceBinding) <i class="conum" data-value="1"></i><b>(1)</b>
+	if !retry &amp;&amp; err == nil {
+		if serviceBinding.HasDeletionTimestamp() {
+			if apis.MaybeRemoveFinalizer(serviceBinding) {
+				if err = r.Update(ctx, serviceBinding); err != nil {
+					return ctrl.Result{}, err
+				}
+			}
+		}
+	}
+	result := ctrl.Result{Requeue: retry, RequeueAfter: delay}
+	log.Info("Done", "retry", retry, "error", err)
+	if retry {
+		return result, err
+	}
+	return result, nil
+}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Pushing service binding to the pipeline</td>
+</tr>
+</table>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../_/js/site.js"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

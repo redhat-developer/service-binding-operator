@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Installing Service Binding Operator :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/installing-service-binding.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.1.1">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="quick-start.html">Quick start guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC requirements</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct secret reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../projecting-binding-data/projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.1.1</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.1/architecture.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.0/architecture.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.0/intro.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Getting started</li>
+    <li><a href="installing-service-binding.html">Installing Service Binding Operator</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.1.1</button>
+  <div class="version-menu">
+    <a class="version" href="../../getting-started/installing-service-binding.html">master</a>
+    <a class="version is-current" href="installing-service-binding.html">1.1.1</a>
+    <a class="version" href="../../1.1.0/getting-started/installing-service-binding.html">1.1.0</a>
+    <a class="version" href="../../1.0.1/getting-started/installing-service-binding.html">1.0.1</a>
+    <a class="version" href="../../1.0.0/getting-started/installing-service-binding.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.1.1-docs/docs/userguide/modules/getting-started/pages/installing-service-binding.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Installing Service Binding Operator</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Service Binding Operator can be installed on the following version of Kubernetes and OpenShift:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="#installing-on-kubernetes">Kubernetes version 1.19 or above</a>.</p>
+</li>
+<li>
+<p><a href="#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui">OpenShift version 4.6 or above</a>.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installing-on-kubernetes"><a class="anchor" href="#installing-on-kubernetes"></a>Installing on Kubernetes</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can install the Service Binding Operator using one of the following methods:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Installing the Service Binding Operator using Operator Lifecycle Manager (OLM)</p>
+<div class="olist discreet">
+<div class="title">Procedure</div>
+<ol class="discreet">
+<li>
+<p>Go to <a href="https://operatorhub.io/operator/service-binding-operator">OperatorHub.io</a>.</p>
+</li>
+<li>
+<p>Click on the blue <b class="button">Install</b> button.</p>
+</li>
+<li>
+<p>Follow the instructions to install the Service Binding Operator.</p>
+</li>
+</ol>
+</div>
+</li>
+<li>
+<p><a href="#installing-the-sbo-using-helm-chart">Installing the Service Binding Operator using Helm chart</a></p>
+</li>
+<li>
+<p>Installing the Service Binding Operator without OLM</p>
+<div class="ulist discreet">
+<div class="title">Procedure</div>
+<ul class="discreet">
+<li>
+<p>Install the Service Binding Operator using the released resources:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f https://github.com/redhat-developer/service-binding-operator/releases/latest/download/release.yaml</code></pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui"><a class="anchor" href="#installing-the-service-binding-operator-from-the-openshift-container-platform-web-ui"></a>Installing the Service Binding Operator from the OpenShift Container Platform web UI</h2>
+<div class="sectionbody">
+<div class="ulist">
+<div class="title">Prerequisites:</div>
+<ul>
+<li>
+<p><a href="https://docs.openshift.com/container-platform/4.8/welcome/index.html">Red Hat OpenShift Container Platform</a> installed.</p>
+</li>
+</ul>
+</div>
+<div class="olist discreet">
+<div class="title">Procedure</div>
+<ol class="discreet">
+<li>
+<p>Navigate in the web console to the <strong>OperatorHub</strong> page and type <code>Service Binding</code> into the <code>Filter by keyword</code> box:</p>
+<div class="paragraph">
+<p><span class="image"><img src="_images/ocp_operathub.png" alt="ocp_operathub"></span></p>
+</div>
+</li>
+<li>
+<p>Click <strong>Service Binding Operator</strong> from the result. A page to install the Operator is displayed with additional information about the Operator.</p>
+<div class="paragraph">
+<p><span class="image"><img src="_images/sbo_intall_landing.png" alt="sbo_intall_landing"></span></p>
+</div>
+</li>
+<li>
+<p>Click <b class="button">Install</b>. The <strong>Install Operator</strong> page is displayed.</p>
+</li>
+<li>
+<p>Select the options as per your requirements and click <b class="button">Install</b>. After the installation is complete, a page with the <strong>Installed Operator – ready for use</strong> message is displayed.</p>
+<div class="paragraph">
+<p><span class="image"><img src="_images/sbo_install_options.png" alt="sbo_install_options"></span></p>
+</div>
+</li>
+<li>
+<p>Click <b class="button">View Operator</b>. The <strong>Service Binding Operator</strong> page is displayed with the Operator details.</p>
+<div class="paragraph">
+<p><span class="image"><img src="_images/sbo_post_install.png" alt="sbo_post_install"></span></p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installing-the-sbo-using-helm-chart"><a class="anchor" href="#installing-the-sbo-using-helm-chart"></a>Installing the Service Binding Operator using Helm chart</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Helm chart installation involves the following steps:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#adding-the-helm-chart-repository">Adding the <code>service-binding-operator-helm-chart</code> repository</a>.</p>
+</li>
+<li>
+<p><a href="#installing-the-helm-chart">Installing the Service Binding Operator Helm chart</a>.</p>
+</li>
+<li>
+<p><a href="#running-a-helm-test">Running a Helm test</a>.</p>
+</li>
+</ol>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you are not installing the Service Binding Operator through Operator Lifecycle Manager (OLM), you must install cert-manager on the cluster. Installing the cert-manager automates
+TLS certificates for Kubernetes and OpenShift workloads. Cert-manager ensures that the certificates are valid and up-to-date, and attempts to renew certificates at a configured time before expiry.
+You can install cert-manager by running the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml</code></pre>
+</div>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="olist arabic">
+<div class="title">Prerequisites:</div>
+<ol class="arabic">
+<li>
+<p>You have access to a Kubernetes or an OpenShift Container Platform (OCP) cluster using an account with cluster-admin permissions.</p>
+</li>
+<li>
+<p>You have the cert-manager installed on the cluster if you are not installing the Service Binding Operator through OLM.</p>
+</li>
+<li>
+<p>You have installed the Helm CLI.</p>
+</li>
+<li>
+<p>You have installed the <code>kubectl</code> or <code>oc</code> CLI.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="adding-the-helm-chart-repository"><a class="anchor" href="#adding-the-helm-chart-repository"></a>Adding the Helm chart repository</h2>
+<div class="sectionbody">
+<div class="olist discreet">
+<div class="title">Procedure</div>
+<ol class="discreet">
+<li>
+<p>Add the <code>service-binding-operator-helm-chart</code> repository to your local repository and name the repository as per your convenience:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm repo add service-binding-operator-helm-chart https://redhat-developer.github.io/service-binding-operator-helm-chart/</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">"service-binding-operator-helm-chart" has been added to your repositories</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Verify your Helm repository by listing it:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm repo list</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                 	                        URL
+service-binding-operator-helm-chart          	https://redhat-developer.github.io/service-binding-operator-helm-chart/</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output verifies that the <code>service-binding-operator-helm-chart</code> repository is added to your local helm repository.</p>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="installing-the-helm-chart"><a class="anchor" href="#installing-the-helm-chart"></a>Installing the Helm chart</h2>
+<div class="sectionbody">
+<div class="olist discreet">
+<div class="title">Procedure</div>
+<ol class="discreet">
+<li>
+<p>Search the repository:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm search repo service-binding-operator-helm-chart</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                                                            CHART VERSION	APP VERSION	DESCRIPTION
+service-binding-operator-helm-chart/service-binding-operator    1.0.0        	1.0.1      	A Helm chart to deploy service binding operator</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Create a Helm chart release and specify the namespace required with the <code>--create-namespace</code> flag:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm install service-binding-operator-release \
+service-binding-operator-helm-chart/service-binding-operator \
+--namespace service-binding-operator --create-namespace</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Optional: If you wish to install the chart on the default namespace, remove the <code>--namespace</code> and <code>--create-namespace</code> flags.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>As part of the Helm test, objects such as deployment, service binding resources, and secrets used for testing the Operator are deleted.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Optional: To view the  resources created for testing, install the chart with the <code>keepTestResources</code> flag value set to <code>true</code>:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm install service-binding-operator-release \
+service-binding-operator-helm-chart/service-binding-operator \
+--namespace service-binding-operator --create-namespace \
+--set keepTestResources=true</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME: service-binding-operator-release
+LAST DEPLOYED: Mon May 16 09:15:16 2022
+NAMESPACE: service-binding-operator
+STATUS: deployed
+REVISION: 1</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Verify that the chart is succesfully installed:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pods --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                                        READY   STATUS    RESTARTS   AGE
+service-binding-operator-78c6444b4d-kswhk   1/1     Running   0          21s</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="running-a-helm-test"><a class="anchor" href="#running-a-helm-test"></a>Running a Helm test</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>If you are installing the chart on the Amazon Elastic Kubernetes Service (Amazon EKS) cluster, then perform the following steps to get appropriate <code>kubeconfig</code> file required by the Helm test:</p>
+</div>
+<div class="olist discreet">
+<div class="title">Procedure</div>
+<ol class="discreet">
+<li>
+<p>Modify the <code>aws-auth</code> config map:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl edit -n kube-system cm/aws-auth</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Add <code>-system:masters</code> to mapRoles and save.</p>
+</li>
+<li>
+<p>After editing the config map, update the EKS <code>kubeconfig</code> file:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">aws eks update-kubeconfig --name &lt;cluster-name&gt;</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Continue with the following steps.</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="olist discreet">
+<div class="title">Procedure</div>
+<ol class="discreet">
+<li>
+<p>Create a <code>my-k-config</code> secret from your <code>kubeconfig</code> file and specify the required namespace:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl create secret generic my-k-config --from-file=kubeconfig=&lt;PATH TO YOUR KUBECONFIG&gt; --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">secret/my-k-config created</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output verifies that the <code>my-k-config</code> secret is created.</p>
+</div>
+</li>
+<li>
+<p>Run the Helm test and specify the namespace if applicable:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm test service-binding-operator-release --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME: service-binding-operator-release
+LAST DEPLOYED: Mon May 16 10:44:53 2022
+NAMESPACE: service-binding-operator
+STATUS: deployed
+REVISION: 1
+TEST SUITE:     service-binding-operator-release-test
+Last Started:   Mon May 16 11:01:10 2022
+Last Completed: Mon May 16 11:01:22 2022
+Phase:          Succeeded</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>Succeeded</code> phase from the output indicates that the Helm test has run successfully.</p>
+</div>
+</li>
+<li>
+<p>Verify that the Helm test has run successfully:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pods --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                                    READY   STATUS      RESTARTS   AGE
+service-binding-operator-release-test   0/1     Completed   0          4m28s</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output verifies that you have successfully installed the Service Binding Operator using a Helm chart and are able to bind your workload to backing services.</p>
+</div>
+</li>
+<li>
+<p>As a safety measure, delete the secret created and specify the namespace if applicable:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl delete secret my-k-config  --namespace service-binding-operator</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">secret/my-k-config deleted</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output verifies that the secret you had created is now deleted.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Deleting the secret avoids exposing the secret credentials of the cluster to which you are connected.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../../_/js/site.js"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
