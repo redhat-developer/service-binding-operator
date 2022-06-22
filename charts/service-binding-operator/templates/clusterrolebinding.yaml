@@ -38,3 +38,16 @@ subjects:
   name: service-binding-operator
   namespace: {{.Release.Namespace}}
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: service-binding-clusterworkloadresourcemappings-viewer-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: service-binding-clusterworkloadresourcemappings-viewer-role
+subjects:
+- apiGroup: rbac.authorization.k8s.io
+  kind: Group
+  name: system:authenticated
+---
