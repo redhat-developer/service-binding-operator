@@ -2,10 +2,10 @@ apiVersion: v2
 name: service-binding-operator
 description: A Helm chart to deploy service binding operator
 type: application
-version: 1.0.1
-appVersion: "1.1.0"
+version: 1.0.2
+appVersion: "1.1.1"
 kubeVersion: ">= 1.19.2-0"
-icon: "https://github.com/redhat-developer/service-binding-operator/blob/master/assets/icon/sbo-logo.png"
+icon: https://raw.githubusercontent.com/redhat-developer/service-binding-operator/master/assets/icon/sbo-logo.png
 keywords:
   - ""
 links:
