@@ -7,6 +7,10 @@ CSV_PACKAGE_NAME ?= service-binding-operator
 
 BUNDLE_METADATA_OPTS ?= --channels=$(OPERATOR_CHANNELS) --default-channel=$(DEFAULT_OPERATOR_CHANNEL)
 
+OPERATOR_INDEX_NAME ?= $(CSV_PACKAGE_NAME)-index
+OPERATOR_INDEX_DIR ?= $(OPERATOR_INDEX_NAME)
+OPERATOR_INDEX_YAML ?= $(OPERATOR_INDEX_DIR)/index.yaml
+
 .PHONY: build
 ## Build operator binary
 build:
@@ -54,7 +58,18 @@ push-bundle-image: bundle-image registry-login
 
 .PHONY: index-image
 index-image: opm push-bundle-image
-	$(OPM) index add -u $(CONTAINER_RUNTIME) -p $(CONTAINER_RUNTIME) --bundles $(OPERATOR_BUNDLE_IMAGE_REF) --tag $(OPERATOR_INDEX_IMAGE_REF)
+	mkdir -p $(OPERATOR_INDEX_DIR)
+	-$(OPM) generate dockerfile $(OPERATOR_INDEX_NAME)
+	$(OPM) init $(CSV_PACKAGE_NAME) --default-channel=$(DEFAULT_OPERATOR_CHANNEL) --icon=$(PROJECT_DIR)/assets/icon/sbo-logo.svg --output=yaml > $(OPERATOR_INDEX_YAML)
+	$(OPM) render $(OPERATOR_BUNDLE_IMAGE_REF) --output=yaml >> $(OPERATOR_INDEX_YAML)
+	@echo "---" >> $(OPERATOR_INDEX_YAML)
+	@echo "schema: olm.channel" >> $(OPERATOR_INDEX_YAML)
+	@echo "package: $(CSV_PACKAGE_NAME)" >> $(OPERATOR_INDEX_YAML)
+	@echo "name: $(DEFAULT_OPERATOR_CHANNEL)" >> $(OPERATOR_INDEX_YAML)
+	@echo "entries:" >> $(OPERATOR_INDEX_YAML)
+	@echo "- name: $(CSV_PACKAGE_NAME).v$(VERSION)" >> $(OPERATOR_INDEX_YAML)
+	$(OPM) validate $(OPERATOR_INDEX_NAME)
+	$(CONTAINER_RUNTIME) build -f $(OPERATOR_INDEX_NAME).Dockerfile -t $(OPERATOR_INDEX_IMAGE_REF) .
 
 .PHONY: push-index-image
 # push index image

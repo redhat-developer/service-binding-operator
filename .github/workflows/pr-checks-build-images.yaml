@@ -49,7 +49,9 @@ jobs:
 
           which podman
 
-          BUILDAH_FORMAT=docker make SKIP_REGISTRY_LOGIN=true release-operator -o registry-login
+          make opm
+
+          OPM=.github/actions/setup-podman/opm BUILDAH_FORMAT=docker make SKIP_REGISTRY_LOGIN=true release-operator -o registry-login
 
           mkdir -p ${ARTIFACTS}
 
