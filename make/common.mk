@@ -155,14 +155,14 @@ mockgen:
 	$(call go-install-tool,$(MOCKGEN),github.com/golang/mock/mockgen@v1.6.0)
 
 .PHONY: opm
-OPM =  $(shell pwd)/bin/opm
+OPM ?=  $(shell pwd)/bin/opm
 opm:
 ifeq (,$(wildcard $(OPM)))
 ifeq (,$(shell which opm 2>/dev/null))
 	@{ \
 	set -e ;\
 	mkdir -p $(dir $(OPM)) ;\
-	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.19.1/$(OS)-$(ARCH)-opm ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.22.0/$(OS)-$(ARCH)-opm ;\
 	chmod +x $(OPM) ;\
 	}
 else

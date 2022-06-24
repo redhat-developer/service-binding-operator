@@ -1,0 +1,16 @@
+#!/bin/bash
+opm=$(readlink -m bin/opm)
+podman="/usr/bin/podman"
+local_image="localhost:5000/sbo:bundle"
+
+case "$1" in
+  render)
+    img=$2
+    "$podman" tag $img $local_image
+    "$podman" push --tls-verify=false $local_image
+    "$opm" render $local_image --output=yaml --use-http | sed -e "s,$local_image,$img,g"
+   ;;
+  *)
+    "$opm" "$@"
+    ;;
+esac
