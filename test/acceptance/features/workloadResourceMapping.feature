@@ -255,7 +255,7 @@ Feature: Bind services to workloads based on workload resource mapping
         Given Generic test application is running
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: deployments.apps
@@ -288,7 +288,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
