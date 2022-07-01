@@ -275,16 +275,14 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The custom resource is present
             """
-            apiVersion: "stable.example.com/v1"
-            kind: Backend
+            apiVersion: v1
+            kind: Secret
             metadata:
-                name: $scenario_id-backend
-                annotations:
-                    service.binding/host: path={.spec.host}
-                    service.binding/username: path={.spec.username}
-            spec:
-                host: example.common
+                name: $scenario_id-secret
+            stringData:
                 username: foo
+                password: bar
+                type: db
             """
         When Service Binding is applied
             """
@@ -296,8 +294,8 @@ Feature: Bind services to workloads based on workload resource mapping
                 type: mysql
                 service:
                     apiVersion: stable.example.com/v1
-                    kind: Backend
-                    name: $scenario_id-backend
+                    kind: Secret
+                    name: $scenario_id-secret
                 workload:
                     name: $scenario_id
                     apiVersion: apps/v1
