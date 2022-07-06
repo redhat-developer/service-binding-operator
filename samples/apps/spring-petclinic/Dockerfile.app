@@ -2,7 +2,7 @@
 FROM --platform=amd64 maven:3.8.4-openjdk-11 as builder
 
 ARG PETCLINIC_REPO=https://github.com/spring-projects/spring-petclinic.git
-ARG PETCLINIC_COMMIT=a7439c74ea718c4f59fe6c7c643c4afe59d7e718
+ARG PETCLINIC_COMMIT=3f8468432d86dcbd0cf4372e93e06d2f47aed26a
 ENV PETCLINIC_DIR=/petclinic
 
 RUN git clone "${PETCLINIC_REPO}" ${PETCLINIC_DIR} && \
