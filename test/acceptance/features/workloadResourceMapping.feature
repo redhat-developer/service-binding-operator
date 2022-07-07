@@ -137,7 +137,7 @@ Feature: Bind services to workloads based on workload resource mapping
         And jq ".status.secret" of Service Binding should be changed to "$scenario_id-secret"
         And jsonpath "{.spec.template.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.template.spec.initContainers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
 
     Scenario: Mapping should allow bindAsFiles: false in podspec resources
         Given The Secret is present
@@ -362,7 +362,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         Then Service Binding is ready
         And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
 
     @spec
     Scenario: Projecting environment variables into non-podspec fields
@@ -483,7 +483,7 @@ Feature: Bind services to workloads based on workload resource mapping
         Then Service Binding is ready
         And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return no value
-        And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
 
     @spec
     Scenario: A workload resource mapping that doesn't specify defaults should use PodSpec-compatible defaults
@@ -541,7 +541,7 @@ Feature: Bind services to workloads based on workload resource mapping
         Then Service Binding is ready
         And jsonpath "{.spec.template.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.template.spec.initContainers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
         And The Workload Resource Mapping is deleted
             """
             apiVersion: servicebinding.io/v1alpha3
@@ -668,7 +668,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         Then Service Binding is ready
         And jsonpath "{.spec.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
         And jsonpath "{.spec.template.spec.containers}" on "appconfigs/$scenario_id-appconfig" should return no value
         And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return no value
 
@@ -728,7 +728,7 @@ Feature: Bind services to workloads based on workload resource mapping
         And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return no value
         And jsonpath "{.spec.spec.containers}" on "appconfigs/$scenario_id-appconfig" should return no value
         And jsonpath "{.spec.template.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
 
     @spec
     @negative

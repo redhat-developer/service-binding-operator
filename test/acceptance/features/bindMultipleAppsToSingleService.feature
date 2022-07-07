@@ -118,7 +118,7 @@ Feature: Bind multiple applications to a single service
             """
         And Service Binding is ready
         And jsonpath "{.spec.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig-1" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig-1" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig-1" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
         When 2 minutes have passed
         And The Custom Resource is present
             """
@@ -134,7 +134,7 @@ Feature: Bind multiple applications to a single service
                         - name: bar
             """
         Then jsonpath "{.spec.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig-2" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig-2" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.spec.volumes}" on "appconfigs/$scenario_id-appconfig-2" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
 
     Scenario: Bind applications via label selector as environment variables after the service binding has been created
         Given The Secret is present
@@ -270,7 +270,7 @@ Feature: Bind multiple applications to a single service
             """
         And Service Binding is ready
         And jsonpath "{.spec.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig-1" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig-1" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig-1" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"
         When 2 minutes have passed
         And The Custom Resource is present
             """
@@ -286,4 +286,4 @@ Feature: Bind multiple applications to a single service
                         - name: bar
             """
         Then jsonpath "{.spec.spec.containers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig-2" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig-2" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
+        And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig-2" should return "[{"name":"$scenario_id-binding","secret":{"defaultMode":256,"secretName":"$scenario_id-secret"}}]"

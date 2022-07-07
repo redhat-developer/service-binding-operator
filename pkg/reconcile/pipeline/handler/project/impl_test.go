@@ -567,6 +567,7 @@ var _ = Describe("Inject bindings as files", func() {
 			for i, old := range deploymentsUnstructuredOld {
 				Expect(deploymentsUnstructured[i]).NotTo(Equal(old))
 			}
+			var defaultModeValue int32 = 0400
 			expectedD1 := deployment("d1", []corev1.Container{
 				{
 					Image: "foo",
@@ -589,7 +590,8 @@ var _ = Describe("Inject bindings as files", func() {
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName:  secretName,
+							DefaultMode: &defaultModeValue,
 						},
 					},
 				},
@@ -616,7 +618,8 @@ var _ = Describe("Inject bindings as files", func() {
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName:  secretName,
+							DefaultMode: &defaultModeValue,
 						},
 					},
 				},
@@ -647,7 +650,8 @@ var _ = Describe("Inject bindings as files", func() {
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName:  secretName,
+							DefaultMode: &defaultModeValue,
 						},
 					},
 				},
@@ -683,7 +687,8 @@ var _ = Describe("Inject bindings as files", func() {
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName:  secretName,
+							DefaultMode: &defaultModeValue,
 						},
 					},
 				},
@@ -714,7 +719,8 @@ var _ = Describe("Inject bindings as files", func() {
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName:  secretName,
+							DefaultMode: &defaultModeValue,
 						},
 					},
 				},
@@ -741,7 +747,8 @@ var _ = Describe("Inject bindings as files", func() {
 					Name: bindingName,
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
+							SecretName:  secretName,
+							DefaultMode: &defaultModeValue,
 						},
 					},
 				},

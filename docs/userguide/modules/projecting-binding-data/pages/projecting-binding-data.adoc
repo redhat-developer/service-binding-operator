@@ -15,6 +15,11 @@ After the backing service exposes the binding data, for a workload to access and
 
 By default, {servicebinding-title} mounts the binding data as files at a specific directory in your workload resource. You can configure the directory path using the `SERVICE_BINDING_ROOT` environment variable setup in the container where your workload runs.
 
+[NOTE]
+====
+All the projected files are read-only for the container user and not readable by others.
+====
+
 Within this service binding root directory, there can be multiple binding metadata projected through different `ServiceBinding` resource reconciliations. For example, a workload requires a connection to a database and a cache server. In that case, one `Service Binding` resource could provide the database, and the other `Service Binding` resource could provide the binding data to the cache server.
 
 .Example: Binding data mounted as files

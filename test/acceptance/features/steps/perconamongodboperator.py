@@ -22,11 +22,16 @@ def install_percona_mongodb_operator(context):
     if not operator.is_running():
         subscription = f'''
 ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: percona
+---
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
 metadata:
   name: operatorgroup
-  namespace: {operator.openshift.operators_namespace}
+  namespace: percona
 spec:
   targetNamespaces:
   - {operator.openshift.operators_namespace}
@@ -35,7 +40,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
   name: '{operator.name}'
-  namespace: {operator.openshift.operators_namespace}
+  namespace: percona
 spec:
   channel: '{operator.operator_catalog_channel}'
   installPlanApproval: Automatic

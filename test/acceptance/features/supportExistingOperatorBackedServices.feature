@@ -449,12 +449,12 @@ Feature: Support a number of existing operator-backed services out of the box
     * Generic test application is running
     * The Custom Resource is present
           """
-          apiVersion: psmdb.percona.com/v1-9-0
+          apiVersion: psmdb.percona.com/v1-11-0
           kind: PerconaServerMongoDB
           metadata:
               name: mongo-cluster
           spec:
-              crVersion: 1.9.0
+              crVersion: 1.11.0
               image: percona/percona-server-mongodb:4.4.8-9
               allowUnsafeConfigurations: true
               upgradeOptions:
@@ -482,7 +482,7 @@ Feature: Support a number of existing operator-backed services out of the box
           spec:
               services:
               - group: psmdb.percona.com
-                version: v1-9-0
+                version: v1-11-0
                 kind: PerconaServerMongoDB
                 name: mongo-cluster
               application:
@@ -492,7 +492,7 @@ Feature: Support a number of existing operator-backed services out of the box
                 resource: deployments
           """
     Then Service Binding is ready
-    And Kind PerconaServerMongoDB with apiVersion psmdb.percona.com/v1-9-0 is listed in bindable kinds
+    And Kind PerconaServerMongoDB with apiVersion psmdb.percona.com/v1-11-0 is listed in bindable kinds
     And Content of file "/bindings/$scenario_id/type" in application pod is
            """
            mongodb

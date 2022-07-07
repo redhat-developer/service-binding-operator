@@ -140,6 +140,7 @@ func BindingsAsFiles(ctx pipeline.Context) {
 	secretName := ctx.BindingSecretName()
 	bindingName := ctx.BindingName()
 	applications, _ := ctx.Applications()
+	var defaultModeValue int32 = 0400
 	for _, app := range applications {
 		containerResources, err := app.BindablePods()
 		if err != nil {
@@ -154,7 +155,8 @@ func BindingsAsFiles(ctx pipeline.Context) {
 			Name: bindingName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName: secretName,
+					SecretName:  secretName,
+					DefaultMode: &defaultModeValue,
 				},
 			},
 		}

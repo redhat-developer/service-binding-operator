@@ -13,7 +13,7 @@ class GenericTestApp(App):
 
     deployment_name_pattern = "{name}"
 
-    def __init__(self, name, namespace, app_image="quay.io/service-binding/generic-test-app:20220216"):
+    def __init__(self, name, namespace, app_image="quay.io/bmuthuka/generic-test-app:202207237"):
         App.__init__(self, name, namespace, app_image, "8080")
 
     def get_env_var_value(self, name):
@@ -153,3 +153,8 @@ def check_env_var_count_set_on_container(context, envVar, app_name=None):
     app_name = substitute_scenario_id(context, app_name)
     env = openshift.get_deployment_env_info(app_name, context.namespace.name)
     assert str(env).count(envVar) == 1
+
+
+@step(u'File "{file_path}" has the least permissions')
+def file_has_the_least_permissions(context, file_path):
+    check_file_exists(context, "/filepermissions/"+file_path)
