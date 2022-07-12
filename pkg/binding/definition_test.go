@@ -15,6 +15,7 @@ func TestStringDefinition(t *testing.T) {
 		path          string
 		value         string
 		expectedValue interface{}
+		optional      bool
 	}
 
 	testCases := []args{
@@ -58,6 +59,13 @@ func TestStringDefinition(t *testing.T) {
 				"foo": "AzureDiamond-foo",
 			},
 		},
+		{
+			description:   "optional true",
+			outputName:    "optionalvalue",
+			path:          "{.status.dbCredentials.donotexist}",
+			expectedValue: nil,
+			optional:      true,
+		},
 	}
 
 	u := &unstructured.Unstructured{
@@ -76,7 +84,8 @@ func TestStringDefinition(t *testing.T) {
 			d := &stringDefinition{
 				outputName: tc.outputName,
 				definition: definition{
-					path: tc.path,
+					path:     tc.path,
+					optional: tc.optional,
 				},
 				value: tc.value,
 			}
@@ -94,6 +103,7 @@ func TestStringOfMap(t *testing.T) {
 		path          string
 		expectedValue interface{}
 		object        *unstructured.Unstructured
+		optional      bool
 	}
 
 	u := &unstructured.Unstructured{
@@ -131,6 +141,13 @@ func TestStringOfMap(t *testing.T) {
 			object: u,
 			path:   "{.status.dbCredentials}",
 		},
+		{
+			description:   "optional true",
+			expectedValue: nil,
+			object:        u,
+			path:          "{.status.dbCredentials.donotexist}",
+			optional:      true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -138,7 +155,8 @@ func TestStringOfMap(t *testing.T) {
 			d := &stringOfMapDefinition{
 				outputName: tc.outputName,
 				definition: definition{
-					path: tc.path,
+					path:     tc.path,
+					optional: tc.optional,
 				},
 			}
 			val, err := d.Apply(tc.object)

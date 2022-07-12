@@ -88,6 +88,9 @@ func BindingItems(ctx pipeline.Context) {
 				requestRetry(ctx, ErrorReadingBindingReason, err)
 				return
 			}
+			if bd.NonExistingOptional(bindingValue) {
+				continue
+			}
 			val := bindingValue.Get()
 			v := reflect.ValueOf(val)
 			if v.Kind() != reflect.Map {

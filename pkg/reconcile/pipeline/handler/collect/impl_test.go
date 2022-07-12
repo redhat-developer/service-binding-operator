@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"strings"
+
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
-	"strings"
 
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/apis"
@@ -405,6 +406,7 @@ var _ = Describe("Collect Binding Data", func() {
 					service.EXPECT().Resource().Return(serviceResource)
 
 					definition.EXPECT().Apply(serviceResource).Return(value, nil)
+					definition.EXPECT().NonExistingOptional().Return(false)
 					value.EXPECT().Get().Return(map[string]map[string]interface{}{"java-maven_port": {"foo": nil}})
 
 					ctx.EXPECT().SetCondition(
@@ -478,6 +480,7 @@ var _ = Describe("Collect Binding Data", func() {
 				bv := bindingmocks.NewMockValue(mockCtrl)
 				bv.EXPECT().Get().Return("we should not return strings")
 				bd.EXPECT().Apply(serviceContent).Return(bv, nil)
+				bd.EXPECT().NonExistingOptional().Return(false)
 
 				service.EXPECT().BindingDefs().Return([]binding.Definition{bd})
 
@@ -528,6 +531,7 @@ var _ = Describe("Collect Binding Data", func() {
 						bv := bindingmocks.NewMockValue(mockCtrl)
 						bv.EXPECT().Get().Return(val)
 						bd.EXPECT().Apply(res).Return(bv, nil)
+						bd.EXPECT().NonExistingOptional().Return(false)
 						bindings = append(bindings, bd)
 						for k, v := range val.(map[string]interface{}) {
 							ctx.EXPECT().AddBindingItem(&pipeline.BindingItem{Name: k, Value: v, Source: service})
@@ -553,6 +557,7 @@ var _ = Describe("Collect Binding Data", func() {
 			bv := bindingmocks.NewMockValue(mockCtrl)
 			bv.EXPECT().Get().Return(val)
 			bd.EXPECT().Apply(res).Return(bv, nil)
+			bd.EXPECT().NonExistingOptional().Return(false)
 			bindings = append(bindings, bd)
 			ctx.EXPECT().AddBindingItem(&pipeline.BindingItem{Name: "foo_bar", Value: "bla", Source: service})
 			ctx.EXPECT().AddBindingItem(&pipeline.BindingItem{Name: "foo_bar2", Value: "bla2", Source: service})
@@ -571,6 +576,7 @@ var _ = Describe("Collect Binding Data", func() {
 			bv := bindingmocks.NewMockValue(mockCtrl)
 			bv.EXPECT().Get().Return(val)
 			bd.EXPECT().Apply(res).Return(bv, nil)
+			bd.EXPECT().NonExistingOptional().Return(false)
 			bindings = append(bindings, bd)
 			ctx.EXPECT().AddBindingItem(&pipeline.BindingItem{Name: "foo_bar_0", Value: "bla", Source: service})
 			ctx.EXPECT().AddBindingItem(&pipeline.BindingItem{Name: "foo_bar_1", Value: "bla2", Source: service})

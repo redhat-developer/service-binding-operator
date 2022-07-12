@@ -26,6 +26,7 @@ type modelKey string
 
 const (
 	pathModelKey                    modelKey = "path"
+	optionalKey                     modelKey = "optional"
 	objectTypeModelKey              modelKey = "objectType"
 	sourceKeyModelKey               modelKey = "sourceKey"
 	sourceValueModelKey             modelKey = "sourceValue"
@@ -99,7 +100,8 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 			outputName: outputName,
 			value:      mod.value,
 			definition: definition{
-				path: mod.path,
+				path:     mod.path,
+				optional: mod.optional,
 			},
 		}, nil
 
@@ -109,7 +111,8 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 			objectType:            mod.objectType,
 			outputName:            outputName,
 			definition: definition{
-				path: mod.path,
+				path:     mod.path,
+				optional: mod.optional,
 			},
 			sourceKey: mod.sourceKey,
 		}, nil
@@ -120,7 +123,8 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 			objectType:            mod.objectType,
 			outputName:            outputName,
 			definition: definition{
-				path: mod.path,
+				path:     mod.path,
+				optional: mod.optional,
 			},
 			sourceValue: mod.sourceValue,
 		}, nil
@@ -129,7 +133,8 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 		return &stringOfMapDefinition{
 			outputName: outputName,
 			definition: definition{
-				path: mod.path,
+				path:     mod.path,
+				optional: mod.optional,
 			},
 		}, nil
 
@@ -137,7 +142,8 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 		return &sliceOfMapsFromPathDefinition{
 			outputName: outputName,
 			definition: definition{
-				path: mod.path,
+				path:     mod.path,
+				optional: mod.optional,
 			},
 			sourceKey:   mod.sourceKey,
 			sourceValue: mod.sourceValue,
@@ -147,7 +153,8 @@ func (m *annotationBackedDefinitionBuilder) Build() (Definition, error) {
 		return &sliceOfStringsFromPathDefinition{
 			outputName: outputName,
 			definition: definition{
-				path: mod.path,
+				path:     mod.path,
+				optional: mod.optional,
 			},
 			sourceValue: mod.sourceValue,
 		}, nil
