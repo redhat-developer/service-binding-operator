@@ -581,6 +581,59 @@ spec:
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="setting-annotations-mapping-to-be-optional"><a class="anchor" href="#setting-annotations-mapping-to-be-optional"></a>Setting annotations mapping to be optional</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can have optional fields in the annotations. For example, a link to the credentials might not be there if the service endpoint does not require authentication. In such cases, a field might not exist in the target path of the annotations. As a result, the Service Binding Operator generates an error, by default. As a service provider, to indicate whether you require annotations mapping, you can set a value to the <code>optional</code> flag in your annotations while enabling services.</p>
+</div>
+<div class="paragraph">
+<p>Service Binding Operator provides annotations mapping only if the target path is available. When the target path is not available the Service Binding Operator skips providing the annotations mapping.</p>
+</div>
+<div class="olist arabic">
+<div class="title">Procedure</div>
+<ol class="arabic">
+<li>
+<p>To enable Service Binding Operator consider a new field in the annotations, provide the mapping by setting the <code>optional</code> flag value to <code>true</code>:</p>
+</li>
+</ol>
+</div>
+<div class="listingblock">
+<div class="title">Example</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps.example.org/v1beta1
+kind: Database
+metadata:
+  name: my-db
+  namespace: my-petclinic
+  annotations:
+    service.binding/username: path={.spec.name},optional=true
+    ...</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>If you set the <code>optional</code> flag value to <code>false</code> and when the Service Binding Operator is unable to find the target path, the Operator fails the annotations mapping.</p>
+</li>
+<li>
+<p>If there is no value set for the <code>optional</code> flag, the Service Binding Operator considers the value as <code>false</code>, by default and fails the annotations mapping.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
 </article>
   </div>
 </main>
