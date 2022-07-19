@@ -178,12 +178,12 @@ Feature: Support a number of existing operator-backed services out of the box
     * Generic test application is running
     * The Custom Resource is present
           """
-          apiVersion: pxc.percona.com/v1-10-0
+          apiVersion: pxc.percona.com/v1
           kind: PerconaXtraDBCluster
           metadata:
             name: minimal-cluster
           spec:
-            crVersion: 1.10.0
+            crVersion: 1.11.0
             secretsName: minimal-cluster-secrets
             allowUnsafeConfigurations: true
             upgradeOptions:
@@ -191,7 +191,7 @@ Feature: Support a number of existing operator-backed services out of the box
               schedule: "0 4 * * *"
             pxc:
               size: 1
-              image: percona/percona-xtradb-cluster:8.0.23-14.1
+              image: percona/percona-xtradb-cluster:8.0.27-18.1
               volumeSpec:
                 persistentVolumeClaim:
                   resources:
@@ -200,10 +200,10 @@ Feature: Support a number of existing operator-backed services out of the box
             haproxy:
               enabled: true
               size: 1
-              image: perconalab/percona-xtradb-cluster-operator:main-haproxy
+              image: percona/percona-xtradb-cluster-operator:1.11.0-haproxy
             logcollector:
               enabled: true
-              image: perconalab/percona-xtradb-cluster-operator:main-logcollector
+              image: percona/percona-xtradb-cluster-operator:1.11.0-logcollector
           """
     * Condition ready=True for PerconaXtraDBCluster/minimal-cluster resource is met
     When Service Binding is applied
@@ -215,7 +215,7 @@ Feature: Support a number of existing operator-backed services out of the box
           spec:
               services:
               - group: pxc.percona.com
-                version: v1-10-0
+                version: v1
                 kind: PerconaXtraDBCluster
                 name: minimal-cluster
               application:
@@ -225,7 +225,7 @@ Feature: Support a number of existing operator-backed services out of the box
                 resource: deployments
           """
     Then Service Binding is ready
-    And Kind PerconaXtraDBCluster with apiVersion pxc.percona.com/v1-10-0 is listed in bindable kinds
+    And Kind PerconaXtraDBCluster with apiVersion pxc.percona.com/v1 is listed in bindable kinds
     And Content of file "/bindings/$scenario_id/type" in application pod is
            """
            mysql
@@ -249,17 +249,18 @@ Feature: Support a number of existing operator-backed services out of the box
     And File "/bindings/$scenario_id/password" exists in application pod
     And Application can connect to the projected MySQL database
 
+  @disable-github-actions
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
     Given Percona Mysql operator is running
     * Generic test application is running
     * The Custom Resource is present
           """
-          apiVersion: pxc.percona.com/v1-10-0
+          apiVersion: pxc.percona.com/v1
           kind: PerconaXtraDBCluster
           metadata:
             name: minimal-cluster
           spec:
-            crVersion: 1.10.0
+            crVersion: 1.11.0
             secretsName: minimal-cluster-secrets
             allowUnsafeConfigurations: true
             upgradeOptions:
@@ -267,7 +268,7 @@ Feature: Support a number of existing operator-backed services out of the box
               schedule: "0 4 * * *"
             pxc:
               size: 1
-              image: percona/percona-xtradb-cluster:8.0.23-14.1
+              image: percona/percona-xtradb-cluster:8.0.27-18.1
               volumeSpec:
                 persistentVolumeClaim:
                   resources:
@@ -276,10 +277,10 @@ Feature: Support a number of existing operator-backed services out of the box
             haproxy:
               enabled: true
               size: 1
-              image: perconalab/percona-xtradb-cluster-operator:main-haproxy
+              image: percona/percona-xtradb-cluster-operator:1.11.0-haproxy
             logcollector:
               enabled: true
-              image: perconalab/percona-xtradb-cluster-operator:main-logcollector
+              image: percona/percona-xtradb-cluster-operator:1.11.0-logcollector
           """
     When Service Binding is applied
           """
@@ -290,7 +291,7 @@ Feature: Support a number of existing operator-backed services out of the box
           spec:
               services:
               - group: pxc.percona.com
-                version: v1-10-0
+                version: v1
                 kind: PerconaXtraDBCluster
                 name: minimal-cluster
               application:
@@ -300,7 +301,7 @@ Feature: Support a number of existing operator-backed services out of the box
                 resource: deployments
           """
     Then Service Binding is ready
-    And Kind PerconaXtraDBCluster with apiVersion pxc.percona.com/v1-10-0 is listed in bindable kinds
+    And Kind PerconaXtraDBCluster with apiVersion pxc.percona.com/v1 is listed in bindable kinds
     And Content of file "/bindings/$scenario_id/type" in application pod is
            """
            mysql
