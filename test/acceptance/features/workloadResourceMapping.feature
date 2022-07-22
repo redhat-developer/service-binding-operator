@@ -291,9 +291,8 @@ Feature: Bind services to workloads based on workload resource mapping
             metadata:
                 name: $scenario_id-binding
             spec:
-                type: mysql
                 service:
-                    apiVersion: stable.example.com/v1
+                    apiVersion: v1
                     kind: Secret
                     name: $scenario_id-secret
                 workload:
@@ -303,13 +302,17 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         Then Service Binding is ready
         And The application env var "SERVICE_BINDING_ROOT" has value "/bindings"
-        And Content of file "/bindings/$scenario_id-binding/host" in application pod is
+        And Content of file "/bindings/$scenario_id-binding/username" in application pod is
             """
-            example.common
+            foo
+            """
+        And Content of file "/bindings/$scenario_id-binding/password" in application pod is
+            """
+            bar
             """
         And Content of file "/bindings/$scenario_id-binding/type" in application pod is
             """
-            mysql
+            db
             """
         And The Workload Resource Mapping is deleted
             """
