@@ -190,6 +190,44 @@ Feature: Bind application to provisioned service
     And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding should be changed to "False"
     And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding should be changed to "ErrorReadingBinding"
 
+  @negative
+  @external-feedback
+  Scenario: Fail binding to provisioned service if secret name is provided but the secret does not exist
+    * The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: ProvisionedBackend
+            metadata:
+                name: $scenario_id
+            spec:
+                foo: bar
+            status:
+                binding:
+                    name: provisioned-secret-imaginary
+            """
+    * Generic test application is running
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: stable.example.com
+                version: v1
+                kind: ProvisionedBackend
+                name: $scenario_id
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then jq ".status.conditions[] | select(.type=="CollectionReady").status" of Service Binding should be changed to "False"
+    And jq ".status.conditions[] | select(.type=="Ready").status" of Service Binding should be changed to "False"
+    And jq ".status.conditions[] | select(.type=="CollectionReady").reason" of Service Binding should be changed to "ErrorReadingSecret"
+
   @external-feedback
   Scenario: Bind application to provisioned service that has binding annotations as well
     Given OLM Operator "provisioned_backend_with_annotations" is running
