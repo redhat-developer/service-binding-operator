@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-OLM_VERSION=0.18.1
+OLM_VERSION=0.21.2
 OPERATOR_CHANNEL=${OPERATOR_CHANNEL:-beta}
 OPERATOR_PACKAGE=${OPERATOR_PACKAGE:-service-binding-operator}
 DOCKER_CFG=${DOCKER_CFG:-$HOME/.docker/config.json}
