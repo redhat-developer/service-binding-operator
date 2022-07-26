@@ -5,6 +5,7 @@ SHELLFLAGS = -ec
 TEST_ACCEPTANCE_START_SBO ?= local
 TEST_ACCEPTANCE_OUTPUT_DIR ?= $(OUTPUT_DIR)/acceptance-tests
 TEST_ACCEPTANCE_REPORT_DIR ?= $(OUTPUT_DIR)/acceptance-tests-report
+TEST_ACCEPTANCE_RESOURCES_DIR ?= $(TEST_ACCEPTANCE_OUTPUT_DIR)/resources
 TEST_ACCEPTANCE_ARTIFACTS ?= $(ARTIFACT_DIR)
 TEST_NAMESPACE = $(shell $(HACK_DIR)/get-test-namespace $(OUTPUT_DIR))
 TEST_ACCEPTANCE_CLI ?= oc
@@ -16,6 +17,9 @@ TEST_ACCEPTANCE_TAGS_ARG ?= --tags="~@disabled" --tags="~@examples" --tags="$(TE
 else
 TEST_ACCEPTANCE_TAGS_ARG ?= --tags="~@disabled" --tags="~@examples"
 endif
+
+OPERATOR_NAMESPACE ?=
+OLM_NAMESPACE ?=
 
 # Testing setup
 .PHONY: deploy-test-3rd-party-crds
@@ -70,7 +74,7 @@ test-acceptance-with-bundle: deploy-from-index-image
 
 .PHONY: test-acceptance-artifacts
 # Collect artifacts from acceptance tests to be archived in CI
-test-acceptance-artifacts:
+test-acceptance-artifacts: collect-kube-resources
 	$(Q)echo "Gathering acceptance tests artifacts"
 	$(Q)mkdir -p $(TEST_ACCEPTANCE_ARTIFACTS) \
 		&& cp -rvf $(TEST_ACCEPTANCE_OUTPUT_DIR) $(TEST_ACCEPTANCE_ARTIFACTS)/
@@ -89,3 +93,11 @@ test-acceptance-generate-report:
 ## Serves acceptance tests report at http://localhost:8088
 test-acceptance-serve-report:
 	$(Q)CONTAINER_RUNTIME=$(CONTAINER_RUNTIME) $(HACK_DIR)/allure-report.sh serve
+
+.PHONY: collect-kube-resources
+# Collect Kubernetes resources
+collect-kube-resources:
+	-$(Q)OUTPUT_PATH=$(TEST_ACCEPTANCE_RESOURCES_DIR) \
+	OPERATOR_NAMESPACE=$(OPERATOR_NAMESPACE) \
+	OLM_NAMESPACE=$(OLM_NAMESPACE) \
+	$(HACK_DIR)/collect-kube-resources.sh
