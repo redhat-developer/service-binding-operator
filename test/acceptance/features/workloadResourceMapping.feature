@@ -1,3 +1,4 @@
+@workload-resource-mapping
 Feature: Bind services to workloads based on workload resource mapping
 
     As a user, I would like to be able to use workload resource bindings as defined by the specification.
