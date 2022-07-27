@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"os"
 	"sync"
-
-	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	v1beta1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"time"
 
 	"github.com/redhat-developer/service-binding-operator/apis/webhooks"
+	v1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1beta1apiextensions "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 
 	crdcontrollers "github.com/redhat-developer/service-binding-operator/controllers/crd"
 
@@ -54,6 +54,10 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
+
+	// see https://github.com/operator-framework/operator-sdk/issues/1813
+	leaseDuration = 15 * time.Second
+	renewDeadline = 10 * time.Second
 )
 
 func init() {
@@ -112,6 +116,8 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "8fa65150.coreos.com",
+		LeaseDuration:          &leaseDuration,
+		RenewDeadline:          &renewDeadline,
 		Namespace:              watchNamespace,
 	})
 	if err != nil {
