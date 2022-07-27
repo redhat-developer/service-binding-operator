@@ -5,7 +5,7 @@ OPNS="$(kubectl get namespaces -o name | grep -E '.*/(.+-)?operators$' || test $
 OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE:-${OPNS#"namespace/"}}
 OLM_NAMESPACE="${OLM_NAMESPACE:-$(kubectl get catalogsources.operators.coreos.com --all-namespaces -o jsonpath='{.items[0].metadata.namespace}' --ignore-not-found=true)}"
 OUTPUT_PATH=${OUTPUT_PATH:-out/acceptance-tests/resources}
-TEST_NAMESPACE_FILE=${TEST_NAMESPACE_FILE:-$OUTPUT_DIR/test-namespace}
+TEST_NAMESPACE_FILE=${TEST_NAMESPACE_FILE:-out/test-namespace}
 set +x
 
 echo "Collecting Kubernetes resources..."
