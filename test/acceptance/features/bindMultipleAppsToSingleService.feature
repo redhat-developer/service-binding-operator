@@ -85,7 +85,7 @@ Feature: Bind multiple applications to a single service
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -162,7 +162,7 @@ Feature: Bind multiple applications to a single service
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -240,7 +240,7 @@ Feature: Bind multiple applications to a single service
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -252,7 +252,7 @@ Feature: Bind multiple applications to a single service
             """
         And Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding

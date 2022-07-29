@@ -11,7 +11,7 @@ Feature: Bind services to workloads based on workload resource mapping
         And OLM Operator "custom_app" is running
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: notpodspecs.stable.example.com
@@ -103,7 +103,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -155,7 +155,7 @@ Feature: Bind services to workloads based on workload resource mapping
         And Generic test application is running
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: deployments.apps
@@ -214,7 +214,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -316,7 +316,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is deleted
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: deployments.apps
@@ -348,7 +348,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -392,7 +392,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -445,7 +445,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: notpodspecs.stable.example.com
@@ -468,7 +468,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -502,7 +502,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -526,7 +526,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -546,7 +546,7 @@ Feature: Bind services to workloads based on workload resource mapping
         And jsonpath "{.spec.template.spec.volumes}" on "appconfigs/$scenario_id-appconfig" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
         And The Workload Resource Mapping is deleted
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -589,7 +589,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -642,7 +642,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -654,7 +654,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -701,7 +701,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -712,7 +712,7 @@ Feature: Bind services to workloads based on workload resource mapping
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -737,7 +737,7 @@ Feature: Bind services to workloads based on workload resource mapping
     Scenario: Multiple version entries with the same versions may not be specified
         When Invalid Workload Resource Mapping is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -753,7 +753,7 @@ Feature: Bind services to workloads based on workload resource mapping
     Scenario: Invalid fixed jsonpaths may not be set
         When Invalid Workload Resource Mapping is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com
@@ -769,7 +769,7 @@ Feature: Bind services to workloads based on workload resource mapping
     Scenario: Required fields must be set
         When Invalid Workload Resource Mapping is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: appconfigs.stable.example.com

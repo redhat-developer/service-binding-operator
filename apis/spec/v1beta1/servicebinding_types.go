@@ -17,7 +17,9 @@
 package v1beta1
 
 import (
+	"errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ServiceBindingWorkloadReference defines a subset of corev1.ObjectReference with extensions
@@ -128,6 +130,26 @@ type ServiceBindingList struct {
 
 func init() {
 	SchemeBuilder.Register(&ServiceBinding{}, &ServiceBindingList{})
+}
+
+func (ref *ServiceBindingServiceReference) GroupVersionResource() (*schema.GroupVersionResource, error) {
+	return nil, errors.New("Resource undefined")
+}
+
+func (ref *ServiceBindingServiceReference) GroupVersionKind() (*schema.GroupVersionKind, error) {
+	typeMeta := &metav1.TypeMeta{Kind: ref.Kind, APIVersion: ref.APIVersion}
+	gvk := typeMeta.GroupVersionKind()
+	return &gvk, nil
+}
+
+func (ref *ServiceBindingWorkloadReference) GroupVersionResource() (*schema.GroupVersionResource, error) {
+	return nil, errors.New("Resource undefined")
+}
+
+func (ref *ServiceBindingWorkloadReference) GroupVersionKind() (*schema.GroupVersionKind, error) {
+	typeMeta := &metav1.TypeMeta{Kind: ref.Kind, APIVersion: ref.APIVersion}
+	gvk := typeMeta.GroupVersionKind()
+	return &gvk, nil
 }
 
 func (sb *ServiceBinding) AsOwnerReference() metav1.OwnerReference {

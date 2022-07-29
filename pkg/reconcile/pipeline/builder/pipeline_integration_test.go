@@ -7,7 +7,7 @@ import (
 
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	fakeauth "k8s.io/client-go/kubernetes/typed/authorization/v1/fake"
 
 	"github.com/golang/mock/gomock"
@@ -162,9 +162,9 @@ var _ = Describe("Default Pipeline", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = client.
-			Resource(v1alpha3.WorkloadResourceMappingGroupVersionResource).
+			Resource(v1beta1.WorkloadResourceMappingGroupVersionResource).
 			Get(c.Background(), serviceGVK.GroupKind().String(), metav1.GetOptions{})
-		Expect(err).To(Equal(errors.NewNotFound(v1alpha3.WorkloadResourceMappingGroupVersionResource.GroupResource(), serviceGVK.GroupKind().String())), "Binding should occur without a workload resource mapping")
+		Expect(err).To(Equal(errors.NewNotFound(v1beta1.WorkloadResourceMappingGroupVersionResource.GroupResource(), serviceGVK.GroupKind().String())), "Binding should occur without a workload resource mapping")
 
 		updatedApp := &appsv1.Deployment{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, updatedApp)

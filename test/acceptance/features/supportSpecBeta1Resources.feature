@@ -127,7 +127,7 @@ Feature: Support spec v1beta1 resources
         And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
 
-    Scenario: Project a v1alpha3 service binding using a v1beta1 workload mapping
+    Scenario: Project a v1beta1 service binding using a v1beta1 workload mapping
         Given The Secret is present
             """
             apiVersion: v1
@@ -172,7 +172,7 @@ Feature: Support spec v1beta1 resources
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -190,7 +190,7 @@ Feature: Support spec v1beta1 resources
         And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
 
-    Scenario: Project a v1beta1 service binding using a v1alpha3 workload mapping
+    Scenario: Project a v1beta1 service binding using a v1beta1 workload mapping
         Given The Secret is present
             """
             apiVersion: v1
@@ -204,7 +204,7 @@ Feature: Support spec v1beta1 resources
             """
         And The Workload Resource Mapping is present
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ClusterWorkloadResourceMapping
             metadata:
                 name: notpodspecs.stable.example.com

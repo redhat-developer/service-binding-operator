@@ -922,7 +922,7 @@ Feature: Bind values from a secret referred in backing service resource
         * Generic test application is running
         When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding
@@ -967,7 +967,7 @@ Feature: Bind values from a secret referred in backing service resource
         * Generic test application is running
         When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding
@@ -1022,7 +1022,7 @@ Feature: Bind values from a secret referred in backing service resource
 
         When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding

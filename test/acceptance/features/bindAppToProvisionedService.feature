@@ -285,7 +285,7 @@ Feature: Bind application to provisioned service
     Given Generic test application is running
     When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding
@@ -320,7 +320,7 @@ Feature: Bind application to provisioned service
     Given Generic test application is running
     When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding
@@ -360,7 +360,7 @@ Feature: Bind application to provisioned service
     Given Generic test application is running
     When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding
@@ -432,7 +432,7 @@ Feature: Bind application to provisioned service
     Given Generic test application is running
     When Service Binding is applied
           """
-          apiVersion: servicebinding.io/v1alpha3
+          apiVersion: servicebinding.io/v1beta1
           kind: ServiceBinding
           metadata:
               name: $scenario_id-binding

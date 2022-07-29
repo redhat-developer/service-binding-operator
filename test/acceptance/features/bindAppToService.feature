@@ -389,7 +389,7 @@ Feature: Bind an application to a service
             """
         When Invalid Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -487,7 +487,7 @@ Feature: Bind an application to a service
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-valid
@@ -505,7 +505,7 @@ Feature: Bind an application to a service
             """
         When Invalid Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: binding-request-with-name-label-selector-spec2

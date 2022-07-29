@@ -76,7 +76,7 @@ objects:
         group: apps
         version: v1
         kind: Deployment
-  - apiVersion: servicebinding.io/v1alpha3
+  - apiVersion: servicebinding.io/v1beta1
     kind: ServiceBinding
     metadata:
       name: service-binding-incomplete
