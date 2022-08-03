@@ -1,3 +1,4 @@
+import polling2
 import re
 import time
 import base64
@@ -5,6 +6,7 @@ import json
 from environment import ctx
 from command import Command
 from behave import step
+from subscription_install_mode import InstallMode
 
 
 class Openshift(object):
@@ -83,7 +85,7 @@ metadata:
   namespace: {namespace}
 spec:
   channel: '{channel}'
-  installPlanApproval: Automatic
+  installPlanApproval: '{install_mode}'
   name: '{name}'
   source: '{operator_source_name}'
   sourceNamespace: {olm_namespace}
@@ -381,14 +383,40 @@ spec:
         last_revision_status = output.split(" ")[-1]
         return last_revision_status
 
-    def create_operator_subscription_to_namespace(self, package_name, namespace, operator_source_name, channel, csv_version=None):
+    def create_operator_subscription_to_namespace(self, package_name, namespace, operator_source_name, channel,
+                                                  csv_version=None, install_mode=InstallMode.Automatic):
         operator_subscription = self.operator_subscription_to_namespace_yaml_template.format(
-            name=package_name, namespace=namespace, operator_source_name=operator_source_name, olm_namespace=self.olm_namespace,
-            channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel) if csv_version is None else csv_version)
+            name=package_name, namespace=namespace, operator_source_name=operator_source_name,
+            olm_namespace=self.olm_namespace,
+            channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel) if csv_version is None else csv_version,
+            install_mode=install_mode.value)
         return self.apply(operator_subscription)
 
-    def create_operator_subscription(self, package_name, operator_source_name, channel, csv_version=None):
-        return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name, channel, csv_version)
+    def create_operator_subscription(self, package_name, operator_source_name, channel, csv_version=None, install_mode=InstallMode.Automatic):
+        return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name, channel, csv_version, install_mode)
+
+    def get_install_plan_for_subscription(self, subscription_name, subscription_namespace, csv_version=None):
+        # wait for install plan
+        cmd = f"{ctx.cli} get subscription {subscription_name} -n {subscription_namespace} -o json | jq -rc '.status.installplan.name'"
+        polling2.poll(target=lambda: tuple(self.cmd.run(cmd)), check_success=lambda o: o[1] == 0 and o[0].startswith(
+            "install"), step=5, timeout=400, ignore_exceptions=(ValueError,))
+        # get the install plan
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to get install plan name for the '{subscription_name}' subscription:\n {output}"
+        install_plan = output
+
+        return install_plan.strip()
+
+    def approve_operator_subscription_in_namespace(self, name, namespace):
+        # get the install plan
+        install_plan = self.get_install_plan_for_subscription(name, namespace)
+        # approve install plan
+        cmd = f'{ctx.cli} -n {namespace} patch installplan {install_plan} --type merge --patch \'{{"spec": {{"approved": true}}}}\''
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to patch the '{install_plan} install plan to approve it:\n{output}"
+
+    def approve_operator_subscription(self, name):
+        self.approve_operator_subscription_in_namespace(name, self.operators_namespace)
 
     def get_resource_list_in_namespace(self, resource_plural, name_pattern, namespace):
         print(f"Searching for {resource_plural} that matches {name_pattern} in {namespace} namespace")
