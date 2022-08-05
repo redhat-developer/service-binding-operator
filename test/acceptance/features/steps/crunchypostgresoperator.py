@@ -1,3 +1,4 @@
+from subscription_install_mode import InstallMode
 from olm import Operator
 from environment import ctx
 from behave import given
@@ -21,6 +22,6 @@ class CrunchyPostgresOperator(Operator):
 def install(_context):
     operator = CrunchyPostgresOperator()
     if not operator.is_running():
-        operator.install_operator_subscription()
+        operator.install_operator_subscription(install_mode=InstallMode.Manual)
         operator.is_running(wait=True)
     print("Crunchy Data Postgres operator is running")
