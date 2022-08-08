@@ -482,6 +482,20 @@ bindings_list = sb.bindings("postgresql")</code></pre>
 </li>
 </ol>
 </div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>By default, the projected files get their permissions set to 0644.  Service Binding Operator cannot set specific permissions due to [a bug in Kubernetes](<a href="https://github.com/kubernetes/kubernetes/issues/57923" class="bare">https://github.com/kubernetes/kubernetes/issues/57923</a>) that causes issues if the service expects specific permissions such as, <code>0600</code>.  As a workaround, you can modify the code of the program or the application that is running inside a workload resource to copy the file to the <code>/tmp</code> directory and set the appropriate permissions.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
 </div>
 </div>
 </div>
