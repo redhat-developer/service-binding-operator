@@ -45,7 +45,7 @@ Retrieving the binding data through the binding data directory name is not a goo
 
 [WARNING]
 ====
-**For using the binding data directory name to look up the binding data:** The {servicebinding-title} uses the `ServiceBinding` resource name (.`metadata.name`) as the binding data directory name, but the spec also provides a way to override that name through the `.spec.name` field. Hence there is a chance for binding data name collision. However, due to the nature of the volume mount in Kubernetes, the binding data directory will contain values from only one of the `Secret` resources. 
+**For using the binding data directory name to look up the binding data:** The {servicebinding-title} uses the `ServiceBinding` resource name (.`metadata.name`) as the binding data directory name, but the spec also provides a way to override that name through the `.spec.name` field. Hence there is a chance for binding data name collision. However, due to the nature of the volume mount in Kubernetes, the binding data directory will contain values from only one of the `Secret` resources.
 ====
 
 .Environment variables
@@ -137,3 +137,8 @@ Depending on your workload requirements and environment, you can choose to proje
 
 . To project the binding data as files, determine the destination folder by ensuring that the existing `SERVICE_BINDING_ROOT` environment variable is present in the container where your workload runs.
 . To project the binding data as environment variables, set the value for the `.spec.bindAsFiles` parameter to `false` from the `ServiceBinding` resource in the custom resource (CR).
+
+[NOTE]
+====
+By default, the projected files get their permissions set to 0644.  {servicebinding-title} cannot set specific permissions due to [a bug in Kubernetes](https://github.com/kubernetes/kubernetes/issues/57923) that causes issues if the service expects specific permissions such as, `0600`.  As a workaround, you can modify the code of the program or the application that is running inside a workload resource to copy the file to the `/tmp` directory and set the appropriate permissions.
+====
