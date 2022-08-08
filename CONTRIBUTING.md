@@ -117,6 +117,13 @@ can be reproduced. Document all the steps that were performed, the
 environment used, include screenshots, logs, and any other information
 that will be useful in reproducing the bug.
 
+These are few commonly used labels for issues:
+
+- kind/documentation: documentation issue
+- kind/enhancement: feature request
+- kind/bug: SBO’s behavior is not what was expected (or documented)
+- kind/question: how do I do $X with SBO?
+
 ### Suggesting Enhancements
 
 Enhancements and requests for new features are also tracked as [GitHub issues](https://github.com/redhat-developer/service-binding-operator/issues) or [Enhancement Proposals](docs/proposals/README.md)
