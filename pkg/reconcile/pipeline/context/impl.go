@@ -230,9 +230,7 @@ func (i *bindingImpl) Services() ([]pipeline.Service, error) {
 		}
 	}
 	services := make([]pipeline.Service, len(i.services))
-	for idx := 0; idx < len(i.services); idx++ {
-		services[idx] = i.services[idx]
-	}
+	copy(services, i.services)
 	return services, nil
 }
 
