@@ -177,7 +177,7 @@ The specification also provides a way to define exactly where binding data needs
 .Example: Schema of the `ClusterWorkloadResourceMapping` resource
 [source,yaml]
 ----
-apiVersion: servicebinding.io/v1alpha3
+apiVersion: servicebinding.io/v1beta1
 kind: ClusterWorkloadResourceMapping
 metadata:
   name: # string <1>
@@ -221,7 +221,7 @@ All other operations are forbidden.
 .Example: Mapping for `CronJob.batch/v1` resources
 [source,yaml]
 ----
-apiVersion: servicebinding.io/v1alpha3
+apiVersion: servicebinding.io/v1beta1
 kind: ClusterWorkloadResourceMapping
 metadata:
  name: cronjobs.batch

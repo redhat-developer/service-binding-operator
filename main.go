@@ -160,16 +160,8 @@ func main() {
 	}
 
 	webhooks.SetupWithManager(mgr, serviceAccountName)
-	if err = (&specv1alpha3.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
-		os.Exit(1)
-	}
 	if err = (&specv1beta1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
-		os.Exit(1)
-	}
-	if err = (&specv1alpha3.ClusterWorkloadResourceMapping{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterWorkloadResourceMapping")
 		os.Exit(1)
 	}
 	if err = (&specv1beta1.ClusterWorkloadResourceMapping{}).SetupWebhookWithManager(mgr); err != nil {

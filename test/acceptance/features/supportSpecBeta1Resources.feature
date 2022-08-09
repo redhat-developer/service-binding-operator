@@ -253,3 +253,54 @@ Feature: Support spec v1beta1 resources
         And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
 
+    @negative
+    Scenario: Reject invalid v1alpha3 workload resource mapping
+        When Invalid Workload Resource Mapping is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: appconfigs.stable.example.com
+            spec:
+                versions:
+                  - version: "v1"
+                  - version: "v1"
+            """
+        Then Error message is thrown
+
+    @negative
+    Scenario: Reject invalid v1alpha3 service binding
+        Given CustomResourceDefinition backends.stable.example.com is available
+        And The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: Backend
+            metadata:
+                name: $scenario_id-backend
+                annotations:
+                    service.binding/host: path={.spec.host}
+                    service.binding/username: path={.spec.username}
+            spec:
+                host: example.common
+                username: foo
+            """
+        When Invalid Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1alpha3
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                workload:
+                  name: $scenario_id
+                  apiVersion: apps/v1
+                  kind: Deployment
+                  selector:
+                    matchLabels:
+                      name: backend-operator
+                service:
+                  apiVersion: stable.example.com/v1
+                  kind: Backend
+                  name: $scenario_id-backend
+            """
+        Then Error message "name and selector MUST NOT be defined in the application reference" is thrown

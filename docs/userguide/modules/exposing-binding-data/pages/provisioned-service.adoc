@@ -59,7 +59,7 @@ spec:
 .Example: `ServiceBinding` resource in Specification API
 [source,yaml]
 ----
-apiVersion: servicebinding.io/v1alpha3
+apiVersion: servicebinding.io/v1beta1
 kind: ServiceBinding
 metadata:
   name: account-service
