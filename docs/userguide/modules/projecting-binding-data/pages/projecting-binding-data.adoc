@@ -142,3 +142,7 @@ Depending on your workload requirements and environment, you can choose to proje
 ====
 By default, the projected files get their permissions set to 0644.  {servicebinding-title} cannot set specific permissions due to https://github.com/kubernetes/kubernetes/issues/57923[a bug in Kubernetes] that causes issues if the service expects specific permissions such as, `0600`.  As a workaround, you can modify the code of the program or the application that is running inside a workload resource to copy the file to the `/tmp` directory and set the appropriate permissions.
 ====
+
+[#understanding-the-rebinding-behavior]
+== Understanding the rebinding behavior
+Consider a case where after a successful binding, you are using the `name` field to identify a workload. In such a case, if you delete an existing workload and recreate it, the projected binding data are lost. The `ServiceBinding` reconciler does not rebind the workload. However, if you use the label selector field to identify a workload, the `ServiceBinding` reconciler rebinds the workload, and the Operator projects the binding data.
