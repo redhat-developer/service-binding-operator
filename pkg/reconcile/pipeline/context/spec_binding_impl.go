@@ -12,7 +12,7 @@ import (
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
 	"golang.org/x/time/rate"
-	"k8s.io/api/authentication/v1"
+	v1 "k8s.io/api/authentication/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -134,9 +134,7 @@ func (i *specImpl) Services() ([]pipeline.Service, error) {
 		i.services = append(i.services, s)
 	}
 	services := make([]pipeline.Service, len(i.services))
-	for idx := 0; idx < len(i.services); idx++ {
-		services[idx] = i.services[idx]
-	}
+	copy(services, i.services)
 	return services, nil
 
 }
