@@ -6,13 +6,12 @@ from behave import given
 class RedisOperator(Operator):
 
     def __init__(self, name="redis-operator"):
-        self.name = name
-        if ctx.cli == "oc":
-            self.operator_catalog_source_name = "community-operators"
-        else:
-            self.operator_catalog_source_name = "operatorhubio-catalog"
-        self.operator_catalog_channel = "stable"
-        self.package_name = name
+        super().__init__(
+            name=name,
+            operator_catalog_source_name="community-operators" if ctx.cli == "oc" else "operatorhubio-catalog",
+            operator_catalog_channel="stable",
+            package_name=name
+        )
 
 
 @given(u'Opstree Redis operator is running')
