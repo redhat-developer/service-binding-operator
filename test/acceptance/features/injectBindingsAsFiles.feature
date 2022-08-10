@@ -176,7 +176,7 @@ Feature: Bindings get injected as files in application
             """
         When Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding

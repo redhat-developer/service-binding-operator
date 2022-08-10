@@ -19,7 +19,7 @@ import (
 	"github.com/golang/mock/gomock"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	v1 "k8s.io/api/core/v1"
@@ -49,10 +49,10 @@ var _ = Describe("Mapping workloads", func() {
 
 	Context("Parsing", func() {
 		It("should parse valid mappings", func() {
-			template := v1alpha3.ClusterWorkloadResourceMappingTemplate{
+			template := v1beta1.ClusterWorkloadResourceMappingTemplate{
 				Version:     "*",
 				Annotations: ".spec.annotations",
-				Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+				Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 					{
 						Name:         ".name",
 						Env:          ".env",
@@ -85,10 +85,10 @@ var _ = Describe("Mapping workloads", func() {
 		})
 
 		It("should use defaults when not specified", func() {
-			template := v1alpha3.ClusterWorkloadResourceMappingTemplate{
+			template := v1beta1.ClusterWorkloadResourceMappingTemplate{
 				Version:     "*",
 				Annotations: ".spec.annotations",
-				Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+				Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 					{
 						Path: ".spec.spec.containers[*]",
 					},
@@ -118,10 +118,10 @@ var _ = Describe("Mapping workloads", func() {
 		})
 
 		It("should return an error on invalid mappings", func() {
-			template := v1alpha3.ClusterWorkloadResourceMappingTemplate{
+			template := v1beta1.ClusterWorkloadResourceMappingTemplate{
 				Version:     "*",
 				Annotations: ".spec.annotations",
-				Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+				Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 					{
 						Path: ".spec.spec.containers[",
 					},
@@ -134,11 +134,11 @@ var _ = Describe("Mapping workloads", func() {
 		})
 
 		It("should not allow jsonpaths in restricted jsonpath contexts", func() {
-			templates := []v1alpha3.ClusterWorkloadResourceMappingTemplate{
+			templates := []v1beta1.ClusterWorkloadResourceMappingTemplate{
 				{
 					Version:     "*",
 					Annotations: ".spec.annotations",
-					Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+					Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 						{
 							Path: ".spec.spec.containers[*]",
 							Name: ".name[*]",
@@ -148,7 +148,7 @@ var _ = Describe("Mapping workloads", func() {
 				{
 					Version:     "*",
 					Annotations: ".spec.annotations",
-					Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+					Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 						{
 							Path: ".spec.spec.containers[*]",
 							Env:  ".env[*]",
@@ -158,7 +158,7 @@ var _ = Describe("Mapping workloads", func() {
 				{
 					Version:     "*",
 					Annotations: ".spec.annotations",
-					Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+					Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 						{
 							Path:         ".spec.spec.containers[*]",
 							VolumeMounts: ".volumeMounts[*]",
@@ -168,7 +168,7 @@ var _ = Describe("Mapping workloads", func() {
 				{
 					Version:     "*",
 					Annotations: ".spec.annotations",
-					Containers: []v1alpha3.ClusterWorkloadResourceMappingContainer{
+					Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
 						{
 							Path: ".spec.spec.containers[*]",
 						},

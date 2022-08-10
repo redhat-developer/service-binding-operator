@@ -246,7 +246,7 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev cannot read resource backends/$scenario_id in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -293,7 +293,7 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev cannot read resource secrets/$scenario_id in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -339,7 +339,7 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev cannot read resource configmaps/$scenario_id in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -375,7 +375,7 @@ Feature: Prevent users to bind services to application
     * User acceptance-tests-dev has 'backends-view' role in test namespace
     When user acceptance-tests-dev applies Service Binding
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding

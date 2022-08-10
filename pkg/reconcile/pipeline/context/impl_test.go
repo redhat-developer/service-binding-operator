@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -991,9 +991,9 @@ var _ = Describe("Context", func() {
 			}
 			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
 
-			mappingSpec := v1alpha3.ClusterWorkloadResourceMapping{
-				Spec: v1alpha3.ClusterWorkloadResourceMappingSpec{
-					Versions: []v1alpha3.ClusterWorkloadResourceMappingTemplate{
+			mappingSpec := v1beta1.ClusterWorkloadResourceMapping{
+				Spec: v1beta1.ClusterWorkloadResourceMappingSpec{
+					Versions: []v1beta1.ClusterWorkloadResourceMappingTemplate{
 						{
 							Version: "v1",
 							Volumes: ".spec.volumeSpec",
@@ -1008,8 +1008,8 @@ var _ = Describe("Context", func() {
 					Name: "foos.app",
 				},
 				TypeMeta: metav1.TypeMeta{
-					Kind:       v1alpha3.WorkloadResourceMappingGroupVersionKind.Kind,
-					APIVersion: "servicebinding.io/v1alpha3",
+					Kind:       v1beta1.WorkloadResourceMappingGroupVersionKind.Kind,
+					APIVersion: "servicebinding.io/v1beta1",
 				},
 			}
 
@@ -1021,7 +1021,7 @@ var _ = Describe("Context", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			u := &unstructured.Unstructured{}
-			u.SetGroupVersionKind(v1alpha3.WorkloadResourceMappingGroupVersionKind)
+			u.SetGroupVersionKind(v1beta1.WorkloadResourceMappingGroupVersionKind)
 			u.SetName("foos.app")
 			u.SetUnstructuredContent(data)
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
@@ -1056,9 +1056,9 @@ var _ = Describe("Context", func() {
 			}
 			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
 
-			mappingSpec := v1alpha3.ClusterWorkloadResourceMapping{
-				Spec: v1alpha3.ClusterWorkloadResourceMappingSpec{
-					Versions: []v1alpha3.ClusterWorkloadResourceMappingTemplate{
+			mappingSpec := v1beta1.ClusterWorkloadResourceMapping{
+				Spec: v1beta1.ClusterWorkloadResourceMappingSpec{
+					Versions: []v1beta1.ClusterWorkloadResourceMappingTemplate{
 						{
 							Version: "*",
 						},
@@ -1068,8 +1068,8 @@ var _ = Describe("Context", func() {
 					Name: "foos.app",
 				},
 				TypeMeta: metav1.TypeMeta{
-					Kind:       v1alpha3.WorkloadResourceMappingGroupVersionKind.Kind,
-					APIVersion: "servicebinding.io/v1alpha3",
+					Kind:       v1beta1.WorkloadResourceMappingGroupVersionKind.Kind,
+					APIVersion: "servicebinding.io/v1beta1",
 				},
 			}
 
@@ -1081,7 +1081,7 @@ var _ = Describe("Context", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			u := &unstructured.Unstructured{}
-			u.SetGroupVersionKind(v1alpha3.WorkloadResourceMappingGroupVersionKind)
+			u.SetGroupVersionKind(v1beta1.WorkloadResourceMappingGroupVersionKind)
 			u.SetName("foos.app")
 			u.SetUnstructuredContent(data)
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)

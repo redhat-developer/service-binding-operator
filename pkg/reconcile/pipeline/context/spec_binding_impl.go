@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/redhat-developer/service-binding-operator/apis"
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
@@ -31,7 +31,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 		typeLookup: typeLookup,
 		get: func(binding interface{}) (pipeline.Context, error) {
 			switch sb := binding.(type) {
-			case *v1alpha3.ServiceBinding:
+			case *v1beta1.ServiceBinding:
 				if sb.Generation != 0 {
 					sb.Status.ObservedGeneration = sb.Generation
 				}
@@ -49,7 +49,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 							return sb.Status.Binding.Name
 						},
 						setStatusSecretName: func(name string) {
-							sb.Status.Binding = &v1alpha3.ServiceBindingSecretReference{Name: name}
+							sb.Status.Binding = &v1beta1.ServiceBindingSecretReference{Name: name}
 						},
 						unstructuredBinding: func() (*unstructured.Unstructured, error) {
 							return converter.ToUnstructured(sb)
@@ -61,7 +61,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 							return sb.AsOwnerReference()
 						},
 						groupVersionResource: func() schema.GroupVersionResource {
-							return v1alpha3.GroupVersionResource
+							return v1beta1.GroupVersionResource
 						},
 						requester: func() *v1.UserInfo {
 							return apis.Requester(sb.ObjectMeta)
@@ -91,7 +91,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 
 type specImpl struct {
 	impl
-	serviceBinding *v1alpha3.ServiceBinding
+	serviceBinding *v1beta1.ServiceBinding
 }
 
 func (i *specImpl) BindingName() string {

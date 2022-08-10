@@ -19,7 +19,7 @@ func SetupWithManager(mgr ctrl.Manager, serviceAccountName string) {
 }
 
 // +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=binding.operators.coreos.com,resources=servicebindings,verbs=create;update,versions=v1alpha1,name=mservicebinding.kb.io,admissionReviewVersions=v1
-// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=create;update,versions=v1alpha3,name=mspec-servicebinding.kb.io,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-servicebinding,mutating=true,failurePolicy=fail,sideEffects=None,groups=servicebinding.io,resources=servicebindings,verbs=create;update,versions=v1alpha3;v1beta1,name=mspec-servicebinding.kb.io,admissionReviewVersions=v1
 
 type admissionHandler struct {
 	decoder            *admission.Decoder

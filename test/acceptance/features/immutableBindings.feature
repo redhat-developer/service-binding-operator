@@ -151,7 +151,7 @@ Feature: Successful Service Binding are Immutable
         Given Generic test application is running
         And Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -169,7 +169,7 @@ Feature: Successful Service Binding are Immutable
         When Service Binding is ready
         Then Service Binding is unable to be applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -188,7 +188,7 @@ Feature: Successful Service Binding are Immutable
         Given Generic test application is running
         And Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding
@@ -206,7 +206,7 @@ Feature: Successful Service Binding are Immutable
         When Service Binding is ready
         Then Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding

@@ -50,4 +50,26 @@ resources:
   kind: BindableKinds
   path: github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: operators.coreos.com
+  group: spec
+  kind: ServiceBinding
+  path: github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1
+  version: v1beta1
+  webhooks:
+    validation: true
+    webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: operators.coreos.com
+  group: spec
+  kind: ClusterWorkloadResourceMapping
+  path: github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1
+  version: v1beta1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

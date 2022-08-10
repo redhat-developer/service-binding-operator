@@ -47,6 +47,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	specv1alpha3 "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	specv1beta1 "github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	speccontrollers "github.com/redhat-developer/service-binding-operator/controllers/spec"
 	// +kubebuilder:scaffold:imports
 )
@@ -63,6 +64,7 @@ func init() {
 	utilruntime.Must(specv1alpha3.AddToScheme(scheme))
 	utilruntime.Must(v1apiextensions.AddToScheme(scheme))
 	utilruntime.Must(v1beta1apiextensions.AddToScheme(scheme))
+	utilruntime.Must(specv1beta1.AddToScheme(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -134,25 +136,35 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
 		os.Exit(1)
 	}
+	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "ServiceBinding")
+		os.Exit(1)
+	}
 	if err = speccontrollers.New(
 		mgr.GetClient(),
 		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
 		mgr.GetScheme(),
+		&specv1alpha3.ServiceBinding{},
+	).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
+		os.Exit(1)
+	}
+	if err = speccontrollers.New(
+		mgr.GetClient(),
+		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
+		mgr.GetScheme(),
+		&specv1beta1.ServiceBinding{},
 	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
 
-	if err = (&v1alpha1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "ServiceBinding")
-		os.Exit(1)
-	}
 	webhooks.SetupWithManager(mgr, serviceAccountName)
-	if err = (&specv1alpha3.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&specv1beta1.ServiceBinding{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
-	if err = (&specv1alpha3.ClusterWorkloadResourceMapping{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&specv1beta1.ClusterWorkloadResourceMapping{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterWorkloadResourceMapping")
 		os.Exit(1)
 	}

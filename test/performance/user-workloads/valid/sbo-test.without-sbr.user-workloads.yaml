@@ -143,7 +143,7 @@ objects:
           - watch
           - update
           - patch
-  - apiVersion: servicebinding.io/v1alpha3
+  - apiVersion: servicebinding.io/v1beta1
     kind: ClusterWorkloadResourceMapping
     metadata:
       name: cronjobs.batch

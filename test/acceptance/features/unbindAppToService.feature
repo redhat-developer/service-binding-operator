@@ -214,7 +214,7 @@ Feature: Unbind an application from a service
             """
         * Service Binding is applied
             """
-            apiVersion: servicebinding.io/v1alpha3
+            apiVersion: servicebinding.io/v1beta1
             kind: ServiceBinding
             metadata:
                 name: $scenario_id-binding

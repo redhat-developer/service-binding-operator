@@ -64,18 +64,18 @@ func (mr *MockDefinitionMockRecorder) GetPath() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPath", reflect.TypeOf((*MockDefinition)(nil).GetPath))
 }
 
-// NonExistingOptional mock
-func (m *MockDefinition) NonExistingOptional(v binding.Value) bool {
+// NonExistingOptional mocks base method.
+func (m *MockDefinition) NonExistingOptional(arg0 binding.Value) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "NonExistingOptional")
+	ret := m.ctrl.Call(m, "NonExistingOptional", arg0)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // NonExistingOptional indicates an expected call of NonExistingOptional.
-func (mr *MockDefinitionMockRecorder) NonExistingOptional() *gomock.Call {
+func (mr *MockDefinitionMockRecorder) NonExistingOptional(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NonExistingOptional", reflect.TypeOf((*MockDefinition)(nil).NonExistingOptional))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NonExistingOptional", reflect.TypeOf((*MockDefinition)(nil).NonExistingOptional), arg0)
 }
 
 // MockValue is a mock of Value interface.

@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/apis"
-	specapi "github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	specapi "github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes/mocks"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"

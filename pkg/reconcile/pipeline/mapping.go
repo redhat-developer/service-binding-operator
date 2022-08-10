@@ -17,7 +17,7 @@ import (
 	"fmt"
 	"path"
 
-	"github.com/redhat-developer/service-binding-operator/apis/spec/v1alpha3"
+	"github.com/redhat-developer/service-binding-operator/apis/spec/v1beta1"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -38,7 +38,7 @@ type WorkloadMapping struct {
 	Volume     []string
 }
 
-func FromWorkloadResourceMappingTemplate(mapping v1alpha3.ClusterWorkloadResourceMappingTemplate) (*WorkloadMapping, error) {
+func FromWorkloadResourceMappingTemplate(mapping v1beta1.ClusterWorkloadResourceMappingTemplate) (*WorkloadMapping, error) {
 	var containers []WorkloadContainer
 	for _, container := range mapping.Containers {
 		wc := WorkloadContainer{}
