@@ -4,6 +4,7 @@ on:
   pull_request_target:
     branches:
       - master
+      - 'release-v**.x'
 
 env:
   REGISTRY_PREFIX: quay.io/redhat-developer

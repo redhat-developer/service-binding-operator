@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+      - 'release-v**.x'
 
 env:
   SDK_VERSION: "1.16.0"
