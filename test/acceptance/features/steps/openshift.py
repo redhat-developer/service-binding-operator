@@ -216,8 +216,9 @@ spec:
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) while deleting a YAML: {output}"
         return output
 
-    def create_catalog_source(self, name, catalog_image):
-        catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image, olm_namespace=self.olm_namespace)
+    def create_catalog_source(self, name, catalog_image, olm_namespace=None):
+        olm_namespace_resolved = olm_namespace if olm_namespace is not None else self.olm_namespace
+        catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image, olm_namespace=olm_namespace_resolved)
         return self.apply(catalog_source)
 
     def get_current_csv(self, package_name, catalog, channel):
@@ -384,16 +385,19 @@ spec:
         return last_revision_status
 
     def create_operator_subscription_to_namespace(self, package_name, namespace, operator_source_name, channel,
-                                                  csv_version=None, install_mode=InstallMode.Automatic):
+                                                  operator_source_namespace=None, csv_version=None, install_mode=InstallMode.Automatic):
+        olm_namespace_resolved = operator_source_namespace if operator_source_namespace is not None else self.olm_namespace
         operator_subscription = self.operator_subscription_to_namespace_yaml_template.format(
             name=package_name, namespace=namespace, operator_source_name=operator_source_name,
-            olm_namespace=self.olm_namespace,
+            olm_namespace=olm_namespace_resolved,
             channel=channel, csv_version=self.get_current_csv(package_name, operator_source_name, channel) if csv_version is None else csv_version,
             install_mode=install_mode.value)
         return self.apply(operator_subscription)
 
-    def create_operator_subscription(self, package_name, operator_source_name, channel, csv_version=None, install_mode=InstallMode.Automatic):
-        return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name, channel, csv_version, install_mode)
+    def create_operator_subscription(self, package_name, operator_source_name, channel, operator_source_namespace=None,
+                                     csv_version=None, install_mode=InstallMode.Automatic):
+        return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name,
+                                                              channel, operator_source_namespace, csv_version, install_mode)
 
     def get_install_plan_for_subscription(self, subscription_name, subscription_namespace, csv_version=None):
         # wait for install plan
