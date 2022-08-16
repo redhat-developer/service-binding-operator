@@ -13,7 +13,7 @@ COPY / /workspace/
 # Build
 RUN make build
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.6
+FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/bin/manager .
 USER 65532:65532
