@@ -15,7 +15,7 @@ uninstall: manifests kustomize
 
 .PHONY: deploy-cert-manager
 deploy-cert-manager:
-	kubectl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.0/cert-manager.yaml
+	kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.9.1/cert-manager.yaml
 	kubectl rollout status -n cert-manager deploy/cert-manager-webhook -w --timeout=120s
 
 .PHONY: deploy
