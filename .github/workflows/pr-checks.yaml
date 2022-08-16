@@ -449,7 +449,6 @@ jobs:
           image-ref: ${{ steps.operator-image-ref.outputs.operator-image-ref }}
           format: 'sarif'
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy scan results to GitHub Security tab
