@@ -7,15 +7,19 @@ from behave import given
 class CrunchyPostgresOperator(Operator):
 
     def __init__(self, name="pgo"):
-        self.name = name
         if ctx.cli == "oc":
-            self.operator_catalog_source_name = "certified-operators"
-            self.package_name = "crunchy-postgres-operator"
+            super().__init__(
+                name=name,
+                package_name="crunchy-postgres-operator",
+                operator_catalog_source_name="certified-operators",
+                operator_catalog_channel="v5")
         else:
-            self.operator_catalog_source_name = "operatorhubio-catalog"
-            self.package_name = "postgresql"
-            self.operator_subscription_csv_version = "postgresoperator.v5.0.5"
-        self.operator_catalog_channel = "v5"
+            super().__init__(
+                name=name,
+                package_name="postgresql",
+                operator_catalog_source_name="operatorhubio-catalog",
+                operator_subscription_csv_version="postgresoperator.v5.0.5",
+                operator_catalog_channel="v5")
 
 
 @given(u'Crunchy Data Postgres operator is running')
