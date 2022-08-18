@@ -103,8 +103,8 @@ Feature: Support a number of existing operator-backed services out of the box
           metadata:
             name: hippo
           spec:
-            image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:centos8-13.4-1
-            postgresVersion: 13
+            image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.4-0
+            postgresVersion: 14
             instances:
               - name: instance1
                 dataVolumeClaimSpec:
@@ -115,7 +115,7 @@ Feature: Support a number of existing operator-backed services out of the box
                       storage: 1Gi
             backups:
               pgbackrest:
-                image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:centos8-2.35-0
+                image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.38-0
                 repos:
                 - name: repo1
                   volume:

@@ -39,11 +39,10 @@ kubectl get pods -n {quickstart-namespace}
 +
 [source,terminal]
 ....
-NAME                               READY   STATUS      RESTARTS   AGE
-hippo-backup-jxv6--1-smqkz         0/1     Completed   0          42s
-hippo-instance1-ml48-0             3/3     Running     0          119s
-hippo-pgbouncer-56db454d6b-782hg   2/2     Running     0          118s
-hippo-repo-host-0                  1/1     Running     0          118s
+NAME                      READY   STATUS      RESTARTS   AGE
+hippo-backup-bthn-p6xmn   0/1     Completed   0          16s
+hippo-instance1-jqpz-0    4/4     Running     0          99s
+hippo-repo-host-0         2/2     Running     0          99s
 ....
 +
 The previous output verifies that the database service is created and configured.
