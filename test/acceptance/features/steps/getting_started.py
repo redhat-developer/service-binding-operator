@@ -28,7 +28,7 @@ def postgresql_is_running(context):
 @step(u'PostgresCluster database is running')
 def pgcluster_is_running(context):
     yaml_is_applied(context, yaml_file="samples/apps/spring-petclinic/pgcluster-deployment.yaml")
-    output, exit_code = cmd.run(f"{ctx.cli} wait --for=condition=ProxyAvailable=True PostgresCluster/hippo -n {context.namespace.name} --timeout=300s")
+    output, exit_code = cmd.run(f"{ctx.cli} wait --for=condition=PGBackRestReplicaCreate=True PostgresCluster/hippo -n {context.namespace.name} --timeout=300s")
     assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to deploy PostgreSQL database for quickstart:\n {output}"
 
 

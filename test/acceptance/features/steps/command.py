@@ -27,6 +27,8 @@ class Command(object):
 
     def run(self, cmd, stdin=None):
         print(f",---------,-\n| COMMAND : {cmd}\n'---------'-")  # for debugging purposes
+        if stdin is not None:
+            print(f"With stdin: [\n{stdin}\n]\n")
         output = None
         exit_code = 0
         try:
