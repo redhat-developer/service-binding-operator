@@ -285,8 +285,8 @@ kind: PostgresCluster
 metadata:
   name: hippo
 spec:
-  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres-ha:centos8-13.4-0
-  postgresVersion: 13
+  image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.4-0
+  postgresVersion: 14
   instances:
     - name: instance1
       dataVolumeClaimSpec:
@@ -297,7 +297,7 @@ spec:
             storage: 1Gi
   backups:
     pgbackrest:
-      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:centos8-2.33-2
+      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.38-0
       repos:
       - name: repo1
         volume:
@@ -306,18 +306,7 @@ spec:
             - "ReadWriteOnce"
             resources:
               requests:
-                storage: 1Gi
-      - name: repo2
-        volume:
-          volumeClaimSpec:
-            accessModes:
-            - "ReadWriteOnce"
-            resources:
-              requests:
-                storage: 1Gi
-  proxy:
-    pgBouncer:
-      image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbouncer:centos8-1.15-2</code></pre>
+                storage: 1Gi</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -344,11 +333,10 @@ spec:
 <div class="listingblock">
 <div class="title">Example output:</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                               READY   STATUS      RESTARTS   AGE
-hippo-backup-jxv6--1-smqkz         0/1     Completed   0          42s
-hippo-instance1-ml48-0             3/3     Running     0          119s
-hippo-pgbouncer-56db454d6b-782hg   2/2     Running     0          118s
-hippo-repo-host-0                  1/1     Running     0          118s</code></pre>
+<pre class="highlightjs highlight"><code class="language-terminal hljs" data-lang="terminal">NAME                      READY   STATUS      RESTARTS   AGE
+hippo-backup-bthn-p6xmn   0/1     Completed   0          16s
+hippo-instance1-jqpz-0    4/4     Running     0          99s
+hippo-repo-host-0         2/2     Running     0          99s</code></pre>
 </div>
 </div>
 <div class="paragraph">
