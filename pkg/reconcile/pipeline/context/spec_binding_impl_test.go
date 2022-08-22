@@ -779,20 +779,9 @@ var _ = Describe("Spec API Context", func() {
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(updatedSB.Status.Binding.Name).NotTo(BeEmpty())
 			Expect(updatedSB.Status.Conditions).To(HaveLen(1))
 			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(apis.BindingReady))
 			Expect(updatedSB.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
-
-			u, err = ctx.ReadSecret(sb.Namespace, updatedSB.Status.Binding.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			secret := &corev1.Secret{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
-			Expect(err).NotTo(HaveOccurred())
-			bindingItems := ctx.BindingItems()
-			Expect(secret.StringData).To(Equal(bindingItems.AsMap()))
-			Expect(secret.OwnerReferences[0].UID).To(Equal(sb.UID))
 
 			u, err = client.Resource(gvr).Namespace(sb.Namespace).Get(context.Background(), "app1", metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
@@ -800,57 +789,33 @@ var _ = Describe("Spec API Context", func() {
 			Expect(u.Object["Spec"]).To(Equal(specData))
 
 		})
-		It("should not update service binding if its uid is unset", func() {
-			sb.UID = ""
-			sb.Name = "sb2"
-			app := specapi.ServiceBindingWorkloadReference{
-				APIVersion: "app/v1",
-				Kind:       "Foo",
-				Name:       "app1",
+	})
+
+	Describe("PersistSecret", func() {
+		var (
+			sb     *specapi.ServiceBinding
+			ctx    pipeline.Context
+			client dynamic.Interface
+		)
+
+		BeforeEach(func() {
+			sb = &specapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+					UID:       "uid1",
+				},
 			}
-			sb.Spec.Workload = app
-			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo", Value: "v1"})
-			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
+			sb.SetGroupVersionKind(specapi.GroupVersionKind)
+			u, _ := converter.ToUnstructured(&sb)
+			s := runtime.NewScheme()
+			Expect(specapi.AddToScheme(s)).NotTo(HaveOccurred())
+			Expect(corev1.AddToScheme(s)).NotTo(HaveOccurred())
+			client = fake.NewSimpleDynamicClient(s, u)
 
-			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
-			typeLookup.EXPECT().ResourceForReferable(&app).Return(&gvr, nil)
+			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			u := &unstructured.Unstructured{}
-			u.SetNamespace(sb.Namespace)
-			u.SetName("app1")
-			u.SetGroupVersionKind(gvr.GroupVersion().WithKind("Foo"))
-
-			_, err := client.Resource(gvr).Namespace(sb.Namespace).Create(context.Background(), u, metav1.CreateOptions{})
-			Expect(err).NotTo(HaveOccurred())
-
-			apps, err := ctx.Applications()
-			Expect(err).NotTo(HaveOccurred())
-			specData := map[string]interface{}{
-				"foo": "bar",
-			}
-			apps[0].Resource().Object["Spec"] = specData
-
-			err = ctx.Close()
-			Expect(err).NotTo(HaveOccurred())
-
-			_, err = client.Resource(specapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
-			Expect(err).To(HaveOccurred())
-
-			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Binding.Name)
-			Expect(err).NotTo(HaveOccurred())
-
-			secret := &corev1.Secret{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
-			Expect(err).NotTo(HaveOccurred())
-			bindingItems := ctx.BindingItems()
-			Expect(secret.StringData).To(Equal(bindingItems.AsMap()))
-			Expect(secret.OwnerReferences).To(HaveLen(0))
-
-			u, err = client.Resource(gvr).Namespace(sb.Namespace).Get(context.Background(), "app1", metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(u.Object["Spec"]).To(Equal(specData))
-
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 		})
 
 		It("should reuse existing secret if no other bindings are added", func() {
@@ -868,23 +833,15 @@ var _ = Describe("Spec API Context", func() {
 
 			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret, Service: service})
 
-			err := ctx.Close()
+			err := ctx.PersistSecret()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(specapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
-
-			updatedSB := specapi.ServiceBinding{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(updatedSB.Status.Binding.Name).Should(Equal(secret.GetName()))
+			Expect(sb.Status.Binding.Name).Should(Equal(secret.GetName()))
 
 			secretList, err := client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).List(context.Background(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(secretList.Items).Should(BeEmpty())
 		})
-
 		It("Should create intermediate secret if additional bindings are added", func() {
 			secret := &unstructured.Unstructured{Object: map[string]interface{}{
 				"data": map[string]interface{}{
@@ -901,20 +858,13 @@ var _ = Describe("Spec API Context", func() {
 			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret, Service: service})
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo3", Value: "val3"})
 
-			err := ctx.Close()
+			err := ctx.PersistSecret()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(specapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(sb.Status.Binding.Name).ShouldNot(Equal(secret.GetName()))
+			Expect(sb.Status.Binding.Name).ShouldNot(BeEmpty())
 
-			updatedSB := specapi.ServiceBinding{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(updatedSB.Status.Binding.Name).ShouldNot(Equal(secret.GetName()))
-			Expect(updatedSB.Status.Binding.Name).ShouldNot(BeEmpty())
-
-			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Binding.Name)
+			u, err := ctx.ReadSecret(sb.Namespace, sb.Status.Binding.Name)
 			Expect(err).NotTo(HaveOccurred())
 
 			intermediateSecret := &corev1.Secret{}
@@ -924,6 +874,34 @@ var _ = Describe("Spec API Context", func() {
 			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo1", "val1"))
 			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo2", "val2"))
 			Expect(intermediateSecret.StringData).Should(HaveKeyWithValue("foo3", "val3"))
+		})
+		It("should not update secret if the service binding's uid is unset", func() {
+			sb.UID = ""
+			sb.Name = "sb2"
+			app := specapi.ServiceBindingWorkloadReference{
+				APIVersion: "app/v1",
+				Kind:       "Foo",
+				Name:       "app1",
+			}
+			sb.Spec.Workload = app
+			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo", Value: "v1"})
+			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo2", Value: "v2"})
+
+			err := ctx.PersistSecret()
+			Expect(err).NotTo(HaveOccurred())
+
+			_, err = client.Resource(specapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
+			Expect(err).To(HaveOccurred())
+
+			u, err := ctx.ReadSecret(sb.Namespace, sb.Status.Binding.Name)
+			Expect(err).NotTo(HaveOccurred())
+
+			secret := &corev1.Secret{}
+			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
+			Expect(err).NotTo(HaveOccurred())
+			bindingItems := ctx.BindingItems()
+			Expect(secret.StringData).To(Equal(bindingItems.AsMap()))
+			Expect(secret.OwnerReferences).To(HaveLen(0))
 		})
 	})
 

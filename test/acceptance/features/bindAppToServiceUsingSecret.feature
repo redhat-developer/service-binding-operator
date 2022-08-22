@@ -799,7 +799,7 @@ Feature: Bind values from a secret referred in backing service resource
             """
 
     @external-feedback
-    Scenario: Inject binding to an application from a Secret resource created later referred as service 
+    Scenario: Inject binding to an application from a Secret resource created later referred as service
         Given Generic test application is running
         When Service Binding is applied
           """
@@ -1047,3 +1047,68 @@ Feature: Bind values from a secret referred in backing service resource
         * jsonpath "{.spec.template.spec.containers[2].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         * jsonpath "{.spec.template.spec.containers[3].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return no value
         * jsonpath "{.spec.template.spec.initContainers[0].volumeMounts}" on "appconfigs/$scenario_id-appconfig" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+
+    Scenario: Make service binding secret available without having a workload
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: $scenario_id-secret
+            stringData:
+                type: db
+                username: foo
+                password: bar
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                services:
+                  - group: ""
+                    version: v1
+                    kind: Secret
+                    name: $scenario_id-secret
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    resource: deployments
+            """
+        Then jq ".status.secret" of Service Binding should be changed to "$scenario_id-secret"
+        And Service Binding CollectionReady.status is "True"
+
+    @spec
+    Scenario: SPEC Make service binding secret available without having a workload
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: $scenario_id-secret
+            stringData:
+                type: db
+                username: foo
+                password: bar
+            """
+        When Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                service:
+                  apiVersion: v1
+                  kind: Secret
+                  name: $scenario_id-secret
+                workload:
+                  name: $scenario_id
+                  apiVersion: apps/v1
+                  kind: Deployment
+            """
+        Then jq ".status.binding.name" of Service Binding should be changed to "$scenario_id-secret"
+        And Service Binding CollectionReady.status is "True"
