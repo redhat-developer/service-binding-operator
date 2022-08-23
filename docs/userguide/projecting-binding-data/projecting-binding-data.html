@@ -499,6 +499,14 @@ bindings_list = sb.bindings("postgresql")</code></pre>
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="understanding-the-rebinding-behavior"><a class="anchor" href="#understanding-the-rebinding-behavior"></a>Understanding the rebinding behavior</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Consider a case where after a successful binding, you are using the <code>name</code> field to identify a workload. In such a case, if you delete an existing workload and recreate it, the projected binding data are lost. The <code>ServiceBinding</code> reconciler does not rebind the workload. However, if you use the label selector field to identify a workload, the <code>ServiceBinding</code> reconciler rebinds the workload, and the Operator projects the binding data.</p>
+</div>
+</div>
+</div>
 </article>
   </div>
 </main>
