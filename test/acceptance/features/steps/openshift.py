@@ -101,7 +101,7 @@ metadata:
   labels:
     app: myapp
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: myapp
