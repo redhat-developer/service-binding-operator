@@ -326,6 +326,7 @@ var _ = Describe("Injection Preflight checks", func() {
 
 	It("should retry processing if error when reading applications", func() {
 		err := errors.New("foo")
+		ctx.EXPECT().PersistSecret().Return(nil)
 		ctx.EXPECT().Applications().Return(nil, err)
 		ctx.EXPECT().RetryProcessing(err)
 		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
@@ -334,6 +335,7 @@ var _ = Describe("Injection Preflight checks", func() {
 	})
 
 	It("should stop processing if no applications declared", func() {
+		ctx.EXPECT().PersistSecret().Return(nil)
 		ctx.EXPECT().Applications().Return([]pipeline.Application{}, nil)
 		ctx.EXPECT().StopProcessing()
 		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
@@ -343,6 +345,7 @@ var _ = Describe("Injection Preflight checks", func() {
 
 	It("should stop processing if mandatory bindings are missing", func() {
 		err := errors.New("Mandatory binding 'type' not found")
+		ctx.EXPECT().PersistSecret().Return(nil)
 		ctx.EXPECT().Applications().Return([]pipeline.Application{mocks.NewMockApplication(mockCtrl)}, nil)
 		ctx.EXPECT().BindingItems().Return(pipeline.BindingItems{&pipeline.BindingItem{Name: "foo", Value: "val1"}, &pipeline.BindingItem{Name: "bar", Value: "val2"}})
 		ctx.EXPECT().StopProcessing()
@@ -353,10 +356,18 @@ var _ = Describe("Injection Preflight checks", func() {
 	})
 
 	It("successful if all mandatory bindings are present", func() {
+		ctx.EXPECT().PersistSecret().Return(nil)
 		ctx.EXPECT().Applications().Return([]pipeline.Application{mocks.NewMockApplication(mockCtrl)}, nil)
 		ctx.EXPECT().BindingItems().Return(pipeline.BindingItems{&pipeline.BindingItem{Name: "foo", Value: "val1"}, &pipeline.BindingItem{Name: "bar", Value: "val2"}})
 		ctx.EXPECT().SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
 		project.PreFlightCheck("foo", "bar")(ctx)
+	})
+
+	It("should fail if binding secret creation threw an error", func() {
+		err := errors.New("foo")
+		ctx.EXPECT().PersistSecret().Return(err)
+		ctx.EXPECT().SetCondition(apis.Conditions().NotCollectionReady().Build())
+		project.PreFlightCheck()(ctx)
 	})
 })
 

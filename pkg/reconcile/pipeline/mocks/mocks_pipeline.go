@@ -241,6 +241,20 @@ func (mr *MockContextMockRecorder) NamingTemplate() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "NamingTemplate", reflect.TypeOf((*MockContext)(nil).NamingTemplate))
 }
 
+// PersistSecret mocks base method.
+func (m *MockContext) PersistSecret() error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PersistSecret")
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PersistSecret indicates an expected call of PersistSecret.
+func (mr *MockContextMockRecorder) PersistSecret() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PersistSecret", reflect.TypeOf((*MockContext)(nil).PersistSecret))
+}
+
 // ReadConfigMap mocks base method.
 func (m *MockContext) ReadConfigMap(arg0, arg1 string) (*unstructured.Unstructured, error) {
 	m.ctrl.T.Helper()

@@ -183,6 +183,9 @@ type Context interface {
 	// Returns error if occurrs
 	Close() error
 
+	// Persists the secret containing binding data into the cluster.
+	PersistSecret() error
+
 	// Sets context condition
 	SetCondition(condition *metav1.Condition)
 

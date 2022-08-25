@@ -764,19 +764,9 @@ var _ = Describe("Context", func() {
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(updatedSB.Status.Secret).NotTo(BeEmpty())
 			Expect(updatedSB.Status.Conditions).To(HaveLen(1))
 			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(apis.BindingReady))
 			Expect(updatedSB.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
-
-			u, err = ctx.ReadSecret(sb.Namespace, updatedSB.Status.Secret)
-			Expect(err).NotTo(HaveOccurred())
-
-			secret := &corev1.Secret{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
-			Expect(err).NotTo(HaveOccurred())
-			items := ctx.BindingItems()
-			Expect(secret.StringData).To(Equal(items.AsMap()))
 		})
 
 		It("should update application if changed", func() {
@@ -819,20 +809,9 @@ var _ = Describe("Context", func() {
 			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(updatedSB.Status.Secret).NotTo(BeEmpty())
 			Expect(updatedSB.Status.Conditions).To(HaveLen(1))
 			Expect(updatedSB.Status.Conditions[0].Type).To(Equal(apis.BindingReady))
 			Expect(updatedSB.Status.Conditions[0].Status).To(Equal(metav1.ConditionTrue))
-
-			u, err = ctx.ReadSecret(sb.Namespace, updatedSB.Status.Secret)
-			Expect(err).NotTo(HaveOccurred())
-
-			secret := &corev1.Secret{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
-			Expect(err).NotTo(HaveOccurred())
-			bindingItems := ctx.BindingItems()
-			Expect(secret.StringData).To(Equal(bindingItems.AsMap()))
-			Expect(secret.OwnerReferences[0].UID).To(Equal(sb.UID))
 
 			u, err = client.Resource(gvr).Namespace(sb.Namespace).Get(context.Background(), "app1", metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
@@ -878,20 +857,38 @@ var _ = Describe("Context", func() {
 			_, err = client.Resource(bindingapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
 			Expect(err).To(HaveOccurred())
 
-			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Secret)
-			Expect(err).NotTo(HaveOccurred())
-
-			secret := &corev1.Secret{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, secret)
-			Expect(err).NotTo(HaveOccurred())
-			bindingItems := ctx.BindingItems()
-			Expect(secret.StringData).To(Equal(bindingItems.AsMap()))
-			Expect(secret.OwnerReferences).To(HaveLen(0))
-
 			u, err = client.Resource(gvr).Namespace(sb.Namespace).Get(context.Background(), "app1", metav1.GetOptions{})
 			Expect(err).NotTo(HaveOccurred())
 
 			Expect(u.Object["Spec"]).To(Equal(specData))
+
+		})
+	})
+
+	Describe("Persist Secret", func() {
+		var (
+			sb     *bindingapi.ServiceBinding
+			ctx    pipeline.Context
+			client dynamic.Interface
+		)
+
+		BeforeEach(func() {
+			sb = &bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+					UID:       "uid1",
+				},
+			}
+			sb.SetGroupVersionKind(bindingapi.GroupVersionKind)
+			u, _ := converter.ToUnstructured(&sb)
+			s := runtime.NewScheme()
+			Expect(bindingapi.AddToScheme(s)).NotTo(HaveOccurred())
+			Expect(corev1.AddToScheme(s)).NotTo(HaveOccurred())
+			client = fake.NewSimpleDynamicClient(s, u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
 
 		})
 
@@ -910,19 +907,12 @@ var _ = Describe("Context", func() {
 
 			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret, Service: service})
 
-			err := ctx.Close()
+			err := ctx.PersistSecret()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(bindingapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(sb.Status.Secret).Should(Equal(secret.GetName()))
 
-			updatedSB := bindingapi.ServiceBinding{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(updatedSB.Status.Secret).Should(Equal(secret.GetName()))
-
-			secretList, err := client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).List(context.Background(), metav1.ListOptions{})
+			secretList, err := client.Resource(schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secrets"}).Namespace(sb.Namespace).List(context.Background(), metav1.ListOptions{})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(secretList.Items).Should(BeEmpty())
 		})
@@ -943,20 +933,13 @@ var _ = Describe("Context", func() {
 			ctx.AddBindings(&pipeline.SecretBackedBindings{Secret: secret, Service: service})
 			ctx.AddBindingItem(&pipeline.BindingItem{Name: "foo3", Value: "val3"})
 
-			err := ctx.Close()
+			err := ctx.PersistSecret()
 			Expect(err).NotTo(HaveOccurred())
 
-			u, err := client.Resource(bindingapi.GroupVersionResource).Namespace(sb.Namespace).Get(context.Background(), sb.Name, metav1.GetOptions{})
-			Expect(err).NotTo(HaveOccurred())
+			Expect(sb.Status.Secret).ShouldNot(Equal(secret.GetName()))
+			Expect(sb.Status.Secret).ShouldNot(BeEmpty())
 
-			updatedSB := bindingapi.ServiceBinding{}
-			err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &updatedSB)
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(updatedSB.Status.Secret).ShouldNot(Equal(secret.GetName()))
-			Expect(updatedSB.Status.Secret).ShouldNot(BeEmpty())
-
-			u, err = ctx.ReadSecret(sb.Namespace, sb.Status.Secret)
+			u, err := ctx.ReadSecret(sb.Namespace, sb.Status.Secret)
 			Expect(err).NotTo(HaveOccurred())
 
 			intermediateSecret := &corev1.Secret{}

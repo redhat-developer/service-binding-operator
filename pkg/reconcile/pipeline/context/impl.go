@@ -446,11 +446,7 @@ func (i *impl) persistSecret() (string, error) {
 	return name, err
 }
 
-func (i *impl) Close() error {
-	if i.err != nil {
-		i.SetCondition(apis.Conditions().NotBindingReady().Reason("ProcessingError").Msg(i.err.Error()).Build())
-		return i.persistBinding()
-	}
+func (i *impl) PersistSecret() error {
 	secretName, err := i.persistSecret()
 	if err != nil {
 		i.SetCondition(apis.Conditions().NotBindingReady().Reason("ErrorPersistingSecret").Msg(err.Error()).Build())
@@ -459,6 +455,14 @@ func (i *impl) Close() error {
 	}
 	if secretName != "" {
 		i.setStatusSecretName(secretName)
+	}
+	return nil
+}
+
+func (i *impl) Close() error {
+	if i.err != nil {
+		i.SetCondition(apis.Conditions().NotBindingReady().Reason("ProcessingError").Msg(i.err.Error()).Build())
+		return i.persistBinding()
 	}
 	for _, app := range i.applications {
 		if app.IsUpdated() {

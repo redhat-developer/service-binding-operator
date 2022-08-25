@@ -726,3 +726,37 @@ Feature: Bind an application to a service using annotations
         And Service Binding CollectionReady.reason is "InvalidAnnotation"
         And Service Binding CollectionReady.message is "Failed to create binding definition from "service.binding/credentials: path=asdf": could not create binding model for annotation key service.binding/credentials and value path=asdf: path has invalid syntax: "asdf""
         And Service Binding Ready.message is "could not create binding model for annotation key service.binding/credentials and value path=asdf: path has invalid syntax: "asdf""
+
+    Scenario: Generate binding secret without having a workload
+        Given CustomResourceDefinition backends.stable.example.com is available
+        And The Custom Resource is present
+            """
+            apiVersion: stable.example.com/v1
+            kind: Backend
+            metadata:
+                name: $scenario_id-backend
+                annotations:
+                    service.binding/host_internal_db: path={.spec.host_internal_db}
+            spec:
+                host_internal_db: internal.db.stable.example.com
+            """
+        When Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                application:
+                    name: $scenario_id
+                    group: apps
+                    version: v1
+                    kind: Deployment
+                services:
+                -   group: stable.example.com
+                    version: v1
+                    kind: Backend
+                    name: $scenario_id-backend
+            """
+        Then Service Binding has the binding secret name set in the status
+        And Service Binding CollectionReady.status is "True"

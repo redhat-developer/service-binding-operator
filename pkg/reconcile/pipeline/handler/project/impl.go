@@ -13,6 +13,10 @@ import (
 
 func PreFlightCheck(mandatoryBindingKeys ...string) func(pipeline.Context) {
 	return func(ctx pipeline.Context) {
+		if ctx.PersistSecret() != nil {
+			ctx.SetCondition(apis.Conditions().NotCollectionReady().Build())
+			return
+		}
 		ctx.SetCondition(apis.Conditions().CollectionReady().DataCollected().Build())
 		applications, err := ctx.Applications()
 		if err != nil {
