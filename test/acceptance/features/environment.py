@@ -14,11 +14,17 @@ before_all(context), after_all(context)
 
 from steps.command import Command
 from steps.environment import ctx
+from behave.model_core import Status
 
 import os
 import semver
 
 cmd = Command()
+
+if os.getenv("DELETE_NAMESPACE") in ["always", "never", "keepwhenfailed"]:
+    delete_namespace = os.getenv("DELETE_NAMESPACE")
+else:
+    delete_namespace = "keepwhenfailed"
 
 
 def before_all(_context):
@@ -49,9 +55,36 @@ def before_all(_context):
         _context.sbo_namespace = output
     else:
         assert False, f"TEST_ACCEPTANCE_START_SBO={start_sbo} is currently unsupported."
+    ctx.no_scenarios_failed = True
 
 
 def before_scenario(_context, _scenario):
     _context.bindings = dict()
     output, code = cmd.run(f'{ctx.cli} get ns default -o jsonpath="{{.metadata.name}}"')
     assert code == 0, f"Checking connection to OS cluster by getting the 'default' project failed: {output}"
+
+
+def after_scenario(_context, scenario):
+    if "namespace" in _context:
+        namespace = _context.namespace.name
+    elif os.getenv("TEST_NAMESPACE"):
+        namespace = os.getenv("TEST_NAMESPACE")
+    else:
+        print("No namespace set in context nor TEST_NAMESPACE env variable is set, skipping deletion")
+        return
+    if delete_namespace == "always":
+        delete_current_namespace(namespace)
+    elif (delete_namespace == "keepwhenfailed"):
+        if scenario.status == Status.passed and (ctx.no_scenarios_failed):
+            delete_current_namespace(namespace)
+        else:
+            ctx.no_scenarios_failed = False
+            print(f"Deleting namespace {namespace} skipped, since one of the scenarios failed.")
+    elif delete_namespace == "never":
+        print(f"Namespace {namespace} deletion skipped.")
+
+
+def delete_current_namespace(name):
+    output, code = cmd.run(f"{ctx.cli} delete namespace {name} --ignore-not-found --timeout=1800s")
+    assert code == 0, f"Deletion of namespace failed: {output}"
+    print(f"Namespace {name} deleted.")
