@@ -1,0 +1,111 @@
+name: Merge to release branches
+
+on:
+  push:
+    branches:
+      - 'release-v**.x'
+
+env:
+  SDK_VERSION: "1.16.0"
+  GO111MODULE: on
+  K8S_VERSION: "1.19.2"
+  CONTAINER_RUNTIME: "docker"
+
+jobs:
+  release:
+    name: Release operator on Quay.io
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Set up PATH
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin/
+          echo "PATH=$PATH:$GITHUB_WORKSPACE/bin/" >> $GITHUB_ENV
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.16"
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+          architecture: "x64"
+
+      - name: Setup CLI
+        uses: ./.github/actions/setup-cli
+        with:
+          operator-sdk: true
+          kubectl: true
+
+      - name: Release operator on Quay.io
+        env:
+          QUAY_USERNAME: ${{ secrets.QUAY_USERNAME }}
+          QUAY_TOKEN: ${{ secrets.QUAY_TOKEN }}
+        run: |
+          export OPERATOR_INDEX_IMAGE_REF=$(make operator-repo-ref):index-${GITHUB_REF_NAME#release-}
+          make release-operator
+
+  unit-tests-with-coverage:
+    name: Unit tests with code coverage for merge-to-release-branch commits
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "^1.16"
+
+      - name: Unit Tests with Code Coverage
+        run: |
+          make test
+
+      - name: Upload Code Coverage Report
+        uses: codecov/codecov-action@v3
+        with:
+          file: cover.out
+          verbose: true
+          fail_ci_if_error: true
+
+  security-scan:
+    name: Security vulnerability scan
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Wait for push
+        uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
+        with:
+          ref: ${{ github.ref }}
+          check-name: "Release operator on Quay.io"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 60
+
+      - name: Extract operator image ref
+        id: operator-image-ref
+        run: |
+          export OIR=$(make operator-repo-ref):$(git rev-parse --short=8 HEAD)
+          echo "::set-output name=operator-image-ref::${OIR}"
+
+      - name: Run Trivy vulnerability scanner in IaC mode
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.operator-image-ref.outputs.operator-image-ref }}
+          format: 'sarif'
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        if: always()
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
