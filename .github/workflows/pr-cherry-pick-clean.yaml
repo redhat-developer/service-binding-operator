@@ -1,0 +1,28 @@
+name: "Clean cherry pick PR branch"
+
+on:
+  pull_request_target:
+    branches:
+      - 'release-v**.x'
+    types: [closed]
+
+jobs:
+  delete-cherry-pick-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: delete-cherry-pick-branch
+        uses: actions/github-script@v6
+        env:
+          REPO: ${{ secrets.SBO_CHERRY_PICK_REPO }}
+        with:
+          github-token: ${{ secrets.SBO_CHERRY_PICK_BOT_TOKEN }}
+          script: |
+            const [owner, repo] = process.env.REPO.split('/');
+            const ref = `heads/${context.payload.pull_request.head.ref}`;
+            const deleteParams = { owner, repo, ref };
+            console.log(`Deleting branch: "${ref}"`);
+            try {
+              github.rest.git.deleteRef(deleteParams);
+            } catch(e) {
+              console.log("Cannot delete branch; error:", e);
+            }
