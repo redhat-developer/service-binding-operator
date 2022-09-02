@@ -1,0 +1,77 @@
+[#api-differences]
+= API differences
+
+{servicebinding-title} supports two resources for making service bindings:
+
+. `ServiceBinding.binding.operators.coreos.com`
+. `ServiceBinding.servicebinding.io`
+
+Both of these binding types have similar features, but they are not completely identical.  Here, the
+differences between these binding types are fully listed.
+
+[cols="1,1,1,1"]
+|===
+| Feature | Supported by `coreos.com` bindings | Supported by `servicebinding.io` bindings | Notes
+
+| Binding to provisioned services
+| Yes
+| Yes
+|
+
+| Direct secret projection
+| Yes
+| Yes
+|
+
+| Bind as Files
+| Yes
+| Yes
+| Default behavior for `servicebinding.io` bindings, opt-in for `coreos.com` bindings.
+
+| Bind as Environment Variables
+| Yes
+| Yes
+| Default behavior for `coreos.com` bindings.  Opt-in functionality for `servicebinding.io` bindings:
+environment variables will be created alongside files.
+
+| Selecting workload with a label selector
+| Yes
+| Yes
+|
+
+| Detecting Binding Resources (`.spec.detectBindingResources`)
+| Yes
+| No
+| There is no equivalent feature within `servicebinding.io` bindings.
+
+| Naming strategies
+| Yes
+| No
+| There is no current mechanism within `servicebinding.io` bindings to interpret the templates that
+naming strategies use.
+
+| Container Path
+| Yes
+| Partial
+| The specification allows `ClusterWorkloadResourceMapping` resources to project binding information
+into arbitrary locations within a workload's resource, which serves as a more powerful version of the
+binding path field. However, since a service binding could specify mapping behavior per binding, a
+`servicebinding.io` binding cannot fully support equivalent behavior without more information about
+the workload.
+
+| Container Name Filtering
+| No
+| Yes
+| `coreos.com` bindings do not have an equivalent feature.
+
+| Secret Path
+| Yes
+| No
+| `servicebinding.io` bindings have no equivalent feature.
+
+| Alternative binding sources (for instance, binding data from annotations)
+| Yes
+| Allowed by {servicebinding-title}
+| Strictly speaking, the specification is silent on this.  However, for the sake of convenience,
+{servicebinding-title} supports these binding methods on both binding types.
+|===
