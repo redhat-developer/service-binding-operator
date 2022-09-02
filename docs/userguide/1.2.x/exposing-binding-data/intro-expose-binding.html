@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Introduction :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/intro-expose-binding.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.2.x">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick start guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing binding data</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="rbac-requirements.html">RBAC requirements</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="provisioned-service.html">Provisioned service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="direct-secret-reference.html">Direct secret reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../projecting-binding-data/projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.2.x</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.1/architecture.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.0/architecture.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.1/intro.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.0/intro.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Exposing binding data</li>
+    <li><a href="intro-expose-binding.html">Introduction</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.2.x</button>
+  <div class="version-menu">
+    <a class="version" href="../../exposing-binding-data/intro-expose-binding.html">master</a>
+    <a class="version is-current" href="intro-expose-binding.html">1.2.x</a>
+    <a class="version" href="../../1.1.1/exposing-binding-data/intro-expose-binding.html">1.1.1</a>
+    <a class="version" href="../../1.1.0/exposing-binding-data/intro-expose-binding.html">1.1.0</a>
+    <a class="version" href="../../1.0.1/exposing-binding-data/intro-expose-binding.html">1.0.1</a>
+    <a class="version" href="../../1.0.0/exposing-binding-data/intro-expose-binding.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/release-v1.2.x/docs/userguide/modules/exposing-binding-data/pages/intro-expose-binding.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Introduction</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Application developers need access to backing services to build and connect workloads. Connecting workloads to backing services is always a challenge because each service provider requires a different way to access their secrets and consume them in a workload.</p>
+</div>
+<div class="paragraph">
+<p>The Service Binding Operator enables application developers to easily bind workloads together with operator-managed backing services, without any manual procedures to configure the binding connection. For the Service Binding Operator to provide the binding data, as an Operator provider or user who creates backing services, you must expose the binding data to be automatically detected by the Service Binding Operator. Then, the Service Binding Operator automatically collects the binding data from the backing service and shares it with a workload to provide a consistent and predictable experience.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="methods-of-exposing-binding-data"><a class="anchor" href="#methods-of-exposing-binding-data"></a>Methods of exposing binding data</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section describes the methods you can use to expose the binding data.</p>
+</div>
+<div class="paragraph">
+<p>Ensure that you know and understand your workload requirements and environment, and how it works with the provided services.</p>
+</div>
+<div class="paragraph">
+<p>Binding data is exposed under the following circumstances:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Backing service is available as a <a href="provisioned-service.html" class="xref page">provisioned service</a> resource.</p>
+<div class="paragraph">
+<p>The service you intend to connect to is compliant with the Service Binding specification. You must create a <code>Secret</code> resource with all the required binding data values and reference it in the backing service custom resource (CR). The detection of all the binding data values is automatic.</p>
+</div>
+</li>
+<li>
+<p>Backing service is not available as a <a href="provisioned-service.html" class="xref page">provisioned service</a> resource.</p>
+<div class="paragraph">
+<p>You must expose the binding data from the backing service. Depending on your workload requirements and environment, you can choose any of the following methods to expose the binding data:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="direct-secret-reference.html" class="xref page">Direct secret reference</a></p>
+</li>
+<li>
+<p><a href="adding-annotation.html" class="xref page">Declaring binding data through custom resource definition (CRD) or CR annotations</a></p>
+</li>
+<li>
+<p><a href="olm-descriptors.html" class="xref page">Declaring binding data through Operator Lifecycle Manager (OLM) descriptors</a></p>
+</li>
+<li>
+<p><a href="detect-bindings.html" class="xref page">Detection of binding data through owned resources</a></p>
+</li>
+</ul>
+</div>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Service Binding Operator implements support for <a href="https://github.com/servicebinding/spec/blob/master/extensions/secret-generation.md">Secret Generation Extension</a> and hence provides the ability to expose the binding data values from the backing service resources and CRDs. You can use the following categories of binding data to map and expose the values:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>A string from a resource</p>
+</li>
+<li>
+<p>A constant value</p>
+</li>
+<li>
+<p>An entire config map or secret that is referenced from a
+resource</p>
+</li>
+<li>
+<p>A specific entry from a config map or secret that is referenced
+from a resource</p>
+</li>
+<li>
+<p>A resource definition value</p>
+</li>
+<li>
+<p>Entries of a collection of objects with the mapping keys and values from entries in a config map or secret that is referenced from a resource</p>
+</li>
+<li>
+<p>A collection of specific entry values in a resource’s
+collection of objects</p>
+</li>
+<li>
+<p>A value to a specific key</p>
+</li>
+<li>
+<p>A value of a collection to a key with a generated name</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="data-model"><a class="anchor" href="#data-model"></a>Data model</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This section explains the data model used in the annotation and OLM
+descriptors. The data model is same for CRD or CR annotations and OLM
+descriptors, but the syntax is different, which is explained in the
+respective sections.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>path</code>: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.The data model used in the annotations and OLM descriptors follow specific conventions.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Service binding annotations must use the following convention:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">service.binding(/&lt;NAME&gt;)?:
+    "&lt;VALUE&gt;|(path=&lt;JSONPATH_TEMPLATE&gt;(,objectType=&lt;OBJECT_TYPE&gt;)?(,elementType=&lt;ELEMENT_TYPE&gt;)?(,sourceKey=&lt;SOURCE_KEY&gt;)?(,sourceValue=&lt;SOURCE_VALUE&gt;)?)"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>where:</p>
+</div>
+<div class="hdlist">
+<table>
+<tr>
+<td class="hdlist1">
+<code>&lt;NAME&gt;</code>
+</td>
+<td class="hdlist2">
+<p>Specifies the name under which the binding value is to be exposed. You can exclude it only when the <code>objectType</code> parameter is set to <code>Secret</code> or <code>ConfigMap</code>.</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+<code>&lt;VALUE&gt;</code>
+</td>
+<td class="hdlist2">
+<p>Specifies the constant value exposed when no <code>path</code> is set.</p>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Although, the data model is the same for custom resource definitions (CRD), custom resource (CR) annotations, and Operator Lifecycle Manager (OLM) descriptors, the syntax for each one differs.</p>
+</div>
+<div class="paragraph">
+<p>The data model provides the details on the allowed values and semantic for the <code>path</code>, <code>elementType</code>, <code>objectType</code>, <code>sourceKey</code>, and <code>sourceValue</code> parameters.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. Parameters and their descriptions</caption>
+<colgroup>
+<col style="width: 23.0769%;">
+<col style="width: 46.1538%;">
+<col style="width: 30.7693%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Parameter</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Default value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>path</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">JSONPath template that consists JSONPath expressions enclosed by curly braces {}. The behaviour matches <a href="https://kubernetes.io/docs/reference/kubectl/jsonpath">kubectl JSONPath support</a>.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>elementType</code></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Specifies whether the value of the element referenced in the <code>path</code> parameter complies with any one of the following types:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>string</code></p>
+</li>
+<li>
+<p><code>sliceOfStrings</code></p>
+</li>
+<li>
+<p><code>sliceOfMaps</code></p>
+</li>
+</ul>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>string</code></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>objectType</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Specifies whether the value of the element indicated in the <code>path</code> parameter refers to a <code>ConfigMap</code>, <code>Secret</code>, or plain string in the current namespace.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>Secret</code>, if <code>elementType</code> is non-string.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sourceKey</code></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Specifies the key in the <code>ConfigMap</code> or <code>Secret</code> resource to be added to the binding secret when collecting the binding data.<br></p>
+</div>
+<div class="paragraph">
+<p>Note:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>When used in conjunction with <code>elementType</code>=<code>sliceOfMaps</code>, the <code>sourceKey</code> parameter specifies the key in the slice of maps whose value is used as a key in the binding secret.</p>
+</li>
+<li>
+<p>Use this optional parameter to expose a specific entry in the referenced <code>Secret</code> or <code>ConfigMap</code> resource as binding data.</p>
+</li>
+<li>
+<p>When not specified, all keys and values from the <code>Secret</code> or <code>ConfigMap</code> resource are exposed and are added to the binding secret.</p>
+</li>
+</ul>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>sourceValue</code></p></td>
+<td class="tableblock halign-left valign-top"><div class="content"><div class="paragraph">
+<p>Specifies the key in the slice of maps.<br></p>
+</div>
+<div class="paragraph">
+<p>Note:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The value of this key is used as the base to generate the value of the entry for the key-value pair to be added to the binding secret.</p>
+</li>
+<li>
+<p>In addition, the value of the <code>sourceKey</code> is used as the key of the entry for the key-value pair to be added to the binding secret.</p>
+</li>
+<li>
+<p>It is mandatory only if <code>elementType</code>=<code>sliceOfMaps</code>.</p>
+</li>
+</ul>
+</div></div></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">N/A</p></td>
+</tr>
+</tbody>
+</table>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>sourceKey</code> and <code>sourceValue</code> parameters are applicable only if the element indicated in the <code>path</code> parameter refers to a <code>ConfigMap</code> or <code>Secret</code> resource.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../../_/js/site.js"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

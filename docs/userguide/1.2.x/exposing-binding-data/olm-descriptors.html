@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Declaring binding data through OLM descriptors :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/olm-descriptors.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.2.x">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick start guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="rbac-requirements.html">RBAC requirements</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="provisioned-service.html">Provisioned service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="direct-secret-reference.html">Direct secret reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../projecting-binding-data/projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.2.x</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.1/architecture.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.0/architecture.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.1/intro.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.0/intro.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Exposing binding data</li>
+    <li><a href="olm-descriptors.html">Declaring binding data through OLM descriptors</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.2.x</button>
+  <div class="version-menu">
+    <a class="version" href="../../exposing-binding-data/olm-descriptors.html">master</a>
+    <a class="version is-current" href="olm-descriptors.html">1.2.x</a>
+    <a class="version" href="../../1.1.1/exposing-binding-data/olm-descriptors.html">1.1.1</a>
+    <a class="version" href="../../1.1.0/exposing-binding-data/olm-descriptors.html">1.1.0</a>
+    <a class="version" href="../../1.0.1/exposing-binding-data/olm-descriptors.html">1.0.1</a>
+    <a class="version" href="../../1.0.0/exposing-binding-data/olm-descriptors.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/release-v1.2.x/docs/userguide/modules/exposing-binding-data/pages/olm-descriptors.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Declaring binding data through OLM descriptors</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can use this method if your backing service is provided by an Operator. If your Operator is distributed as an <a href="https://github.com/operator-framework/operator-registry/blob/master/docs/design/operator-bundle.md">Operator Bundle</a>, you can add <a href="https://github.com/openshift/console/blob/master/frontend/packages/operator-lifecycle-manager/src/components/descriptors/reference/reference.md">Operator Lifecycle Manager (OLM) descriptors</a> to describe the binding data that is to be exposed. The OLM descriptors are part of <a href="https://docs.openshift.com/container-platform/4.7/operators/operator_sdk/osdk-generating-csvs.html">Cluster Service Version</a> resources. The Service Binding Operator detects the OLM descriptors and then creates a <code>Secret</code> resource with the values extracted based on the detected OLM descriptors.</p>
+</div>
+<div class="paragraph">
+<p>You can expose the binding data by using the <code>specDescriptors</code> array and <code>statusDescriptors</code> array. The <code>specDescriptors</code> array specifies a path under the <code>.spec</code> section of a CR. The <code>statusDescriptors</code> array specifies a path under the <code>.status</code> section of a CR.</p>
+</div>
+<div class="paragraph">
+<p>Following are the only two fields that are used for binding the data:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>Path</code>: A dot-delimited path of the field on the object as described by the descriptor.</p>
+</li>
+<li>
+<p><code>X-Descriptors</code>: Defines the binding data.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>The following examples show how to define an X-Descriptor depending on the resource to which you point the path:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: X-Descriptor definition for exposing a secret</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbCredentials
+  x-descriptors:
+  - urn:alm:descriptor:io.kubernetes:Secret
+  - service.binding</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example: X-Descriptor definition for exposing a config map</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
+  x-descriptors:
+  - urn:alm:descriptor:io.kubernetes:ConfigMap
+  - service.binding</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="ulist">
+<ul>
+<li>
+<p>You must have a <code>service.binding</code> entry in the X-Descriptors to identify that it is a configuration for service binding.</p>
+</li>
+<li>
+<p>The absence of the <code>Secret</code> or <code>ConfigMap</code> specific X-Descriptors indicates that the descriptor is referencing the binding data value at the given path.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exposing-entire-configmap-or-secret-referenced-from-resource"><a class="anchor" href="#exposing-entire-configmap-or-secret-referenced-from-resource"></a>Exposing an entire config map or secret that is referenced from a resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following example shows how to expose an entire config map through OLM descriptors:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing an entire config map through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
+  x-descriptors:
+  - urn:alm:descriptor:io.kubernetes:ConfigMap
+  - service.binding</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This example uses the <code>path</code> attribute with a <code>urn:alm:descriptor:io.kubernetes:ConfigMap</code> entry to indicate that the path points to the <code>ConfigMap</code> service resource.</p>
+</div>
+<div class="paragraph">
+<p>If you intend to project all the values from a <code>ConfigMap</code> service resource, you must specify it as an attribute in the backing service CR. For example, if the attribute is part of the <code>.spec</code> section, you can create and use a <code>specDescriptors</code> array. Or, if the attribute is part of the <code>.status</code> section, you can create and use a <code>statusDescriptors</code> array.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exposing-specific-entry-from-config-map-or-secret-referenced-from-resource"><a class="anchor" href="#exposing-specific-entry-from-config-map-or-secret-referenced-from-resource"></a>Exposing a specific entry from a config map or secret that is referenced from a resource</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following examples show how to expose a specific entry from a config map  or secret through OLM descriptors:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing an entry from a config map through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
+  x-descriptors:
+  - urn:alm:descriptor:io.kubernetes:ConfigMap
+  - service.binding:my_certificate:sourceKey=certificate</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing an entry from a secret through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.dbConfiguration
+  x-descriptors:
+  - urn:alm:descriptor:io.kubernetes:Secret
+  - service.binding:my_certificate:sourceKey=certificate</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous examples use the <code>path</code> attribute with an <code>X-Descriptors</code> update for <code>service.binding</code> and <code>sourceKey</code> by providing the following information:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Name of the binding key that is to be projected</p>
+</li>
+<li>
+<p>Name of the key in the Secret service resource</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exposing-resource-definition-value"><a class="anchor" href="#exposing-resource-definition-value"></a>Exposing a resource definition value</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following example shows how to expose a resource definition value through OLM descriptors:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing a resource definition value through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: data.connectionURL
+  x-descriptors:
+  - service.binding:uri</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example uses the <code>connectionURL</code> attribute that points to the required resource definition value that is to be projected as <code>uri</code>.</p>
+</div>
+<div class="paragraph">
+<p>If required values are available as attributes of backing service resources, annotating these values using <code>X-Descriptors</code> identifies them as the binding data.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exposing-entries-of-collection-with-key-and-value-from-each-entry"><a class="anchor" href="#exposing-entries-of-collection-with-key-and-value-from-each-entry"></a>Exposing entries of a collection with the key and value from each entry</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following example shows how to expose the entries of a collection with the key and value from each entry through OLM descriptors:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing the entries of a collection through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: bootstrap
+  x-descriptors:
+  - service.binding:endpoints:elementType=sliceOfMaps:sourceKey=type:sourceValue=url</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example uses the <code>path</code> attribute with an <code>X-Descriptors</code> update for the required entries of a collection.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Configuration from a backing service resource</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">status:
+  connections:
+    - type: primary
+      url: primary.example.com
+    - type: secondary
+      url: secondary.example.com
+    - type: '404'
+      url: black-hole.example.com</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example helps you to project all those values with keys such as <code>primary</code>,
+<code>secondary</code>, and so on.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exposing-items-of-collection-with-one-key-per-item"><a class="anchor" href="#exposing-items-of-collection-with-one-key-per-item"></a>Exposing items of a collection with one key per item</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following example shows how to expose the items of a collection with one key per item through OLM descriptors:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing the items of a collection through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: spec.tags
+  x-descriptors:
+  - service.binding:tags:elementType=sliceOfStrings</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example uses the <code>path</code> attribute with an <code>X-Descriptors</code> update for the required items of a collection.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Configuration from a backing service resource</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">spec:
+  tags:
+  - knowledge
+  - is
+  - power</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example helps you project all those values with key such as <code>prefix_0</code>, <code>prefix_1</code>, and so on. The default prefix is the name of the resource <code>kind:</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="exposing-values-of-collection-entries-with-one-key-per-entry-value"><a class="anchor" href="#exposing-values-of-collection-entries-with-one-key-per-entry-value"></a>Exposing values of collection entries with one key per entry value</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following example shows how to expose the values of collection entries with one key per entry value through OLM descriptors:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Exposing the values of collection entries through OLM descriptors</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">- path: bootstrap
+  x-descriptors:
+  - service.binding:endpoints:elementType=sliceOfStrings:sourceValue=url</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example uses the <code>path</code> attribute with an <code>X-Descriptors</code> update for the required values of a collection.</p>
+</div>
+<div class="paragraph">
+<p>The following example shows how the previous values of a collection are projected into the bound application.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Binding data files</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-text hljs" data-lang="text">/bindings/&lt;binding-name&gt;/url_0 =&gt; primary.example.com
+/bindings/&lt;binding-name&gt;/url_1 =&gt; secondary.example.com
+/bindings/&lt;binding-name&gt;/url_2 =&gt; black-hole.example.com</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous example helps you project all those values with key such as <code>prefix_0</code>, <code>prefix_1</code>, and so on. The default prefix is the name of the resource <code>kind:</code>.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script src="../../../_/js/site.js"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
