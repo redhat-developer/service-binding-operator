@@ -1,4 +1,5 @@
 * Binding workloads using Service Binding Operator
+** xref:api-differences.adoc[]
 ** xref:creating-service-binding.adoc[]
 ** xref:binding-options.adoc[]
 ** xref:custom-path-injection.adoc[]
