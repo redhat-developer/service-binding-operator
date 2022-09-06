@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Binding workloads using Service Binding Operator :: Service Binding Operator Documentation</title>
-    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/binding-workloads-using-sbo/creating-service-binding.html">
+    <title>API differences :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/binding-workloads-using-sbo/api-differences.html">
     <meta name="generator" content="Antora 3.0.1">
     <link rel="stylesheet" href="../../_/css/site.css">
     <script>var uiRootPath = '../../_'</script>
@@ -120,10 +120,10 @@
     <button class="nav-item-toggle"></button>
     <span class="nav-text">Binding workloads using Service Binding Operator</span>
 <ul class="nav-list">
-  <li class="nav-item" data-depth="2">
+  <li class="nav-item is-current-page" data-depth="2">
     <a class="nav-link" href="api-differences.html">API differences</a>
   </li>
-  <li class="nav-item is-current-page" data-depth="2">
+  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="creating-service-binding.html">Binding workloads using Service Binding Operator</a>
   </li>
   <li class="nav-item" data-depth="2">
@@ -204,122 +204,136 @@
   <ul>
     <li><a href="../intro.html">User Guide</a></li>
     <li>Binding workloads using Service Binding Operator</li>
-    <li><a href="creating-service-binding.html">Binding workloads using Service Binding Operator</a></li>
+    <li><a href="api-differences.html">API differences</a></li>
   </ul>
 </nav>
 <div class="page-versions">
   <button class="version-menu-toggle" title="Show other versions of page">master</button>
   <div class="version-menu">
-    <a class="version is-current" href="creating-service-binding.html">master</a>
-    <a class="version" href="../1.2.x/binding-workloads-using-sbo/creating-service-binding.html">1.2.x</a>
-    <a class="version" href="../1.1.1/binding-workloads-using-sbo/creating-service-binding.html">1.1.1</a>
-    <a class="version" href="../1.1.0/binding-workloads-using-sbo/creating-service-binding.html">1.1.0</a>
+    <a class="version is-current" href="api-differences.html">master</a>
+    <a class="version is-missing" href="../1.2.x/intro.html">1.2.x</a>
+    <a class="version is-missing" href="../1.1.1/intro.html">1.1.1</a>
+    <a class="version is-missing" href="../1.1.0/intro.html">1.1.0</a>
     <a class="version is-missing" href="../1.0.1/intro.html">1.0.1</a>
     <a class="version is-missing" href="../1.0.0/intro.html">1.0.0</a>
   </div>
 </div>
-  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/userguide/modules/binding-workloads-using-sbo/pages/creating-service-binding.adoc">Edit this Page</a></div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/userguide/modules/binding-workloads-using-sbo/pages/api-differences.adoc">Edit this Page</a></div>
   </div>
   <div class="content">
 <aside class="toc sidebar" data-title="Contents" data-levels="2">
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Binding workloads using Service Binding Operator</h1>
-<div class="sect1">
-<h2 id="creating-service-binding"><a class="anchor" href="#creating-service-binding"></a>Creating service binding</h2>
-<div class="sectionbody">
-<div class="admonitionblock important">
-<table>
-<tr>
-<td class="icon">
-<i class="fa icon-important" title="Important"></i>
-</td>
-<td class="content">
-<div class="ulist">
-<ul>
+<h1 class="page">API differences</h1>
+<div class="paragraph">
+<p>Service Binding Operator supports two resources for making service bindings:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
 <li>
-<p>Binding services or workloads defined by <a href="https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions">CRD</a> requires adding appropriate rights to the Operator service account, either by cluster administrators or Operator providers. Please check the <a href="../exposing-binding-data/rbac-requirements.html" class="xref page">RBAC requirements</a> section for further details.</p>
+<p><code>ServiceBinding.binding.operators.coreos.com</code></p>
 </li>
 <li>
-<p>If the users do not have permissions to read binding data or modify workload resource, the Service Binding Operator prevents such users to bind services to workload. Adhering to the RBAC requirements avoids unnecessary permission elevation for the user and prevents access to unauthorized services or workloads.</p>
+<p><code>ServiceBinding.servicebinding.io</code></p>
 </li>
-</ul>
-</div>
-</td>
-</tr>
-</table>
+</ol>
 </div>
 <div class="paragraph">
-<p>Application developers must bind a workload to one or more backing services by using a binding secret. This secret is generated for the purpose of storing information to be consumed by the workload.</p>
+<p>Both of these binding types have similar features, but they are not completely identical.  Here, the
+differences between these binding types are fully listed.</p>
 </div>
-<div class="paragraph">
-<p>As an example, consider that the service you want to connect to is already exposing the binding data. In this case, you would also need a workload to be used along with the <code>ServiceBinding</code> custom resource (CR). By using this <code>ServiceBinding</code> CR, the workload sends a binding request with the details of the services to bind with.</p>
-</div>
-<div class="listingblock">
-<div class="title">Example of <code>ServiceBinding</code> CR in the <code>binding.operators.coreos.com/v1alpha1</code> API:</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
-kind: ServiceBinding
-metadata:
-  name: account-service
-spec:
-  application: <i class="conum" data-value="1"></i><b>(1)</b>
-    version: v1
-    group: apps
-    kind: Deployment
-    name: online-banking
-  services: <i class="conum" data-value="2"></i><b>(2)</b>
-  - version: v1alpha1
-    group: example.com
-    kind: AccountService
-    name: prod-account-service</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+<col style="width: 25%;">
+</colgroup>
+<thead>
 <tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>Specifies a list of service resources.</td>
+<th class="tableblock halign-left valign-top">Feature</th>
+<th class="tableblock halign-left valign-top">Supported by <code>coreos.com</code> bindings</th>
+<th class="tableblock halign-left valign-top">Supported by <code>servicebinding.io</code> bindings</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Binding to provisioned services</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
-<td><i class="conum" data-value="2"></i><b>2</b></td>
-<td>The sample application that points to a Deployment or any other similar resource with an embedded PodSpec.</td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Direct secret projection</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"></td>
 </tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bind as Files</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default behavior for <code>servicebinding.io</code> bindings, opt-in for <code>coreos.com</code> bindings.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bind as Environment Variables</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Default behavior for <code>coreos.com</code> bindings.  Opt-in functionality for <code>servicebinding.io</code> bindings:
+environment variables will be created alongside files.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Selecting workload with a label selector</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Detecting Binding Resources (<code>.spec.detectBindingResources</code>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">There is no equivalent feature within <code>servicebinding.io</code> bindings.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Naming strategies</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">There is no current mechanism within <code>servicebinding.io</code> bindings to interpret the templates that
+naming strategies use.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container Path</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Partial</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The specification allows <code>ClusterWorkloadResourceMapping</code> resources to project binding information
+into arbitrary locations within a workload&#8217;s resource, which serves as a more powerful version of the
+binding path field. However, since a service binding could specify mapping behavior per binding, a
+<code>servicebinding.io</code> binding cannot fully support equivalent behavior without more information about
+the workload.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Container Name Filtering</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>coreos.com</code> bindings do not have an equivalent feature.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Secret Path</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>servicebinding.io</code> bindings have no equivalent feature.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Alternative binding sources (for instance, binding data from annotations)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Yes</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Allowed by Service Binding Operator</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Strictly speaking, the specification is silent on this.  However, for the sake of convenience,
+Service Binding Operator supports these binding methods on both binding types.</p></td>
+</tr>
+</tbody>
 </table>
-</div>
-<div class="listingblock">
-<div class="title">Example of <code>ServiceBinding</code> CR in the <code>servicebinding.io</code> API:</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1beta1
-kind: ServiceBinding
-metadata:
-  name: account-service
-spec:
-  workload:  <i class="conum" data-value="1"></i><b>(1)</b>
-    apiVersion: apps/v1
-    kind: Deployment
-    name: online-banking
-
-  service:
-    apiVersion: example.com/v1alpha1
-    kind: AccountService
-    name: prod-account-service</code></pre>
-</div>
-</div>
-<div class="colist arabic">
-<table>
-<tr>
-<td><i class="conum" data-value="1"></i><b>1</b></td>
-<td>The application resource is a deployment resource with the name <code>online-banking</code>.</td>
-</tr>
-</table>
-</div>
-<div class="paragraph">
-<p>As shown in the previous examples, you can also directly use a <code>ConfigMap</code> or a <code>Secret</code> itself as a service resource to be used as a source of binding data.</p>
-</div>
-</div>
-</div>
 </article>
   </div>
 </main>
