@@ -26,17 +26,17 @@ spec:
       displayName: Cluster Workload Resource Mapping
       kind: ClusterWorkloadResourceMapping
       name: clusterworkloadresourcemappings.servicebinding.io
-      version: v1alpha3
+      version: v1beta1
     - description: Service Binding expresses intent to bind a backing service with an application workload. 
       displayName: Service Binding
       kind: ServiceBinding
       name: servicebindings.binding.operators.coreos.com
       version: v1alpha1
-    - description: (Tech Preview) Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload. Available as tech preview but subjected to change in near future.
-      displayName: Service Binding (Spec API Tech Preview)
+    - description: Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload.
+      displayName: Service Binding (Spec API)
       kind: ServiceBinding
       name: servicebindings.servicebinding.io
-      version: v1alpha3
+      version: v1beta1
   description: |
     The Service Binding Operator manages the data plane for applications and backing services. It enables developers to connect their
     applications to backing services (REST API, databases, event buses and others) with a consistent and predictable
@@ -64,7 +64,7 @@ spec:
 
     Service Binding Operator is providing and supporting two different APIs.
     * `binding.operators.coreos.com/v1alpha1`: This API is compliant with the Service Binding specification. It is fully supported and considered as the mature API. It’s the API we recommend in production environments.
-    * `servicebinding.io/v1alpha3`: This API is the one defined in the Service Binding specification. The specification is still evolving and maturing, as a result the API might change in the future. We recommend you to carefully use that API for testing purposes and preparing your integration to become fully compliant with the specification. It is available in Service Binding Operator 1.x, as Tech Preview.
+    * `servicebinding.io/v1beta1`: This API is the one defined in the Service Binding specification. It is available in Service Binding Operator 1.x.
 
     We’ll consider supporting only the API from the specification, once the Service Binding specification will be officially GA. Of course, that will be a breaking change and handle in a safe way for you.
 
