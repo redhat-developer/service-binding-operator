@@ -10,8 +10,15 @@ OPERATOR_REGISTRY ?= quay.io
 OPERATOR_REPO_REF ?= $(OPERATOR_REGISTRY)/redhat-developer/servicebinding-operator
 OPERATOR_IMAGE_REF ?= $(OPERATOR_REPO_REF):$(GIT_COMMIT_ID)
 OPERATOR_IMAGE_SHA_REF ?= $(shell $(CONTAINER_RUNTIME) inspect --format='{{index .RepoDigests 0}}' $(OPERATOR_IMAGE_REF) | cut -f 2 -d '@')
+OPERATOR_BUNDLE_VERSION ?= $(VERSION)
 OPERATOR_BUNDLE_IMAGE_REF ?= $(OPERATOR_REPO_REF):bundle-$(VERSION)-$(GIT_COMMIT_ID)
 OPERATOR_INDEX_IMAGE_REF ?= $(OPERATOR_REPO_REF):index
+OPERATOR_UPGRADE_INDEX_IMAGE_REF ?= $(OPERATOR_REPO_REF):upgrade-index
+
+.PHONY: operator-version
+# Prints operator version
+operator-version:
+	@echo $(VERSION)
 
 .PHONY: operator-repo-ref
 # Prints operator repo ref
@@ -32,3 +39,8 @@ operator-bundle-image-ref:
 # Prints operator index image ref
 operator-index-image-ref:
 	@echo $(OPERATOR_INDEX_IMAGE_REF)
+
+.PHONY: operator-upgrade-index-image-ref
+# Prints operator upgrade index image ref
+operator-upgrade-index-image-ref:
+	@echo $(OPERATOR_UPGRADE_INDEX_IMAGE_REF)

@@ -21,7 +21,8 @@ from quarkus_application import QuarkusApplication
 from serverless_operator import ServerlessOperator
 from servicebindingoperator import Servicebindingoperator
 from app import App
-from util import substitute_scenario_id
+from subscription_install_mode import InstallMode
+from util import scenario_id, substitute_scenario_id, get_env
 
 
 # STEP
@@ -43,52 +44,65 @@ def namespace_is_used(context, namespace_name):
 # STEP
 @given(u'Namespace [{namespace_env}] is used')
 def given_namespace_from_env_is_used(context, namespace_env):
-    env = os.getenv(namespace_env)
-    assert env is not None, f"{namespace_env} environment variable needs to be set"
-    print(f"{namespace_env} = {env}")
-    namespace_is_used(context, env)
+    namespace_is_used(context, get_env(namespace_env))
 
 
 # STEP
-sbo_is_running_in_namespace_step = u'Service Binding Operator is running in "{operator_namespace}" namespace'
-
-
-@given(sbo_is_running_in_namespace_step)
-@when(sbo_is_running_in_namespace_step)
+@step(u'Service Binding Operator is running in "{operator_namespace}" namespace')
 def sbo_is_running_in_namespace(context, operator_namespace):
     """
     Checks if the SBO is up and running in the given namespace
     """
     sb_operator = Servicebindingoperator(namespace=operator_namespace)
-    assert sb_operator.is_running(), "Service Binding Operator is not running"
+    if "csv_version" in context:
+        assert sb_operator.is_running(wait=True, csv_version=context.csv_version), "Service Binding Operator is not running"
+    else:
+        assert sb_operator.is_running(wait=True), "Service Binding Operator is not running"
     print("Service binding operator is running!!!")
 
 
 # STEP
-sbo_is_running_in_namespace_from_env_step = u'Service Binding Operator is running in [{operator_namespace_env}] namespace'
-
-
-@given(sbo_is_running_in_namespace_from_env_step)
-@when(sbo_is_running_in_namespace_from_env_step)
+@step(u'Service Binding Operator is running in [{operator_namespace_env}] namespace')
 def sbo_is_running_in_namespace_from_env(context, operator_namespace_env):
-    env = os.getenv(operator_namespace_env)
-    assert env is not None, f"{operator_namespace_env} environment variable needs to be set"
-    print(f"{operator_namespace_env} = {env}")
-    sbo_is_running_in_namespace(context, env)
+    sbo_is_running_in_namespace(context, get_env(operator_namespace_env))
 
 
 # STEP
-sbo_is_running_step = u'Service Binding Operator is running'
-
-
-@given(sbo_is_running_step)
-@when(sbo_is_running_step)
+@step(u'Service Binding Operator is running')
 def sbo_is_running(context):
     if "sbo_namespace" in context:
         sbo_is_running_in_namespace(context, context.sbo_namespace)
     else:
         assert context.namespace is not None, "Namespace is not set in context"
         sbo_is_running_in_namespace(context, context.namespace.name)
+
+
+# STEP
+@step(u'Service Binding Operator is not running in "{operator_namespace}" namespace')
+def sbo_is_not_running_in_namespace(context, operator_namespace):
+    """
+    Checks if the SBO is not running in the given namespace
+    """
+    sb_operator = Servicebindingoperator(namespace=operator_namespace)
+    assert not polling2.poll(target=lambda: sb_operator.is_running(), check_success=lambda o: not o, step=5,
+                             timeout=120, ignore_exceptions=(ValueError,)), "Service binding operator is running!!!"
+    print("Service binding operator is not running!!!")
+
+
+# STEP
+@when(u'Service Binding Operator is not running in [{operator_namespace_env}] namespace')
+def sbo_is_not_running_in_namespace_from_env(context, operator_namespace_env):
+    sbo_is_not_running_in_namespace(context, get_env(operator_namespace_env))
+
+
+# STEP
+@step(u'Service Binding Operator is not running')
+def sbo_is_not_running(context):
+    if "sbo_namespace" in context:
+        sbo_is_not_running_in_namespace(context, context.sbo_namespace)
+    else:
+        assert context.namespace is not None, "Namespace is not set in context"
+        sbo_is_not_running_in_namespace(context, context.namespace.name)
 
 
 # STEP
@@ -476,3 +490,37 @@ def invalid_mapping_is_applied(context):
     openshift = Openshift()
     resource = substitute_scenario_id(context, context.text)
     context.expected_error = openshift.apply_invalid(resource)
+
+
+@step(u'[{csv_version_env}] CSV from [{package_name_env}] package is installed from [{channel_env}] channel of the [{index_image_env}] index image')
+def operator_is_installed_from_index_image_from_env(context, csv_version_env, package_name_env, channel_env, index_image_env):
+    operator_is_installed_from_index_image(context, get_env(csv_version_env), get_env(package_name_env), get_env(channel_env), get_env(index_image_env))
+
+
+@step(u'"{csv_version}" CSV from "{package_name}" package is installed from "{channel}" channel of the "{index_image}" index image')
+@step(u'"{csv_version}" CSV from "{package_name}" package is installed from "{channel}" channel of the "{index_image}" index image in "{namespace}" namespace')
+def operator_is_installed_from_index_image(context, csv_version, package_name, channel, index_image, namespace=None):
+    openshift = Openshift()
+    catalog_name = scenario_id(context)
+    openshift.create_catalog_source(name=catalog_name, catalog_image=index_image)
+    openshift.create_operator_subscription(package_name=package_name, operator_source_name=catalog_name,
+                                           channel=channel, csv_version=csv_version, install_mode=InstallMode.Manual)
+    context.operator_subscription_name = package_name
+    if namespace is None:
+        context.operator_subscription_namespace = openshift.operators_namespace
+    else:
+        context.operator_subscription_namespace = namespace
+
+
+@step(u'Operator subscription is approved')
+def operator_subscription_is_approved(context):
+    openshift = Openshift()
+    assert 'operator_subscription_name' in context, "Unable to find 'operator_subscription_name' in context"
+    openshift.approve_operator_subscription(name=context.operator_subscription_name)
+    operator_subscription_namespace = context.operator_subscription_namespace if "operator_subscription_namespace" in context else openshift.operators_namespace
+    context.csv_version = openshift.get_installed_csv_for_subscription(context.operator_subscription_name, operator_subscription_namespace)
+
+
+@step(u'Waited for {duration} seconds')
+def wait(context, duration):
+    time.sleep(float(duration))
