@@ -251,6 +251,8 @@ Feature: Support a number of existing operator-backed services out of the box
     And File "/bindings/$scenario_id/password" exists in application pod
     And Application can connect to the projected MySQL database
 
+  @disable-openshift-4.11
+  @disable-openshift-4.12
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
     Given Percona Mysql operator is running
     * Generic test application is running
