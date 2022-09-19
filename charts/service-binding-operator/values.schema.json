@@ -26,7 +26,18 @@
         },
         "keepTestResources":{
           "type": "boolean"
+        },
+        "kubernetes":{
+          "type": "object",
+          "required": [
+            "platform"
+          ],
+          "properties": {
+            "platform": {
+              "type": "string"
+            }
         }
       }
+    }
   }
   
