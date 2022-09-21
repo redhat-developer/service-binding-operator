@@ -20,7 +20,7 @@ else
 
   retries=50
   until [[ $retries == 0 ]]; do
-    oc login -u $USER -p $USER_TOKEN && break
+    oc login -u $USER -p $USER_TOKEN --insecure-skip-tls-verify=true && break
     sleep 5
     retries=$(($retries - 1))
   done;
