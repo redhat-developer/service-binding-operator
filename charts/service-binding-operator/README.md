@@ -19,9 +19,11 @@ The `values.yaml` file contains the following values that can be customized when
 - `image.repository`
 - `image.testRepository`
 - `keepTestResources`
+- `kubernetes.platform`
 
 You can define values for the `image.pullPolicy`, `image.repository`, and `image.testRepository` values. If you are not able to pull an image from the quay.io registry, then copy the image to your own container registry.
 As part of the Helm test, objects such as deployment, service binding resources, and secrets used for testing are deleted. To view them, you can install the chart with the `keepTestResources` flag value set to `true`.
+`kubernetes.platform` is by default set to `vanilla`. The user should specify the platform while installing the chart. The kubernetes platform supported for now are `eks`,`vanilla` and `openshift`.
 
 
 ## Helm Chart Installation 
