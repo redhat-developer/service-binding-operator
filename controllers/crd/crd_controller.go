@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
+	crdtypes "github.com/redhat-developer/service-binding-operator/controllers/crd/types"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
 	"github.com/redhat-developer/service-binding-operator/pkg/converter"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline/context/service"
@@ -63,8 +64,9 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 		}
 	}()
 	log := r.Log.WithValues("CRD", req.NamespacedName)
-	crd := &v1apiextensions.CustomResourceDefinition{}
-	err := r.Get(ctx, req.NamespacedName, crd)
+	data := &unstructured.Unstructured{}
+	data.SetGroupVersionKind(v1apiextensions.SchemeGroupVersion.WithKind("CustomResourceDefinition"))
+	err := r.Get(ctx, req.NamespacedName, data)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -77,9 +79,15 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 		log.Error(err, "Failed to get CRD")
 		return ctrl.Result{}, err
 	}
+	crd := &crdtypes.CustomResourceDefinition{}
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(data.Object, crd); err != nil {
+		log.Error(err, "Failed to convert unstructured data", "data", data.Object)
+		return ctrl.Result{}, err
+	}
 
 	toPersist := false
 
+	old := client.MergeFrom(crd.IntoCRD())
 	for i := range crd.Spec.Versions {
 		gvk := schema.GroupVersionKind{Group: crd.Spec.Group, Kind: crd.Spec.Names.Kind, Version: crd.Spec.Versions[i].Name}
 		if !crd.GetDeletionTimestamp().IsZero() {
@@ -108,8 +116,10 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 			annotations, found := r.annotationRegistry.GetAnnotations(gvk)
 			if found {
 				log.Info("Found bindable annotations", "gvk", gvk, "annotations", annotations)
+				// NOTE: we want to patch here, since we're not using a full serialization of CRDs;
+				// calling Update will delete fields, and we don't want that.
 				crd.SetAnnotations(util.MergeMaps(crd.GetAnnotations(), annotations))
-				err := r.Update(ctx, crd)
+				err := r.Patch(ctx, crd.IntoCRD(), old)
 				if err != nil {
 					log.Error(err, "Error updating CRD")
 					return ctrl.Result{}, err
