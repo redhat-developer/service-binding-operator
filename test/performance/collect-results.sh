@@ -65,7 +65,7 @@ timestamps() {
         echo -n ";"
 
         # AllDoneTimestamp
-        done_ts=$(cat "$log" | jq -rc 'select(.msg | contains("Done")) | select(.serviceBinding | contains("'$ns/$name'")) | select(.retry==false).ts')
+        done_ts=$(cat "$log" | jq -rc 'select(.msg | contains("Done")) | select(.serviceBinding | contains("'$ns/$name'")) | select(.retry==false).ts' | tail -n 1)
         if [ -n "$done_ts" ]; then
             all_done=$(date -d "@$done_ts" "+%F %T.%N")
         else
