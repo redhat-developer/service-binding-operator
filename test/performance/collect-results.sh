@@ -43,7 +43,7 @@ timestamps() {
 
     rm -f $RESULTS/$TMP_CSV
     jq -rc 'select(.metadata.namespace | startswith("'$NS_PREFIX'")) | ((.metadata.namespace) + ";" + (.metadata.name) + ";" + (.metadata.creationTimestamp))' $SBR_JSON >$RESULTS/$TMP_CSV
-    echo "ServiceBinding;Created;ReconciledTimestamp;Ready;AllDoneTimestamp;TimeToReconcile;ReconciledToDone;TimeToDone" >$RESULTS/$SBR_TIMESTAMPS_CSV
+    echo "ServiceBinding;Created;ReconciledTimestamp;AllDoneTimestamp;TimeToReconcile;ReconciledToDone;TimeToDone" >$RESULTS/$SBR_TIMESTAMPS_CSV
     for i in $(cat $RESULTS/$TMP_CSV); do
         ns=$(echo -n $i | cut -d ";" -f1)
         name=$(echo -n $i | cut -d ";" -f2)
@@ -92,7 +92,7 @@ timestamps() {
 
     rm -f $RESULTS/$TMP_CSV
     jq -rc 'select(.metadata.namespace | startswith("'$NS_PREFIX'")) | ((.metadata.namespace) + ";" + (.metadata.name))' $WORKLOADS_JSON >$RESULTS/$TMP_CSV
-    echo "Namespace;Workload;SB_Name;SB_created;SB_ReconciledTimestamp;SB_Ready;SB_AllDoneTimestamp" >$RESULTS/$BINDING_TIMESTAMPS_CSV
+    echo "Namespace;Workload;SB_Name;SB_created;SB_ReconciledTimestamp;SB_AllDoneTimestamp;SB_TimeToReconcile;SB_ReconciledToDone;SB_TimeToDone" >$RESULTS/$BINDING_TIMESTAMPS_CSV
     for i in $(cat $RESULTS/$TMP_CSV); do
         echo -n $i
         echo -n ";"

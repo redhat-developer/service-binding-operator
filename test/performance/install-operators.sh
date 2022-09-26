@@ -1,32 +1,12 @@
 #!/bin/bash -e
-export RHOAS_INDEX_IMAGE=${RHOAS_INDEX_IMAGE:-quay.io/rhoas/service-operator-registry:autolatest}
 export RHOAS_CHANNEL=${RHOAS_CHANNEL:-beta}
 export RHOAS_PACKAGE=${RHOAS_PACKAGE:-rhoas-operator}
 export RHOAS_CATSRC_NAMESPACE=${RHOAS_CATSRC_NAMESPACE:-openshift-marketplace}
-export RHOAS_CATSRC_NAME=${RHOAS_CATSRC_NAME:-rhoas-operators}
+export RHOAS_CATSRC_NAME=${RHOAS_CATSRC_NAME:-community-operators}
 export RHOAS_NAMESPACE=${RHOAS_NAMESPACE:-openshift-operators}
 
 echo "Installing RHOAS Operator"
 oc apply -f - <<EOD
----
-apiVersion: operators.coreos.com/v1alpha1
-kind: CatalogSource
-metadata:
-  name: $RHOAS_CATSRC_NAME
-  namespace: $RHOAS_CATSRC_NAMESPACE
-spec:
-  displayName: RHOAS Operators
-  icon:
-    base64data: ""
-    mediatype: ""
-  image: $RHOAS_INDEX_IMAGE
-  priority: -400
-  publisher: RHOAS
-  sourceType: grpc
-  updateStrategy:
-    registryPoll:
-      interval: 260s
----
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
