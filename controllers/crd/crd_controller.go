@@ -81,6 +81,9 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 	toPersist := false
 
 	for i := range crd.Spec.Versions {
+		if !crd.Spec.Versions[i].Served {
+			continue
+		}
 		gvk := schema.GroupVersionKind{Group: crd.Spec.Group, Kind: crd.Spec.Names.Kind, Version: crd.Spec.Versions[i].Name}
 		if !crd.GetDeletionTimestamp().IsZero() {
 			r.bindableKinds.Delete(gvk)
