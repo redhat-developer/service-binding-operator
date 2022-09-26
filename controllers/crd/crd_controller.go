@@ -80,6 +80,11 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 
 	toPersist := false
 
+	unstructuredCrd, err := converter.ToUnstructured(crd)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	for i := range crd.Spec.Versions {
 		if !crd.Spec.Versions[i].Served {
 			continue
@@ -94,7 +99,7 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 		fakeServiceContent.SetName("s1")
 		fakeServiceContent.SetGroupVersionKind(gvk)
 		service, err := r.serviceBuilder.Build(fakeServiceContent, service.CrdReaderOption(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
-			return converter.ToUnstructured(crd)
+			return unstructuredCrd, nil
 		}))
 		if err != nil {
 			return ctrl.Result{}, err

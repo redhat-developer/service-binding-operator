@@ -263,8 +263,13 @@ func (c *customResourceDefinition) IsBindable() (bool, error) {
 	return false, nil
 }
 
+const ListLimit = 1
+
 func (c *customResourceDefinition) Descriptor() (*pipeline.CRDDescription, error) {
-	csvs, err := c.client.Resource(olmv1alpha1.SchemeGroupVersion.WithResource("clusterserviceversions")).Namespace(c.ns).List(context.Background(), metav1.ListOptions{})
+	csvs, err := c.client.
+		Resource(olmv1alpha1.SchemeGroupVersion.WithResource("clusterserviceversions")).
+		Namespace(c.ns).
+		List(context.Background(), metav1.ListOptions{Limit: ListLimit})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			return nil, nil
@@ -274,30 +279,53 @@ func (c *customResourceDefinition) Descriptor() (*pipeline.CRDDescription, error
 	if len(csvs.Items) == 0 {
 		return nil, nil
 	}
-	for _, csv := range csvs.Items {
-		ownedPath := []string{"spec", "customresourcedefinitions", "owned"}
+	for len(csvs.Items) != 0 {
+		for _, csv := range csvs.Items {
+			ownedPath := []string{"spec", "customresourcedefinitions", "owned"}
 
-		ownedCRDs, exists, err := unstructured.NestedSlice(csv.Object, ownedPath...)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			continue
-		}
-
-		for _, crd := range ownedCRDs {
-			crdDesciption := &pipeline.CRDDescription{}
-			data, ok := crd.(map[string]interface{})
-			if !ok {
-				return nil, e.New("cannot cast to map")
-			}
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(data, crdDesciption)
+			ownedCRDs, exists, err := unstructured.NestedSlice(csv.Object, ownedPath...)
 			if err != nil {
 				return nil, err
 			}
-			if crdDesciption.Name == c.resource.GetName() && crdDesciption.Kind == c.kind() && crdDesciption.Version == c.serviceGVR.Version {
-				return crdDesciption, nil
+			if !exists {
+				continue
 			}
+
+			for _, crd := range ownedCRDs {
+				data, ok := crd.(map[string]interface{})
+				if !ok {
+					return nil, e.New("cannot cast to map")
+				}
+				name, found, err := unstructured.NestedString(data, "name")
+				if !found || err != nil {
+					return nil, err
+				}
+				kind, found, err := unstructured.NestedString(data, "kind")
+				if !found || err != nil {
+					return nil, err
+				}
+				version, found, err := unstructured.NestedString(data, "version")
+				if !found || err != nil {
+					return nil, err
+				}
+
+				if name == c.resource.GetName() && kind == c.kind() && version == c.serviceGVR.Version {
+					description := &pipeline.CRDDescription{}
+					err = runtime.DefaultUnstructuredConverter.FromUnstructured(data, description)
+					return description, err
+				}
+			}
+		}
+
+		csvs, err = c.client.
+			Resource(olmv1alpha1.SchemeGroupVersion.WithResource("clusterserviceversions")).
+			Namespace(c.ns).
+			List(context.Background(), metav1.ListOptions{Limit: ListLimit, Continue: csvs.GetContinue()})
+		if err != nil {
+			if errors.IsNotFound(err) {
+				return nil, nil
+			}
+			return nil, err
 		}
 	}
 	return nil, nil
