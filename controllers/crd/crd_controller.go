@@ -19,8 +19,9 @@ package binding
 import (
 	"context"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"sync"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 
 	"github.com/go-logr/logr"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -163,7 +164,7 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *CrdReconciler) SetupWithManager(mgr ctrl.Manager, bindableKinds *sync.Map) error {
+func (r *CrdReconciler) SetupWithManager(mgr ctrl.Manager, bindableKinds *sync.Map, olm bool) error {
 	r.bindableKinds = bindableKinds
 	r.annotationRegistry = registry.ServiceAnnotations
 	dynamicClient, err := dynamic.NewForConfig(mgr.GetConfig())

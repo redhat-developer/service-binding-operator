@@ -86,11 +86,15 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var enableOLMDescriptor bool
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&enableOLMDescriptor, "olm-descriptor", false,
+		"Enable OLM descriptor support. ")
+
 	controllers.RegisterFlags(flag.CommandLine)
 
 	opts := zap.Options{
@@ -132,7 +136,7 @@ func main() {
 		mgr.GetClient(),
 		ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
 		mgr.GetScheme(),
-	).SetupWithManager(mgr); err != nil {
+	).SetupWithManager(mgr, enableOLMDescriptor); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
 		os.Exit(1)
 	}
@@ -145,7 +149,7 @@ func main() {
 		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
 		mgr.GetScheme(),
 		&specv1alpha3.ServiceBinding{},
-	).SetupWithManager(mgr); err != nil {
+	).SetupWithManager(mgr, enableOLMDescriptor); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
@@ -154,7 +158,7 @@ func main() {
 		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
 		mgr.GetScheme(),
 		&specv1beta1.ServiceBinding{},
-	).SetupWithManager(mgr); err != nil {
+	).SetupWithManager(mgr, enableOLMDescriptor); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
@@ -174,7 +178,7 @@ func main() {
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("CRD v1"),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr, bindableKinds); err != nil {
+	}).SetupWithManager(mgr, bindableKinds, enableOLMDescriptor); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CRD v1")
 		os.Exit(1)
 	}

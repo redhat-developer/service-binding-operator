@@ -49,7 +49,7 @@ type BindingReconciler struct {
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager, olm bool) error {
 	pipeline, err := r.PipelineProvider(mgr.GetConfig(), kubernetes.ResourceLookup(mgr.GetRESTMapper()))
 	if err != nil {
 		return err
