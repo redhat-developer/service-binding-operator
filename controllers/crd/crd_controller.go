@@ -171,7 +171,7 @@ func (r *CrdReconciler) SetupWithManager(mgr ctrl.Manager, bindableKinds *sync.M
 	if err != nil {
 		return err
 	}
-	r.serviceBuilder = service.NewBuilder(kubernetes.ResourceLookup(mgr.GetRESTMapper())).WithClient(dynamicClient)
+	r.serviceBuilder = service.NewBuilder(kubernetes.ResourceLookup(mgr.GetRESTMapper())).WithClient(dynamicClient).WithOLMAnnotations(olm)
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1apiextensions.CustomResourceDefinition{}).
 		Complete(r)

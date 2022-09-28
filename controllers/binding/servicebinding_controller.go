@@ -41,7 +41,7 @@ type ServiceBindingReconciler struct {
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=servicebindings/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=binding.operators.coreos.com,resources=servicebindings/finalizers,verbs=update
 
-func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *ServiceBindingReconciler {
+func New(client client.Client, log logr.Logger, scheme *runtime.Scheme, olmAnnotations bool) *ServiceBindingReconciler {
 	r := &ServiceBindingReconciler{
 		BindingReconciler: controllers.BindingReconciler{
 			Client: client,
@@ -56,7 +56,7 @@ func New(client client.Client, log logr.Logger, scheme *runtime.Scheme) *Service
 				if err != nil {
 					return nil, err
 				}
-				return builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), lookup)).Build(), nil
+				return builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), lookup, olmAnnotations)).Build(), nil
 			},
 			ReconcilingObject: func() apis.Object { return &v1alpha1.ServiceBinding{} },
 		},

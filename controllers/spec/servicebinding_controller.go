@@ -40,7 +40,7 @@ type ServiceBindingReconciler struct {
 // +kubebuilder:rbac:groups=servicebinding.io,resources=servicebindings/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=servicebinding.io,resources=servicebindings/finalizers,verbs=update
 
-func New(client client.Client, log logr.Logger, scheme *runtime.Scheme, object apis.Object) *ServiceBindingReconciler {
+func New(client client.Client, log logr.Logger, scheme *runtime.Scheme, object apis.Object, olmAnnotations bool) *ServiceBindingReconciler {
 	r := &ServiceBindingReconciler{
 		BindingReconciler: controllers.BindingReconciler{
 			Client: client,
@@ -55,7 +55,7 @@ func New(client client.Client, log logr.Logger, scheme *runtime.Scheme, object a
 				if err != nil {
 					return nil, err
 				}
-				return builder.SpecBuilder.WithContextProvider(context.SpecProvider(client, authClient.SubjectAccessReviews(), lookup)).Build(), nil
+				return builder.SpecBuilder.WithContextProvider(context.SpecProvider(client, authClient.SubjectAccessReviews(), lookup, olmAnnotations)).Build(), nil
 			},
 			ReconcilingObject: func() apis.Object { return object },
 		},

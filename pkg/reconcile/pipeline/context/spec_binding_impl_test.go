@@ -76,7 +76,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -122,7 +122,7 @@ var _ = Describe("Spec API Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u1, u2)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -165,7 +165,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -204,7 +204,7 @@ var _ = Describe("Spec API Context", func() {
 					return true, nil, e.New(expectedError)
 				})
 			authClient := &fakeauth.FakeAuthorizationV1{}
-			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -234,7 +234,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -304,7 +304,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := SpecProvider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -339,7 +339,7 @@ var _ = Describe("Spec API Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.HasLabelSelector()).To(BeTrue())
 		})
@@ -365,7 +365,7 @@ var _ = Describe("Spec API Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.HasLabelSelector()).To(BeFalse())
 		})
@@ -416,7 +416,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, true).Get(sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			services, err := ctx.Services()
@@ -448,7 +448,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, true).Get(sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Services()
@@ -458,7 +458,7 @@ var _ = Describe("Spec API Context", func() {
 	})
 
 	Describe("Binding Name", func() {
-		var testProvider = Provider(nil, nil, nil)
+		var testProvider = Provider(nil, nil, nil, false)
 		It("should be equal on .spec.name if specified", func() {
 			ctx, _ := testProvider.Get(&specapi.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -483,7 +483,7 @@ var _ = Describe("Spec API Context", func() {
 		})
 	})
 	Describe("Binding Secret Name", func() {
-		var testProvider = Provider(nil, nil, nil)
+		var testProvider = Provider(nil, nil, nil, false)
 
 		It("should not be empty string", func() {
 			ctx, _ := testProvider.Get(&specapi.ServiceBinding{
@@ -699,8 +699,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
-
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(sb)
 		})
 
 		It("should only persist context conditions on error", func() {
@@ -815,7 +814,7 @@ var _ = Describe("Spec API Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(sb)
 		})
 
 		It("should reuse existing secret if no other bindings are added", func() {
@@ -926,7 +925,7 @@ var _ = Describe("Spec API Context", func() {
 					},
 				},
 			}
-			ctx, _ = Provider(nil, nil, nil).Get(sb)
+			ctx, _ = Provider(nil, nil, nil, false).Get(sb)
 
 			Expect(ctx.EnvBindings()).To(ConsistOf(&pipeline.EnvBinding{Var: "e1", Name: "b1"}, &pipeline.EnvBinding{Var: "e2", Name: "b2"}))
 		})

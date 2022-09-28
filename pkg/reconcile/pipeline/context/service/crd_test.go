@@ -113,7 +113,7 @@ var _ = Describe("CRD", func() {
 		ucsv.SetNamespace(ns)
 		client = fake.NewSimpleDynamicClient(runtime.NewScheme(), ucsv)
 
-		crd := &customResourceDefinition{resource: u, client: client, ns: ns, serviceGVR: &serviceGVR}
+		crd := &customResourceDefinition{resource: u, client: client, ns: ns, serviceGVR: &serviceGVR, useOlmAnnotations: true}
 
 		Expect(crd.IsBindable()).To(BeTrue())
 	})

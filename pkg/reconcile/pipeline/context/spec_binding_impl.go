@@ -25,7 +25,7 @@ import (
 
 var _ pipeline.Context = &specImpl{}
 
-var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient authv1.SubjectAccessReviewInterface, typeLookup kubernetes.K8STypeLookup) pipeline.ContextProvider {
+var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient authv1.SubjectAccessReviewInterface, typeLookup kubernetes.K8STypeLookup, olmAnnotations bool) pipeline.ContextProvider {
 	return &provider{
 		client:     client,
 		typeLookup: typeLookup,
@@ -66,7 +66,7 @@ var SpecProvider = func(client dynamic.Interface, subjectAccessReviewClient auth
 						requester: func() *v1.UserInfo {
 							return apis.Requester(sb.ObjectMeta)
 						},
-						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client),
+						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client).WithOLMAnnotations(olmAnnotations),
 						labelSelectionRateLimiter: workqueue.NewMaxOfRateLimiter(
 							workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 2*time.Minute),
 							&workqueue.BucketRateLimiter{

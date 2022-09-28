@@ -28,6 +28,7 @@ type CrdReader func(gvk *schema.GroupVersionResource) (*unstructured.Unstructure
 type Builder interface {
 	WithClient(client dynamic.Interface) Builder
 	WithCrdReader(reader CrdReader) Builder
+	WithOLMAnnotations(usage bool) Builder
 	Build(content *unstructured.Unstructured, options ...buildOption) (pipeline.Service, error)
 	LookOwnedResources(val bool) Builder
 }
@@ -51,6 +52,7 @@ type builder struct {
 	typeLookup            kubernetes.K8STypeLookup
 	crdReader             CrdReader
 	lookForOwnedResources bool
+	useOlmAnnotations     bool
 }
 
 func NewBuilder(typeLookup kubernetes.K8STypeLookup) Builder {
@@ -66,6 +68,11 @@ func (b *builder) WithClient(client dynamic.Interface) Builder {
 
 func (b *builder) WithCrdReader(reader CrdReader) Builder {
 	b.crdReader = reader
+	return b
+}
+
+func (b *builder) WithOLMAnnotations(usage bool) Builder {
+	b.useOlmAnnotations = usage
 	return b
 }
 
@@ -139,6 +146,7 @@ type service struct {
 	lookForOwnedResources bool
 	bindingDefinitions    []binding.Definition
 	id                    *string
+	useOlmAnnotations     bool
 }
 
 func (s *service) OwnedResources() ([]*unstructured.Unstructured, error) {
@@ -212,10 +220,11 @@ func (s *service) IsBindable() (bool, error) {
 }
 
 type customResourceDefinition struct {
-	resource   *unstructured.Unstructured
-	serviceGVR *schema.GroupVersionResource
-	client     dynamic.Interface
-	ns         string
+	resource          *unstructured.Unstructured
+	serviceGVR        *schema.GroupVersionResource
+	client            dynamic.Interface
+	ns                string
+	useOlmAnnotations bool
 }
 
 func (c *customResourceDefinition) Resource() *unstructured.Unstructured {
@@ -264,6 +273,9 @@ func (c *customResourceDefinition) IsBindable() (bool, error) {
 }
 
 func (c *customResourceDefinition) Descriptor() (*pipeline.CRDDescription, error) {
+	if !c.useOlmAnnotations {
+		return nil, nil
+	}
 	csvs, err := c.client.Resource(olmv1alpha1.SchemeGroupVersion.WithResource("clusterserviceversions")).Namespace(c.ns).List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {

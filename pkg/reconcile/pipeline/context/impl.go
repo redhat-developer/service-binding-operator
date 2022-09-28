@@ -101,7 +101,7 @@ func (p *provider) Get(binding interface{}) (pipeline.Context, error) {
 	return p.get(binding)
 }
 
-var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientauthzv1.SubjectAccessReviewInterface, typeLookup kubernetes.K8STypeLookup) pipeline.ContextProvider {
+var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientauthzv1.SubjectAccessReviewInterface, typeLookup kubernetes.K8STypeLookup, olmAnnotations bool) pipeline.ContextProvider {
 	return &provider{
 		client:     client,
 		typeLookup: typeLookup,
@@ -136,7 +136,7 @@ var Provider = func(client dynamic.Interface, subjectAccessReviewClient clientau
 						requester: func() *authv1.UserInfo {
 							return apis.Requester(sb.ObjectMeta)
 						},
-						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client).LookOwnedResources(sb.Spec.DetectBindingResources),
+						serviceBuilder: service.NewBuilder(typeLookup).WithClient(client).WithOLMAnnotations(olmAnnotations).LookOwnedResources(sb.Spec.DetectBindingResources),
 						labelSelectionRateLimiter: workqueue.NewMaxOfRateLimiter(
 							workqueue.NewItemExponentialFailureRateLimiter(5*time.Millisecond, 2*time.Minute),
 							&workqueue.BucketRateLimiter{

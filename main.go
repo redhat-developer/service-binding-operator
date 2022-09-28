@@ -136,7 +136,8 @@ func main() {
 		mgr.GetClient(),
 		ctrl.Log.WithName("controllers").WithName("ServiceBinding"),
 		mgr.GetScheme(),
-	).SetupWithManager(mgr, enableOLMDescriptor); err != nil {
+		enableOLMDescriptor,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "ServiceBinding")
 		os.Exit(1)
 	}
@@ -149,7 +150,8 @@ func main() {
 		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
 		mgr.GetScheme(),
 		&specv1alpha3.ServiceBinding{},
-	).SetupWithManager(mgr, enableOLMDescriptor); err != nil {
+		enableOLMDescriptor,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
@@ -158,7 +160,8 @@ func main() {
 		ctrl.Log.WithName("controllers").WithName("SPEC ServiceBinding"),
 		mgr.GetScheme(),
 		&specv1beta1.ServiceBinding{},
-	).SetupWithManager(mgr, enableOLMDescriptor); err != nil {
+		enableOLMDescriptor,
+	).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SPEC ServiceBinding")
 		os.Exit(1)
 	}

@@ -127,7 +127,7 @@ var _ = Describe("Default Pipeline", func() {
 
 		authClient := &fakeauth.FakeAuthorizationV1{}
 
-		p := builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), typeLookup)).Build()
+		p := builder.DefaultBuilder.WithContextProvider(context.Provider(client, authClient.SubjectAccessReviews(), typeLookup, false)).Build()
 
 		retry, delay, err := p.Process(sb)
 		Expect(err).NotTo(HaveOccurred())

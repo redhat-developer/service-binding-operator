@@ -79,7 +79,7 @@ var _ = Describe("Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -131,7 +131,7 @@ var _ = Describe("Context", func() {
 
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u1, u2)
 			authClient := &fakeauth.FakeAuthorizationV1{}
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			applications, err := ctx.Applications()
@@ -180,7 +180,7 @@ var _ = Describe("Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -224,7 +224,7 @@ var _ = Describe("Context", func() {
 					return true, nil, e.New(expectedError)
 				})
 			authClient := &fakeauth.FakeAuthorizationV1{}
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -257,7 +257,7 @@ var _ = Describe("Context", func() {
 
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Applications()
@@ -290,7 +290,7 @@ var _ = Describe("Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.HasLabelSelector()).To(BeTrue())
 		})
@@ -319,7 +319,7 @@ var _ = Describe("Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(ctx.HasLabelSelector()).To(BeFalse())
 		})
@@ -377,7 +377,7 @@ var _ = Describe("Context", func() {
 				typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil).Times(len(tc.serviceGVKs))
 				typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(gvr, nil).Times(len(tc.serviceGVKs))
 
-				ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+				ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, true).Get(sb)
 				Expect(err).NotTo(HaveOccurred())
 
 				services, err := ctx.Services()
@@ -471,7 +471,7 @@ var _ = Describe("Context", func() {
 			gvr := &schema.GroupVersionResource{Group: "foo", Version: "v1", Resource: "bars"}
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil)
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, true).Get(sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Services()
@@ -503,7 +503,7 @@ var _ = Describe("Context", func() {
 			typeLookup.EXPECT().ResourceForReferable(gomock.Any()).Return(gvr, nil).Times(2)
 			typeLookup.EXPECT().ResourceForKind(gomock.Any()).Return(gvr, nil).Times(1)
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, true).Get(sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			_, err = ctx.Services()
@@ -511,7 +511,7 @@ var _ = Describe("Context", func() {
 		})
 	})
 	Describe("Binding Name", func() {
-		var testProvider = Provider(nil, nil, nil)
+		var testProvider = Provider(nil, nil, nil, false)
 		It("should be equal on .spec.name if specified", func() {
 			ctx, _ := testProvider.Get(&bindingapi.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -537,7 +537,7 @@ var _ = Describe("Context", func() {
 	})
 
 	Describe("Binding Secret Name", func() {
-		var testProvider = Provider(nil, nil, nil)
+		var testProvider = Provider(nil, nil, nil, false)
 		It("should not be empty string", func() {
 			ctx, _ := testProvider.Get(&bindingapi.ServiceBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -708,7 +708,7 @@ var _ = Describe("Context", func() {
 			client = fake.NewSimpleDynamicClient(s, u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(sb)
 
 		})
 
@@ -888,7 +888,7 @@ var _ = Describe("Context", func() {
 			client = fake.NewSimpleDynamicClient(s, u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(sb)
+			ctx, _ = Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(sb)
 
 		})
 
@@ -1010,7 +1010,7 @@ var _ = Describe("Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			mapping, err := ctx.WorkloadResourceTemplate(&gvr, "")
@@ -1070,7 +1070,7 @@ var _ = Describe("Context", func() {
 			client := fake.NewSimpleDynamicClient(runtime.NewScheme(), u)
 			authClient := &fakeauth.FakeAuthorizationV1{}
 
-			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup, false).Get(&sb)
 			Expect(err).NotTo(HaveOccurred())
 
 			mapping, err := ctx.WorkloadResourceTemplate(&gvr, "")
