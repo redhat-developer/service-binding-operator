@@ -107,14 +107,26 @@ jobs:
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
-      - name: Acceptance tests
+      - name: Deploy SBO
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
         timeout-minutes: 60
         run: |
           source ./operator.refs
           export CATSRC_NAME=sbo-pr-checks
 
-          make SKIP_REGISTRY_LOGIN=true -o registry-login test-acceptance-with-bundle
+          make SKIP_REGISTRY_LOGIN=true -o registry-login deploy-from-index-image
+
+      - name: Patch SBO to accept OLM annotations
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        run: |
+          kubectl patch deployments.apps -n operators service-binding-operator --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--olm-descriptor"}]'
+
+      - name: Acceptance tests
+        if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
+        timeout-minutes: 60
+        run: |
+          source ./operator.refs
+          make TEST_ACCEPTANCE_START_SBO=remote test-acceptance
 
       - name: Collect Kube resources
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
