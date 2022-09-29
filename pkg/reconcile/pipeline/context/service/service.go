@@ -92,6 +92,7 @@ func (b *builder) Build(content *unstructured.Unstructured, options ...buildOpti
 		groupVersionResource:  gvr,
 		lookForOwnedResources: b.lookForOwnedResources,
 		namespace:             content.GetNamespace(),
+		useOlmAnnotations:     b.useOlmAnnotations,
 	}
 	for _, o := range options {
 		o(s)
