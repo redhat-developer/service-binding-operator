@@ -19,8 +19,9 @@ package binding
 import (
 	"context"
 	"fmt"
-	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"sync"
+
+	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 
 	"github.com/go-logr/logr"
 	bindingapi "github.com/redhat-developer/service-binding-operator/apis/binding/v1alpha1"
@@ -93,6 +94,8 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 		fakeServiceContent := &unstructured.Unstructured{}
 		fakeServiceContent.SetName("s1")
 		fakeServiceContent.SetGroupVersionKind(gvk)
+		fakeServiceContent.SetNamespace(req.NamespacedName.Namespace)
+		log.Info("Request namespace: ", "namespace", req.NamespacedName.Namespace)
 		service, err := r.serviceBuilder.Build(fakeServiceContent, service.CrdReaderOption(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
 			return converter.ToUnstructured(crd)
 		}))
