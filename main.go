@@ -92,7 +92,7 @@ func main() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	flag.BoolVar(&enableOLMDescriptor, "olm-descriptor", false,
+	flag.BoolVar(&enableOLMDescriptor, "olm-descriptor", true,
 		"Enable OLM descriptor support. ")
 
 	controllers.RegisterFlags(flag.CommandLine)
