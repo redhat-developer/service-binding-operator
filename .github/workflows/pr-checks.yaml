@@ -119,7 +119,15 @@ jobs:
       - name: Patch SBO to accept OLM annotations
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
         run: |
-          kubectl patch deployments.apps -n operators service-binding-operator --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--olm-descriptor"}]'
+          echo "##[group]kubectl describe deployments.apps -n operators service-binding-operator"
+            kubectl describe deployments.apps -n operators service-binding-operator
+          echo "##[endgroup]"
+          echo "##[group]Patch operator"
+            kubectl patch deployments.apps -n operators service-binding-operator --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--olm-descriptor"}]'
+          echo "##[endgroup]"
+          echo "##[group]kubectl describe deployments.apps -n operators service-binding-operator"
+            kubectl describe deployments.apps -n operators service-binding-operator
+          echo "##[endgroup]"
 
       - name: Acceptance tests
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
