@@ -197,7 +197,7 @@ func (s *service) CustomResourceDefinition() (pipeline.CRD, error) {
 		if err != nil {
 			return nil, err
 		}
-		s.crd = &customResourceDefinition{resource: u, client: s.client, ns: s.namespace, serviceGVR: s.groupVersionResource}
+		s.crd = &customResourceDefinition{resource: u, client: s.client, ns: s.namespace, serviceGVR: s.groupVersionResource, useOlmAnnotations: s.useOlmAnnotations}
 		return s.crd, err
 	}
 	return s.crd, nil
