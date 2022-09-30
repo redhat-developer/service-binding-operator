@@ -524,7 +524,7 @@ Feature: Bind an application to a service
             """
         Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
 
-    @olm
+    @olm @olm-descriptors
     Scenario: Bind service to application using binding definition available in x-descriptors
         Given OLM Operator "backend-new-spec" is running
         * Generic test application is running
