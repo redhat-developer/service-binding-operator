@@ -202,7 +202,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_PASSWORD" has value "hunter2"
 
-    @olm
+    @olm @olm-descriptors
     Scenario: Inject into app a key from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application is running
@@ -358,7 +358,7 @@ Feature: Bind values from a secret referred in backing service resource
         And The application env var "BACKEND_USERNAME" has value "AzureDiamond"
         And The application env var "BACKEND_HOST" has value "example.com"
 
-    @olm
+    @olm @olm-descriptors
     Scenario: Inject into app all keys from a secret referred within service resource Binding definition is declared via OLM descriptor.
 
         Given Generic test application is running
