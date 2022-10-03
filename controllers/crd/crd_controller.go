@@ -94,7 +94,7 @@ func (r *CrdReconciler) Reconcile(ctx context.Context, req ctrl.Request) (reconc
 		fakeServiceContent := &unstructured.Unstructured{}
 		fakeServiceContent.SetName("s1")
 		fakeServiceContent.SetGroupVersionKind(gvk)
-		fakeServiceContent.SetNamespace(req.NamespacedName.Namespace)
+		fakeServiceContent.SetNamespace("default")
 		log.Info("Request namespace: ", "namespace", req.NamespacedName.Namespace)
 		service, err := r.serviceBuilder.Build(fakeServiceContent, service.CrdReaderOption(func(gvk *schema.GroupVersionResource) (*unstructured.Unstructured, error) {
 			return converter.ToUnstructured(crd)
