@@ -39,7 +39,7 @@ Service Binding:
 * Provides service operators a low-touch administrative experience to provision
   and manage access to services
 * Enriches development lifecycle with a consistent and declarative service
-  binding methow that eliminates environments discrepancies
+  binding method that eliminates environments discrepancies
 
 ## Key Features
 
