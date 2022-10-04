@@ -12,7 +12,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	bindingmocks "github.com/redhat-developer/service-binding-operator/pkg/binding/mocks"
@@ -71,7 +70,6 @@ var _ = Describe("Collect Binding Definitions", func() {
 	})
 
 	Describe("request retry processing and set collection ready status to false", func() {
-
 		var (
 			errMsg = "foo"
 			err    = errors.New(errMsg)
@@ -85,7 +83,6 @@ var _ = Describe("Collect Binding Definitions", func() {
 				service1.EXPECT().CustomResourceDefinition().Return(crd, nil)
 				service1.EXPECT().Resource().Return(&unstructured.Unstructured{})
 				crd.EXPECT().Resource().Return(&unstructured.Unstructured{})
-				crd.EXPECT().Descriptor().Return(nil, nil)
 
 				service2 := mocks.NewMockService(mockCtrl)
 				service2.EXPECT().CustomResourceDefinition().Return(nil, err)
@@ -94,27 +91,6 @@ var _ = Describe("Collect Binding Definitions", func() {
 
 			shouldRetry(pipeline.HandlerFunc(collect.BindingDefinitions), collect.ErrorReadingCRD, err)
 		})
-
-		Context("on error reading descriptor from at least one service", func() {
-			BeforeEach(func() {
-				service1 := mocks.NewMockService(mockCtrl)
-				crd := mocks.NewMockCRD(mockCtrl)
-				service1.EXPECT().CustomResourceDefinition().Return(crd, nil)
-				service1.EXPECT().Resource().Return(&unstructured.Unstructured{})
-				crd.EXPECT().Resource().Return(&unstructured.Unstructured{})
-				crd.EXPECT().Descriptor().Return(nil, nil)
-
-				service2 := mocks.NewMockService(mockCtrl)
-				crd2 := mocks.NewMockCRD(mockCtrl)
-				service2.EXPECT().CustomResourceDefinition().Return(crd2, nil)
-				crd2.EXPECT().Descriptor().Return(nil, err)
-
-				ctx.EXPECT().Services().Return([]pipeline.Service{service1, service2}, nil)
-			})
-
-			shouldRetry(pipeline.HandlerFunc(collect.BindingDefinitions), collect.ErrorReadingDescriptorReason, err)
-		})
-
 	})
 	Describe("successful processing", func() {
 
@@ -161,7 +137,6 @@ var _ = Describe("Collect Binding Definitions", func() {
 					"service.binding/foo":                   "path={.status.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2":                  "path={.status.foo2},objectType=Secret,sourceValue=username",
 				})
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{}, nil)
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo2"}))
 				collect.BindingDefinitions(ctx)
@@ -173,124 +148,12 @@ var _ = Describe("Collect Binding Definitions", func() {
 					"service.binding/foo":  "path={.status.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2": "path={.status.foo2},objectType=Secret,sourceValue=username",
 				})
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{}, nil)
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
 				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo2"}))
-				collect.BindingDefinitions(ctx)
-			})
-
-			It("should extract binding definitions from status descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
-					StatusDescriptors: []olmv1alpha1.StatusDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username:sourceValue=username"},
-						},
-						{
-							Path:         "bar",
-							XDescriptors: []string{"bar"},
-						},
-						{
-							Path:         "foo2",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username2:sourceValue=username"},
-						},
-					},
-				}, nil)
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo2"}))
-				collect.BindingDefinitions(ctx)
-			})
-
-			It("should extract binding definitions from spec descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
-					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username:sourceValue=username"},
-						},
-						{
-							Path:         "bar",
-							XDescriptors: []string{"bar"},
-						},
-						{
-							Path:         "foo2",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username2:sourceValue=username"},
-						},
-					},
-				}, nil)
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo"}))
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo2"}))
-				collect.BindingDefinitions(ctx)
-			})
-
-			It("should extract binding definitions both from spec and status descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
-					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username:sourceValue=username"},
-						},
-					},
-					StatusDescriptors: []olmv1alpha1.StatusDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username2:sourceValue=username"},
-						},
-					},
-				}, nil)
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"status", "foo"}))
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo"}))
-				collect.BindingDefinitions(ctx)
-			})
-
-			It("binding definitions on CRD take precedence over those from descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
-					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username:sourceValue=username"},
-						},
-					},
-					StatusDescriptors: []olmv1alpha1.StatusDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username2:sourceValue=username"},
-						},
-					},
-				}, nil)
-				crdContent.SetAnnotations(map[string]string{
-					"service.binding/username2": "path={.spec.foo2},objectType=Secret,sourceValue=username",
-				})
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo"}))
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo2"}))
-				collect.BindingDefinitions(ctx)
-			})
-
-			It("binding definitions on service take precedence over those from descriptors", func() {
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{
-					SpecDescriptors: []olmv1alpha1.SpecDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username:sourceValue=username"},
-						},
-					},
-					StatusDescriptors: []olmv1alpha1.StatusDescriptor{
-						{
-							Path:         "foo",
-							XDescriptors: []string{"urn:alm:descriptor:io.kubernetes:Secret", "service.binding:username2:sourceValue=username"},
-						},
-					},
-				}, nil)
-				serviceContent.SetAnnotations(map[string]string{
-					"service.binding/username2": "path={.spec.foo2},objectType=Secret,sourceValue=username",
-				})
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo"}))
-				service.EXPECT().AddBindingDef(bindingDefPath([]string{"spec", "foo2"}))
 				collect.BindingDefinitions(ctx)
 			})
 
 			It("binding definitions on service take precedence over those from CRD", func() {
-				crd.EXPECT().Descriptor().Return(&pipeline.CRDDescription{}, nil)
 				crdContent.SetAnnotations(map[string]string{
 					"service.binding/foo":  "path={.spec.foo},objectType=Secret,sourceValue=username",
 					"service.binding/foo2": "path={.spec.foo2},objectType=Secret,sourceValue=username",
@@ -307,7 +170,6 @@ var _ = Describe("Collect Binding Definitions", func() {
 
 			Context("non OLM environment", func() {
 				It("should extract binding definitions both from service and CRD annotations", func() {
-					crd.EXPECT().Descriptor().Return(nil, nil)
 					crdContent.SetAnnotations(map[string]string{
 						"service.binding/foo": "path={.spec.foo},objectType=Secret,sourceValue=username",
 					})
