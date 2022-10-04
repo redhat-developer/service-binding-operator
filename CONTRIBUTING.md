@@ -29,7 +29,7 @@ contribution. See the [DCO](DCO) file for details.
 * Fork the repository on GitHub
 * Read the [README](README.md) file for build and test instructions
 * Run the examples
-* Explore the the project
+* Explore the project
 * Submit issues and feature requests, submit changes, bug fixes, new features
 
 ## How Can I Contribute?
@@ -66,7 +66,7 @@ a new request.
 All submitted code and document changes are reviewed by the project
 maintainers through pull requests.
 
-To submit a bug fix or enmhancement, log an issue in github, create a new
+To submit a bug fix or enhancement, log an issue in github, create a new
 branch in your fork of the repo and include the issue number as a prefix in
 the name of the branch. Include new tests to provide coverage for all new
 or changed code. Create a pull request when you have completed code changes.
