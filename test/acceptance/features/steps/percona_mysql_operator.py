@@ -1,6 +1,6 @@
 from olm import Operator
 from environment import ctx
-from behave import given
+from behave import step
 
 
 class PerconaMysqlOperator(Operator):
@@ -14,7 +14,7 @@ class PerconaMysqlOperator(Operator):
         )
 
 
-@given(u'Percona Mysql operator is running')
+@step(u'Percona Mysql operator is running')
 def install(context):
     operator = PerconaMysqlOperator()
     operator.operator_namespace = context.namespace.name
@@ -47,3 +47,11 @@ spec:
         operator.openshift.approve_operator_subscription_in_namespace(operator.name, operator.operator_namespace)
         operator.is_running(wait=True)
     print("Percona Mysql operator is running")
+
+
+@step(u'Percona Mysql operator is removed')
+def uninstall(context):
+    operator = PerconaMysqlOperator()
+    operator.operator_namespace = context.namespace.name
+    if operator.is_running():
+        operator.uninstall_operator_subscription(wait=True)

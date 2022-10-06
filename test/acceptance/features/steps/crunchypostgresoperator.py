@@ -1,7 +1,7 @@
 from subscription_install_mode import InstallMode
 from olm import Operator
 from environment import ctx
-from behave import given
+from behave import step
 
 
 class CrunchyPostgresOperator(Operator):
@@ -24,10 +24,17 @@ class CrunchyPostgresOperator(Operator):
             operator_catalog_channel=channel)
 
 
-@given(u'Crunchy Data Postgres operator is running')
+@step(u'Crunchy Data Postgres operator is running')
 def install(_context):
     operator = CrunchyPostgresOperator()
     if not operator.is_running():
         operator.install_operator_subscription(install_mode=InstallMode.Manual)
         operator.is_running(wait=True)
     print("Crunchy Data Postgres operator is running")
+
+
+@step(u'Crunchy Data Postgres operator is removed')
+def uninstall(_context):
+    operator = CrunchyPostgresOperator()
+    if operator.is_running():
+        operator.uninstall_operator_subscription(wait=True)

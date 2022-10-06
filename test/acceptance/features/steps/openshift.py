@@ -424,13 +424,31 @@ spec:
             assert exit_code == 0, f"Unable to patch CSV version for '{install_plan}' install plan:\n {output}"
 
         # approve install plan
-        print(f"Approving {install_plan} install plan")
+        print(f"Approving {install_plan} install plan for {csv_version}")
         cmd = f'{ctx.cli} -n {namespace} patch installplan {install_plan} --type merge --patch \'{{"spec": {{"approved": true}}}}\''
         (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Unable to patch the {install_plan} install plan to approve it:\n{output}"
 
     def approve_operator_subscription(self, name, csv_version=None):
         self.approve_operator_subscription_in_namespace(name, self.operators_namespace, csv_version)
+
+    def remove_operator_subscription_in_namespace(self, name, namespace):
+        print(f"Removing {name} subscription in {namespace} namespace")
+        cmd = f'{ctx.cli} -n {namespace} delete subscription {name}'
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to delete subscription {name} in {namespace} namespace:\n{output}"
+
+    def remove_operator_subscription(self, name):
+        self.remove_operator_subscription_in_namespace(name, self.operators_namespace)
+
+    def remove_csv_in_namespace(self, csv_version, namespace):
+        print(f"Removing {csv_version} CSV in {namespace} namespace")
+        cmd = f'{ctx.cli} -n {namespace} delete csv {csv_version}'
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to delete CSV {csv_version} in {namespace} namespace:\n{output}"
+
+    def remove_csv(self, csv_version):
+        self.remove_csv_in_namespace(csv_version, self.operators_namespace)
 
     def get_resource_list_in_namespace(self, resource_plural, name_pattern, namespace):
         print(f"Searching for {resource_plural} that matches {name_pattern} in {namespace} namespace")
@@ -481,6 +499,15 @@ spec:
             ns_arg = ""
         (output, exit_code) = self.cmd.run(f"{ctx.cli} apply {ns_arg} --validate={validate} -f " + yaml)
         assert exit_code == 0, "Applying yaml file failed as the exit code is not 0"
+        return output
+
+    def delete_from_yaml_file(self, yaml, namespace=None):
+        if namespace is not None:
+            ns_arg = f"-n {namespace}"
+        else:
+            ns_arg = ""
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} delete {ns_arg} -f " + yaml)
+        assert exit_code == 0, f"Deleting from yaml file failed as the exit code is not 0:\n{output}"
         return output
 
     def get_deployment_names_of_given_pattern(self, deployment_name_pattern, namespace):

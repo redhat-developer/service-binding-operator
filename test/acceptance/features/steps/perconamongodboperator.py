@@ -1,6 +1,6 @@
 from olm import Operator
 from environment import ctx
-from behave import given
+from behave import step
 
 
 class PerconaMongoDBOperator(Operator):
@@ -14,7 +14,7 @@ class PerconaMongoDBOperator(Operator):
         )
 
 
-@given(u'Percona MongoDB operator is running')
+@step(u'Percona MongoDB operator is running')
 def install_percona_mongodb_operator(context):
     operator = PerconaMongoDBOperator()
     operator.operator_namespace = context.namespace.name
@@ -47,3 +47,11 @@ spec:
         operator.openshift.approve_operator_subscription_in_namespace(operator.name, operator.operator_namespace)
         operator.is_running(wait=True)
     print("Percona MongoDB operator is running")
+
+
+@step(u'Percona MongoDB operator is removed')
+def uninstall(context):
+    operator = PerconaMongoDBOperator()
+    operator.operator_namespace = context.namespace.name
+    if operator.is_running():
+        operator.uninstall_operator_subscription(wait=True)

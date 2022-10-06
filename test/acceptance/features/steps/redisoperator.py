@@ -1,6 +1,6 @@
 from olm import Operator
 from environment import ctx
-from behave import given
+from behave import step
 
 
 class RedisOperator(Operator):
@@ -14,10 +14,17 @@ class RedisOperator(Operator):
         )
 
 
-@given(u'Opstree Redis operator is running')
+@step(u'Opstree Redis operator is running')
 def install_redis_operator(_context):
     operator = RedisOperator()
     if not operator.is_running():
         operator.install_operator_subscription()
         operator.is_running(wait=True)
     print("Opstree Redis operator is running")
+
+
+@step(u'Opstree Redis operator is removed')
+def uninstall(_context):
+    operator = RedisOperator()
+    if operator.is_running():
+        operator.uninstall_operator_subscription(wait=True)

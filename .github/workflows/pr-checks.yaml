@@ -230,6 +230,7 @@ jobs:
     env:
       EXTRA_BEHAVE_ARGS: "--tags=@supported-operator --tags=~@disable-github-actions"
       TEST_RUN: Supported_Operators_Acceptance_tests_Kubernetes_with_OLM
+      DELETE_NAMESPACE: never
 
     steps:
       - name: Checkout Git Repository

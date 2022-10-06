@@ -91,6 +91,7 @@ Feature: Support a number of existing operator-backed services out of the box
            """
            redisSecret!
            """
+    And Opstree Redis operator is removed
 
   @external-feedback
   Scenario: Bind test application to Postgres provisioned by Crunchy Data Postgres operator
@@ -171,6 +172,7 @@ Feature: Support a number of existing operator-backed services out of the box
     And File "/bindings/$scenario_id/tls.crt" exists in application pod
     And File "/bindings/$scenario_id/tls.key" exists in application pod
     And Application can connect to the projected Postgres database
+    And Crunchy Data Postgres operator is removed
 
   @disable-github-actions
   @disable-openshift-4.11
@@ -250,6 +252,7 @@ Feature: Support a number of existing operator-backed services out of the box
            """
     And File "/bindings/$scenario_id/password" exists in application pod
     And Application can connect to the projected MySQL database
+    And Percona Mysql operator is removed
 
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
     Given Percona Mysql operator is running
@@ -324,6 +327,7 @@ Feature: Support a number of existing operator-backed services out of the box
            root
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+    And Percona Mysql operator is removed
 
   @external-feedback
   Scenario: Bind test application to Postgres instance provisioned by Cloud Native Postgres operator
@@ -394,6 +398,7 @@ Feature: Support a number of existing operator-backed services out of the box
            """
     And File "/bindings/$scenario_id/password" exists in application pod
     And Application can connect to the projected Postgres database
+    And Cloud Native Postgres operator is removed
 
   Scenario: Bind test application to RabbitMQ instance provisioned by RabbitMq operator
     Given RabbitMQ operator is running
@@ -442,6 +447,7 @@ Feature: Support a number of existing operator-backed services out of the box
            root
            """
     And File "/bindings/$scenario_id/password" exists in application pod
+    And RabbitMQ operator is removed
 
   @crdv1beta1
   Scenario: Bind test application to MongoDB provisioned by Percona's MongoDB operator
@@ -506,3 +512,4 @@ Feature: Support a number of existing operator-backed services out of the box
             """
             mongo-cluster-rs0.$NAMESPACE.svc.cluster.local
             """
+    And Percona MongoDB operator is removed
