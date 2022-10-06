@@ -399,7 +399,7 @@ spec:
         return self.create_operator_subscription_to_namespace(package_name, self.operators_namespace, operator_source_name,
                                                               channel, operator_source_namespace, csv_version, install_mode)
 
-    def get_install_plan_for_subscription(self, subscription_name, subscription_namespace, csv_version=None):
+    def get_install_plan_for_subscription(self, subscription_name, subscription_namespace):
         # wait for install plan
         cmd = f"{ctx.cli} get subscription {subscription_name} -n {subscription_namespace} -o json | jq -rc '.status.installplan.name'"
         polling2.poll(target=lambda: tuple(self.cmd.run(cmd)), check_success=lambda o: o[1] == 0 and o[0].startswith(
@@ -411,16 +411,26 @@ spec:
 
         return install_plan.strip()
 
-    def approve_operator_subscription_in_namespace(self, name, namespace):
+    def approve_operator_subscription_in_namespace(self, name, namespace, csv_version=None):
         # get the install plan
         install_plan = self.get_install_plan_for_subscription(name, namespace)
+
+        # patch CSV for install plan
+        if csv_version is not None:
+            print(f"Patching {install_plan} install plan for {csv_version} CSV")
+            patch = f'{{"spec": {{"clusterServiceVersionNames": ["{csv_version}"] }}}}'
+            cmd = f"{ctx.cli} patch installplan {install_plan} -n {namespace} -p '{patch}' --type=merge"
+            (output, exit_code) = self.cmd.run(cmd)
+            assert exit_code == 0, f"Unable to patch CSV version for '{install_plan}' install plan:\n {output}"
+
         # approve install plan
+        print(f"Approving {install_plan} install plan")
         cmd = f'{ctx.cli} -n {namespace} patch installplan {install_plan} --type merge --patch \'{{"spec": {{"approved": true}}}}\''
         (output, exit_code) = self.cmd.run(cmd)
-        assert exit_code == 0, f"Unable to patch the '{install_plan} install plan to approve it:\n{output}"
+        assert exit_code == 0, f"Unable to patch the {install_plan} install plan to approve it:\n{output}"
 
-    def approve_operator_subscription(self, name):
-        self.approve_operator_subscription_in_namespace(name, self.operators_namespace)
+    def approve_operator_subscription(self, name, csv_version=None):
+        self.approve_operator_subscription_in_namespace(name, self.operators_namespace, csv_version)
 
     def get_resource_list_in_namespace(self, resource_plural, name_pattern, namespace):
         print(f"Searching for {resource_plural} that matches {name_pattern} in {namespace} namespace")
