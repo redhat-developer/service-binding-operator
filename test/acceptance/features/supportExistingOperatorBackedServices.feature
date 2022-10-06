@@ -193,7 +193,7 @@ Feature: Support a number of existing operator-backed services out of the box
               schedule: "0 4 * * *"
             pxc:
               size: 1
-              image: percona/percona-xtradb-cluster:8.0.27-18.1
+              image: docker.io/percona/percona-xtradb-cluster:8.0.27-18.1
               volumeSpec:
                 persistentVolumeClaim:
                   resources:
@@ -202,10 +202,10 @@ Feature: Support a number of existing operator-backed services out of the box
             haproxy:
               enabled: true
               size: 1
-              image: percona/percona-xtradb-cluster-operator:1.11.0-haproxy
+              image: docker.io/percona/percona-xtradb-cluster-operator:1.11.0-haproxy
             logcollector:
               enabled: true
-              image: percona/percona-xtradb-cluster-operator:1.11.0-logcollector
+              image: docker.io/percona/percona-xtradb-cluster-operator:1.11.0-logcollector
           """
     * Condition ready=True for PerconaXtraDBCluster/minimal-cluster resource is met
     When Service Binding is applied
@@ -269,7 +269,7 @@ Feature: Support a number of existing operator-backed services out of the box
               schedule: "0 4 * * *"
             pxc:
               size: 1
-              image: percona/percona-xtradb-cluster:8.0.27-18.1
+              image: docker.io/percona/percona-xtradb-cluster:8.0.27-18.1
               volumeSpec:
                 persistentVolumeClaim:
                   resources:
@@ -278,10 +278,10 @@ Feature: Support a number of existing operator-backed services out of the box
             haproxy:
               enabled: true
               size: 1
-              image: percona/percona-xtradb-cluster-operator:1.11.0-haproxy
+              image: docker.io/percona/percona-xtradb-cluster-operator:1.11.0-haproxy
             logcollector:
               enabled: true
-              image: percona/percona-xtradb-cluster-operator:1.11.0-logcollector
+              image: docker.io/percona/percona-xtradb-cluster-operator:1.11.0-logcollector
           """
     When Service Binding is applied
           """
