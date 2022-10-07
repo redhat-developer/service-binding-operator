@@ -24,7 +24,6 @@ You must expose the binding data from the backing service. Depending on your wor
 +
 ** xref:direct-secret-reference.adoc[Direct secret reference]
 ** xref:adding-annotation.adoc[Declaring binding data through custom resource definition (CRD) or CR annotations]
-** xref:olm-descriptors.adoc[Declaring binding data through Operator Lifecycle Manager (OLM) descriptors]
 ** xref:detect-bindings.adoc[Detection of binding data through owned resources]
 
 
@@ -47,12 +46,9 @@ collection of objects
 [#data-model]
 == Data model
 
-This section explains the data model used in the annotation and OLM
-descriptors. The data model is same for CRD or CR annotations and OLM
-descriptors, but the syntax is different, which is explained in the
-respective sections.
+This section explains the data model used in the annotations.
 
-* `path`: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.The data model used in the annotations and OLM descriptors follow specific conventions.
+* `path`: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}. The data model used in the annotations follow specific conventions.
 
 Service binding annotations must use the following convention:
 
@@ -65,8 +61,6 @@ where:
 [horizontal]
 `<NAME>`:: Specifies the name under which the binding value is to be exposed. You can exclude it only when the `objectType` parameter is set to `Secret` or `ConfigMap`.
 `<VALUE>`:: Specifies the constant value exposed when no `path` is set.
-
-Although, the data model is the same for custom resource definitions (CRD), custom resource (CR) annotations, and Operator Lifecycle Manager (OLM) descriptors, the syntax for each one differs.
 
 The data model provides the details on the allowed values and semantic for the `path`, `elementType`, `objectType`, `sourceKey`, and `sourceValue` parameters.
 

@@ -119,9 +119,6 @@ type CRD interface {
 	HasResource
 
 	Bindable
-
-	// optional Descriptor attached to ClusterServiceVersion resource
-	Descriptor() (*CRDDescription, error)
 }
 
 // Pipeline context passed to each handler

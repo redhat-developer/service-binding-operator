@@ -510,21 +510,6 @@ func (m *MockCRD) EXPECT() *MockCRDMockRecorder {
 	return m.recorder
 }
 
-// Descriptor mocks base method.
-func (m *MockCRD) Descriptor() (*pipeline.CRDDescription, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Descriptor")
-	ret0, _ := ret[0].(*pipeline.CRDDescription)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// Descriptor indicates an expected call of Descriptor.
-func (mr *MockCRDMockRecorder) Descriptor() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Descriptor", reflect.TypeOf((*MockCRD)(nil).Descriptor))
-}
-
 // IsBindable mocks base method.
 func (m *MockCRD) IsBindable() (bool, error) {
 	m.ctrl.T.Helper()
