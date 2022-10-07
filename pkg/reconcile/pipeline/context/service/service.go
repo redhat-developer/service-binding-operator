@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	e "errors"
 
-	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"github.com/redhat-developer/service-binding-operator/pkg/binding/registry"
 	"github.com/redhat-developer/service-binding-operator/pkg/client/kubernetes"
@@ -16,7 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 )
@@ -238,14 +235,7 @@ func (c *customResourceDefinition) kind() string {
 }
 
 func (c *customResourceDefinition) IsBindable() (bool, error) {
-	descriptor, err := c.Descriptor()
-	if err != nil {
-		return false, err
-	}
 	annotations := make(map[string]string)
-	if descriptor != nil {
-		util.MergeMaps(annotations, descriptor.BindingAnnotations())
-	}
 	util.MergeMaps(annotations, c.resource.GetAnnotations())
 	if len(annotations) == 0 {
 		return false, nil
@@ -261,44 +251,4 @@ func (c *customResourceDefinition) IsBindable() (bool, error) {
 		}
 	}
 	return false, nil
-}
-
-func (c *customResourceDefinition) Descriptor() (*pipeline.CRDDescription, error) {
-	csvs, err := c.client.Resource(olmv1alpha1.SchemeGroupVersion.WithResource("clusterserviceversions")).Namespace(c.ns).List(context.Background(), metav1.ListOptions{})
-	if err != nil {
-		if errors.IsNotFound(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	if len(csvs.Items) == 0 {
-		return nil, nil
-	}
-	for _, csv := range csvs.Items {
-		ownedPath := []string{"spec", "customresourcedefinitions", "owned"}
-
-		ownedCRDs, exists, err := unstructured.NestedSlice(csv.Object, ownedPath...)
-		if err != nil {
-			return nil, err
-		}
-		if !exists {
-			continue
-		}
-
-		for _, crd := range ownedCRDs {
-			crdDesciption := &pipeline.CRDDescription{}
-			data, ok := crd.(map[string]interface{})
-			if !ok {
-				return nil, e.New("cannot cast to map")
-			}
-			err := runtime.DefaultUnstructuredConverter.FromUnstructured(data, crdDesciption)
-			if err != nil {
-				return nil, err
-			}
-			if crdDesciption.Name == c.resource.GetName() && crdDesciption.Kind == c.kind() && crdDesciption.Version == c.serviceGVR.Version {
-				return crdDesciption, nil
-			}
-		}
-	}
-	return nil, nil
 }

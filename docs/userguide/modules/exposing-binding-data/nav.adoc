@@ -4,6 +4,5 @@
 ** xref:provisioned-service.adoc[]
 ** xref:direct-secret-reference.adoc[]
 ** xref:adding-annotation.adoc[]
-** xref:olm-descriptors.adoc[]
 ** xref:detect-bindings.adoc[]
 

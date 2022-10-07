@@ -524,48 +524,6 @@ Feature: Bind an application to a service
             """
         Then Error message "name and selector MUST NOT be defined in the application reference" is thrown
 
-    @olm @olm-descriptors
-    Scenario: Bind service to application using binding definition available in x-descriptors
-        Given OLM Operator "backend-new-spec" is running
-        * Generic test application is running
-        * The Custom Resource is present
-            """
-            apiVersion: "beta.example.com/v1"
-            kind: Backend
-            metadata:
-                name: $scenario_id-backend
-            spec:
-                host: example.common
-                ports:
-                    - protocol: tcp
-                      port: 8080
-                    - protocol: ftp
-                      port: 22
-            """
-        * Service Binding is applied
-            """
-            apiVersion: binding.operators.coreos.com/v1alpha1
-            kind: ServiceBinding
-            metadata:
-                name: $scenario_id-binding
-            spec:
-                bindAsFiles: false
-                services:
-                -   group: beta.example.com
-                    version: v1
-                    kind: Backend
-                    name: $scenario_id-backend
-                application:
-                    name: $scenario_id
-                    group: apps
-                    version: v1
-                    resource: deployments
-            """
-        Then Service Binding is ready
-        And The application env var "BACKEND_HOST" has value "example.common"
-        And The application env var "BACKEND_PORTS_FTP" has value "22"
-        And The application env var "BACKEND_PORTS_TCP" has value "8080"
-
     @external-feedback
     Scenario: Custom environment variable is injected into the application under the declared name ignoring global and service env prefix
         Given Generic test application is running

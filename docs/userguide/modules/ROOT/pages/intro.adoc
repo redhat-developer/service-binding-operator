@@ -34,18 +34,18 @@ With {servicebinding-title}, you can:
 *Exposal of binding data from services*
 
 * Based on annotations present in CRD, custom resources (CRs), or resources.
-* Based on descriptors present in Operator Lifecycle Manager (OLM) descriptors.
+* Project secrets and services following the Provisioned Service standard.
 
 *Workload projection*
 
-* Projection of binding data as files, with a volume mounts.
+* Projection of binding data as files, with a volume mount.
 * Projection of binding data as environment variables.
 
 *Service Binding Options*
 
 * Bind backing services in a namespace that is different from the workload namespace.
 * Project binding data into the specific container workloads.
-* Auto-detection of the binding data from resources owned by the backing service CR. 
+* Auto-detection of the binding data from resources owned by the backing service CR.
 * Change the binding names before projecting them into workload.
 * Compose custom binding data from the exposed binding data.
 * Support for non-`PodSpec` compliant workload resources.
@@ -71,7 +71,7 @@ By using the {servicebinding-title}, as an application developer, you need to de
 The CRD of the {servicebinding-title} supports the following APIs:
 
 * *Service Binding* with the `binding.operators.coreos.com` API group.
-+ 
++
 This API is compliant with the Service Binding specification. It is fully supported and considered as the mature API. Use this API in production environments.
 
 * *Service Binding (Spec API Tech Preview)* with the `servicebinding.io` API group.
@@ -100,5 +100,3 @@ vars
 [#referenced-specification]
 == Referenced specification
 Service Binding Operator supports the https://github.com/k8s-service-bindings/spec[Service Binding Specification for Kubernetes].
-
-

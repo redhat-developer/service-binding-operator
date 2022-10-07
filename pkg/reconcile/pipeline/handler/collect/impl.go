@@ -49,14 +49,6 @@ func BindingDefinitions(ctx pipeline.Context) {
 			return
 		}
 		if crd != nil {
-			descr, err := crd.Descriptor()
-			if err != nil {
-				requestRetry(ctx, ErrorReadingDescriptorReason, err)
-				return
-			}
-			if descr != nil {
-				util.MergeMaps(anns, descr.BindingAnnotations())
-			}
 			util.MergeMaps(anns, crd.Resource().GetAnnotations())
 		}
 
