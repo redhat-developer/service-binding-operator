@@ -7,6 +7,9 @@ content:
     - branches: HEAD
       start_paths: docs/userguide, docs/devguide
       url: https://github.com/redhat-developer/service-binding-operator
+    - branches: release-v1.3.x
+      start_paths: docs/userguide, docs/devguide
+      url: https://github.com/redhat-developer/service-binding-operator
     - branches: release-v1.2.x
       start_paths: docs/userguide, docs/devguide
       url: https://github.com/redhat-developer/service-binding-operator
