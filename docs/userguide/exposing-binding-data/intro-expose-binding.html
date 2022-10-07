@@ -92,9 +92,6 @@
     <a class="nav-link" href="adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
   </li>
   <li class="nav-item" data-depth="2">
-    <a class="nav-link" href="olm-descriptors.html">Declaring binding data through OLM descriptors</a>
-  </li>
-  <li class="nav-item" data-depth="2">
     <a class="nav-link" href="detect-bindings.html">Detection of binding data through owned resources</a>
   </li>
 </ul>
@@ -270,9 +267,6 @@
 <p><a href="adding-annotation.html" class="xref page">Declaring binding data through custom resource definition (CRD) or CR annotations</a></p>
 </li>
 <li>
-<p><a href="olm-descriptors.html" class="xref page">Declaring binding data through Operator Lifecycle Manager (OLM) descriptors</a></p>
-</li>
-<li>
 <p><a href="detect-bindings.html" class="xref page">Detection of binding data through owned resources</a></p>
 </li>
 </ul>
@@ -323,15 +317,12 @@ collection of objects</p>
 <h2 id="data-model"><a class="anchor" href="#data-model"></a>Data model</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>This section explains the data model used in the annotation and OLM
-descriptors. The data model is same for CRD or CR annotations and OLM
-descriptors, but the syntax is different, which is explained in the
-respective sections.</p>
+<p>This section explains the data model used in the annotations.</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p><code>path</code>: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}.The data model used in the annotations and OLM descriptors follow specific conventions.</p>
+<p><code>path</code>: JSONPath template is composed of JSONPath expressions enclosed by curly braces {}. The data model used in the annotations follow specific conventions.</p>
 </li>
 </ul>
 </div>
@@ -366,9 +357,6 @@ respective sections.</p>
 </td>
 </tr>
 </table>
-</div>
-<div class="paragraph">
-<p>Although, the data model is the same for custom resource definitions (CRD), custom resource (CR) annotations, and Operator Lifecycle Manager (OLM) descriptors, the syntax for each one differs.</p>
 </div>
 <div class="paragraph">
 <p>The data model provides the details on the allowed values and semantic for the <code>path</code>, <code>elementType</code>, <code>objectType</code>, <code>sourceKey</code>, and <code>sourceValue</code> parameters.</p>
