@@ -426,7 +426,6 @@ Feature: Support a number of existing operator-backed services out of the box
                 resource: deployments
           """
     Then Service Binding is ready
-    And Kind RabbitmqCluster with apiVersion rabbitmq.com/v1beta1 is listed in bindable kinds
     And Content of file "/bindings/$scenario_id/type" in application pod is
            """
            rabbitmq

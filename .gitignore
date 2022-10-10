@@ -112,3 +112,4 @@ bundle
 bundle.Dockerfile
 config/crd/bases/_.yaml
 .cache
+config/manager/kustomization.yaml

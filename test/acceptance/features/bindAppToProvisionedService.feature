@@ -127,7 +127,7 @@ Feature: Bind application to provisioned service
             kind: CustomResourceDefinition
             metadata:
                 name: provisionedbackends.stable.example.com
-                annotations:
+                labels:
                     "servicebinding.io/provisioned-service": "true"
             spec:
                 group: stable.example.com

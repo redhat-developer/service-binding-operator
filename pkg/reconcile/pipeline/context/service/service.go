@@ -235,14 +235,17 @@ func (c *customResourceDefinition) kind() string {
 }
 
 func (c *customResourceDefinition) IsBindable() (bool, error) {
+	labels := make(map[string]string)
+	util.MergeMaps(labels, c.resource.GetLabels())
+	val, found := labels[binding.ProvisionedServiceAnnotationKey]
+	if found && val == "true" {
+		return true, nil
+	}
+
 	annotations := make(map[string]string)
 	util.MergeMaps(annotations, c.resource.GetAnnotations())
 	if len(annotations) == 0 {
 		return false, nil
-	}
-	val, found := annotations[binding.ProvisionedServiceAnnotationKey]
-	if found && val == "true" {
-		return true, nil
 	}
 
 	for k := range annotations {

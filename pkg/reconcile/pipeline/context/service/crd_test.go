@@ -33,10 +33,10 @@ var _ = Describe("CRD", func() {
 
 	It("should be bindable if marked as provisioned service", func() {
 		u := &unstructured.Unstructured{}
-		annotations := map[string]string{
+		labels := map[string]string{
 			binding.ProvisionedServiceAnnotationKey: "true",
 		}
-		u.SetAnnotations(annotations)
+		u.SetLabels(labels)
 		crd := &customResourceDefinition{resource: u, client: client}
 
 		Expect(crd.IsBindable()).To(BeTrue())

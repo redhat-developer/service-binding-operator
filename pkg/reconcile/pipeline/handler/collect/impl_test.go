@@ -665,7 +665,7 @@ var _ = Describe("Collect From Provisioned Service", func() {
 			err := errors.New("CRD of service ns1/foo indicates provisioned service, but no secret name provided under .status.binding.name")
 			crd := mocks.NewMockCRD(mockCtrl)
 			u := &unstructured.Unstructured{}
-			u.SetAnnotations(map[string]string{binding.ProvisionedServiceAnnotationKey: "true"})
+			u.SetLabels(map[string]string{binding.ProvisionedServiceAnnotationKey: "true"})
 
 			crd.EXPECT().Resource().Return(u)
 

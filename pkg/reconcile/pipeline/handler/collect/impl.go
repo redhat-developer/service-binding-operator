@@ -124,7 +124,7 @@ func ProvisionedService(ctx pipeline.Context) {
 			if crd == nil {
 				continue
 			}
-			v, ok := crd.Resource().GetAnnotations()[binding.ProvisionedServiceAnnotationKey]
+			v, ok := crd.Resource().GetLabels()[binding.ProvisionedServiceAnnotationKey]
 			if ok && v == "true" {
 				requestRetry(ctx, ErrorReadingBindingReason, fmt.Errorf("CRD of service %v/%v indicates provisioned service, but no secret name provided under .status.binding.name", res.GetNamespace(), res.GetName()))
 				return
