@@ -93,6 +93,7 @@ Feature: Support a number of existing operator-backed services out of the box
            """
 
   @external-feedback
+  @disable-openshift-4.12
   Scenario: Bind test application to Postgres provisioned by Crunchy Data Postgres operator
     Given Crunchy Data Postgres operator is running
     * Generic test application is running
@@ -103,7 +104,7 @@ Feature: Support a number of existing operator-backed services out of the box
           metadata:
             name: hippo
           spec:
-            image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.4-0
+            image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.5-1
             postgresVersion: 14
             instances:
               - name: instance1
@@ -115,7 +116,7 @@ Feature: Support a number of existing operator-backed services out of the box
                       storage: 1Gi
             backups:
               pgbackrest:
-                image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.38-0
+                image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.40-1
                 repos:
                 - name: repo1
                   volume:
@@ -251,6 +252,7 @@ Feature: Support a number of existing operator-backed services out of the box
     And File "/bindings/$scenario_id/password" exists in application pod
     And Application can connect to the projected MySQL database
 
+  @disable-openshift-4.12
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
     Given Percona Mysql operator is running
     * Generic test application is running
