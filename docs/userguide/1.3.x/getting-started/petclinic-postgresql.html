@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Connecting PetClinic application to PostgreSQL database :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/petclinic-postgresql.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.3.x">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="quick-start.html">Quick start guide</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC requirements</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct secret reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../projecting-binding-data/projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/api-differences.html">API differences</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.3.x</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.3.x/architecture.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.1/architecture.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.0/architecture.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.1/architecture.html">1.0.1</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.2.x/intro.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.1/intro.html">1.1.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.0/intro.html">1.1.0</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.1/intro.html">1.0.1</a>
+        </li>
+        <li class="version">
+          <a href="../../1.0.0/intro.html">1.0.0</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Getting started</li>
+    <li><a href="petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.3.x</button>
+  <div class="version-menu">
+    <a class="version" href="../../getting-started/petclinic-postgresql.html">master</a>
+    <a class="version is-current" href="petclinic-postgresql.html">1.3.x</a>
+    <a class="version" href="../../1.2.x/getting-started/petclinic-postgresql.html">1.2.x</a>
+    <a class="version" href="../../1.1.1/getting-started/petclinic-postgresql.html">1.1.1</a>
+    <a class="version" href="../../1.1.0/getting-started/petclinic-postgresql.html">1.1.0</a>
+    <a class="version" href="../../1.0.1/getting-started/petclinic-postgresql.html">1.0.1</a>
+    <a class="version is-missing" href="../../1.0.0/intro.html">1.0.0</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/release-v1.3.x/docs/userguide/modules/getting-started/pages/petclinic-postgresql.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Connecting PetClinic application to PostgreSQL database</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p><span class="image"><img src="_images/postgresql-spring-boot.png" alt="postgresql spring boot"></span></p>
+</div>
+<div class="paragraph">
+<p>In this configuration, we leverage the Service Binding Operator to collect the binding data from the PostgreSQL database and to project them into the Spring PetClinic application.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The PostgreSQL database in this scenario is deployed using Kubernetes <code>Deployment</code> of the <a href="https://hub.docker.com/_/postgres">postgres</a> container image.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>This scenario involves the following procedures:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><a href="#creating-a-postgresql-database-service">Creating a PostgreSQL database service</a>.</p>
+</li>
+<li>
+<p><a href="#deploying-the-application">Deploying the Spring PetClinic application</a>.</p>
+</li>
+<li>
+<p><a href="#connecting-the-application-to-the-database">Connecting the application to the database service using Service Binding Operator</a>.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="creating-postgresql-dbinstance"><a class="anchor" href="#creating-postgresql-dbinstance"></a>Creating a PostgreSQL database instance</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>For the application to use a PostgreSQL database service, you must create a PostgreSQL database instance.</p>
+</div>
+<div class="paragraph">
+<p>To create a PostgreSQL database instance, you must create the following Kubernetes resources:</p>
+</div>
+<div class="paragraph">
+<p> <details><summary> 
+<code>Deployment</code> resource to run the actual database instance
+ </summary><div> </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic-postgresql
+  labels:
+    app: spring-petclinic-postgresql
+  annotations:
+    service.binding/type: "postgresql"
+    service.binding/host: "path={.metadata.name}.{.metadata.namespace}"
+    service.binding/port: "path={.spec.template.spec.containers[0].ports[0].containerPort}"
+    service.binding: "path={.spec.template.spec.volumes[0].secret.secretName},objectType=Secret"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-petclinic-postgresql
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic-postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:13
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB_FILE
+              value: /secrets/database
+            - name: POSTGRES_PASSWORD_FILE
+              value: /secrets/password
+            - name: POSTGRES_USER_FILE
+              value: /secrets/username
+            - name: PGDATA
+              value: /tmp/data
+          volumeMounts:
+            - name: spring-petclinic-postgresql
+              mountPath: "/secrets"
+              readOnly: true
+          ports:
+            - name: postgresql
+              containerPort: 5432
+      volumes:
+        - name: spring-petclinic-postgresql
+          secret:
+            secretName: spring-petclinic-postgresql</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </div></details> </p>
+</div>
+<div class="paragraph">
+<p> <details><summary> 
+<code>Secret</code> resource to store the database credentials
+ </summary><div> </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: spring-petclinic-postgresql
+stringData:
+  database: spring-petclinic-postgresql-db
+  username: spring-petclinic-postgresql-user
+  password: spring-petclinic-postgresql-passwd</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </div></details> </p>
+</div>
+<div class="paragraph">
+<p> <details><summary> 
+<code>Service</code> resource to provide a way to access to the database
+ </summary><div> </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: spring-petclinic-postgresql
+  name: spring-petclinic-postgresql
+spec:
+  ports:
+    - port: 5432
+      protocol: TCP
+      targetPort: 5432
+  selector:
+    app: spring-petclinic-postgresql</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </div></details> </p>
+</div>
+<h3 id="_procedure" class="discrete">Procedure</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create the database resources by running the following command:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/postgresql-deployment.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/postgresql-deployment.yaml</a> -n my-petclinic</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>After you have created the database instance, verify that the respective pod in the <code>my-petclinic</code> namespace is up and running (it will take less than a minute):</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pods -n my-petclinic</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output:</div>
+<div class="content">
+<pre>NAME                                          READY  STATUS   RESTARTS  AGE
+spring-petclinic-postgresql-6db5594876-4556g  1/1    Running  0         16m</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The previous output verifies that the setup of the database for the application is complete. You can deploy the sample application and connect it to the database service.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-important" title="Important"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>The <code>Deployment</code> resource of the database has a couple of annotations set in the <code>.metadata.annotations</code> section:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">service.binding/type: "postgresql"
+service.binding/host: "path={.metadata.name}.{.metadata.namespace}"
+service.binding/port: "path={.spec.template.spec.containers[0].ports[0].containerPort}"
+service.binding: "path={.spec.template.spec.volumes[0].secret.secretName},objectType=Secret"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>You can view them by running the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl annotate --list deployment spring-petclinic-postgresql -n my-petclinic | grep '^service.binding'</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>These annotations are necessary to be set on the <code>Deployment</code> resource of the database to make it a bindable service. Doing so exposes the binding data such as the database connection information or credentials that can be detected by the Service Binding Operator. Binding data values such as the <code>type</code> of service, the <code>host</code> and <code>port</code> connection information, and a reference to the secret containing the database credentials are specified in these annotations.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>Based on the type of the resource, there are many ways to expose binding data from the backing service.</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For more information on service binding annotations, see the <a href="../exposing-binding-data/adding-annotation.html" class="xref page">Declaring binding data through CRD or CR annotations</a> section.</p>
+</li>
+<li>
+<p>For more information on the possible methods of exposing binding data, see the <a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Exposing binding data</a> section.</p>
+</li>
+</ul>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Now, after the database is configured for the application, you can deploy the application and connect it to the database service.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="deploying-spring-petclinic-app"><a class="anchor" href="#deploying-spring-petclinic-app"></a>Deploying the Spring PetClinic application</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To deploy the Spring PetClinic application on our Kubernetes cluster, use a deployment configuration consisting of the following resources:</p>
+</div>
+<div class="paragraph">
+<p> <details><summary> 
+<code>Deployment</code> resource to run the actual application instance
+ </summary><div> </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-petclinic
+  labels:
+    app: spring-petclinic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-petclinic
+  template:
+    metadata:
+      labels:
+        app: spring-petclinic
+    spec:
+      containers:
+        - name: app
+          image: quay.io/service-binding/spring-petclinic:latest
+          imagePullPolicy: Always
+          env:
+          - name: SPRING_PROFILES_ACTIVE
+            value: postgres
+          ports:
+          - name: http
+            containerPort: 8080</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </div></details> </p>
+</div>
+<div class="paragraph">
+<p> <details><summary> 
+<code>Service</code> resource to provide a way to access the application UI
+ </summary><div> </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: spring-petclinic
+  name: spring-petclinic
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: spring-petclinic</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </div></details> </p>
+</div>
+<h3 id="_procedure_2" class="discrete">Procedure</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create the application resources by running the following command:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/petclinic-deployment.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/petclinic-deployment.yaml</a> -n my-petclinic</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>At this stage, the application is not yet connected to the database service. Hence the pod fails to start. To verify run the following command:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get pods -n my-petclinic</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">NAME                                 READY  STATUS            RESTARTS    AGE
+spring-petclinic-5d47b7dbcd-7zd8v    0/1    CrashLoopBackOff  1 (7s ago)  28s</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>You can now use the Service Binding Operator to connect the application to the database service.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="connecting-the-app-to-dbservice-with-sbo"><a class="anchor" href="#connecting-the-app-to-dbservice-with-sbo"></a>Connecting the application to the database service with Service Binding Operator</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>In the absence of the Service Binding Operator, as an administrator of the application, you must perform the following steps <em>manually</em> to extract all the configuration details, create a <code>Secret</code> resource, and expose it to the application through a volume mount in Kubernetes:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Identify the required values for connecting the application to the database.</p>
+</li>
+<li>
+<p>Locate the resources where the values are present.</p>
+</li>
+<li>
+<p>Take the values from different resources and create a <code>Secret</code> resource.</p>
+</li>
+<li>
+<p>Mount the <code>Secret</code> resource into the application.</p>
+</li>
+<li>
+<p>Depending on the application requirement expose the values as environment variables or files.</p>
+</li>
+</ol>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>To leverage the Service Binding Operator as a way to easily and safely connect the sample application to the database service, you must create a <code>ServiceBinding</code> custom resource (CR) that triggers the Service Binding Operator to project the binding data into the application:</p>
+</div>
+<div class="paragraph">
+<p> <details><summary> 
+<code>ServiceBinding</code> resource to project the binding data
+ </summary><div> </p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name:
+    spring-petclinic-postgresql
+spec:
+  services:
+    - group: apps
+      version: v1
+      kind: Deployment
+      name: spring-petclinic-postgresql
+  application:
+    name: spring-petclinic
+    group: apps
+    version: v1
+    resource: deployments</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p> </div></details> </p>
+</div>
+<div class="paragraph">
+<p>The <code>.spec</code> field of the <code>ServiceBinding</code> CR has two sections:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>The first section is a list of service resources (<code>.spec.services</code>). The services resources point to the database service resources. For more information on how the values are exposed from the service resources, see the <a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Exposing binding data</a> section.</p>
+</li>
+<li>
+<p>The second section is the application (<code>.spec.application</code>). The application points to a <code>Deployment</code> or any resource that is compliant with PodSpec.</p>
+</li>
+</ul>
+</div>
+<h3 id="_procedure_3" class="discrete">Procedure</h3>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Create the <code>ServiceBinding</code> CR by running the following command in shell:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -f <a href="_attachments/petclinic-postgresql-binding.yaml">https://redhat-developer.github.io/service-binding-operator/userguide/getting-started/_attachments/petclinic-postgresql-binding.yaml</a> -n my-petclinic</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Verify that the request for service binding is successful by running the following command:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl get servicebindings -n my-petclinic</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">NAME                          READY   REASON              AGE
+spring-petclinic-postgresql   True    ApplicationsBound   28s</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+<div class="paragraph">
+<p>By creating this <code>ServiceBinding</code> resource, we now have the binding data values from the database that is to be projected into the application container as
+files, by default. Alternatively, you can also choose to project the binding data values as environment variables if you prefer. If you check under the
+<code>/bindings/spring-petclinic-postgresql</code> directory, you can see all the values from the <code>Secret</code> resource projected there.</p>
+</div>
+<div class="paragraph">
+<p>In the case of the previous example, you can find <code>username</code> and <code>password</code> as the projected values. The values pointed out through the annotation are also projected, such as the <code>database</code>, <code>host</code>, and <code>port</code> values. For connectivity, the <code>type</code> value is projected as the binding data.</p>
+</div>
+<div class="paragraph">
+<p>The application looks for the <code>SERVICE_BINDING_ROOT</code> environment variable to find the location of the <code>/bindings</code> directory. The Spring Boot application
+used here uses the <a href="https://github.com/spring-cloud/spring-cloud-bindings">Spring Cloud Bindings</a> library and it looks for the <code>SERVICE_BINDING_ROOT</code> environment variable to get the projected binding data. For more information on how an application uses these values, see the <a href="../projecting-binding-data/projecting-binding-data.html" class="xref page">Projecting binding data</a> section.</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</li>
+<li>
+<p>Verify that the binding is successful by setting up the port forwarding from the application port to access the sample application from your local environment:</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl port-forward --address 0.0.0.0 svc/spring-petclinic 8080:80 -n my-petclinic</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example output:</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">Forwarding from 0.0.0.0:8080 -> 8080</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Access <a href="http://localhost:8080" class="bare">http://localhost:8080</a>.</p>
+<div class="paragraph">
+<p>You can now remotely access web UI of the application and see that the application is now connected to the database service.</p>
+</div>
+</li>
+</ol>
+</div>
+<div class="paragraph">
+<p>For more information on creating requests for service binding, see the <a href="../binding-workloads-using-sbo/creating-service-binding.html" class="xref page">Creating service binding</a> section.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="conclusion"><a class="anchor" href="#conclusion"></a>Conclusion</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In this scenario, we set up a PostgreSQL database and connected it to the Spring PetClinic application using the Service Binding Operator to collect the binding data and expose them to the application.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="next-steps"><a class="anchor" href="#next-steps"></a>Next Steps</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>By using service bindings, developers are able to more easily leverage the services available to them on a Kubernetes cluster. This method provides
+consistency across different services and is repeatable for the developers. Service binding provides a unified way to create a binding connection between
+the application and service and eliminates the need for the usual manual and error-prone configuration.</p>
+</div>
+<div class="paragraph">
+<p>For more information, see the following sections:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><a href="../binding-workloads-using-sbo/creating-service-binding.html" class="xref page">Creating service binding</a></p>
+</li>
+<li>
+<p><a href="../projecting-binding-data/projecting-binding-data.html" class="xref page">Projecting binding data</a></p>
+</li>
+<li>
+<p><a href="../exposing-binding-data/intro-expose-binding.html" class="xref page">Exposing binding data</a></p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
