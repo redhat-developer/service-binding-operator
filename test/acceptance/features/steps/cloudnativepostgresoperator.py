@@ -10,7 +10,7 @@ class CloudNativePostgresOperator(Operator):
             name=name,
             pod_name_pattern="postgresql-operator-controller-manager.*",
             operator_catalog_source_name="operatorhubio-catalog",
-            operator_catalog_channel="stable",
+            operator_catalog_channel="stable-v1.17",
             operator_catalog_image="quay.io/operatorhubio/catalog:latest",
             package_name=name)
 
