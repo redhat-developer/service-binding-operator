@@ -190,69 +190,6 @@ Feature: Support spec v1beta1 resources
         And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
         And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
 
-    Scenario: Project a v1beta1 service binding using a v1beta1 workload mapping
-        Given The Secret is present
-            """
-            apiVersion: v1
-            kind: Secret
-            metadata:
-                name: $scenario_id-secret
-            stringData:
-                username: AzureDiamond
-                password: hunter2
-                type:     secret
-            """
-        And The Workload Resource Mapping is present
-            """
-            apiVersion: servicebinding.io/v1beta1
-            kind: ClusterWorkloadResourceMapping
-            metadata:
-                name: notpodspecs.stable.example.com
-            spec:
-                versions:
-                  - version: "*"
-                    volumes: .spec.volumeData
-                    containers:
-                      - path: .spec.containerSpecs[*]
-                        name: .id
-                        env: .envData
-                        volumeMounts: .volumeEntries
-                      - path: .spec.initContainerSpecs[*]
-                        name: .id
-                        env: .envData
-                        volumeMounts: .volumeEntries
-            """
-        And The Custom Resource is present
-            """
-            apiVersion: "stable.example.com/v1"
-            kind: NotPodSpec
-            metadata:
-                name: $scenario_id-npc
-            spec:
-                containerSpecs:
-                  - id: $scenario_id
-                    image: scratch
-            """
-        When Service Binding is applied
-            """
-            apiVersion: servicebinding.io/v1beta1
-            kind: ServiceBinding
-            metadata:
-                name: $scenario_id-binding
-            spec:
-                service:
-                    name: $scenario_id-secret
-                    kind: Secret
-                    apiVersion: v1
-                workload:
-                    apiVersion: stable.example.com/v1
-                    kind: NotPodSpec
-                    name: $scenario_id-npc
-            """
-        Then Service Binding is ready
-        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
-        And jsonpath "{.spec.volumeData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"$scenario_id-binding","secret":{"secretName":"$scenario_id-secret"}}]"
-
     @negative
     Scenario: Reject invalid v1alpha3 workload resource mapping
         When Invalid Workload Resource Mapping is applied
