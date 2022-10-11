@@ -66,6 +66,7 @@ jobs:
   acceptance:
     name: Acceptance Tests with Kubernetes and using OLM
     runs-on: ubuntu-20.04
+    timeout-minutes: 90
 
     env:
       EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@examples --tags=~@supported-operator --tags=~@optional-annotations --tags=~@workload-resource-mapping --tags=~@disable-github-actions"
@@ -230,6 +231,7 @@ jobs:
     env:
       EXTRA_BEHAVE_ARGS: "--tags=@supported-operator --tags=~@disable-github-actions"
       TEST_RUN: Supported_Operators_Acceptance_tests_Kubernetes_with_OLM
+      DELETE_NAMESPACE: never
 
     steps:
       - name: Checkout Git Repository
@@ -386,6 +388,7 @@ jobs:
   acceptance_without_olm:
     name: Acceptance tests running on Kubernetes without using OLM
     runs-on: ubuntu-20.04
+    timeout-minutes: 90
 
     env:
       EXTRA_BEHAVE_ARGS: "--tags=~@knative --tags=~@openshift --tags=~@olm --tags=~@disable-github-actions"
