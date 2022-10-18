@@ -7,6 +7,11 @@ OPENSHIFT_API ?=
 OPENSHIFT_USERNAME ?=
 OPENSHIFT_PASSWORD ?=
 
+TEST_PERFORMANCE_AVG_MEMORY ?= 150 # value in MiB
+TEST_PERFORMANCE_MAX_MEMORY ?= 200 # valie in MiB
+TEST_PERFORMANCE_AVG_CPU ?= 20 # value in millicores of vCPU
+TEST_PERFORMANCE_MAX_CPU ?= 100 # value in millicores of vCPU
+
 .PHONY: test-performance-setup
 ## Setup OpenShift cluster for performance test
 test-performance-setup:
@@ -30,3 +35,17 @@ test-performance-artifacts:
 	$(Q)echo "Gathering performance test artifacts"
 	$(Q)mkdir -p $(TEST_PERFORMANCE_ARTIFACTS) \
 		&& cp -rvf $(TEST_PERFORMANCE_OUTPUT_DIR) $(TEST_PERFORMANCE_ARTIFACTS)/
+
+.PHONY: test-performance-thresholds
+# Compare various KPIs to the threshold values and fail if any threshold is exceeded
+test-performance-thresholds: yq
+	@echo Evaluating KPI:
+	@$(YQ) eval '.kpi[] | select(.name == "usage")' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml
+	@echo "Checking if average value of memory "$$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "Memory_MiB").average)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml)" < $(TEST_PERFORMANCE_AVG_MEMORY) MiB"
+	@[ $$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "Memory_MiB").average) < $(TEST_PERFORMANCE_AVG_MEMORY)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml) == "true" ]
+	@echo "Checking if maximal value of memory "$$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "Memory_MiB").maximum)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml)" < $(TEST_PERFORMANCE_MAX_MEMORY) MiB"
+	@[ $$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "Memory_MiB").maximum) < $(TEST_PERFORMANCE_MAX_MEMORY)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml) == "true" ]
+	@echo "Checking if average value of CPU "$$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "CPU_millicores").average)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml)" < $(TEST_PERFORMANCE_AVG_CPU) milicores of vCPU"
+	@[ $$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "CPU_millicores").average) < $(TEST_PERFORMANCE_AVG_CPU)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml) == "true" ]
+	@echo "Checking if maximal value of CPU "$$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "CPU_millicores").maximum)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml)" < $(TEST_PERFORMANCE_MAX_CPU) milicores of vCPU"
+	@[ $$($(YQ) eval '(.kpi[] | select(.name == "usage").metrics.[] | select(.name == "CPU_millicores").maximum) < $(TEST_PERFORMANCE_MAX_CPU)' $(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml) == "true" ]
