@@ -144,7 +144,7 @@ endef
 
 YQ = $(shell pwd)/bin/yq
 yq:
-	$(call go-install-tool,$(YQ),github.com/mikefarah/yq/v4@v4.9.8)
+	$(call go-install-tool,$(YQ),github.com/mikefarah/yq/v4@v4.26.1)
 
 KUBECTL_SLICE = $(shell pwd)/bin/kubectl-slice
 kubectl-slice:
