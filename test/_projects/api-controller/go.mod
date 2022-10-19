@@ -1,6 +1,6 @@
 module api-controller
 
-go 1.18
+go 1.17
 
 require (
 	github.com/redhat-developer/service-binding-operator v0.0.0
