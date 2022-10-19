@@ -1,6 +1,6 @@
 # action.yml
 name: 'Setup Tools'
-description: 'Setup CLI configuration with kubectl operator-sdk opm minikube, setup path, kubeconfig, minikube and docker info '
+description: 'Setup CLI configuration with kubectl operator-sdk minikube, setup path, kubeconfig, minikube and docker info '
 inputs:
   operator-sdk:
     description: "Install Operator SDK"
@@ -30,7 +30,6 @@ runs:
     - id: setup-tools
       env:
         OPERATOR_SDK: ${{ inputs.operator-sdk }}
-        OPM: ${{ inputs.opm }}
         KUBECTL: ${{ inputs.kubectl }}
         MINIKUBE: ${{ inputs.minikube }}
         START_MINIKUBE: ${{ inputs.start-minikube }}
