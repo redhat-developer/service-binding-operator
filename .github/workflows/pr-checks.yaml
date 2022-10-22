@@ -23,18 +23,18 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "^1.16"
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
           architecture: "x64"
 
       - name: Checkout repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run linters
         run: make lint
@@ -45,12 +45,12 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "^1.16"
 
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Unit Tests with Code Coverage
         run: |
@@ -73,7 +73,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -81,7 +81,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
           architecture: "x64"
@@ -103,7 +103,7 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
@@ -137,7 +137,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: kubernetes-with-olm-test-results
@@ -153,7 +153,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -161,7 +161,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
           architecture: "x64"
@@ -183,7 +183,7 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
@@ -217,7 +217,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: supported-operators-kubernetes
@@ -233,7 +233,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -241,7 +241,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
           architecture: "x64"
@@ -263,7 +263,7 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
@@ -297,7 +297,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: workload-resource-mapping
@@ -314,7 +314,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -322,7 +322,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
           architecture: "x64"
@@ -335,7 +335,7 @@ jobs:
 
       - name: Set up Go
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "^1.16"
 
@@ -357,7 +357,7 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
@@ -393,7 +393,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: kubernetes-without-olm-test-results
@@ -405,7 +405,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
@@ -423,7 +423,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Wait for push
         uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
@@ -434,7 +434,7 @@ jobs:
           wait-interval: 60
 
       - name: Download image references
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
@@ -442,7 +442,7 @@ jobs:
         id: operator-image-ref
         run: |
           source ./operator.refs
-          echo "::set-output name=operator-image-ref::${OPERATOR_IMAGE_REF}"
+          echo "operator-image-ref=${OPERATOR_IMAGE_REF}" >> $GITHUB_OUTPUT
 
       - name: Run Trivy vulnerability scanner in IaC mode
         uses: aquasecurity/trivy-action@master

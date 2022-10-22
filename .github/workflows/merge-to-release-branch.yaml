@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up PATH
         run: |
@@ -26,7 +26,7 @@ jobs:
           echo "PATH=$PATH:$GITHUB_WORKSPACE/bin/" >> $GITHUB_ENV
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "^1.16"
 
@@ -56,10 +56,10 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "^1.16"
 
@@ -79,7 +79,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Wait for push
         uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
@@ -93,7 +93,7 @@ jobs:
         id: operator-image-ref
         run: |
           export OIR=$(make operator-repo-ref):$(git rev-parse --short=8 HEAD)
-          echo "::set-output name=operator-image-ref::${OIR}"
+          echo "operator-image-ref=${OIR}" >> $GITHUB_OUTPUT
 
       - name: Run Trivy vulnerability scanner in IaC mode
         uses: aquasecurity/trivy-action@master

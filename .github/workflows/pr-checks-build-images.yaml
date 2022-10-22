@@ -20,12 +20,12 @@ jobs:
 
     steps:
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v3
         with:
           go-version: "^1.16"
 
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup CLI
         uses: ./.github/actions/setup-cli
@@ -64,13 +64,13 @@ jobs:
           tar -czvf ${ARTIFACTS}/registry.tar.gz -C ${GITHUB_WORKSPACE} registry
 
       - name: Archive images
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
           path: ${{env.ARTIFACTS}}/*.tar.gz
 
       - name: Archive image references
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
           path: ${{env.ARTIFACTS}}/*.refs
