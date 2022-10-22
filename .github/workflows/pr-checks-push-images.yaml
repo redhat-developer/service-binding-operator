@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Wait for build
         uses: lewagon/wait-on-check-action@1b1630e169116b58a4b933d5ad7effc46d3d312d
@@ -28,7 +28,7 @@ jobs:
           wait-interval: 60
 
       - name: Download images
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
