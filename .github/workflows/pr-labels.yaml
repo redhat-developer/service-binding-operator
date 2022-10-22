@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
