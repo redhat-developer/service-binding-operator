@@ -445,22 +445,25 @@ Feature: Support a number of existing operator-backed services out of the box
            """
     And File "/bindings/$scenario_id/password" exists in application pod
 
-  @crdv1beta1
-  Scenario: Bind test application to MongoDB provisioned by Percona's MongoDB operator
+  @disable-openshift-4.9
+  @disable-openshift-4.10
+  @disable-openshift-4.11
+  @disable-openshift-4.12
+  Scenario: Bind test application to MongoDB provisioned by Percona's MongoDB operator on Kubernetes
     Given Percona MongoDB operator is running
     * Generic test application is running
     * The Custom Resource is present
           """
-          apiVersion: psmdb.percona.com/v1-9-0
+          apiVersion: psmdb.percona.com/v1
           kind: PerconaServerMongoDB
           metadata:
               name: mongo-cluster
           spec:
-              crVersion: 1.9.0
-              image: percona/percona-server-mongodb:4.4.8-9
+              crVersion: 1.13.0
+              image: percona/percona-server-mongodb:4.4.9-10
               allowUnsafeConfigurations: true
               upgradeOptions:
-                  apply: 4.4-recommended
+                  apply: disabled
                   schedule: "0 2 * * *"
               secrets:
                   users: mongo-cluster-secrets
@@ -472,8 +475,6 @@ Feature: Support a number of existing operator-backed services out of the box
                             resources:
                                 requests:
                                     storage: 1Gi
-              sharding:
-                  enabled: false
           """
     When Service Binding is applied
           """
@@ -484,7 +485,7 @@ Feature: Support a number of existing operator-backed services out of the box
           spec:
               services:
               - group: psmdb.percona.com
-                version: v1-9-0
+                version: v1
                 kind: PerconaServerMongoDB
                 name: mongo-cluster
               application:
@@ -494,7 +495,70 @@ Feature: Support a number of existing operator-backed services out of the box
                 resource: deployments
           """
     Then Service Binding is ready
-    And Kind PerconaServerMongoDB with apiVersion psmdb.percona.com/v1-9-0 is listed in bindable kinds
+    And Kind PerconaServerMongoDB with apiVersion psmdb.percona.com/v1 is listed in bindable kinds
+    And Content of file "/bindings/$scenario_id/type" in application pod is
+           """
+           mongodb
+           """
+    And Content of file "/bindings/$scenario_id/username" in application pod is
+           """
+           userAdmin
+           """
+    And File "/bindings/$scenario_id/password" exists in application pod
+    And Content of file "/bindings/$scenario_id/host" in application pod is
+            """
+            mongo-cluster-rs0.$NAMESPACE.svc.cluster.local
+            """
+
+  @disable-github-actions
+  Scenario: Bind test application to MongoDB provisioned by Percona's MongoDB operator on OpenShift
+    Given Percona MongoDB operator is running
+    * Generic test application is running
+    * The Custom Resource is present
+          """
+          apiVersion: psmdb.percona.com/v1
+          kind: PerconaServerMongoDB
+          metadata:
+              name: mongo-cluster
+          spec:
+              platform: openshift
+              crVersion: 1.13.0
+              image: percona/percona-server-mongodb:4.4.9-10
+              allowUnsafeConfigurations: true
+              upgradeOptions:
+                  apply: disabled
+                  schedule: "0 2 * * *"
+              secrets:
+                  users: mongo-cluster-secrets
+              replsets:
+                  - name: rs0
+                    size: 1
+                    volumeSpec:
+                        persistentVolumeClaim:
+                            resources:
+                                requests:
+                                    storage: 1Gi
+          """
+    When Service Binding is applied
+          """
+          apiVersion: binding.operators.coreos.com/v1alpha1
+          kind: ServiceBinding
+          metadata:
+              name: $scenario_id
+          spec:
+              services:
+              - group: psmdb.percona.com
+                version: v1
+                kind: PerconaServerMongoDB
+                name: mongo-cluster
+              application:
+                name: $scenario_id
+                group: apps
+                version: v1
+                resource: deployments
+          """
+    Then Service Binding is ready
+    And Kind PerconaServerMongoDB with apiVersion psmdb.percona.com/v1 is listed in bindable kinds
     And Content of file "/bindings/$scenario_id/type" in application pod is
            """
            mongodb

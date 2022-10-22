@@ -108,7 +108,7 @@ currently fall in this category are:
   services
 * [Percona
   MongoDB](https://operatorhub.io/operator/percona-server-mongodb-operator):
-  bindable with `PerconaServerMongoDB.psmdb.percona.com/v1-9-0` and `v1-10-0`
+  bindable with `PerconaServerMongoDB.psmdb.percona.com/v1-9-0`, `v1-10-0` and `v1`
   services
   * NOTE: Provides administrative access to the cluster by default
 * [RabbitMQ Cluster](https://github.com/rabbitmq/cluster-operator): bindable
