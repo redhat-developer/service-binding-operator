@@ -23,12 +23,12 @@ OLM_NAMESPACE ?=
 
 # Testing setup
 .PHONY: deploy-test-3rd-party-crds
-deploy-test-3rd-party-crds:
-	$(Q)kubectl --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/
+deploy-test-3rd-party-crds: kubectl
+	$(Q)$(KUBECTL) --namespace $(TEST_NAMESPACE) apply -f ./test/third-party-crds/
 
 .PHONY: create-test-namespace
-create-test-namespace:
-	$(Q)kubectl get namespace $(TEST_NAMESPACE) || kubectl create namespace $(TEST_NAMESPACE)
+create-test-namespace: kubectl
+	$(Q)$(KUBECTL) get namespace $(TEST_NAMESPACE) || $(KUBECTL) create namespace $(TEST_NAMESPACE)
 
 .PHONY: test-setup
 test-setup: test-cleanup create-test-namespace deploy-test-3rd-party-crds
