@@ -14,7 +14,7 @@ runs:
   using: "composite"
   steps:
     - id: check-skip-test
-      uses: actions/github-script@v6.1.0
+      uses: actions/github-script@v6.3.3
       with:
         result-encoding: string
         script: |
