@@ -167,36 +167,76 @@ put us into an unreleasable state
   * End to end, i.e. acceptance tests
 * Unit tests:
   * Coverage should remain the same or increase
- 
+
+## Configure your local environment
+
+To compile and execute the Service Binding Operator, you must have on your machine the following dependencies:
+
+* Git
+* Go
+* Python3
+* Make
+* Docker
+
+Other dependencies are needed, but you can install them locally using the make rule `install-tools`.
+This rule will download into the local `./bin` folder all the missing tools needed to work with this repo.
+So, to install the dependencies locally and configure your shell to use them, use the following commands:
+
+```
+make install-tools
+eval $(make local-env)
+```
+
+If not present, the following dependencies will be downloaded:
+
+* minikube
+* opm
+* mockgen
+* kubectl-slice
+* yq
+* kustomize
+* controller-gen
+* gen-mocks
+* operator-sdk
+* kubectl
+* helm
+
 ## Running Acceptance Tests
 
-1. Set KUBECONFIG for both minikube and acceptance tests (it will be generated at minikube's start if it does not exist):
+1. Install dependencies
+
+```
+make install-tools
+eval $(make local-env)
+```
+
+2. Set KUBECONFIG for both minikube and acceptance tests (it will be generated at minikube's start if it does not exist):
 
 ```
 export KUBECONFIG=/tmp/minikubeconfig
 ```
 
-2. Start minikube:
+3. Start minikube:
 
 ```
 ./hack/start-minikube.sh
 ```
 
-3. Enable olm on minikube:
+4. Enable olm on minikube:
 
 
 ```
 minikube addons enable olm
 ```
 
-4. Deploy operator to the minikube cluster
+5. Deploy operator to the minikube cluster
 
 ```
 eval $(minikube docker-env)
 make deploy OPERATOR_REPO_REF=$(minikube ip):5000/sbo
 ```
 
-5. Execute all acceptance tests tagged with `@dev` using `kubectl` CLI:
+6. Execute all acceptance tests tagged with `@dev` using `kubectl` CLI:
 
 ```
 make test-acceptance TEST_ACCEPTANCE_TAGS="@dev" TEST_ACCEPTANCE_START_SBO=remote TEST_ACCEPTANCE_CLI=kubectl
