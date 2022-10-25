@@ -23,14 +23,14 @@ manifests: controller-gen
 
 .PHONY: bundle
 # Generate bundle manifests and metadata, then validate generated files.
-bundle: manifests kustomize yq kubectl-slice push-image
-#	operator-sdk generate kustomize manifests -q
+bundle: manifests kustomize yq kubectl-slice operator-sdk push-image
+#	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) e -i '.metadata.annotations.containerImage="$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)"' bundle/manifests/service-binding-operator.clusterserviceversion.yaml
-	# this is needed because operator-sdk 1.16 filters out aggregated cluster role and the accompanied binding
+	# this is needed because $(OPERATOR_SDK) 1.16 filters out aggregated cluster role and the accompanied binding
 	$(KUSTOMIZE) build config/manifests | $(YQ) e 'select((.kind == "ClusterRole" and .metadata.name == "service-binding-controller-role") or (.kind == "ClusterRoleBinding" and .metadata.name == "service-binding-controller-rolebinding"))' - | $(KUBECTL_SLICE) -o bundle/manifests -t '{{.metadata.name}}_{{.apiVersion | replace "/" "_"}}_{{.kind | lower}}.yaml'
-	operator-sdk bundle validate ./bundle --select-optional name=operatorhub
+	$(OPERATOR_SDK) bundle validate ./bundle --select-optional name=operatorhub
 
 .PHONY: registry-login
 registry-login:
@@ -52,9 +52,9 @@ bundle-image: bundle
 	$(CONTAINER_RUNTIME) build -f bundle.Dockerfile -t $(OPERATOR_BUNDLE_IMAGE_REF) .
 
 .PHONY: push-bundle-image
-push-bundle-image: bundle-image registry-login
+push-bundle-image: bundle-image registry-login operator-sdk
 	$(Q)$(CONTAINER_RUNTIME) push $(OPERATOR_BUNDLE_IMAGE_REF)
-	$(Q)operator-sdk bundle validate --select-optional name=operatorhub -b $(CONTAINER_RUNTIME) $(OPERATOR_BUNDLE_IMAGE_REF)
+	$(Q)$(OPERATOR_SDK) bundle validate --select-optional name=operatorhub -b $(CONTAINER_RUNTIME) $(OPERATOR_BUNDLE_IMAGE_REF)
 
 .PHONY: index-image
 index-image: opm push-bundle-image
