@@ -75,6 +75,14 @@ func New() Registry {
 				"service.binding/password": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_PASSWORD",
 				"service.binding/host":     "path={.status.host}",
 			},
+			schema.GroupVersionKind{Group: "psmdb.percona.com", Version: "v1", Kind: "PerconaServerMongoDB"}: {
+				"service.binding/type":     "mongodb",
+				"service.binding/provider": "percona",
+				"service.binding":          "path={.spec.secrets.users},objectType=Secret",
+				"service.binding/username": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_USER",
+				"service.binding/password": "path={.spec.secrets.users},objectType=Secret,sourceKey=MONGODB_USER_ADMIN_PASSWORD",
+				"service.binding/host":     "path={.status.host}",
+			},
 			schema.GroupVersionKind{Group: "postgresql.k8s.enterprisedb.io", Version: "v1", Kind: "Cluster"}: {
 				"service.binding/type":     "postgresql",
 				"service.binding/host":     "path={.status.writeService}",
