@@ -8,9 +8,9 @@ run: generate fmt vet install
 install: manifests kustomize kubectl
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) apply -f -
 
-.PHONY: uninstall kubectl
+.PHONY: uninstall
 ## Uninstall CRDs from a cluster
-uninstall: manifests kustomize
+uninstall: manifests kustomize kubectl
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete -f -
 
 .PHONY: deploy-cert-manager
