@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha1"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
@@ -88,6 +89,11 @@ type bindingImpl struct {
 }
 
 func (i *impl) UnbindRequested() bool {
+	_, found := i.bindingMeta.GetAnnotations()[apis.MappingAnnotationKey]
+	return found || i.IsRemoved()
+}
+
+func (i *impl) IsRemoved() bool {
 	return !i.bindingMeta.DeletionTimestamp.IsZero()
 }
 
@@ -161,6 +167,16 @@ func (i *bindingImpl) BindingName() string {
 
 func (i *bindingImpl) EnvBindings() []*pipeline.EnvBinding {
 	return make([]*pipeline.EnvBinding, 0)
+}
+
+func (i *bindingImpl) CleanAnnotations() bool {
+	annotations := i.serviceBinding.GetAnnotations()
+	_, found := annotations[apis.MappingAnnotationKey]
+	if found {
+		delete(annotations, apis.MappingAnnotationKey)
+		i.serviceBinding.SetAnnotations(annotations)
+	}
+	return found
 }
 
 func (i *bindingImpl) Mappings() map[string]string {
@@ -405,6 +421,10 @@ func (i *impl) persistBinding() error {
 	}
 	client := i.client.Resource(i.groupVersionResource()).Namespace(i.bindingMeta.Namespace)
 	_, err = client.UpdateStatus(context.Background(), u, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+	_, err = client.Update(context.Background(), u, metav1.UpdateOptions{})
 	return err
 }
 
@@ -532,33 +552,38 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 	}
 
 	var mappingTemplate *v1beta1.ClusterWorkloadResourceMappingTemplate = nil
-	mappingObj, err := i.client.Resource(mappingGVR).
-		Get(context.Background(),
-			gvr.GroupResource().String(),
-			metav1.GetOptions{})
-	if errors.IsNotFound(err) {
-		mappingTemplate = &defaultTemplate
-	} else if mappingObj != nil {
-		var mapping v1beta1.ClusterWorkloadResourceMapping
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(mappingObj.Object, &mapping)
-		if err != nil {
+	var mapping v1beta1.ClusterWorkloadResourceMapping
+	if mappingData, found := i.bindingMeta.Annotations[apis.MappingAnnotationKey]; found {
+		if err := json.Unmarshal([]byte(mappingData), &mapping); err != nil {
 			return nil, err
 		}
-
-		wildcardTemplate := defaultTemplate.DeepCopy()
-		for _, template := range mapping.Spec.Versions {
-			if template.Version == gvr.Version {
-				mappingTemplate = &template
-				break
-			} else if template.Version == "*" {
-				wildcardTemplate = &template
-			}
-		}
-		if mappingTemplate == nil {
-			mappingTemplate = wildcardTemplate
-		}
 	} else {
-		return nil, err
+		mappingObj, err := i.client.Resource(mappingGVR).
+			Get(context.Background(),
+				gvr.GroupResource().String(),
+				metav1.GetOptions{})
+		if errors.IsNotFound(err) {
+			mappingTemplate = &defaultTemplate
+		} else if mappingObj != nil {
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(mappingObj.Object, &mapping)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	wildcardTemplate := defaultTemplate.DeepCopy()
+	for _, template := range mapping.Spec.Versions {
+		if template.Version == gvr.Version {
+			mappingTemplate = &template
+			break
+		} else if template.Version == "*" {
+			wildcardTemplate = &template
+		}
+	}
+	if mappingTemplate == nil {
+		mappingTemplate = wildcardTemplate
 	}
 
 	if len(mappingTemplate.Containers) == 0 {
@@ -586,7 +611,6 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 		return nil, err
 	}
 
-	i.resourceMapping = workloadMapping
 	return workloadMapping, nil
 }
 

@@ -777,249 +777,271 @@ var _ = Describe("Unbind handler", func() {
 	BeforeEach(func() {
 		mockCtrl = gomock.NewController(GinkgoT())
 		ctx = mocks.NewMockContext(mockCtrl)
-		ctx.EXPECT().UnbindRequested().Return(true)
-		ctx.EXPECT().StopProcessing()
 	})
 
 	AfterEach(func() {
 		mockCtrl.Finish()
 	})
 
-	It("should stop processing when there is error getting applications", func() {
-		ctx.EXPECT().Applications().Return(nil, errors.New("foo"))
+	It("should not unbind if unbinding is not requested", func() {
+		ctx.EXPECT().UnbindRequested().Return(false)
 		project.Unbind(ctx)
 	})
-	It("should stop processing when there are no applications", func() {
-		ctx.EXPECT().Applications().Return([]pipeline.Application{}, nil)
-		project.Unbind(ctx)
-	})
-	Context("successful processing", func() {
-		var (
-			deploymentsUnstructured    []*unstructured.Unstructured
-			deploymentsUnstructuredOld []*unstructured.Unstructured
-			secretName                 string
-			bindingName                string
-		)
 
+	Context("normal processing", func() {
 		BeforeEach(func() {
-			var apps []pipeline.Application
-			secretName = "secret1"
-			bindingName = "binding1"
-			ctx.EXPECT().BindingSecretName().Return(secretName)
-			ctx.EXPECT().BindingName().Return(bindingName)
-			ctx.EXPECT().EnvBindings().Return([]*pipeline.EnvBinding{})
-			d1 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-				},
-			})
-			d2 := deployment("d2", []corev1.Container{
-				{
-					Image: "foo2",
-					EnvFrom: []corev1.EnvFromSource{
-						{
-							SecretRef: &corev1.SecretEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "bla",
-								},
-							},
-						},
-						{
-							SecretRef: &corev1.SecretEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: secretName,
-								},
-							},
-						},
-					},
-				},
-			})
-			d3 := deployment("d2", []corev1.Container{
-				{
-					Image: "foo2",
-					EnvFrom: []corev1.EnvFromSource{
-						{
-							SecretRef: &corev1.SecretEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: secretName,
-								},
-							},
-						},
-					},
-				},
-			})
-			d4 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      bindingName,
-							MountPath: "/bla",
-						},
-					},
-				},
-			})
-			d5 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      bindingName,
-							MountPath: "/bla",
-						},
-						{
-							Name:      "bla",
-							MountPath: "/bla2",
-						},
-					},
-				},
-			})
-			d6 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-				},
-			})
-			d6.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: bindingName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
-						},
-					},
-				},
-			}
-			d7 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-				},
-			})
-			d7.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: bindingName,
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: secretName,
-						},
-					},
-				},
-				{
-					Name: "foo",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: "foo",
-						},
-					},
-				},
-			}
-			for _, d := range []*appsv1.Deployment{d1, d2, d3, d4, d5, d6, d7} {
-				u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(d)
-				if err != nil {
-					Fail(err.Error())
-				}
-				res := &unstructured.Unstructured{Object: u}
-				deploymentsUnstructured = append(deploymentsUnstructured, res)
-				deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
-				app := mocks.NewMockApplication(mockCtrl)
-				containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
-				var metaContainers []pipeline.MetaContainer
-				for _, c := range containers {
-					name, _, _ := unstructured.NestedString(c, "name")
-					metaContainers = append(metaContainers, pipeline.MetaContainer{
-						Data:        c,
-						Name:        name,
-						Env:         []string{"env"},
-						EnvFrom:     []string{"envFrom"},
-						VolumeMount: []string{"volumeMounts"},
-					})
-				}
-				template := pipeline.MetaPodSpec{
-					Containers: metaContainers,
-					Volume:     strings.Split("spec.template.spec.volumes", "."),
-					Data:       u,
-				}
-				app.EXPECT().BindablePods().Return(&template, nil)
-				apps = append(apps, app)
-			}
-
-			ctx.EXPECT().Applications().Return(apps, nil)
+			ctx.EXPECT().UnbindRequested().Return(true)
 		})
-		It("should remove secret refs", func() {
+
+		It("should stop processing when there is error getting applications", func() {
+			ctx.EXPECT().Applications().Return(nil, errors.New("foo"))
+			ctx.EXPECT().StopProcessing()
 			project.Unbind(ctx)
-			Expect(deploymentsUnstructured[0]).To(Equal(deploymentsUnstructuredOld[0]))
-			Expect(deploymentsUnstructured[1]).NotTo(Equal(deploymentsUnstructuredOld[1]))
-			Expect(deploymentsUnstructured[2]).NotTo(Equal(deploymentsUnstructuredOld[2]))
-			Expect(deploymentsUnstructured[3]).NotTo(Equal(deploymentsUnstructuredOld[3]))
-			Expect(deploymentsUnstructured[4]).NotTo(Equal(deploymentsUnstructuredOld[4]))
-			Expect(deploymentsUnstructured[5]).NotTo(Equal(deploymentsUnstructuredOld[5]))
-			Expect(deploymentsUnstructured[6]).NotTo(Equal(deploymentsUnstructuredOld[6]))
-			d2 := deployment("d2", []corev1.Container{
-				{
-					Image: "foo2",
-					EnvFrom: []corev1.EnvFromSource{
-						{
-							SecretRef: &corev1.SecretEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: "bla",
+		})
+
+		It("should stop processing when there are no applications", func() {
+			ctx.EXPECT().Applications().Return([]pipeline.Application{}, nil)
+			ctx.EXPECT().StopProcessing()
+			project.Unbind(ctx)
+		})
+
+		Context("successful processing", func() {
+			var (
+				deploymentsUnstructured    []*unstructured.Unstructured
+				deploymentsUnstructuredOld []*unstructured.Unstructured
+				secretName                 string
+				bindingName                string
+			)
+
+			BeforeEach(func() {
+				var apps []pipeline.Application
+				secretName = "secret1"
+				bindingName = "binding1"
+				ctx.EXPECT().IsRemoved().AnyTimes().Return(true)
+				ctx.EXPECT().BindingSecretName().Return(secretName)
+				ctx.EXPECT().BindingName().Return(bindingName)
+				ctx.EXPECT().EnvBindings().Return([]*pipeline.EnvBinding{})
+				d1 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+					},
+				})
+				d2 := deployment("d2", []corev1.Container{
+					{
+						Image: "foo2",
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								SecretRef: &corev1.SecretEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "bla",
+									},
+								},
+							},
+							{
+								SecretRef: &corev1.SecretEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: secretName,
+									},
 								},
 							},
 						},
 					},
-				},
-			})
-			d3 := deployment("d2", []corev1.Container{
-				{
-					Image:   "foo2",
-					EnvFrom: []v1.EnvFromSource{},
-				},
-			})
-			d4 := deployment("d1", []corev1.Container{
-				{
-					Image:        "foo",
-					VolumeMounts: []v1.VolumeMount{},
-				},
-			})
-			d5 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "bla",
-							MountPath: "/bla2",
+				})
+				d3 := deployment("d2", []corev1.Container{
+					{
+						Image: "foo2",
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								SecretRef: &corev1.SecretEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: secretName,
+									},
+								},
+							},
 						},
 					},
-				},
-			})
-			d6 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-				},
-			})
-			d6.Spec.Template.Spec.Volumes = []corev1.Volume{}
-			d7 := deployment("d1", []corev1.Container{
-				{
-					Image: "foo",
-				},
-			})
-			d7.Spec.Template.Spec.Volumes = []corev1.Volume{
-				{
-					Name: "foo",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: "foo",
+				})
+				d4 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      bindingName,
+								MountPath: "/bla",
+							},
 						},
 					},
-				},
-			}
-			for i, expectedDeployment := range []*appsv1.Deployment{nil, d2, d3, d4, d5, d6, d7} {
-				if expectedDeployment == nil {
-					continue
+				})
+				d5 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      bindingName,
+								MountPath: "/bla",
+							},
+							{
+								Name:      "bla",
+								MountPath: "/bla2",
+							},
+						},
+					},
+				})
+				d6 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+					},
+				})
+				d6.Spec.Template.Spec.Volumes = []corev1.Volume{
+					{
+						Name: bindingName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: secretName,
+							},
+						},
+					},
 				}
-				d := &appsv1.Deployment{}
-				err := runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[i].Object, d)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(d.Spec.Template).To(Equal(expectedDeployment.Spec.Template))
-			}
+				d7 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+					},
+				})
+				d7.Spec.Template.Spec.Volumes = []corev1.Volume{
+					{
+						Name: bindingName,
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: secretName,
+							},
+						},
+					},
+					{
+						Name: "foo",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "foo",
+							},
+						},
+					},
+				}
+				for _, d := range []*appsv1.Deployment{d1, d2, d3, d4, d5, d6, d7} {
+					u, err := runtime.DefaultUnstructuredConverter.ToUnstructured(d)
+					if err != nil {
+						Fail(err.Error())
+					}
+					res := &unstructured.Unstructured{Object: u}
+					deploymentsUnstructured = append(deploymentsUnstructured, res)
+					deploymentsUnstructuredOld = append(deploymentsUnstructuredOld, res.DeepCopy())
+					app := mocks.NewMockApplication(mockCtrl)
+					containers, _, _ := converter.NestedResources(&corev1.Container{}, u, strings.Split("spec.template.spec.containers", ".")...)
+					var metaContainers []pipeline.MetaContainer
+					for _, c := range containers {
+						name, _, _ := unstructured.NestedString(c, "name")
+						metaContainers = append(metaContainers, pipeline.MetaContainer{
+							Data:        c,
+							Name:        name,
+							Env:         []string{"env"},
+							EnvFrom:     []string{"envFrom"},
+							VolumeMount: []string{"volumeMounts"},
+						})
+					}
+					template := pipeline.MetaPodSpec{
+						Containers: metaContainers,
+						Volume:     strings.Split("spec.template.spec.volumes", "."),
+						Data:       u,
+					}
+					app.EXPECT().BindablePods().Return(&template, nil)
+					apps = append(apps, app)
+				}
+
+				ctx.EXPECT().Applications().Return(apps, nil)
+			})
+			It("should remove secret refs", func() {
+				ctx.EXPECT().CleanAnnotations().Return(false)
+				ctx.EXPECT().StopProcessing()
+				project.Unbind(ctx)
+				Expect(deploymentsUnstructured[0]).To(Equal(deploymentsUnstructuredOld[0]))
+				Expect(deploymentsUnstructured[1]).NotTo(Equal(deploymentsUnstructuredOld[1]))
+				Expect(deploymentsUnstructured[2]).NotTo(Equal(deploymentsUnstructuredOld[2]))
+				Expect(deploymentsUnstructured[3]).NotTo(Equal(deploymentsUnstructuredOld[3]))
+				Expect(deploymentsUnstructured[4]).NotTo(Equal(deploymentsUnstructuredOld[4]))
+				Expect(deploymentsUnstructured[5]).NotTo(Equal(deploymentsUnstructuredOld[5]))
+				Expect(deploymentsUnstructured[6]).NotTo(Equal(deploymentsUnstructuredOld[6]))
+				d2 := deployment("d2", []corev1.Container{
+					{
+						Image: "foo2",
+						EnvFrom: []corev1.EnvFromSource{
+							{
+								SecretRef: &corev1.SecretEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "bla",
+									},
+								},
+							},
+						},
+					},
+				})
+				d3 := deployment("d2", []corev1.Container{
+					{
+						Image:   "foo2",
+						EnvFrom: []v1.EnvFromSource{},
+					},
+				})
+				d4 := deployment("d1", []corev1.Container{
+					{
+						Image:        "foo",
+						VolumeMounts: []v1.VolumeMount{},
+					},
+				})
+				d5 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "bla",
+								MountPath: "/bla2",
+							},
+						},
+					},
+				})
+				d6 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+					},
+				})
+				d6.Spec.Template.Spec.Volumes = []corev1.Volume{}
+				d7 := deployment("d1", []corev1.Container{
+					{
+						Image: "foo",
+					},
+				})
+				d7.Spec.Template.Spec.Volumes = []corev1.Volume{
+					{
+						Name: "foo",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{
+								SecretName: "foo",
+							},
+						},
+					},
+				}
+				for i, expectedDeployment := range []*appsv1.Deployment{nil, d2, d3, d4, d5, d6, d7} {
+					if expectedDeployment == nil {
+						continue
+					}
+					d := &appsv1.Deployment{}
+					err := runtime.DefaultUnstructuredConverter.FromUnstructured(deploymentsUnstructured[i].Object, d)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(d.Spec.Template).To(Equal(expectedDeployment.Spec.Template))
+				}
+			})
+			It("should re-queue the service binding when annotations were cleaned", func() {
+				ctx.EXPECT().CleanAnnotations().Return(true)
+				ctx.EXPECT().StopProcessing().Times(0)
+				ctx.EXPECT().RetryProcessing(nil)
+				project.Unbind(ctx)
+			})
 		})
 	})
 })

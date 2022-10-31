@@ -1077,10 +1077,130 @@ var _ = Describe("Context", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(mapping.Volume).To(Equal([]string{"spec", "template", "spec", "volumes"}))
 			Expect(mapping.Containers).To(HaveLen(2))
+			for _, container := range mapping.Containers {
+				Expect(container.Env).To(Equal([]string{"env"}))
+				Expect(container.EnvFrom).To(Equal([]string{"envFrom"}))
+				Expect(container.Name).To(Equal([]string{"name"}))
+				Expect(container.VolumeMounts).To(Equal([]string{"volumeMounts"}))
+			}
+		})
+
+		It("should use mapping in annotation", func() {
+			ref := bindingapi.Application{
+				Ref: bindingapi.Ref{
+					Group:   "app",
+					Version: "v1",
+					Kind:    "Foo",
+					Name:    "app1",
+				},
+			}
+			gvr := schema.GroupVersionResource{Group: "app", Version: "v1", Resource: "foos"}
+
+			mappingSpec := v1beta1.ClusterWorkloadResourceMapping{
+				Spec: v1beta1.ClusterWorkloadResourceMappingSpec{
+					Versions: []v1beta1.ClusterWorkloadResourceMappingTemplate{
+						{
+							Version: "*",
+							Containers: []v1beta1.ClusterWorkloadResourceMappingContainer{
+								{
+									Path: ".spec.template.spec.containers",
+								},
+							},
+						},
+					},
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foos.app",
+				},
+				TypeMeta: metav1.TypeMeta{
+					Kind:       v1beta1.WorkloadResourceMappingGroupVersionKind.Kind,
+					APIVersion: "servicebinding.io/v1beta1",
+				},
+			}
+
+			fakeData, err := json.Marshal(&mappingSpec)
+			Expect(err).NotTo(HaveOccurred())
+
+			sb := bindingapi.ServiceBinding{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "sb1",
+					Namespace: "ns1",
+					Annotations: map[string]string{
+						apis.MappingAnnotationKey: string(fakeData),
+					},
+				},
+				Spec: bindingapi.ServiceBindingSpec{
+					Application: ref,
+				},
+			}
+
+			u := v1beta1.ClusterWorkloadResourceMapping{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "foos.app",
+				},
+				Spec: v1beta1.ClusterWorkloadResourceMappingSpec{
+					Versions: []v1beta1.ClusterWorkloadResourceMappingTemplate{
+						v1beta1.DefaultTemplate,
+					},
+				},
+			}
+			Expect(err).NotTo(HaveOccurred())
+
+			scheme := runtime.NewScheme()
+			Expect(v1beta1.AddToScheme(scheme)).NotTo(HaveOccurred())
+			client := fake.NewSimpleDynamicClient(scheme, &u)
+			authClient := &fakeauth.FakeAuthorizationV1{}
+
+			ctx, err := Provider(client, authClient.SubjectAccessReviews(), typeLookup).Get(&sb)
+			Expect(err).NotTo(HaveOccurred())
+
+			mapping, err := ctx.WorkloadResourceTemplate(&gvr, "")
+			Expect(err).NotTo(HaveOccurred())
+			Expect(mapping.Volume).To(Equal([]string{"spec", "template", "spec", "volumes"}))
+			Expect(mapping.Containers).To(HaveLen(1))
 			Expect(mapping.Containers[0].Env).To(Equal([]string{"env"}))
 			Expect(mapping.Containers[0].EnvFrom).To(Equal([]string{"envFrom"}))
 			Expect(mapping.Containers[0].Name).To(Equal([]string{"name"}))
 			Expect(mapping.Containers[0].VolumeMounts).To(Equal([]string{"volumeMounts"}))
+		})
+	})
+
+	Describe("CleanAnnotations", func() {
+		var (
+			sb  *bindingapi.ServiceBinding
+			ctx pipeline.Context
+			err error
+		)
+
+		BeforeEach(func() {
+			sb = &bindingapi.ServiceBinding{}
+			ctx, err = Provider(nil, nil, nil).Get(sb)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should clean mapping annotations when present", func() {
+			sb.SetAnnotations(map[string]string{
+				apis.MappingAnnotationKey: "foo",
+			})
+			Expect(ctx.CleanAnnotations()).To(BeTrue())
+			Expect(sb.GetAnnotations()).To(BeEmpty())
+		})
+
+		It("should not touch other annotations present", func() {
+			sb.SetAnnotations(map[string]string{
+				apis.MappingAnnotationKey: "foo",
+				"spam":                    "eggs",
+			})
+			Expect(ctx.CleanAnnotations()).To(BeTrue())
+			Expect(sb.GetAnnotations()).To(Equal(map[string]string{"spam": "eggs"}))
+		})
+
+		It("should return false when mapping annotations are not present", func() {
+			sb.SetAnnotations(map[string]string{
+				"spam": "eggs",
+			})
+			Expect(ctx.CleanAnnotations()).To(BeFalse())
+			Expect(sb.GetAnnotations()).To(Equal(map[string]string{"spam": "eggs"}))
 		})
 	})
 })

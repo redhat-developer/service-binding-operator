@@ -133,6 +133,20 @@ func (mr *MockContextMockRecorder) BindingSecretName() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BindingSecretName", reflect.TypeOf((*MockContext)(nil).BindingSecretName))
 }
 
+// CleanAnnotations mocks base method.
+func (m *MockContext) CleanAnnotations() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CleanAnnotations")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// CleanAnnotations indicates an expected call of CleanAnnotations.
+func (mr *MockContextMockRecorder) CleanAnnotations() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CleanAnnotations", reflect.TypeOf((*MockContext)(nil).CleanAnnotations))
+}
+
 // Close mocks base method.
 func (m *MockContext) Close() error {
 	m.ctrl.T.Helper()
@@ -211,6 +225,20 @@ func (m *MockContext) HasLabelSelector() bool {
 func (mr *MockContextMockRecorder) HasLabelSelector() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasLabelSelector", reflect.TypeOf((*MockContext)(nil).HasLabelSelector))
+}
+
+// IsRemoved mocks base method.
+func (m *MockContext) IsRemoved() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsRemoved")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsRemoved indicates an expected call of IsRemoved.
+func (mr *MockContextMockRecorder) IsRemoved() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsRemoved", reflect.TypeOf((*MockContext)(nil).IsRemoved))
 }
 
 // Mappings mocks base method.

@@ -164,7 +164,15 @@ func main() {
 		setupLog.Error(err, "unable to create webhook", "webhook", "SPEC ServiceBinding")
 		os.Exit(1)
 	}
-	if err = (&specv1beta1.ClusterWorkloadResourceMapping{}).SetupWebhookWithManager(mgr); err != nil {
+	mappingValidator, err := webhooks.NewMappingValidator(
+		mgr.GetConfig(),
+		mgr.GetRESTMapper(),
+	)
+	if err != nil {
+		setupLog.Error(err, "unable to initialize webhook", "webhook", "ClusterWorkloadResourceMapping")
+		os.Exit(1)
+	}
+	if err = mappingValidator.SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "ClusterWorkloadResourceMapping")
 		os.Exit(1)
 	}

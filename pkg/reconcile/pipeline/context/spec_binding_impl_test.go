@@ -932,6 +932,45 @@ var _ = Describe("Spec API Context", func() {
 		})
 
 	})
+
+	Describe("CleanAnnotations", func() {
+		var (
+			sb  *specapi.ServiceBinding
+			ctx pipeline.Context
+			err error
+		)
+
+		BeforeEach(func() {
+			sb = &specapi.ServiceBinding{}
+			ctx, err = Provider(nil, nil, nil).Get(sb)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("should clean mapping annotations when present", func() {
+			sb.SetAnnotations(map[string]string{
+				apis.MappingAnnotationKey: "foo",
+			})
+			Expect(ctx.CleanAnnotations()).To(BeTrue())
+			Expect(sb.GetAnnotations()).To(BeEmpty())
+		})
+
+		It("should not touch other annotations present", func() {
+			sb.SetAnnotations(map[string]string{
+				apis.MappingAnnotationKey: "foo",
+				"spam":                    "eggs",
+			})
+			Expect(ctx.CleanAnnotations()).To(BeTrue())
+			Expect(sb.GetAnnotations()).To(Equal(map[string]string{"spam": "eggs"}))
+		})
+
+		It("should return false when mapping annotations are not present", func() {
+			sb.SetAnnotations(map[string]string{
+				"spam": "eggs",
+			})
+			Expect(ctx.CleanAnnotations()).To(BeFalse())
+			Expect(sb.GetAnnotations()).To(Equal(map[string]string{"spam": "eggs"}))
+		})
+	})
 })
 
 func scheme(objs ...runtime.Object) *runtime.Scheme {

@@ -58,3 +58,16 @@ def resource_jsonpath_value(context, json_path, res_name, json_value=""):
     (crdName, name) = res_name.split("/")
     polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crdName, name, context.namespace.name, json_path) == json_value,
                   step=5, timeout=800, ignore_exceptions=(json.JSONDecodeError,))
+
+
+@step(u'jsonpath "{json_path}" on "{res_name}" should contain "{json_value}"')
+def resource_jsonpath_contains(context, json_path, res_name, json_value):
+    openshift = Openshift()
+    json_path = substitute_scenario_id(context, json_path)
+    res_name = substitute_scenario_id(context, res_name)
+    json_value = json.loads(substitute_scenario_id(context, json_value))
+    (crdName, name) = res_name.split("/")
+    actual_value = polling2.poll(lambda: openshift.get_resource_info_by_jsonpath(crdName, name, context.namespace.name, json_path),
+                                 step=5, timeout=800, ignore_exceptions=(json.JSONDecodeError))
+    data = json.loads(actual_value)
+    assert json_value in data, "Expected {str(json_value)} in {str(data)}"

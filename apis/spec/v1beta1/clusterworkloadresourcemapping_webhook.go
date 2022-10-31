@@ -21,17 +21,11 @@ import (
 	"strings"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
-
-func (r *ClusterWorkloadResourceMapping) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).
-		For(r).
-		Complete()
-}
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 
@@ -144,4 +138,22 @@ func verifyJsonPath(node jsonpath.Node, path *field.Path, value string) field.Er
 		errs = append(errs, field.Invalid(path, node.Type().String(), "Invalid node type"))
 	}
 	return errs
+}
+
+func (mapping *ClusterWorkloadResourceMapping) AcceptsGVR(gvk *schema.GroupVersionResource) bool {
+	expectedName := fmt.Sprintf("%v.%v", gvk.Resource, gvk.Group)
+	if mapping.Name != expectedName {
+		return false
+	}
+	for _, version := range mapping.Spec.Versions {
+		switch version.Version {
+		case gvk.Version:
+			return true
+		case "*":
+			return true
+		default:
+			continue
+		}
+	}
+	return false
 }

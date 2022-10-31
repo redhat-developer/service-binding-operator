@@ -112,6 +112,16 @@ func (i *specImpl) EnvBindings() []*pipeline.EnvBinding {
 	return result
 }
 
+func (i *specImpl) CleanAnnotations() bool {
+	annotations := i.serviceBinding.GetAnnotations()
+	_, found := annotations[apis.MappingAnnotationKey]
+	if found {
+		delete(annotations, apis.MappingAnnotationKey)
+		i.serviceBinding.SetAnnotations(annotations)
+	}
+	return found
+}
+
 func (i *specImpl) Services() ([]pipeline.Service, error) {
 	if i.services == nil {
 		serviceRef := i.serviceBinding.Spec.Service
