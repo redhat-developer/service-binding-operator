@@ -1,7 +1,9 @@
 ## Append samples you want in your CSV to this file as resources ##
 resources:
+- operators_v1alpha1_bindablekinds.yaml
 - operators_v1alpha1_servicebinding.yaml
-- servicebinding.io_v1alpha3_servicebinding.yaml
-- spec_v1beta1_servicebinding.yaml
+- spec_v1alpha3_clusterworkloadresourcemapping.yaml
+- spec_v1alpha3_servicebinding.yaml
 - spec_v1beta1_clusterworkloadresourcemapping.yaml
+- spec_v1beta1_servicebinding.yaml
 # +kubebuilder:scaffold:manifestskustomizesamples
