@@ -1,0 +1,5 @@
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: BindableKinds
+metadata:
+  name: bindable-kinds
+spec: {}
