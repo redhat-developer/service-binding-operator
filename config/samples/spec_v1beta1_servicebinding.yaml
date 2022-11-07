@@ -3,4 +3,12 @@ kind: ServiceBinding
 metadata:
   name: servicebinding-sample
 spec:
-  # TODO(user): Add fields here
+  type: postgres
+  service:
+    name: pg-instance
+    apiVersion: postgresql.example.dev/v1alpha1
+    kind: Database
+  workload:
+    name: nodejs-rest-http-crud
+    apiVersion: apps/v1
+    kind: Deployment
