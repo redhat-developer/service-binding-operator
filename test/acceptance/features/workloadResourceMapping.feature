@@ -414,7 +414,10 @@ Feature: Bind services to workloads based on workload resource mapping
                     key:  password
             """
         Then Service Binding is ready
-        And jsonpath "{.spec.containerSpecs[0].envData}" on "notpodspecs/$scenario_id-npc" should return "[{"name":"BINDING_TYPE","valueFrom":{"secretKeyRef":{"key":"type","name":"$scenario_id-secret"}}},{"name":"BINDING_USERNAME","valueFrom":{"secretKeyRef":{"key":"username","name":"$scenario_id-secret"}}},{"name":"BINDING_PASSWORD","valueFrom":{"secretKeyRef":{"key":"password","name":"$scenario_id-secret"}}},{"name":"SERVICE_BINDING_ROOT","value":"/bindings"}]"
+        And jsonpath "{.spec.containerSpecs[0].envData}" on "notpodspecs/$scenario_id-npc" should contain "{"name":"BINDING_TYPE","valueFrom":{"secretKeyRef":{"key":"type","name":"$scenario_id-secret"}}}"
+        And jsonpath "{.spec.containerSpecs[0].envData}" on "notpodspecs/$scenario_id-npc" should contain "{"name":"BINDING_USERNAME","valueFrom":{"secretKeyRef":{"key":"username","name":"$scenario_id-secret"}}}"
+        And jsonpath "{.spec.containerSpecs[0].envData}" on "notpodspecs/$scenario_id-npc" should contain "{"name":"BINDING_PASSWORD","valueFrom":{"secretKeyRef":{"key":"password","name":"$scenario_id-secret"}}}"
+        And jsonpath "{.spec.containerSpecs[0].envData}" on "notpodspecs/$scenario_id-npc" should contain "{"name":"SERVICE_BINDING_ROOT","value":"/bindings"}"
 
     @spec
     Scenario: Projecting values into a non-PodSpec resource for a specific API version
@@ -779,3 +782,303 @@ Feature: Bind services to workloads based on workload resource mapping
                       - name: .metadata.name
             """
         Then Error message is thrown
+
+    @spec
+    Scenario: SPEC Altering a workload mapping should project values where there were previously none
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: $scenario_id-secret
+            stringData:
+                username: foo
+                password: bar
+                type: db
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: NotPodSpec
+            metadata:
+                name: $scenario_id-npc
+            spec:
+                containerSpecs:
+                  - id: $scenario_id-id
+                initContainerSpecs:
+                  - id: $scenario_id-init
+            """
+        And The Workload Resource Mapping is present
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: notpodspecs.stable.example.com
+            spec:
+                versions:
+                  - version: "*"
+                    volumes: .spec.volumeData
+                    containers:
+                      - path: .spec.containerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+            """
+        And Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                service:
+                    name: $scenario_id-secret
+                    kind: Secret
+                    apiVersion: v1
+                workload:
+                    apiVersion: stable.example.com/v1
+                    kind: NotPodSpec
+                    name: $scenario_id-npc
+            """
+        And Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return no value
+        When The Workload Resource Mapping is present
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: notpodspecs.stable.example.com
+            spec:
+                versions:
+                  - version: "*"
+                    volumes: .spec.volumeData
+                    containers:
+                      - path: .spec.containerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+                      - path: .spec.initContainerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+            """
+        Then Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+
+    @spec
+    Scenario: SPEC Altering a workload mapping should remove stale projections
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: $scenario_id-secret
+            stringData:
+                username: foo
+                password: bar
+                type: db
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: NotPodSpec
+            metadata:
+                name: $scenario_id-npc
+            spec:
+                containerSpecs:
+                  - id: $scenario_id-id
+                initContainerSpecs:
+                  - id: $scenario_id-init
+            """
+        And Service Binding is applied
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                service:
+                    name: $scenario_id-secret
+                    kind: Secret
+                    apiVersion: v1
+                workload:
+                    apiVersion: stable.example.com/v1
+                    kind: NotPodSpec
+                    name: $scenario_id-npc
+            """
+        And Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        When The Workload Resource Mapping is present
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: notpodspecs.stable.example.com
+            spec:
+                versions:
+                  - version: "*"
+                    volumes: .spec.volumeData
+                    containers:
+                      - path: .spec.containerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+            """
+        Then Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[]"
+
+    Scenario: Altering a workload mapping should project values where there were previously none
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: $scenario_id-secret
+            stringData:
+                username: foo
+                password: bar
+                type: db
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: NotPodSpec
+            metadata:
+                name: $scenario_id-npc
+            spec:
+                containerSpecs:
+                  - id: $scenario_id-id
+                initContainerSpecs:
+                  - id: $scenario_id-init
+            """
+        And The Workload Resource Mapping is present
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: notpodspecs.stable.example.com
+            spec:
+                versions:
+                  - version: "*"
+                    volumes: .spec.volumeData
+                    containers:
+                      - path: .spec.containerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+            """
+        And Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                bindAsFiles: true
+                application:
+                    name: $scenario_id-npc
+                    group: stable.example.com
+                    version: v1
+                    resource: notpodspecs
+                services:
+                  - version: v1
+                    group: ""
+                    kind: Secret
+                    name: $scenario_id-secret
+            """
+        And Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return no value
+        When The Workload Resource Mapping is present
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: notpodspecs.stable.example.com
+            spec:
+                versions:
+                  - version: "*"
+                    volumes: .spec.volumeData
+                    containers:
+                      - path: .spec.containerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+                      - path: .spec.initContainerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+            """
+        Then Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+
+    Scenario: Altering a workload mapping should remove stale projections
+        Given The Secret is present
+            """
+            apiVersion: v1
+            kind: Secret
+            metadata:
+                name: $scenario_id-secret
+            stringData:
+                username: foo
+                password: bar
+                type: db
+            """
+        And The Custom Resource is present
+            """
+            apiVersion: "stable.example.com/v1"
+            kind: NotPodSpec
+            metadata:
+                name: $scenario_id-npc
+            spec:
+                containerSpecs:
+                  - id: $scenario_id-id
+                initContainerSpecs:
+                  - id: $scenario_id-init
+            """
+        And Service Binding is applied
+            """
+            apiVersion: binding.operators.coreos.com/v1alpha1
+            kind: ServiceBinding
+            metadata:
+                name: $scenario_id-binding
+            spec:
+                bindAsFiles: true
+                application:
+                    name: $scenario_id-npc
+                    group: stable.example.com
+                    version: v1
+                    resource: notpodspecs
+                services:
+                  - version: v1
+                    group: ""
+                    kind: Secret
+                    name: $scenario_id-secret
+            """
+        And Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        When The Workload Resource Mapping is present
+            """
+            apiVersion: servicebinding.io/v1beta1
+            kind: ClusterWorkloadResourceMapping
+            metadata:
+                name: notpodspecs.stable.example.com
+            spec:
+                versions:
+                  - version: "*"
+                    volumes: .spec.volumeData
+                    containers:
+                      - path: .spec.containerSpecs[*]
+                        name: .id
+                        env: .envData
+                        volumeMounts: .volumeEntries
+            """
+        Then Service Binding is ready
+        And jsonpath "{.spec.containerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[{"mountPath":"/bindings/$scenario_id-binding","name":"$scenario_id-binding"}]"
+        And jsonpath "{.spec.initContainerSpecs[0].volumeEntries}" on "notpodspecs/$scenario_id-npc" should return "[]"

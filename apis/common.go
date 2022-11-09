@@ -3,18 +3,20 @@ package apis
 import (
 	"encoding/json"
 	"errors"
+	"reflect"
+
 	"k8s.io/api/authentication/v1"
 	authv1 "k8s.io/api/authentication/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	finalizerName          = "finalizer.servicebinding.openshift.io"
 	requesterAnnotationKey = "servicebinding.io/requester"
+	MappingAnnotationKey   = "servicebinding.io/mapping"
 )
 
 func MaybeAddFinalizer(obj Object) bool {

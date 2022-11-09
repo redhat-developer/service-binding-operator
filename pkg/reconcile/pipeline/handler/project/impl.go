@@ -229,7 +229,12 @@ func Unbind(ctx pipeline.Context) {
 			}
 		}
 	}
-	ctx.StopProcessing()
+
+	if ctx.CleanAnnotations() {
+		ctx.RetryProcessing(nil)
+	} else {
+		ctx.StopProcessing()
+	}
 }
 
 func stop(ctx pipeline.Context, err error) {

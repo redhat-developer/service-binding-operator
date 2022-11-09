@@ -55,9 +55,10 @@ func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	r.pipeline = pipeline
+	p := predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})
 	return ctrl.NewControllerManagedBy(mgr).
 		For(r.ReconcilingObject()).
-		WithEventFilter(predicate.GenerationChangedPredicate{}).
+		WithEventFilter(p).
 		WithOptions(controller.Options{MaxConcurrentReconciles: MaxConcurrentReconciles}).
 		Complete(r)
 }

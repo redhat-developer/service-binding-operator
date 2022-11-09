@@ -4,6 +4,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -218,5 +220,51 @@ var _ = Describe("Validation Webhook", func() {
 			},
 		}
 		Expect(mapping.validate()).To(BeNil())
+	})
+})
+
+var _ = Describe("AcceptGVR", func() {
+	var (
+		mapping ClusterWorkloadResourceMapping
+		gvr     schema.GroupVersionResource
+	)
+
+	BeforeEach(func() {
+		mapping = ClusterWorkloadResourceMapping{
+			ObjectMeta: v1.ObjectMeta{
+				Name: "foos.bar",
+			},
+			Spec: ClusterWorkloadResourceMappingSpec{
+				Versions: []ClusterWorkloadResourceMappingTemplate{
+					{
+						Version: "v1",
+					},
+				},
+			},
+		}
+		gvr = schema.GroupVersionResource{
+			Group:    "bar",
+			Resource: "foos",
+			Version:  "v1",
+		}
+	})
+
+	It("should accept a compatible GVR", func() {
+		Expect(mapping.AcceptsGVR(&gvr)).To(BeTrue())
+	})
+
+	It("should accept when matching a wildcard template", func() {
+		mapping.Spec.Versions[0].Version = "*"
+		Expect(mapping.AcceptsGVR(&gvr)).To(BeTrue())
+	})
+
+	It("should reject an incompatible GVR", func() {
+		mapping.Spec.Versions[0].Version = "v2"
+		Expect(mapping.AcceptsGVR(&gvr)).To(BeFalse())
+	})
+
+	It("should ignore GVRs with an incompatible Group/Resource", func() {
+		mapping.Name = "spams.bar"
+		Expect(mapping.AcceptsGVR(&gvr)).To(BeFalse())
 	})
 })

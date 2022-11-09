@@ -133,8 +133,14 @@ type Context interface {
 	// if no application found, return an error
 	Applications() ([]Application, error)
 
-	// Returns true if binding is about to be removed
+	// Returns true if the binding needs to be removed
 	UnbindRequested() bool
+
+	// Returns true if the binding is being removed
+	IsRemoved() bool
+
+	// Cleans temporary annotations on the underlying resources
+	CleanAnnotations() bool
 
 	BindingSecretName() string
 
