@@ -1,6 +1,6 @@
 module github.com/redhat-developer/service-binding-operator
 
-go 1.17
+go 1.18
 
 require (
 	github.com/go-logr/logr v1.2.0
