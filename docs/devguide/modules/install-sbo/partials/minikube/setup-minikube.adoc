@@ -1,0 +1,15 @@
+1. Run `minikube` using the script `./hack/start-minikube.sh`
+
+2. Install `cert-manager`
++
+[source,bash]
+----
+make deploy-cert-manager
+----
+
+3. Configure current shell
++
+[source,bash]
+----
+eval $(minikube docker-env)
+----

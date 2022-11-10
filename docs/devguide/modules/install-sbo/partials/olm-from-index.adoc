@@ -1,0 +1,26 @@
+== Install with OLM and a given Index image
+
+You can install the Service Binding Operator from a given index image, like the one on link:https://operatorhub.io/operator/service-binding-operator[OperatorHub.io] 
+or the one generated for each Service Binding Operator's Pull Request.
+
+=== From OperatorHub.io
+
+To install the link:https://operatorhub.io/operator/service-binding-operator[OperatorHub.io]'s image use the following command:
+
+[source,bash]
+----
+CATSRC_NAME=operatorhubio OPERATOR_INDEX_IMAGE_REF=quay.io/operatorhubio/catalog:latest make deploy-from-index-image
+----
+
+=== From a Pull Request index image
+
+For each link:https://github.com/redhat-developer/service-binding-operator/pulls[Pull Request] the images needed to install with OLM
+are create and pushed to the link:https://quay.io/repository/redhat-developer/servicebinding-operator?tab=tags[Service Binding Operator's Quay Repository].
+
+In the following <PR_NUMBER> is the Pull Request's number and <COMMIT_ID> is the short commit ID (i.e., the first 8 characters of the commit ID).
+
+[source,bash]
+----
+CATSRC_NAME=sbo-pr OPERATOR_INDEX_IMAGE_REF=quay.io/redhat-developer/servicebinding-operator:pr-<PR_NUMBER>-<COMMIT_ID>-index make deploy-from-index-image
+----
+

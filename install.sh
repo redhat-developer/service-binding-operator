@@ -5,6 +5,7 @@ OPERATOR_CHANNEL=${OPERATOR_CHANNEL:-beta}
 OPERATOR_PACKAGE=${OPERATOR_PACKAGE:-service-binding-operator}
 DOCKER_CFG=${DOCKER_CFG:-$HOME/.docker/config.json}
 CONTAINER_RUNTIME=${CONTAINER_RUNTIME:-docker}
+CATSRC_NAME_OVERRIDE=${CATSRC_NAME_OVERRIDE:-}
 
 kubectl get crd clusterserviceversions.operators.coreos.com || \
   curl -sL https://github.com/operator-framework/operator-lifecycle-manager/releases/download/v${OLM_VERSION}/install.sh | bash -s v${OLM_VERSION}
@@ -35,7 +36,7 @@ if [ -n "$OPERATOR_INDEX_IMAGE" ]; then
     echo "Catalog source with a given index image already found in namespace '$CATSRC_NAMESPACE': '$CATSRC_ALREADY_FOUND', using it for subscription."
     CATSRC_NAME=$CATSRC_ALREADY_FOUND
   else
-    CATSRC_NAME=${CATSRC_NAME:-catsrc-$(echo -n "$OPERATOR_INDEX_IMAGE" | sed -e 's,[/:\.],-,g')}
+    CATSRC_NAME=$([ -n "$CATSRC_NAME_OVERRIDE" ] && echo $CATSRC_NAME_OVERRIDE || echo ${CATSRC_NAME:-catsrc-$(echo -n "$OPERATOR_INDEX_IMAGE" | sed -e 's,[/:\.],-,g')})
     #Apply CatalogSource for obtaining catalog of SBO operators
     kubectl apply -f - << EOD
 ---

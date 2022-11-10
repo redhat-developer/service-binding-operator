@@ -1,0 +1,7 @@
+You can use a xref:https://developers.redhat.com/products/openshift/getting-started[managed Openshift cluster] or a xref:https://github.com/code-ready/crc[locally installed one].
+
+NOTE: You need _Administrator_ access to the cluster.
+
+You may prefer to use the Openshift's internal Container Registry or an external one.
+In the following, you find instructions for both.
+

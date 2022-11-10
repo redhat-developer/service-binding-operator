@@ -1,0 +1,36 @@
+= Install on Openshift
+
+[#intro]
+include::partial$openshift/intro.adoc[]
+
+== Internal Container Registry
+
+[#icr-setup-openshift]
+include::partial$openshift/internal-cr/setup-openshift.adoc[]
+
+[#icr-olm-install]
+include::partial$openshift/internal-cr/olm-install.adoc[]
+
+[#icr-helm-install]
+include::partial$openshift/internal-cr/helm-install.adoc[]
+
+[#icr-manifests-install]
+include::partial$openshift/internal-cr/manifests-install.adoc[]
+
+== External Container Registry
+
+[#ecr-setup-openshift]
+include::partial$openshift/external-cr/setup-openshift.adoc[]
+
+[#ecr-olm-install]
+include::partial$openshift/external-cr/olm-install.adoc[]
+
+[#ecr-helm-install]
+include::partial$openshift/external-cr/helm-install.adoc[]
+
+[#ecr-manifests-install]
+include::partial$openshift/external-cr/manifests-install.adoc[]
+
+[#olm-index-install]
+include::partial$olm-from-index.adoc[]
+

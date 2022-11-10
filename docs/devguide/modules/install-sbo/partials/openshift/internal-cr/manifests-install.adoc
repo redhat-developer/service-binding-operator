@@ -1,0 +1,18 @@
+=== Install with manifests
+
+1. Build and push the operator's image
++
+[source,bash]
+----
+export OPERATOR_IMAGE_REF=$REGISTRY/service-binding-operator/service-binding-operator:latest
+make image push-image -o registry-login
+----
+
+2. Deploy the operator
++
+[source,bash]
+----
+export OPERATOR_IMAGE_REF=$(kubectl get imagestream -n service-binding-operator service-binding-operator -o jsonpath='{.status.dockerImageRepository}:{.status.tags[0].tag}')
+make deploy -o image -o push-image
+----
+

@@ -1,0 +1,40 @@
+== Install with manifests
+
+1. Configure the shell
++
+[source,bash]
+----
+export OPERATOR_IMAGE_REF=redhat-developer/service-binding-operator:latest
+----
+
+2. Configure manifests
++
+[source,bash]
+----
+(cd config/manager && kustomize edit set image controller=$OPERATOR_IMAGE_REF)
+----
+
+3. Build the operator's image
++
+[source,bash]
+----
+make image
+----
+
+4. Deploy the operator
++
+[source,bash]
+----
+kubectl apply -k config/default
+----
+
+5. Patch the deployed operator
++
+[source,bash]
+----
+kubectl patch deployment service-binding-operator \
+	--patch '{"spec":{"template":{"spec":{"containers":[{"image":"'$OPERATOR_IMAGE_REF'","name":"controller","imagePullPolicy":"IfNotPresent"}]}}}}'
+kubectl patch deployment service-binding-operator \
+	--patch '{"spec":{"template":{"spec":{"containers":[{"image":"'$OPERATOR_IMAGE_REF'","name":"manager","imagePullPolicy":"IfNotPresent"}]}}}}'
+----
+

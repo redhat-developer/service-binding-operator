@@ -35,7 +35,7 @@ For details around Pipeline API, please check https://github.com/redhat-develope
 * Easy unit testing/integration testing
 * Single communication point with cluster allow easy mocking of cluster API
 * Possible reconciliation of service bindings outside of operator scope - use it as a library and allow tighter integration with other projects.
-* Easy support for various similar service binding APIs - same pipeline can be reused, just a new context provider need to implemented
+* Easy support for various similar service binding APIs - same pipeline can be reused, just a new context provider need to be implemented
 * Easy support for different environments - e.g. binding services and application on plain Docker engine is possible by just providing proper context provider
 * Opens up an opportunity for better logging
 * Opens up an opportunity for better error handling

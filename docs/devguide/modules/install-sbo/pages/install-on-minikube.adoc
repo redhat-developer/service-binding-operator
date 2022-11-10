@@ -1,0 +1,14 @@
+= Install on Minikube
+
+[#setup-minikube]
+include::partial$minikube/setup-minikube.adoc[]
+
+[#olm-install]
+include::partial$minikube/olm-install.adoc[]
+
+[#helm-install]
+include::partial$minikube/helm-install.adoc[]
+
+[#manifests-install]
+include::partial$minikube/manifests-install.adoc[]
+
