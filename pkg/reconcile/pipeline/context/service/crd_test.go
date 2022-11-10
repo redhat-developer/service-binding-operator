@@ -4,7 +4,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
-	"github.com/redhat-developer/service-binding-operator/pkg/binding"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic/fake"
@@ -29,17 +28,6 @@ var _ = Describe("CRD", func() {
 
 	AfterEach(func() {
 		mockCtrl.Finish()
-	})
-
-	It("should be bindable if marked as provisioned service", func() {
-		u := &unstructured.Unstructured{}
-		annotations := map[string]string{
-			binding.ProvisionedServiceAnnotationKey: "true",
-		}
-		u.SetAnnotations(annotations)
-		crd := &customResourceDefinition{resource: u, client: client}
-
-		Expect(crd.IsBindable()).To(BeTrue())
 	})
 
 	DescribeTable("should be bindable if has binding annotation", func(annKey string) {
@@ -70,4 +58,76 @@ var _ = Describe("CRD", func() {
 		crd := &customResourceDefinition{resource: u, client: client}
 		Expect(crd.IsBindable()).To(BeFalse())
 	})
+
+	It("should be bindable if the status has binding.name attribute", func() {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"kind":       "BackingService",
+				"apiVersion": "app1.example.org/v1alpha1",
+				"metadata": map[string]interface{}{
+					"name": "back1",
+				},
+				"spec": map[string]interface{}{
+					"versions": []map[string]interface{}{
+						{
+							"schema": map[string]interface{}{
+								"openAPIV3Schema": map[string]interface{}{
+									"properties": map[string]interface{}{
+										"status": map[string]interface{}{
+											"properties": map[string]interface{}{
+												"binding": map[string]interface{}{
+													"properties": map[string]interface{}{
+														"name": map[string]interface{}{
+															"type": "string",
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}}
+		crd := &customResourceDefinition{resource: u, client: client}
+		Expect(crd.IsBindable()).To(BeTrue())
+	})
+	It("should not be bindable if the status has binding.name with attribute value", func() {
+		u := &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"kind":       "BackingService",
+				"apiVersion": "app1.example.org/v1alpha1",
+				"metadata": map[string]interface{}{
+					"name": "back1",
+				},
+				"spec": map[string]interface{}{
+					"versions": []map[string]interface{}{
+						{
+							"schema": map[string]interface{}{
+								"openAPIV3Schema": map[string]interface{}{
+									"properties": map[string]interface{}{
+										"status": map[string]interface{}{
+											"properties": map[string]interface{}{
+												"binding": map[string]interface{}{
+													"properties": map[string]interface{}{
+														"name": map[string]interface{}{
+															"type": "not-string", // correct: string
+														},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			}}
+		crd := &customResourceDefinition{resource: u, client: client}
+		Expect(crd.IsBindable()).To(BeFalse())
+	})
+
 })

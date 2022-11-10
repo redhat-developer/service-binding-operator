@@ -61,8 +61,11 @@ spec:
                   properties:
                     dbCredentials:
                       type: string
-                bindings:
-                  type: string
+                binding:
+                  type: object
+                  properties:
+                    name:
+                      type: string
             data:
               type: object
               properties:
