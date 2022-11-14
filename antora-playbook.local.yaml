@@ -13,17 +13,11 @@ content:
     - branches: release-v1.2.x
       start_paths: docs/userguide, docs/devguide
       url: ./
-    - branches: v1.1.1-docs
-      start_paths: docs/userguide, docs/devguide
-      url: ./
-    - branches: v1.1.0-docs
+    - branches: release-v1.1.x
       start_paths: docs/userguide, docs/devguide
       url: ./
     - branches: v1.0.1-docs
       start_paths: docs/userguide, docs/devguide
-      url: ./
-    - branches: v1.0.0-docs
-      start_paths: docs/userguide
       url: ./
 ui:
   bundle:
