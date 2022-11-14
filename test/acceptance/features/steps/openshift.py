@@ -3,6 +3,7 @@ import re
 import time
 import base64
 import json
+import semver
 from environment import ctx
 from command import Command
 from behave import step
@@ -411,26 +412,50 @@ spec:
 
         return install_plan.strip()
 
-    def approve_operator_subscription_in_namespace(self, name, namespace, csv_version=None):
+    def get_current_csv_for_subscription(self, subscription_name, subscription_namespace):
+        cmd = f"{ctx.cli} get subscription {subscription_name} -n {subscription_namespace} -o json | jq -rc '.status.currentCSV'"
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to get currentCSV for the '{subscription_name}' subscription:\n {output}"
+        return output.strip()
+
+    def get_installed_csv_for_subscription(self, subscription_name, subscription_namespace):
+        cmd = f"{ctx.cli} get subscription {subscription_name} -n {subscription_namespace} -o json | jq -rc '.status.installedCSV'"
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to get installedCSV for the '{subscription_name}' subscription:\n {output}"
+        return output.strip()
+
+    def approve_operator_subscription_in_namespace(self, name, namespace):
         # get the install plan
         install_plan = self.get_install_plan_for_subscription(name, namespace)
 
-        # patch CSV for install plan
-        if csv_version is not None:
-            print(f"Patching {install_plan} install plan for {csv_version} CSV")
-            patch = f'{{"spec": {{"clusterServiceVersionNames": ["{csv_version}"] }}}}'
-            cmd = f"{ctx.cli} patch installplan {install_plan} -n {namespace} -p '{patch}' --type=merge"
-            (output, exit_code) = self.cmd.run(cmd)
-            assert exit_code == 0, f"Unable to patch CSV version for '{install_plan}' install plan:\n {output}"
+        # get current CSV for subscription
+        csv_version = self.get_current_csv_for_subscription(name, namespace)
 
         # approve install plan
-        print(f"Approving {install_plan} install plan")
+        print(f"Approving {install_plan} install plan for {csv_version}")
         cmd = f'{ctx.cli} -n {namespace} patch installplan {install_plan} --type merge --patch \'{{"spec": {{"approved": true}}}}\''
         (output, exit_code) = self.cmd.run(cmd)
         assert exit_code == 0, f"Unable to patch the {install_plan} install plan to approve it:\n{output}"
 
-    def approve_operator_subscription(self, name, csv_version=None):
-        self.approve_operator_subscription_in_namespace(name, self.operators_namespace, csv_version)
+        # wait for install plan to complete
+        print(f"Waiting for {install_plan} install plan for {csv_version} to complete")
+        cmd = f'{ctx.cli} wait --for=condition=Installed=True InstallPlan/{install_plan} -n {namespace} --timeout=120s'
+        (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to patch the {install_plan} install plan to approve it:\n{output}"
+
+        # wait for CSV to install successfully
+        print(f"Waiting for {csv_version} CSV to install successfully")
+        if ctx.cli == "oc" and semver.compare(ctx.cli_version, "4.10.0") < 0:
+            cmd = f"{ctx.cli} get csv/{csv_version} -n {namespace} -o jsonpath='{{.status.phase}}'"
+            (output, exit_code) = polling2.poll(target=lambda: tuple(self.cmd.run(cmd)), check_success=lambda o: o[1] == 0 and o[0].startswith(
+                "Succeeded"), step=5, timeout=120, ignore_exceptions=(ValueError,))
+        else:
+            cmd = f"{ctx.cli} wait --for=jsonpath='.status.phase'=Succeeded csv/{csv_version} -n {namespace} --timeout=120s"
+            (output, exit_code) = self.cmd.run(cmd)
+        assert exit_code == 0, f"Unable to install {csv_version} CSV successfully:\n{output}"
+
+    def approve_operator_subscription(self, name):
+        self.approve_operator_subscription_in_namespace(name, self.operators_namespace)
 
     def get_resource_list_in_namespace(self, resource_plural, name_pattern, namespace):
         print(f"Searching for {resource_plural} that matches {name_pattern} in {namespace} namespace")
