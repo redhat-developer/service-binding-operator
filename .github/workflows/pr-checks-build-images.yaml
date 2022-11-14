@@ -46,19 +46,23 @@ jobs:
           export TAG=pr-${PR_NUMBER}-${PR_SHA:0:8}
           export OPERATOR_IMAGE_REF=${OPERATOR_REPO_REF}:${TAG}
           export OPERATOR_BUNDLE_IMAGE_REF=${OPERATOR_IMAGE_REF}-bundle
-          export OPERATOR_INDEX_IMAGE_REF=${OPERATOR_IMAGE_REF}-index
+          export OPERATOR_INDEX_IMAGE_REF=$(make operator-index-image-ref)
+          export OPERATOR_UPGRADE_INDEX_IMAGE_REF=${OPERATOR_IMAGE_REF}-index
+          export OPERATOR_BUNDLE_VERSION=$(make operator-version)-${TAG}
 
           which podman
 
           make opm
 
-          OPM=.github/actions/setup-podman/opm BUILDAH_FORMAT=docker make SKIP_REGISTRY_LOGIN=true release-operator -o registry-login
+          podman pull ${OPERATOR_INDEX_IMAGE_REF}
+
+          OPM=.github/actions/setup-podman/opm BUILDAH_FORMAT=docker make SKIP_REGISTRY_LOGIN=true push-index-image-upgrade -o registry-login
 
           mkdir -p ${ARTIFACTS}
 
           echo "export OPERATOR_IMAGE_REF=${OPERATOR_IMAGE_REF}" >> ${ARTIFACTS}/operator.refs
           echo "export OPERATOR_BUNDLE_IMAGE_REF=${OPERATOR_BUNDLE_IMAGE_REF}" >> ${ARTIFACTS}/operator.refs
-          echo "export OPERATOR_INDEX_IMAGE_REF=${OPERATOR_INDEX_IMAGE_REF}" >> ${ARTIFACTS}/operator.refs
+          echo "export OPERATOR_INDEX_IMAGE_REF=${OPERATOR_UPGRADE_INDEX_IMAGE_REF}" >> ${ARTIFACTS}/operator.refs
 
           podman stop reg
           tar -czvf ${ARTIFACTS}/registry.tar.gz -C ${GITHUB_WORKSPACE} registry

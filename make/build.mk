@@ -26,7 +26,7 @@ manifests: controller-gen
 bundle: manifests kustomize yq kubectl-slice operator-sdk push-image
 #	$(OPERATOR_SDK) generate kustomize manifests -q
 	cd config/manager && $(KUSTOMIZE) edit set image controller=$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)
-	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	$(KUSTOMIZE) build config/manifests | $(OPERATOR_SDK) generate bundle -q --overwrite --version $(OPERATOR_BUNDLE_VERSION) $(BUNDLE_METADATA_OPTS)
 	$(YQ) e -i '.metadata.annotations.containerImage="$(OPERATOR_REPO_REF)@$(OPERATOR_IMAGE_SHA_REF)"' bundle/manifests/service-binding-operator.clusterserviceversion.yaml
 	# this is needed because $(OPERATOR_SDK) 1.16 filters out aggregated cluster role and the accompanied binding
 	$(KUSTOMIZE) build config/manifests | $(YQ) e 'select((.kind == "ClusterRole" and .metadata.name == "service-binding-controller-role") or (.kind == "ClusterRoleBinding" and .metadata.name == "service-binding-controller-rolebinding"))' - | $(KUBECTL_SLICE) -o bundle/manifests -t '{{.metadata.name}}_{{.apiVersion | replace "/" "_"}}_{{.kind | lower}}.yaml'
@@ -67,9 +67,25 @@ index-image: opm push-bundle-image
 	@echo "package: $(CSV_PACKAGE_NAME)" >> $(OPERATOR_INDEX_YAML)
 	@echo "name: $(DEFAULT_OPERATOR_CHANNEL)" >> $(OPERATOR_INDEX_YAML)
 	@echo "entries:" >> $(OPERATOR_INDEX_YAML)
-	@echo "- name: $(CSV_PACKAGE_NAME).v$(VERSION)" >> $(OPERATOR_INDEX_YAML)
+	@echo "- name: $(CSV_PACKAGE_NAME).v$(OPERATOR_BUNDLE_VERSION)" >> $(OPERATOR_INDEX_YAML)
 	$(OPM) validate $(OPERATOR_INDEX_NAME)
 	$(CONTAINER_RUNTIME) build -f $(OPERATOR_INDEX_NAME).Dockerfile -t $(OPERATOR_INDEX_IMAGE_REF) .
+
+.PHONY: index-image-upgrade
+index-image-upgrade: OPERATOR_BUNDLE_VERSION ?= $(VERSION)-$(GIT_COMMIT_ID)
+index-image-upgrade: opm push-bundle-image
+	mkdir -p $(OPERATOR_INDEX_DIR)
+	-$(OPM) generate dockerfile $(OPERATOR_INDEX_NAME)
+	$(OPM) render $(OPERATOR_INDEX_IMAGE_REF) --output=yaml > $(OPERATOR_INDEX_YAML)
+	$(OPM) render $(OPERATOR_BUNDLE_IMAGE_REF) --output=yaml >> $(OPERATOR_INDEX_YAML)
+	$(YQ) eval -i '(select(.schema=="olm.channel").entries) += {"name": "$(CSV_PACKAGE_NAME).v$(OPERATOR_BUNDLE_VERSION)", "replaces": "'$$(yq eval 'select(.schema=="olm.channel") | select(.name=="$(DEFAULT_OPERATOR_CHANNEL)").entries[] | select(.replaces == null).name' $(OPERATOR_INDEX_YAML))'"}' $(OPERATOR_INDEX_YAML)
+	$(OPM) validate $(OPERATOR_INDEX_NAME)
+	$(CONTAINER_RUNTIME) build -f $(OPERATOR_INDEX_NAME).Dockerfile -t $(OPERATOR_UPGRADE_INDEX_IMAGE_REF) .
+
+.PHONY: push-index-image-upgrade
+# push upgrade index image
+push-index-image-upgrade: index-image-upgrade registry-login
+	$(Q)$(CONTAINER_RUNTIME) push $(OPERATOR_UPGRADE_INDEX_IMAGE_REF)
 
 .PHONY: push-index-image
 # push index image

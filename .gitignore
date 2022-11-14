@@ -112,3 +112,5 @@ bundle
 bundle.Dockerfile
 config/crd/bases/_.yaml
 .cache
+
+service-binding-operator-index*
