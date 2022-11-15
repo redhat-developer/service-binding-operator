@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Introduction :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/intro.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.1.x">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="1">
+    <a class="nav-link" href="intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="getting-started/quick-start.html">Quick start guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/rbac-requirements.html">RBAC requirements</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/provisioned-service.html">Provisioned service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/direct-secret-reference.html">Direct secret reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/adding-annotation.html">Declaring binding data through CRD or CR annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/olm-descriptors.html">Declaring binding data through OLM descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="exposing-binding-data/detect-bindings.html">Detection of binding data through owned resources</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Projecting binding data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="projecting-binding-data/projecting-binding-data.html">Projecting binding data</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Binding workloads using Service Binding Operator</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="binding-workloads-using-sbo/creating-service-binding.html">Binding workloads using Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="binding-workloads-using-sbo/binding-options.html">Advanced binding options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="binding-workloads-using-sbo/custom-path-injection.html">Binding secondary workloads that are not compliant with PodSpec</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="binding-workloads-using-sbo/unbinding-workloads.html">Unbinding workloads</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.1.x</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../devguide/1.3.x/architecture.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../devguide/1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../devguide/1.1.x/architecture.html">1.1.x</a>
+        </li>
+        <li class="version">
+          <a href="../../devguide/1.0.x/architecture.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../intro.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../1.3.x/intro.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../1.2.x/intro.html">1.2.x</a>
+        </li>
+        <li class="version is-current">
+          <a href="intro.html">1.1.x</a>
+        </li>
+        <li class="version">
+          <a href="../1.0.x/intro.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="intro.html">User Guide</a></li>
+    <li><a href="intro.html">Introduction</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.1.x</button>
+  <div class="version-menu">
+    <a class="version" href="../intro.html">master</a>
+    <a class="version" href="../1.3.x/intro.html">1.3.x</a>
+    <a class="version" href="../1.2.x/intro.html">1.2.x</a>
+    <a class="version is-current" href="intro.html">1.1.x</a>
+    <a class="version" href="../1.0.x/intro.html">1.0.x</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/release-v1.1.x/docs/userguide/modules/ROOT/pages/intro.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Introduction</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Service Binding Operator consists of a controller and an accompanying custom resource definition (CRD) for service binding. It manages the data plane for workloads and backing services. The Service Binding Controller reads the data made available by the control plane of backing services. Then, it projects this data to workloads according to the rules specified through the <code>ServiceBinding</code> resource.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="_images/intro-bindings.png" alt="service-binding-intro"></span></p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="title">Terminology</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">Service binding</dt>
+<dd>
+<p>The representation of the action of providing information about a service to a workload. Examples include establishing the exchange of credentials between a Java application and a database that it requires.</p>
+</dd>
+<dt class="hdlist1">Backing service</dt>
+<dd>
+<p>Any service or software that the application consumes over the network as part of its normal operation. Examples include a database, a message broker, an application with REST endpoints, an event stream, an Application Performance Monitor (APM), or a Hardware Security Module (HSM).</p>
+</dd>
+<dt class="hdlist1">Workload (application)</dt>
+<dd>
+<p>Any process, running within a container. Examples include a Spring Boot application, a NodeJS Express application, or a Ruby on Rails application.</p>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This is different than an umbrella application as defined by the Kubernetes SIG, which refers to a set of micro-services.
+</td>
+</tr>
+</table>
+</div>
+</dd>
+<dt class="hdlist1">Binding data</dt>
+<dd>
+<p>Information about a service that you use to configure the behavior of other resources within the cluster. Examples include credentials, connection details, volume mounts, or secrets.</p>
+</dd>
+<dt class="hdlist1">Binding connection</dt>
+<dd>
+<p>Any connection that establishes an interaction between the connected components such as a bindable backing service and an application requiring that backing service.</p>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="why-service-bindings"><a class="anchor" href="#why-service-bindings"></a>Why service bindings?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Application developers need access to backing services to build and connect workloads. Today in Kubernetes, the exposure of secrets for connecting workloads to external services such as REST APIs, databases, event buses, and many more is manual and custom-made. Connecting workloads to backing services is always a challenge because each service provider suggests a different way to access their secrets, and each application developer consumes those secrets in a custom way to their workloads. While there is a good deal of value to this flexibility level, large development teams lose overall velocity dealing with each unique solution. In addition, manual configuration and maintenance of this binding together of workloads and backing services make the process tedious, inefficient, and error-prone.</p>
+</div>
+<div class="paragraph">
+<p>With Service Binding Operator, you can:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Bind your workloads to backing services or external services.</p>
+</li>
+<li>
+<p>Automate configuration of binding data.</p>
+</li>
+<li>
+<p>Provide service operators a low-touch administrative experience to provision and manage access to services.</p>
+</li>
+<li>
+<p>Enrich development lifecycle with a consistent and declarative service binding method that eliminates discrepancies in cluster environments.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="features-sbo"><a class="anchor" href="#features-sbo"></a>Features</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><strong>Exposal of binding data from services</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Based on annotations present in CRD, custom resources (CRs), or resources.</p>
+</li>
+<li>
+<p>Based on descriptors present in Operator Lifecycle Manager (OLM) descriptors.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Workload projection</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Projection of binding data as files, with a volume mounts.</p>
+</li>
+<li>
+<p>Projection of binding data as environment variables.</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p><strong>Service Binding Options</strong></p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Bind backing services in a namespace that is different from the workload namespace.</p>
+</li>
+<li>
+<p>Project binding data into the specific container workloads.</p>
+</li>
+<li>
+<p>Auto-detection of the binding data from resources owned by the backing service CR.</p>
+</li>
+<li>
+<p>Change the binding names before projecting them into workload.</p>
+</li>
+<li>
+<p>Compose custom binding data from the exposed binding data.</p>
+</li>
+<li>
+<p>Support for non-<code>PodSpec</code> compliant workload resources.</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="security"><a class="anchor" href="#security"></a>Security</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p>Support for role-based access control (RBAC).</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="understanding-sbo"><a class="anchor" href="#understanding-sbo"></a>Understanding Service Binding Operator</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The Service Binding Operator enables application developers to easily bind workloads together with backing services or external services, by automatically collecting and sharing binding data with the workloads. The process involves making the backing service bindable and binding the workload and the service together.</p>
+</div>
+<div class="sect2">
+<h3 id="making-an-operator-managed-backing-service-bindable"><a class="anchor" href="#making-an-operator-managed-backing-service-bindable"></a>Making an Operator-managed backing service bindable</h3>
+<div class="paragraph">
+<p>To make a service bindable, as an Operator provider you need to expose the binding data required by workloads to bind with the services provided by the Operator. You can provide the binding data either as annotations or as descriptors in the CRD of the Operator that manages the backing service.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="binding-a-workload-together-with-a-backing-service"><a class="anchor" href="#binding-a-workload-together-with-a-backing-service"></a>Binding a workload together with a backing service</h3>
+<div class="paragraph">
+<p>By using the Service Binding Operator, as an application developer, you need to declare the intent of establishing a binding connection. You must create a <code>Service Binding</code> CR  that references the backing service. This action triggers the Service Binding Operator to project the exposed binding data into the workload. The Service Binding Operator receives the declared intent and binds the workload together with the backing service.</p>
+</div>
+<div class="paragraph">
+<p>The CRD of the Service Binding Operator supports the following APIs:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Service Binding</strong> with the <code>binding.operators.coreos.com</code> API group.</p>
+<div class="paragraph">
+<p>This API is compliant with the Service Binding specification. It is fully supported and considered as the mature API. Use this API in production environments.</p>
+</div>
+</li>
+<li>
+<p><strong>Service Binding (Spec API Tech Preview)</strong> with the <code>servicebinding.io</code> API group.</p>
+<div class="paragraph">
+<p>This API is defined in the Service Binding specification. The specification is still evolving and maturing. As a result, the API might change in the future. Use the API carefully for testing purposes and preparing your integration to become fully compliant with the specification. The API is available in Service Binding Operator 1.x, as Tech Preview.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+We will consider supporting only the <code>servicebinding.io</code> API group from the specification, after the Service Binding specification will be officially GA. Any resulting breaking changes will be handled safely.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>Some of the key difference between the APIs:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">binding.operators.coreos.com API</th>
+<th class="tableblock halign-left valign-top">servicebinding.io API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support naming strategy</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support naming strategy</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support custom mapping</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support custom mapping</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Support to auto-detect binding resources</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Does not support
+auto-detecting binding resources</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Flag to bind as files or env vars</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">No flag switch between files and env
+vars</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="referenced-specification"><a class="anchor" href="#referenced-specification"></a>Referenced specification</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Service Binding Operator supports the <a href="https://github.com/k8s-service-bindings/spec">Service Binding Specification for Kubernetes</a>.</p>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

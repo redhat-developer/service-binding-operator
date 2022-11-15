@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Advanced Binding Options :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/1.0.x/creating-service-bindings/binding-options.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.0.x">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick Start Guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../using-projected-bindings/using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/adding-annotation.html">Declare Binding Data with Resource Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../exposing-binding-data/rbac-requirements.html">RBAC Requirements</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.0.x</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.3.x/architecture.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.x/architecture.html">1.1.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.x/architecture.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../1.3.x/intro.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.2.x/intro.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.x/intro.html">1.1.x</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Creating Service Binding</li>
+    <li><a href="binding-options.html">Advanced Binding Options</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.0.x</button>
+  <div class="version-menu">
+    <a class="version is-missing" href="../../intro.html">master</a>
+    <a class="version is-missing" href="../../1.3.x/intro.html">1.3.x</a>
+    <a class="version is-missing" href="../../1.2.x/intro.html">1.2.x</a>
+    <a class="version is-missing" href="../../1.1.x/intro.html">1.1.x</a>
+    <a class="version is-current" href="binding-options.html">1.0.x</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.0.1-docs/docs/userguide/modules/creating-service-bindings/pages/binding-options.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Advanced Binding Options</h1>
+<div class="sect1">
+<h2 id="_transform_binding_names_before_projection_into_application"><a class="anchor" href="#_transform_binding_names_before_projection_into_application"></a>Transform binding names before projection into application</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is only available for <code>ServiceBinding</code> in the
+<code>binding.operators.coreos.com</code> API group.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If an application expects the projected environment variables in a
+particular format, but the values from backing services are not
+available in that format, then users can use the feature described here
+to transform binding names.</p>
+</div>
+<div class="paragraph">
+<p>The transformation rules can be specified in the <code>.spec.namingStrategy</code>
+attribute of the <code>ServiceBinding</code> resource.</p>
+</div>
+<div class="paragraph">
+<p>If the <code>namingStrategy</code> is not specified, the environment variables are
+create like this:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>names are upper-cased</p>
+</li>
+<li>
+<p>service resource kind is upper-cased and prepended to the name</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Let’s say there is a <code>host: example.com</code> value in the backing service,
+the projected environment variable is going to be like this:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">DATABASE_HOST: example.com</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this example, <code>DATABASE</code> is the backend service <code>Kind</code> and <code>HOST</code> is
+the binding name.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_how"><a class="anchor" href="#_how"></a>How ?</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Following fields are part of <code>ServiceBinding</code> request. - Application</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  application:
+    name: nodejs-app
+    group: apps
+    version: v1
+    resource: deployments</code></pre>
+</div>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Backend/Database Service</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">namingStrategy: 'POSTGRES_{{ .service.kind | upper }}_{{ .name | upper }}_ENV'
+services:
+  - group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    name: db-demo</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Considering following are the fields exposed by above service to use for
+binding 1. host 2. port</p>
+</div>
+<div class="paragraph">
+<p>We have applied
+<code>POSTGRES_{{ .service.kind | upper }}_{{ .name | upper }}_ENV</code> naming
+strategy 1. <code>.name</code> refers to binding name exposed by the service, in
+this case <code>host</code> or <code>port</code>. 2. <code>.service.kind</code> refer to the kind of
+service resource whoes binding name are transformed with this strategy.
+3. <code>upper</code> is the string function used to postprocess the string while
+compiling the template string. 4. <code>POSTGRES</code> is the prefix used. 5.
+<code>ENV</code> is the suffix used.</p>
+</div>
+<div class="paragraph">
+<p>Following would be list of binding names prepared by above
+<code>ServiceBinding</code></p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">POSTGRES_DATABASE_HOST_ENV: example.com
+POSTGRES_DATABASE_PORT_ENV: 8080</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>We can define how each key should be prepared defining string template
+in <code>namingStrategy</code></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_naming_strategies"><a class="anchor" href="#_naming_strategies"></a>Naming Strategies</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>There are few naming strategies predefine.</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>none</code> - When this is applied, no transformations are performed on
+binding names. The binding names is in following form - <code>{{ .name }}</code>.
+This is the default behavior.</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">host: example.com
+port: 8080</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><code>uppercase</code> - This is by uppercase set when no <code>namingStrategy</code> is
+defined and <code>bindAsFiles</code> set to false -
+<code>{{ .service.kind | upper}}_{{ .name | upper    }}</code></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">DATABASE_HOST: example.com
+DATABASE_PORT: 8080</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p><code>lowercase</code> - This is by default set when <code>bindAsFiles</code> set to true -
+<code>{{ .name | lower }}</code></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">host: example.com
+port: 8080</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_predefined_string_post_processing_functions"><a class="anchor" href="#_predefined_string_post_processing_functions"></a>Predefined string post processing functions</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p><code>upper</code> - Capatalize all letters</p>
+</li>
+<li>
+<p><code>lower</code> - Lowercase all letters</p>
+</li>
+<li>
+<p><code>title</code> - Title case all letters.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compose_custom_binding_data"><a class="anchor" href="#_compose_custom_binding_data"></a>Compose custom binding data</h2>
+<div class="sectionbody">
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<i class="fa icon-note" title="Note"></i>
+</td>
+<td class="content">
+This feature is only available for <code>ServiceBinding</code> in the
+<code>binding.operators.coreos.com</code> API group.
+</td>
+</tr>
+</table>
+</div>
+<div class="paragraph">
+<p>If the backing service doesn’t expose binding data or the values exposed
+are not easily consumable, then an application author may compose custom
+binding data using attributes in the Kubernetes resource representing
+the backing service.</p>
+</div>
+<div class="paragraph">
+<p>Example, the backing service CR may expose the host, port and database
+user as binding data, but the application may need to consume this
+information as a connection string.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: multi-service-binding
+  namespace: service-binding-demo
+spec:
+
+  application:
+    name: java-app
+    group: apps
+    version: v1
+    resource: deployments
+
+ services:
+  - group: postgresql.baiju.dev
+    version: v1alpha1
+    kind: Database
+    name: db-demo   <i class="conum" data-value="1"></i><b>(1)</b>
+    id: postgresDB <i class="conum" data-value="2"></i><b>(2)</b>
+  - group: ibmcloud.ibm.com
+    version: v1alpha1
+    kind: Binding
+    name: mytranslator-binding <i class="conum" data-value="3"></i><b>(3)</b>
+    id: translationService
+
+  mappings:
+    ## From the database service
+    - name: JDBC_URL
+      value: 'jdbc:postgresql://{{ .postgresDB.status.dbConnectionIP }}:{{ .postgresDB.status.dbConnectionPort }}/{{ .postgresDB.status.dbName }}'
+    - name: DB_USER
+      value: '{{ .postgresDB.status.dbCredentials.user }}'
+
+    ## From the translator service
+    - name: LANGUAGE_TRANSLATOR_URL
+      value: '{{ index translationService.status.secretName "url" }}'
+    - name: LANGUAGE_TRANSLATOR_IAM_APIKEY
+      value: '{{ index translationService.status.secretName "apikey" }}'
+
+    ## From both the services!
+    - name: EXAMPLE_VARIABLE
+      value: '{{ .postgresDB.status.dbName }}{{ translationService.status.secretName}}'
+
+    ## Generate JSON.
+    - name: DB_JSON
+      value: {{ json .postgresDB.status }}</code></pre>
+</div>
+</div>
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Database service</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Optional "id" field</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Translation service</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>

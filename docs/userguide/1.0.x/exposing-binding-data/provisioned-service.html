@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Provisioned Service :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/exposing-binding-data/provisioned-service.html">
+    <meta name="generator" content="Antora 3.0.1">
+    <link rel="stylesheet" href="../../../_/css/site.css">
+    <script>var uiRootPath = '../../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header><div class="body">
+<div class="nav-container" data-component="userguide" data-version="1.0.x">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../intro.html">User Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../intro.html">Introduction</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Getting Started</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/installing-service-binding.html">Installing Service Binding Operator</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/quick-start.html">Quick Start Guide</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-postgresql.html">Connecting PetClinic application to PostgreSQL database</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../getting-started/petclinic-pgcluster.html">Connecting PetClinic application to an Operator-backed PostgreSQL database</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Creating Service Binding</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/creating-service-binding.html">Creating Service Binding</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/binding-options.html">Advanced Binding Options</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/custom-path-injection.html">Custom Container Location in Application Resource</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../creating-service-bindings/unbind-application.html">Unbind Application</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Using Projected Bindings</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="../using-projected-bindings/using-projected-bindings.html">General Concept</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Exposing Binding Data</span>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="intro-expose-binding.html">Introduction</a>
+  </li>
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="provisioned-service.html">Provisioned Service</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="direct-secret-reference.html">Direct Secret Reference</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="adding-annotation.html">Declare Binding Data with Resource Annotations</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="olm-descriptors.html">Adding Binding Data as OLM Descriptors</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="detect-bindings.html">Detect Bindings through owned resources</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="rbac-requirements.html">RBAC Requirements</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">User Guide</span>
+    <span class="version">1.0.x</span>
+  </div>
+  <ul class="components">
+    <li class="component">
+      <a class="title" href="../../../devguide/architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../../devguide/architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.3.x/architecture.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.1.x/architecture.html">1.1.x</a>
+        </li>
+        <li class="version">
+          <a href="../../../devguide/1.0.x/architecture.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component is-current">
+      <a class="title" href="../../intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../intro.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../1.3.x/intro.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.2.x/intro.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../1.1.x/intro.html">1.1.x</a>
+        </li>
+        <li class="version is-current">
+          <a href="../intro.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../intro.html">User Guide</a></li>
+    <li>Exposing Binding Data</li>
+    <li><a href="provisioned-service.html">Provisioned Service</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">1.0.x</button>
+  <div class="version-menu">
+    <a class="version" href="../../exposing-binding-data/provisioned-service.html">master</a>
+    <a class="version" href="../../1.3.x/exposing-binding-data/provisioned-service.html">1.3.x</a>
+    <a class="version" href="../../1.2.x/exposing-binding-data/provisioned-service.html">1.2.x</a>
+    <a class="version" href="../../1.1.x/exposing-binding-data/provisioned-service.html">1.1.x</a>
+    <a class="version is-current" href="provisioned-service.html">1.0.x</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/v1.0.1-docs/docs/userguide/modules/exposing-binding-data/pages/provisioned-service.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Provisioned Service</h1>
+<div class="paragraph">
+<p>As a backing service author or provider, you can use this method to be
+compliant with the Service Binding specification.</p>
+</div>
+<div class="paragraph">
+<p><a href="https://github.com/k8s-service-bindings/spec#provisioned-service">Provisioned
+Service</a> represents a backing service custom resource with a reference
+to a Secret resource. The Secret resource provides all the binding data
+values required for an application to connect to the backing service.
+You must provide the reference to the Secret service resource in the
+<code>.status.binding.name</code> attribute of the custom resource.</p>
+</div>
+<div class="paragraph">
+<p>The following examples show an <code>AccountService</code> resource that represents
+a backing service and a <code>Secret</code> service resource. As a backing service
+author, you can create a <code>Secret</code> service resource with all the
+necessary connection details and refer them using the
+<code>.status.binding.name</code> field.</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: AccountService resource</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: example.com/v1alpha1
+kind: AccountService
+name: prod-account-service
+spec:
+  ...
+status:
+  binding:
+    name: production-db-secret</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is the referenced Secret:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: v1
+kind: Secret
+metadata:
+  name: production-db-secret
+data:
+  password: "MTBz"
+  username: "Z3Vlc3Q="</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When creating service binding, directly give the details of the
+<code>AccountService</code> resource in the following <code>ServiceBinding</code>
+specifications:</p>
+</div>
+<div class="listingblock">
+<div class="title">Example: Specification with the binding.operators.coreos.com API</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: account-service
+spec:
+  ...
+  services:
+  - group: "example.com"
+    version: v1alpha1
+    kind: AccountService
+    name: prod-account-service
+  application:
+    name: nodejs-app
+    group: apps
+    version: v1
+    resource: deployments</code></pre>
+</div>
+</div>
+<div class="listingblock">
+<div class="title">Example: Specification that is compliant with the service.binding API</div>
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">apiVersion: servicebinding.io/v1alpha3
+kind: ServiceBinding
+metadata:
+  name: account-service
+
+spec:
+  ...
+  service:
+    apiVersion: example.com/v1alpha1
+    kind: AccountService
+    name: prod-account-service
+  application:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: nodejs-app</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>All the keys in the <code>Secret</code> resource are exposed as binding data and
+projected into the application.</p>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../../_/js/site.js" data-ui-root-path="../../../_"></script>
+<script async src="../../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
