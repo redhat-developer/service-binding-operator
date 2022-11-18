@@ -19,3 +19,8 @@ release-manifests: prepare-operatorhub-pr kustomize yq
 	cd $(OUTPUT_DIR)/foo/config/manager && $(KUSTOMIZE) edit set image controller=$(REF)
 	$(KUSTOMIZE) build $(OUTPUT_DIR)/foo/config/default > $(OUTPUT_DIR)/release.yaml
 	git worktree remove --force $(OUTPUT_DIR)/foo
+
+.PHONY: branch-release
+## prepare release branch
+branch-release:
+	OUTPUT_DIR=$(OUTPUT_DIR) VERSION=$(VERSION) $(HACK_DIR)/branch-release.sh
