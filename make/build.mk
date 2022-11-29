@@ -11,6 +11,8 @@ OPERATOR_INDEX_NAME ?= $(CSV_PACKAGE_NAME)-index
 OPERATOR_INDEX_DIR ?= $(OPERATOR_INDEX_NAME)
 OPERATOR_INDEX_YAML ?= $(OPERATOR_INDEX_DIR)/index.yaml
 
+OPM_RENDER_OPTS := 
+
 .PHONY: build
 ## Build operator binary
 build:
@@ -61,7 +63,7 @@ index-image: opm push-bundle-image
 	mkdir -p $(OPERATOR_INDEX_DIR)
 	-$(OPM) generate dockerfile $(OPERATOR_INDEX_NAME)
 	$(OPM) init $(CSV_PACKAGE_NAME) --default-channel=$(DEFAULT_OPERATOR_CHANNEL) --icon=$(PROJECT_DIR)/assets/icon/sbo-logo.svg --output=yaml > $(OPERATOR_INDEX_YAML)
-	$(OPM) render $(OPERATOR_BUNDLE_IMAGE_REF) --output=yaml >> $(OPERATOR_INDEX_YAML)
+	$(OPM) render $(OPERATOR_BUNDLE_IMAGE_REF) --output=yaml $(OPM_RENDER_OPTS) >> $(OPERATOR_INDEX_YAML)
 	@echo "---" >> $(OPERATOR_INDEX_YAML)
 	@echo "schema: olm.channel" >> $(OPERATOR_INDEX_YAML)
 	@echo "package: $(CSV_PACKAGE_NAME)" >> $(OPERATOR_INDEX_YAML)

@@ -19,6 +19,9 @@
             "repository": {
               "type": "string"
             },
+            "image": {
+              "type": "string"
+            },
             "testRepository": {
               "type": "string"
             }

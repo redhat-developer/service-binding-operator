@@ -1,0 +1,43 @@
+=== Install with OLM
+
+1. Build and push the operator's image
++
+[source,bash]
+----
+export OPERATOR_REPO_REF=$REGISTRY/service-binding-operator
+make image push-image -o registry-login
+----
+
+2. Build and push the bundle image
++
+[source,bash]
+----
+export OPERATOR_BUNDLE_REPO_REF=$REGISTRY/sbo-bundle
+make bundle-image push-bundle-image \
+    -o registry-login \
+    -o push-image \
+    -o image
+----
+
+3. Build and push the index image
++
+[source,bash]
+----
+export OPERATOR_INDEX_REPO_REF=$REGISTRY/service-binding-operator
+make index-image push-index-image \
+    -o registry-login \
+    -o image \
+    -o push-image \
+    -o bundle-image \
+    -o push-bundle-image
+----
+
+4. Deploy from index image
++
+[source,bash]
+----
+CATSRC_NAME_OVERRIDE=catsrc-sbo-dev make deploy-from-index-image
+----
+
+NOTE: `CATSRC_NAME_OVERRIDE` is needed otherwise the generated name for the catalogsource will be too long (bigger than 63 characters)
+

@@ -1,0 +1,39 @@
+1. Enable route to Openshift internal CR
++
+[source,bash]
+----
+oc patch configs.imageregistry.operator.openshift.io/cluster --patch '{"spec":{"defaultRoute":true}}' --type=merge
+export REGISTRY=$(oc get route default-route -n openshift-image-registry --template='{{ .spec.host }}')
+echo $REGISTRY
+----
+
+2. Login into the Openshift's internal registry
++
+[source,bash]
+----
+oc registry login --skip-check
+----
+
+3. You may need to configure your `/etc/docker/daemon.json` adding the route to the internal container registry in the list `insecure-registries`.
++
+[source,json]
+----
+{
+  "insecure-registries": ["URL TO INTERNAL CONTAINER REGISTRY"]
+}
+----
++
+you can use `jq` to update it (as root)
+[source,console]
++
+----
+sudo cp /etc/docker/daemon.json{,.bkp}
+jq '."insecure-registries" += ["'$REGISTRY'"]' /etc/docker/daemon.json.bkp | sudo tee /etc/docker/daemon.json
+----
+
+4. If you updated the `/etc/docker/daemon.json`, you have to restart the docker service (as root)
++
+[source,console]
+----
+sudo systemctl restart docker.service docker.socket
+----

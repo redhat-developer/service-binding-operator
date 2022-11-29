@@ -1,0 +1,48 @@
+== Install with Helm
+
+1. Configure the shell
++
+[source,bash]
+----
+export OPERATOR_IMAGE_REF=redhat-developer/service-binding-operator:latest
+----
+
+
+2. Build the operator's image
++
+[source,bash]
+----
+make image
+----
+
+3. Install the CRDs
++
+[source,bash]
+----
+make install
+----
+
+4. Deploy the operator using Helm
++
+[source,bash]
+----
+helm install \
+    --create-namespace \
+    --namespace service-binding-operator \
+    --set image.image=$OPERATOR_IMAGE_REF \
+    service-binding-operator \
+    ./charts/service-binding-operator
+----
++
+or if you prefer to use only the templates
++
+[source,bash]
+----
+kubectl create namespace service-binding-operator
+helm template \
+    --skip-tests \
+    --namespace service-binding-operator \
+    --set image.image=$OPERATOR_IMAGE_REF \
+    ./charts/service-binding-operator | kubectl apply -f -
+----
+

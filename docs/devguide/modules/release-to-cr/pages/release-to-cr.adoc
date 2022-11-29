@@ -1,0 +1,71 @@
+= Release to Container Registry
+
+To release the Operator image into a Container Registry, the following steps must be accomplished:
+
+1. Log into a Container Registry
+2. Configure your shell
+3. Build the Operator image
+4. Push the Operator image
+
+== Log into a Container Registry
+
+Choose the Container Registry you want to use, login into it and configure your shell.
+
+=== Log into Quay
+
+1. Log into Quay with your credentials
++
+[source,bash]
+----
+docker login quay.io
+----
+
+2. Export needed variables
++
+[source,bash]
+----
+export REGISTRY=quay.io/<USERNAME>
+----
+
+=== Log into Docker Hub
+
+1. Log into Docker Hub with your credentials
++
+[source,bash]
+----
+docker login
+----
+
+2. Export needed variables
++
+[source,bash]
+----
+export REGISTRY=<USERNAME>
+----
+
+== Configure the shell
+
+1. Export needed variables
++
+[source,bash]
+----
+export OPERATOR_REPO_REF=$REGISTRY/service-binding-operator
+----
+
+== Build and push image
+
+1. Build the image
++
+[source,bash]
+----
+make image
+----
+
+2. Push the image
++
+[source,bash]
+----
+make push-image
+----
+
+

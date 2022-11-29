@@ -1,0 +1,17 @@
+=== Install with manifests
+
+1. Build and push the operator's image
++
+[source,bash]
+----
+export OPERATOR_REPO_REF=$REGISTRY/service-binding-operator/service-binding-operator
+make image push-image -o registry-login
+----
+
+2. Deploy the operator
++
+[source,bash]
+----
+make deploy
+----
+

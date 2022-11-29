@@ -1,0 +1,25 @@
+= Run Acceptance Tests
+
+Follow the instructions at link:../install-sbo/install-on-minikube.html[Install on Minikube] or link:../install-sbo/install-on-openshift.html[Install on Openshift] to install the Service Binding Operator.
+
+1. Set KUBECONFIG environment variable
++
+[source,bash]
+----
+export KUBECONFIG=<PATH TO MY CONFIG FILE> # default is $HOME/.kube/config
+----
+
+2. Run acceptance tests tagged with `@dev` using `kubectl` CLI
++
+[source,bash]
+----
+make test-acceptance TEST_ACCEPTANCE_TAGS="@dev" TEST_ACCEPTANCE_START_SBO=remote TEST_ACCEPTANCE_CLI=kubectl
+----
+
+3. Run acceptance tests for a single scenario
++
+[source,bash]
+----
+make test-acceptance TEST_ACCEPTANCE_START_SBO=remote TEST_ACCEPTANCE_CLI=kubectl EXTRA_BEHAVE_ARGS='-n "Specify path of secret in the Service Binding"'
+----
+

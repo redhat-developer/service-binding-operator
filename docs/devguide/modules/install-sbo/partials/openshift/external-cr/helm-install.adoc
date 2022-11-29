@@ -1,0 +1,41 @@
+=== Install with Helm
+
+1. Build and push the operator's image
++
+[source,bash]
+----
+export OPERATOR_IMAGE_REF=$REGISTRY/service-binding-operator:latest
+make image push-image -o registry-login
+----
+
+2. Install the CRDs
++
+[source,bash]
+----
+make install
+----
+
+3. Deploy the operator
++
+[source,bash]
+----
+helm install \
+    --create-namespace \
+    --namespace openshift-operators \
+    --set image.image=$OPERATOR_IMAGE_REF \
+    service-binding-operator \
+    ./charts/service-binding-operator
+----
++
+or if you prefer to use only the templates
++
+[source,bash]
+----
+kubectl create namespace openshift-operators
+helm template \
+    --skip-tests \
+    --namespace openshift-operators \
+    --set image.image=$OPERATOR_IMAGE_REF \
+    ./charts/service-binding-operator | kubectl apply -f -
+----
+

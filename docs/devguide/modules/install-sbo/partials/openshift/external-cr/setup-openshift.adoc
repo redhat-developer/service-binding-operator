@@ -1,0 +1,2 @@
+First of all, follow the instructions at link:../release-to-cr/release-to-cr.html[Release to a Container Registry] to login to an external Container Registry and configure the shell.
+

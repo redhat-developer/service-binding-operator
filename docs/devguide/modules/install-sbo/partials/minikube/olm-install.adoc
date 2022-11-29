@@ -1,0 +1,36 @@
+== Install with OLM
+
+1. Enable OLM
+[source,bash]
++
+----
+minikube addons enable olm
+----
+
+2. Configure the shell
++
+[source,bash]
+----
+export OPERATOR_REPO_REF=$(minikube ip):5000/service-binding-operator
+export OPERATOR_INDEX_IMAGE_REF=$(minikube ip):5000/service-binding-operator:index
+export OPERATOR_BUNDLE_IMAGE_REF=$(minikube ip):5000/sbo-bundle:latest
+----
+
+3. Build and push images
++
+[source,bash]
+----
+make image push-image -o registry-login
+make bundle-image push-bundle-image -o registry-login
+make index-image push-index-image -o registry-login OPM_RENDER_OPTS=--use-http
+----
+
+4. Deploy the operator through with OLM
++
+[source,bash]
+----
+make deploy-from-index-image
+----
+
+[#minikube-olm-index-install]
+include::partial$olm-from-index.adoc[]
