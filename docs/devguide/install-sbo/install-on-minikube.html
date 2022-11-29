@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Install on Minikube :: Service Binding Operator Documentation</title>
+    <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/devguide/install-sbo/install-on-minikube.html">
+    <meta name="generator" content="Antora 3.1.1">
+    <link rel="stylesheet" href="../../_/css/site.css">
+    <script>var uiRootPath = '../../_'</script>
+  </head>
+  <body class="article">
+<header class="header">
+  <nav class="navbar">
+    <div class="navbar-brand">
+
+
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/index.html">Service Binding Operator Documentation</a>
+
+
+      <button class="navbar-burger" data-target="topbar-nav">
+        <span><img src="../../_/img/sbo-logo.svg" alt="sbo logo"></span>
+        <span></span>
+        <span></span>
+      </button>
+
+    </div>
+    <div id="topbar-nav" class="navbar-menu">
+
+      <div class="navbar-end">
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/userguide/index.html">User Guide</a>
+      <a class="navbar-item" href="https://redhat-developer.github.io/service-binding-operator/devguide/index.html">Developer Guide</a>
+      </div>
+    </div>
+  </nav>
+</header>
+<div class="body">
+<div class="nav-container" data-component="devguide" data-version="master">
+  <aside class="nav">
+    <div class="panels">
+<div class="nav-panel-menu is-active" data-panel="menu">
+  <nav class="nav-menu">
+    <h3 class="title"><a href="../architecture.html">Developer Guide</a></h3>
+<ul class="nav-list">
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../architecture.html">Architecture</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <button class="nav-item-toggle"></button>
+    <span class="nav-text">Install</span>
+<ul class="nav-list">
+  <li class="nav-item is-current-page" data-depth="2">
+    <a class="nav-link" href="install-on-minikube.html">On Minikube</a>
+  </li>
+  <li class="nav-item" data-depth="2">
+    <a class="nav-link" href="install-on-openshift.html">On Openshift</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../release-to-cr/release-to-cr.html">Release to Container Registry</a>
+  </li>
+</ul>
+  </li>
+  <li class="nav-item" data-depth="0">
+<ul class="nav-list">
+  <li class="nav-item" data-depth="1">
+    <a class="nav-link" href="../acceptance-tests/acceptance-tests.html">Run Acceptance Tests</a>
+  </li>
+</ul>
+  </li>
+</ul>
+  </nav>
+</div>
+<div class="nav-panel-explore" data-panel="explore">
+  <div class="context">
+    <span class="title">Developer Guide</span>
+    <span class="version">master</span>
+  </div>
+  <ul class="components">
+    <li class="component is-current">
+      <a class="title" href="../architecture.html">Developer Guide</a>
+      <ul class="versions">
+        <li class="version is-current is-latest">
+          <a href="../architecture.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../1.3.x/architecture.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../1.2.x/architecture.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../1.1.x/architecture.html">1.1.x</a>
+        </li>
+        <li class="version">
+          <a href="../1.0.x/architecture.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+    <li class="component">
+      <a class="title" href="../../userguide/intro.html">User Guide</a>
+      <ul class="versions">
+        <li class="version is-latest">
+          <a href="../../userguide/intro.html">master</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.3.x/intro.html">1.3.x</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.2.x/intro.html">1.2.x</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.1.x/intro.html">1.1.x</a>
+        </li>
+        <li class="version">
+          <a href="../../userguide/1.0.x/intro.html">1.0.x</a>
+        </li>
+      </ul>
+    </li>
+  </ul>
+</div>
+    </div>
+  </aside>
+</div>
+<main class="article">
+<div class="toolbar" role="navigation">
+<button class="nav-toggle"></button>
+  <a href="../../userguide/intro.html" class="home-link"></a>
+<nav class="breadcrumbs" aria-label="breadcrumbs">
+  <ul>
+    <li><a href="../architecture.html">Developer Guide</a></li>
+    <li>Install</li>
+    <li><a href="install-on-minikube.html">On Minikube</a></li>
+  </ul>
+</nav>
+<div class="page-versions">
+  <button class="version-menu-toggle" title="Show other versions of page">master</button>
+  <div class="version-menu">
+    <a class="version is-current" href="install-on-minikube.html">master</a>
+    <a class="version is-missing" href="../1.3.x/architecture.html">1.3.x</a>
+    <a class="version is-missing" href="../1.2.x/architecture.html">1.2.x</a>
+    <a class="version is-missing" href="../1.1.x/architecture.html">1.1.x</a>
+    <a class="version is-missing" href="../1.0.x/architecture.html">1.0.x</a>
+  </div>
+</div>
+  <div class="edit-this-page"><a href="https://github.com/redhat-developer/service-binding-operator/edit/master/docs/devguide/modules/install-sbo/pages/install-on-minikube.adoc">Edit this Page</a></div>
+  </div>
+  <div class="content">
+<aside class="toc sidebar" data-title="Contents" data-levels="2">
+  <div class="toc-menu"></div>
+</aside>
+<article class="doc">
+<h1 class="page">Install on Minikube</h1>
+<div id="preamble">
+<div class="sectionbody">
+<div id="setup-minikube" class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Run <code>minikube</code> using the script <code>./hack/start-minikube.sh</code></p>
+</li>
+<li>
+<p>Install <code>cert-manager</code></p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">make deploy-cert-manager</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Configure current shell</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">eval $(minikube docker-env)</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="olm-install"><a class="anchor" href="#olm-install"></a>Install with OLM</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Enable OLM</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">minikube addons enable olm</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Configure the shell</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export OPERATOR_REPO_REF=$(minikube ip):5000/service-binding-operator
+export OPERATOR_INDEX_IMAGE_REF=$(minikube ip):5000/service-binding-operator:index
+export OPERATOR_BUNDLE_IMAGE_REF=$(minikube ip):5000/sbo-bundle:latest</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Build and push images</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">make image push-image -o registry-login
+make bundle-image push-bundle-image -o registry-login
+make index-image push-index-image -o registry-login OPM_RENDER_OPTS=--use-http</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Deploy the operator through with OLM</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">make deploy-from-index-image</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="minikube-olm-index-install"><a class="anchor" href="#minikube-olm-index-install"></a>Install with OLM and a given Index image</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>You can install the Service Binding Operator from a given index image, like the one on <a href="https://operatorhub.io/operator/service-binding-operator">OperatorHub.io</a>
+or the one generated for each Service Binding Operator&#8217;s Pull Request.</p>
+</div>
+<div class="sect2">
+<h3 id="_from_operatorhub_io"><a class="anchor" href="#_from_operatorhub_io"></a>From OperatorHub.io</h3>
+<div class="paragraph">
+<p>To install the <a href="https://operatorhub.io/operator/service-binding-operator">OperatorHub.io</a>'s image use the following command:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">CATSRC_NAME=operatorhubio OPERATOR_INDEX_IMAGE_REF=quay.io/operatorhubio/catalog:latest make deploy-from-index-image</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_from_a_pull_request_index_image"><a class="anchor" href="#_from_a_pull_request_index_image"></a>From a Pull Request index image</h3>
+<div class="paragraph">
+<p>For each <a href="https://github.com/redhat-developer/service-binding-operator/pulls">Pull Request</a> the images needed to install with OLM
+are create and pushed to the <a href="https://quay.io/repository/redhat-developer/servicebinding-operator?tab=tags">Service Binding Operator&#8217;s Quay Repository</a>.</p>
+</div>
+<div class="paragraph">
+<p>In the following &lt;PR_NUMBER&gt; is the Pull Request&#8217;s number and &lt;COMMIT_ID&gt; is the short commit ID (i.e., the first 8 characters of the commit ID).</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">CATSRC_NAME=sbo-pr OPERATOR_INDEX_IMAGE_REF=quay.io/redhat-developer/servicebinding-operator:pr-&lt;PR_NUMBER&gt;-&lt;COMMIT_ID&gt;-index make deploy-from-index-image</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="helm-install"><a class="anchor" href="#helm-install"></a>Install with Helm</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Configure the shell</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export OPERATOR_IMAGE_REF=redhat-developer/service-binding-operator:latest</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Build the operator&#8217;s image</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">make image</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Install the CRDs</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">make install</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Deploy the operator using Helm</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">helm install \
+    --create-namespace \
+    --namespace service-binding-operator \
+    --set image.image=$OPERATOR_IMAGE_REF \
+    service-binding-operator \
+    ./charts/service-binding-operator</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>or if you prefer to use only the templates</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl create namespace service-binding-operator
+helm template \
+    --skip-tests \
+    --namespace service-binding-operator \
+    --set image.image=$OPERATOR_IMAGE_REF \
+    ./charts/service-binding-operator | kubectl apply -f -</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="manifests-install"><a class="anchor" href="#manifests-install"></a>Install with manifests</h2>
+<div class="sectionbody">
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Configure the shell</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">export OPERATOR_IMAGE_REF=redhat-developer/service-binding-operator:latest</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Configure manifests</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">(cd config/manager &amp;&amp; kustomize edit set image controller=$OPERATOR_IMAGE_REF)</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Build the operator&#8217;s image</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">make image</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Deploy the operator</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl apply -k config/default</code></pre>
+</div>
+</div>
+</li>
+<li>
+<p>Patch the deployed operator</p>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-bash hljs" data-lang="bash">kubectl patch deployment service-binding-operator \
+	--patch '{"spec":{"template":{"spec":{"containers":[{"image":"'$OPERATOR_IMAGE_REF'","name":"controller","imagePullPolicy":"IfNotPresent"}]}}}}'
+kubectl patch deployment service-binding-operator \
+	--patch '{"spec":{"template":{"spec":{"containers":[{"image":"'$OPERATOR_IMAGE_REF'","name":"manager","imagePullPolicy":"IfNotPresent"}]}}}}'</code></pre>
+</div>
+</div>
+</li>
+</ol>
+</div>
+</div>
+</div>
+</article>
+  </div>
+</main>
+</div>
+<footer class="footer">
+  <p>This page was built using the Antora default UI.</p>
+  <p>The source code for this UI is licensed under the terms of the MPL-2.0 license.</p>
+</footer>
+<script id="site-script" src="../../_/js/site.js" data-ui-root-path="../../_"></script>
+<script async src="../../_/js/vendor/highlight.js"></script>
+  </body>
+</html>
