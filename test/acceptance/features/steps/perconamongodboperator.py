@@ -8,8 +8,9 @@ class PerconaMongoDBOperator(Operator):
     def __init__(self, name="percona-server-mongodb-operator"):
         super().__init__(
             name=name,
-            operator_catalog_source_name="community-operators" if ctx.cli == "oc" else "operatorhubio-catalog",
+            operator_catalog_source_name="operatorhubio-catalog",
             operator_catalog_channel="stable",
+            operator_catalog_image="quay.io/operatorhubio/catalog:latest",
             package_name=name
         )
 
@@ -19,6 +20,8 @@ def install_percona_mongodb_operator(context):
     operator = PerconaMongoDBOperator()
     operator.operator_namespace = context.namespace.name
     if not operator.is_running():
+        if ctx.cli == "oc":
+            operator.install_catalog_source()
         subscription = f'''
 ---
 apiVersion: operators.coreos.com/v1
