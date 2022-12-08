@@ -78,6 +78,35 @@ def sbo_is_running(context):
 
 
 # STEP
+@step(u'Service Binding Operator is uninstalled from "{operator_namespace}" namespace')
+def sbo_is_uninstalled_from_namespace(context, operator_namespace):
+    """
+    Uninstall SBO from the given namespace
+    """
+    sb_operator = Servicebindingoperator(namespace=operator_namespace)
+    sb_operator.uninstall()
+    assert not polling2.poll(target=lambda: sb_operator.is_running(), check_success=lambda o: not o, step=5,
+                             timeout=120, ignore_exceptions=(ValueError,)), "Service binding operator is running!!!"
+    print("Service binding operator is not running!!!")
+
+
+# STEP
+@step(u'Service Binding Operator is uninstalled from [{operator_namespace_env}] namespace')
+def sbo_is_uninstalled_from_env_namespace(context, operator_namespace_env):
+    sbo_is_uninstalled_from_namespace(context, get_env(operator_namespace_env))
+
+
+# STEP
+@step(u'Service Binding Operator is uninstalled')
+def sbo_is_uninstalled(context):
+    if "sbo_namespace" in context:
+        sbo_is_uninstalled_from_namespace(context, context.sbo_namespace)
+    else:
+        assert context.namespace is not None, "Namespace is not set in context"
+        sbo_is_uninstalled_from_namespace(context, context.namespace.name)
+
+
+# STEP
 @step(u'Service Binding Operator is not running in "{operator_namespace}" namespace')
 def sbo_is_not_running_in_namespace(context, operator_namespace):
     """
