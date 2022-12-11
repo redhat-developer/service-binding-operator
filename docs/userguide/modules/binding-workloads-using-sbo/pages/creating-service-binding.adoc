@@ -59,4 +59,16 @@ spec:
 
 As shown in the previous examples, you can also directly use a `ConfigMap` or a `Secret` itself as a service resource to be used as a source of binding data.
 
+[#supported-workloads]
+== Supported workloads
 
+Immutable resources like `Pod` and `Job` are not supported.  All other workloads are supported including the following:
+
+1. Deployment
+2. ReplicaSet
+3. StatefulSet
+4. DaemonSet
+5. CronJob
+6. DeploymentConfig (part of OpenShift)
+
+NOTE: Workloads not listed here can be supported using xref:custom-path-injection.adoc#workload-resource-mapping[ClusterWorkloadResourceMapping] resource.
