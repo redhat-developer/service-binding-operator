@@ -49,7 +49,9 @@ class Servicebindingoperator():
             assert code == 0, f"Non-zero return code while trying to check SBO cert secret is owned by {csv_version} CSV: {output}"
 
         output, code = self.cmd.run(f"{ctx.cli} rollout status -w deployment/service-binding-operator -n {sbo_namespace}")
-        assert code == 0, f"Non-zero return code while trying to SBO is healthy: {output}"
+        if code != 0:
+            print(f"Non-zero return code while trying to SBO is healthy: {output}")
+            return False
         return sbo_namespace is not None
 
     def is_running(self, wait=False, csv_version=None):
@@ -67,3 +69,11 @@ class Servicebindingoperator():
 
     def get_name_pattern(self):
         return self.name_pattern.format(name=self.name)
+
+    def uninstall(self, package_name="service-binding-operator"):
+        sbo_namespace = self.openshift.lookup_namespace_for_resource("subscriptions.operators.coreos.com", package_name)
+        self.openshift.delete_resource("subscriptions.operators.coreos.com", package_name, sbo_namespace)
+        csvs = self.openshift.search_resource_lst_in_namespace("clusterserviceversions.operators.coreos.com", "service-binding-operator.*", sbo_namespace)
+        if csvs is not None:
+            for csv in csvs:
+                self.openshift.delete_resource("clusterserviceversions.operators.coreos.com", csv, sbo_namespace)

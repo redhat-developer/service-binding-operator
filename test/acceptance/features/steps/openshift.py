@@ -217,6 +217,17 @@ spec:
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) while deleting a YAML: {output}"
         return output
 
+    def delete_resource(self, resource_plural, name, namespace):
+        if namespace is not None:
+            ns_arg = f"-n {namespace}"
+            ns_msg = f" in {namespace}"
+        else:
+            ns_arg = ""
+            ns_msg = ""
+        (output, exit_code) = self.cmd.run(f"{ctx.cli} delete {ns_arg} {resource_plural} {name} --ignore-not-found=true")
+        assert exit_code == 0, f"Non-zero exit code ({exit_code}) while deleting resource {resource_plural}/{name}{ns_msg}:\n {output}"
+        return output
+
     def create_catalog_source(self, name, catalog_image, olm_namespace=None):
         olm_namespace_resolved = olm_namespace if olm_namespace is not None else self.olm_namespace
         catalog_source = self.catalog_source_yaml_template.format(name=name, catalog_image=catalog_image, olm_namespace=olm_namespace_resolved)
