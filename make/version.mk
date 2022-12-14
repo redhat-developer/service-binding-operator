@@ -2,7 +2,7 @@ SHELL = /usr/bin/env bash -o pipefail
 SHELLFLAGS = -ec
 
 # Current Operator version
-VERSION ?= 1.3.1
+VERSION ?= 1.3.2
 
 GIT_COMMIT_ID ?= $(shell git rev-parse --short=8 HEAD)
 
@@ -32,3 +32,8 @@ operator-bundle-image-ref:
 # Prints operator index image ref
 operator-index-image-ref:
 	@echo $(OPERATOR_INDEX_IMAGE_REF)
+
+.PHONY: operator-upgrade-index-image-ref
+# Prints operator upgrade index image ref
+operator-upgrade-index-image-ref:
+	@echo $(OPERATOR_UPGRADE_INDEX_IMAGE_REF)
