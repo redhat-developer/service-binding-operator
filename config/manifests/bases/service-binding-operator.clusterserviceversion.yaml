@@ -26,12 +26,22 @@ spec:
       displayName: Cluster Workload Resource Mapping
       kind: ClusterWorkloadResourceMapping
       name: clusterworkloadresourcemappings.servicebinding.io
+      version: v1alpha3
+    - description: Cluster Workload Resource Mapping defines the mapping for a specific version of an workload resource to a logical PodTemplateSpec-like structure. It provides a way to define exactly where binding data needs to be projected. Use this method when you are not able to configure custom path locations correctly by any other methods.
+      displayName: Cluster Workload Resource Mapping
+      kind: ClusterWorkloadResourceMapping
+      name: clusterworkloadresourcemappings.servicebinding.io
       version: v1beta1
-    - description: Service Binding expresses intent to bind a backing service with an application workload. 
+    - description: Service Binding expresses intent to bind a backing service with an application workload.
       displayName: Service Binding
       kind: ServiceBinding
       name: servicebindings.binding.operators.coreos.com
       version: v1alpha1
+    - description: (Tech Preview) Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload. Available as tech preview but subjected to change in near future.
+      displayName: Service Binding (Spec API Tech Preview)
+      kind: ServiceBinding
+      name: servicebindings.servicebinding.io
+      version: v1alpha3
     - description: Service Binding implementing community specification (https://github.com/k8s-service-bindings/spec) describing the connection between a backing service and an application workload.
       displayName: Service Binding (Spec API)
       kind: ServiceBinding
