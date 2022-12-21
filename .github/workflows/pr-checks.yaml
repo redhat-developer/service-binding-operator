@@ -176,9 +176,9 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
@@ -257,9 +257,9 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
@@ -339,9 +339,9 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
@@ -420,9 +420,9 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
@@ -507,9 +507,9 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
@@ -606,9 +606,9 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Acceptance tests against vanilla k8s without OLM
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
@@ -684,9 +684,9 @@ jobs:
           wait-interval: 60
 
       - name: Download image references
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifact@v3
         with:
-          names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Extract operator image ref
         id: operator-image-ref

@@ -28,9 +28,9 @@ jobs:
           wait-interval: 60
 
       - name: Download images
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: actions/download-artifacts@v3
         with:
-          names: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
+          name: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
       - name: Setup local registry
         run: |
