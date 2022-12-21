@@ -11,9 +11,9 @@ env:
   SDK_VERSION: "1.17.0"
   MINIKUBE_WANTUPDATENOTIFICATION: false
   MINIKUBE_WANTREPORTERRORPROMPT: false
-  K8S_VERSION: "1.19.2"
+  K8S_VERSION: "1.21.3"
   MINIKUBE_VERSION: "1.26.0"
-  OLM_VERSION: "0.18.1"
+  OLM_VERSION: "0.22.0"
   TEST_ACCEPTANCE_CLI: "kubectl"
   TEST_RESULTS: "out/acceptance-tests"
 
@@ -396,7 +396,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -404,7 +404,7 @@ jobs:
 
       - name: Set up Python
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.7"
           architecture: "x64"
@@ -432,7 +432,7 @@ jobs:
 
       - name: Extract image references
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' }}
-        uses: marcofaggian/action-download-multiple-artifacts@v3.0.8
+        uses: pmacik/action-download-multiple-artifacts@node16
         with:
           names: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
@@ -469,7 +469,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: upgrade-with-olm
