@@ -15,7 +15,7 @@ b_yaml_file = args.b
 raw = bool(args.raw)
 
 with open(a_yaml_file, "r") as a_yaml:
-    with (open(b_yaml_file, "r") as b_yaml):
+    with open(b_yaml_file, "r") as b_yaml:
         a_kpi = yaml.safe_load(a_yaml)["kpi"]
         b_kpi = yaml.safe_load(b_yaml)["kpi"]
 
