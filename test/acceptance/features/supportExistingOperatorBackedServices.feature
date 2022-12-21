@@ -104,7 +104,7 @@ Feature: Support a number of existing operator-backed services out of the box
           metadata:
             name: hippo
           spec:
-            image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.5-1
+            image: registry.developers.crunchydata.com/crunchydata/crunchy-postgres:ubi8-14.6-2
             postgresVersion: 14
             instances:
               - name: instance1
@@ -116,7 +116,7 @@ Feature: Support a number of existing operator-backed services out of the box
                       storage: 1Gi
             backups:
               pgbackrest:
-                image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.40-1
+                image: registry.developers.crunchydata.com/crunchydata/crunchy-pgbackrest:ubi8-2.41-2
                 repos:
                 - name: repo1
                   volume:
