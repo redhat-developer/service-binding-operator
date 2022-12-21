@@ -1,4 +1,4 @@
-You can use a xref:https://developers.redhat.com/products/openshift/getting-started[managed Openshift cluster] or a xref:https://github.com/code-ready/crc[locally installed one].
+You can use a https://developers.redhat.com/products/openshift/getting-started[managed Openshift cluster, window="_blank"] or a https://github.com/code-ready/crc[locally installed one, window="_blank"].
 
 NOTE: You need _Administrator_ access to the cluster.
 
