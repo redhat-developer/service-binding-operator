@@ -10,12 +10,18 @@ import (
 	"github.com/redhat-developer/service-binding-operator/apis"
 	"github.com/redhat-developer/service-binding-operator/pkg/reconcile/pipeline"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/rest"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // +kubebuilder:rbac:groups=apiextensions.k8s.io,resources=customresourcedefinitions,verbs=get;list
@@ -43,9 +49,13 @@ type BindingReconciler struct {
 
 	pipeline pipeline.Pipeline
 
+	ctrl controller.Controller
+
 	PipelineProvider func(*rest.Config, kubernetes.K8STypeLookup) (pipeline.Pipeline, error)
 
 	ReconcilingObject func() apis.Object
+	MapWorkloadToSB   func(a client.Object) []reconcile.Request
+	ResourceToWatch   func(ctx context.Context, key client.ObjectKey) (string, string, string)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -56,12 +66,16 @@ func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	r.pipeline = pipeline
 	p := predicate.Or(predicate.GenerationChangedPredicate{}, predicate.AnnotationChangedPredicate{})
-	return ctrl.NewControllerManagedBy(mgr).
+	ctrl, err := ctrl.NewControllerManagedBy(mgr).
 		For(r.ReconcilingObject()).
 		WithEventFilter(p).
 		WithOptions(controller.Options{MaxConcurrentReconciles: MaxConcurrentReconciles}).
-		Complete(r)
+		Build(r)
+	r.ctrl = ctrl
+	return err
 }
+
+var watchMap map[string]string = map[string]string{}
 
 // +kubebuilder:rbac:groups=authorization.k8s.io,resources=subjectaccessreviews,verbs=create
 // +kubebuilder:rbac:groups=authorization.k8s.io,resources=selfsubjectaccessreviews,verbs=create
@@ -79,6 +93,21 @@ func (r *BindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.0/pkg/reconcile
 func (r *BindingReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+
+	g, v, k := r.ResourceToWatch(ctx, req.NamespacedName)
+	resource := &unstructured.Unstructured{}
+	gvk := schema.GroupVersionKind{Group: g, Version: v, Kind: k}
+	resource.SetGroupVersionKind(gvk)
+	if _, ok := watchMap[gvk.String()]; !ok {
+		watchMap[gvk.String()] = ""
+		err := r.ctrl.Watch(
+			&source.Kind{Type: resource},
+			handler.EnqueueRequestsFromMapFunc(r.MapWorkloadToSB))
+		if err != nil {
+			log.Log.Error(err, "error watching", "resource", resource)
+		}
+	}
+
 	log := r.Log.WithValues("serviceBinding", req.NamespacedName)
 	serviceBinding := r.ReconcilingObject()
 
