@@ -13,7 +13,7 @@ class CrunchyPostgresOperator(Operator):
         else:
             package_name = "postgresql"
             catalog_source_name = "operatorhubio-catalog"
-        csv = "postgresoperator.v5.2.0"
+        csv = "postgresoperator.v5.3.0"
         channel = "v5"
 
         super().__init__(
