@@ -1,4 +1,4 @@
-directories=${directories:-"test/acceptance/features"}
+directories=${directories:-"test/acceptance/features test/performance"}
 pass=0
 fail=0
 
