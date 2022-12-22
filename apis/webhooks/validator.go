@@ -90,7 +90,8 @@ func Serialize(ctx context.Context, mapping *v1beta1.ClusterWorkloadResourceMapp
 		return err
 	}
 
-	for _, binding := range data.Items {
+	for i := range data.Items {
+		binding := data.Items[i]
 		// we should filter out service bindings that the mapping doesn't affect.
 		sb := v1beta1.ServiceBinding{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(binding.Object, &sb)
@@ -133,7 +134,8 @@ func Serialize(ctx context.Context, mapping *v1beta1.ClusterWorkloadResourceMapp
 		return err
 	}
 
-	for _, binding := range data.Items {
+	for i := range data.Items {
+		binding := data.Items[i]
 		sb := v1alpha1.ServiceBinding{}
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(binding.Object, &sb)
 		if err != nil {

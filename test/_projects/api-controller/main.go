@@ -31,5 +31,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	m.Start(context.Background())
+	if err = m.Start(context.Background()); err != nil {
+		panic(err)
+	}
 }
