@@ -16,6 +16,13 @@ NS_PREFIX=${NS_PREFIX:-entanglement}
 
 SBO_METRICS=$(find $METRICS -type f -name 'pod-info.service-binding-operator-*.csv')
 
+SBO_VERSION=$(make operator-version --no-print-directory)
+OPENSHIFT_RELEASE=$(oc version -o yaml | yq e '.openshiftVersion')
+OPENSHIFT_VERSION=$(oc version -o yaml | yq e '.openshiftVersion' | grep -oP '^\d{1,2}.\d{1,2}.\d{1,2}')
+RUN_TYPE=${RUN_TYPE:-default} 
+PULL_NUMBER=${PULL_NUMBER:-n/a} 
+PULL_PULL_SHA=${PULL_PULL_SHA:-n/a}
+
 SCENARIOS="nosb-inv nosb-val sb-inc sb-inv sb-val"
 #SCENARIOS="nosb-val"
 
@@ -52,3 +59,11 @@ for scenario in $SCENARIOS; do
         cat $output >>$kpi_yaml
     done
 done
+
+echo "execution_timestamp: $(date +%F\ %T)" >>$kpi_yaml
+echo "sbo_version: $SBO_VERSION" >>$kpi_yaml
+echo "openshift_version: $OPENSHIFT_VERSION" >>$kpi_yaml
+echo "openshift_release: $OPENSHIFT_RELEASE" >>$kpi_yaml
+echo "run_type: $RUN_TYPE" >>$kpi_yaml
+echo "pull_number: $PULL_NUMBER" >> $kpi_yaml
+echo "commit_id: ${PULL_PULL_SHA}" >> $kpi_yaml
