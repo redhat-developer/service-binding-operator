@@ -13,10 +13,12 @@ OPERATOR_INDEX_YAML ?= $(OPERATOR_INDEX_DIR)/index.yaml
 
 OPM_RENDER_OPTS := 
 
+GO_BUILD_FLAGS ?= -ldflags="-s -w" -trimpath
+
 .PHONY: build
 ## Build operator binary
 build:
-	$(GO) build -o bin/manager main.go
+	$(GO) build $(GO_BUILD_FLAGS) -o bin/manager main.go
 
 .PHONY: manifests
 ## Generate manifests e.g. CRD, RBAC etc.
