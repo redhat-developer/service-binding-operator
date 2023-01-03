@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: "test/_projects/api-client"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
+    directory: "test/_projects/api-controller"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: "test/acceptance/features/"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: "hack/check-python/"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: "test/acceptance/resources/apps/generic-test-app/"
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: daily
