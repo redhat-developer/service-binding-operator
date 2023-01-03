@@ -1,4 +1,4 @@
-pydocstyle==2.1.1
+pydocstyle==6.2.0
 pyflakes==2.2.0
 vulture==2.1
 radon==4.3.1
