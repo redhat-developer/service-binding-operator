@@ -55,5 +55,5 @@ test-performance-thresholds: yq
 test-performance-upload-kpi: setup-venv
 	@echo Uploading kpi to the open search instance
 	$(Q)$(PYTHON_VENV_DIR)/bin/pip install -q -r ./test/performance/requirements.txt
-	OS_HOST=$(OPENSEARCH_HOST) OS_REGION=$(OPENSEARCH_REGION) KPI_YAML_FILE=$(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml $(PYTHON_VENV_DIR)/bin/python3 ./test/performance/upload_data.py
+	OS_HOST=$(OPENSEARCH_HOST) OS_REGION=$(OPENSEARCH_REGION) KPI_YAML_FILE=$(TEST_PERFORMANCE_OUTPUT_DIR)/results/kpi.yaml TEST_PERFORMANCE_AVG_MEMORY=$(TEST_PERFORMANCE_AVG_MEMORY) TEST_PERFORMANCE_MAX_MEMORY=$(TEST_PERFORMANCE_MAX_MEMORY) TEST_PERFORMANCE_AVG_CPU=$(TEST_PERFORMANCE_AVG_CPU) TEST_PERFORMANCE_MAX_CPU=$(TEST_PERFORMANCE_MAX_CPU) $(PYTHON_VENV_DIR)/bin/python3 ./test/performance/upload_data.py
 
