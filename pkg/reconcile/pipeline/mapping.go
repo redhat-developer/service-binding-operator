@@ -214,7 +214,8 @@ func (container *MetaContainer) AddEnvVars(vars []corev1.EnvVar) error {
 		_ = container.RemoveEnvVars(v.Name)
 	}
 	var data []map[string]interface{}
-	for _, variable := range vars {
+	for i := range vars {
+		variable := vars[i]
 		x, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&variable)
 		if err != nil {
 			return err

@@ -2,7 +2,7 @@ package context
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -377,7 +377,7 @@ func (i *impl) bindingSecretName() (string, bool) {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	hash := sha1.New()
+	hash := sha256.New()
 	for _, k := range keys {
 		_, _ = hash.Write([]byte(k))
 		_, _ = hash.Write([]byte(data[k]))
@@ -574,7 +574,8 @@ func (i *impl) WorkloadResourceTemplate(gvr *schema.GroupVersionResource, contai
 		}
 	}
 	wildcardTemplate := defaultTemplate.DeepCopy()
-	for _, template := range mapping.Spec.Versions {
+	for i := range mapping.Spec.Versions {
+		template := mapping.Spec.Versions[i]
 		if template.Version == gvr.Version {
 			mappingTemplate = &template
 			break
