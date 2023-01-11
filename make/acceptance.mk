@@ -44,7 +44,7 @@ ifeq ($(TEST_ACCEPTANCE_START_SBO), local)
 test-acceptance-setup: stop-local build test-cleanup create-test-namespace deploy-test-3rd-party-crds
 	$(Q)echo "Starting local SBO instance"
 	$(eval TEST_ACCEPTANCE_SBO_STARTED := $(shell ZAP_FLAGS="$(ZAP_FLAGS)" OUTPUT="$(TEST_ACCEPTANCE_OUTPUT_DIR)" RUN_IN_BACKGROUND=true ./hack/deploy-sbo-local.sh))
-else ifeq ($(TEST_ACCEPTANCE_START_SBO), remote)
+else ifeq ($(TEST_ACCEPTANCE_START_SBO), $(filter $(TEST_ACCEPTANCE_START_SBO), remote scenarios))
 test-acceptance-setup: test-cleanup create-test-namespace
 else ifeq ($(TEST_ACCEPTANCE_START_SBO), operator-hub)
 test-acceptance-setup:

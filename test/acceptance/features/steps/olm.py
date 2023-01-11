@@ -51,13 +51,22 @@ class Operator(object):
                 return False
         return self.openshift.wait_for_package_manifest(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
 
+    def csv_version_resolved(self, csv_version=None):
+        if csv_version is None:
+            if self.operator_subscription_csv_version is None:
+                return self.openshift.get_current_csv(self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel)
+            else:
+                return self.operator_subscription_csv_version
+        else:
+            return csv_version
+
     def install_operator_subscription(self, csv_version=None, install_mode=InstallMode.Automatic):
-        csv_version_resolved = self.operator_subscription_csv_version if csv_version is None else csv_version
+        csv_version_resolved = self.csv_version_resolved(csv_version)
         install_sub_output = self.openshift.create_operator_subscription(
             self.package_name, self.operator_catalog_source_name, self.operator_catalog_channel, self.operator_catalog_namespace,
             csv_version_resolved, install_mode)
         if re.search(r'.*subscription.operators.coreos.com/%s\s(unchanged|created)' % self.package_name, install_sub_output) is None:
             print("Failed to create {} operator subscription".format(self.package_name))
             return False
-        self.openshift.approve_operator_subscription(self.package_name, csv_version_resolved)
+        self.openshift.approve_operator_subscription(self.package_name)
         return True

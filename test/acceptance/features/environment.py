@@ -29,10 +29,7 @@ else:
 
 def before_all(_context):
     if ctx.cli == "oc":
-        output, code = cmd.run("oc version --client | grep Client")
-        assert code == 0, f"Checking oc version failed: {output}"
-
-        oc_ver = output.split()[2]
+        oc_ver = ctx.cli_version
         assert semver.compare(oc_ver, "4.5.0") > 0, f"oc version is required 4.5+, but is {oc_ver}."
 
         namespace = os.getenv("TEST_NAMESPACE")
@@ -41,7 +38,7 @@ def before_all(_context):
 
     start_sbo = os.getenv("TEST_ACCEPTANCE_START_SBO")
     assert start_sbo is not None, "TEST_ACCEPTANCE_START_SBO is not set. It should be one of local, remote or operator-hub"
-    assert start_sbo in {"local", "remote", "operator-hub"}, "TEST_ACCEPTANCE_START_SBO should be one of local, remote or operator-hub"
+    assert start_sbo in {"local", "remote", "operator-hub", "scenarios"}, "TEST_ACCEPTANCE_START_SBO should be one of local, remote or operator-hub"
 
     if start_sbo == "local":
         assert not str(os.getenv("TEST_ACCEPTANCE_SBO_STARTED")).startswith("FAILED"), "TEST_ACCEPTANCE_SBO_STARTED shoud not be FAILED."
@@ -53,6 +50,8 @@ def before_all(_context):
         output = str(output).strip()
         assert output != "", "Unable to find SBO's deployment in any namespace."
         _context.sbo_namespace = output
+    elif start_sbo == "scenarios":
+        print("INFO: The scenarios are responsible for installing and running SBO...")
     else:
         assert False, f"TEST_ACCEPTANCE_START_SBO={start_sbo} is currently unsupported."
     ctx.no_scenarios_failed = True
