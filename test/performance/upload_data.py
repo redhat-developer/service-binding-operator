@@ -98,7 +98,16 @@ def read_metric_data(file_name):
     """ Read from the metrics file and construct the document """
     with open(file_name, encoding="utf-8") as file_d:
         content = yaml.load(file_d, Loader=yaml.FullLoader)
-        kpi_data = content['kpi']
+
+    kpi_data = content['kpi']
+    execution_timestamp = content['execution_timestamp']
+    sbo_version = content['sbo_version']
+    openshift_version = content['openshift_version']
+    openshift_release = content['openshift_release']
+    run_type = content['run_type']
+    pull_number = content['pull_number']
+    commit_id = content['commit_id']
+
     for data in kpi_data:
         if data['name'] == 'usage':
             for metric in data['metrics']:
@@ -117,7 +126,14 @@ def read_metric_data(file_name):
             'memory_average_threshold': get_average_threshold_mem(),
             'memory_maximum_threshold': get_maximum_threshold_mem(),
             'cpu_average_threshold': get_average_threshold_cpu(),
-            'cpu_maximum_threshold': get_maximum_threshold_cpu()}
+            'cpu_maximum_threshold': get_maximum_threshold_cpu(),
+            'run_type': run_type,
+            'pull_number': pull_number,
+            'commit_id': commit_id,
+            'execution_timestamp': execution_timestamp,
+            'sbo_version': sbo_version,
+            'openshift_version': openshift_version,
+            'openshift_release': openshift_release}
 
 
 def generate_id():
