@@ -1,6 +1,6 @@
 pydocstyle==2.1.1
 pyflakes==2.2.0
-vulture==2.1
+vulture==2.7
 radon==5.1.0
 flake8_polyfill==1.0.2
 PyYAML==5.4.1
