@@ -26,6 +26,7 @@ Feature: Getting Started Guide
   @disable.arch.s390x
   @disable.arch.arm64
   @disable-openshift-4.12
+  @disable-openshift-4.13
   Scenario: Connecting PetClinic application to an Operator-backed PostgreSQL database
     Given Crunchy Data Postgres operator is running
     * PetClinic sample application is installed
