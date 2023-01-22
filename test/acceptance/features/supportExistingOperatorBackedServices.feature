@@ -94,6 +94,7 @@ Feature: Support a number of existing operator-backed services out of the box
 
   @external-feedback
   @disable-openshift-4.12
+  @disable-openshift-4.13
   Scenario: Bind test application to Postgres provisioned by Crunchy Data Postgres operator
     Given Crunchy Data Postgres operator is running
     * Generic test application is running
@@ -176,6 +177,7 @@ Feature: Support a number of existing operator-backed services out of the box
   @disable-github-actions
   @disable-openshift-4.11
   @disable-openshift-4.12
+  @disable-openshift-4.13
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator and connect
     Given Percona Mysql operator is running
     * Generic test application is running
@@ -253,6 +255,7 @@ Feature: Support a number of existing operator-backed services out of the box
     And Application can connect to the projected MySQL database
 
   @disable-openshift-4.12
+  @disable-openshift-4.13
   Scenario: Bind test application to Mysql provisioned by Percona Mysql operator
     Given Percona Mysql operator is running
     * Generic test application is running
@@ -445,10 +448,10 @@ Feature: Support a number of existing operator-backed services out of the box
            """
     And File "/bindings/$scenario_id/password" exists in application pod
 
-  @disable-openshift-4.9
   @disable-openshift-4.10
   @disable-openshift-4.11
   @disable-openshift-4.12
+  @disable-openshift-4.13
   Scenario: Bind test application to MongoDB provisioned by Percona's MongoDB operator on Kubernetes
     Given Percona MongoDB operator is running
     * Generic test application is running
