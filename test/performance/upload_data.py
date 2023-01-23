@@ -107,7 +107,7 @@ def read_metric_data(file_name):
     run_type = content['run_type']
     pull_number = content['pull_number']
     commit_id = content['commit_id']
-
+    execution_timestamp_in_string = execution_timestamp.strftime("%Y-%m-%d %H:%M:%S")
     for data in kpi_data:
         if data['name'] == 'usage':
             for metric in data['metrics']:
@@ -130,7 +130,7 @@ def read_metric_data(file_name):
             'run_type': run_type,
             'pull_number': pull_number,
             'commit_id': commit_id,
-            'execution_timestamp': execution_timestamp,
+            'execution_timestamp': execution_timestamp_in_string,
             'sbo_version': sbo_version,
             'openshift_version': openshift_version,
             'openshift_release': openshift_release}
