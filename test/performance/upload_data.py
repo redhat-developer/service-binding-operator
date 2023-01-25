@@ -15,11 +15,11 @@ from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
 def create_index(os_client, index_name, number_of_shards=4):
     """ Method to create index in opensearch instance """
     index_body = {
-      'settings': {
-        'index': {
-          'number_of_shards': number_of_shards
+        'settings': {
+            'index': {
+                'number_of_shards': number_of_shards
+            }
         }
-      }
     }
     response = os_client.indices.create(index_name, body=index_body)
     print('\nCreating index:')
@@ -29,7 +29,7 @@ def create_index(os_client, index_name, number_of_shards=4):
 def delete_index(os_client, index_name):
     """ Method to delete index from opensearch instance """
     response = os_client.indices.delete(
-      index=index_name
+        index=index_name
     )
     print('\nDeleting index:')
     print(response)
@@ -61,13 +61,13 @@ def search_document(os_client, index_name):
     """ Sample search for the document """
     qval = 'miller'
     query = {
-      'size': 5,
-      'query': {
-        'multi_match': {
-          'query': qval,
-          'fields': ['title^2', 'director']
+        'size': 5,
+        'query': {
+            'multi_match': {
+                'query': qval,
+                'fields': ['title^2', 'director']
+            }
         }
-      }
     }
     response = os_client.search(
         body=query,
@@ -165,21 +165,8 @@ def get_maximum_threshold_cpu():
 if __name__ == '__main__':
     OS_INDEX_NAME = 'sbo-perf-data'
     client = setup_os_client()
-    # create_index(client, index_name)
-    # delete_index(client, index_name)
-    # delete_a_document(client, index_name, id)
-
     metric_file_name = os.environ['KPI_YAML_FILE']
     doc = read_metric_data(metric_file_name)
-    # doc = {'upload_date': '2022-12-14 06:30:30',
-    # 'memory_average' : 68.2,
-    # 'memory_maximum': 98.2,
-    # 'cpu_average': 10.5,
-    # 'cpu_maximum': 90.2,
-    # 'memory_average_threshold': 150,
-    # 'memory_maximum_threshold': 200,
-    # 'cpu_average_threshold': 20,
-    # 'cpu_maximum_threshold': 100}
     RANDOM_DOC_ID = generate_id()
     print(f"Random Generated ID: {RANDOM_DOC_ID}")
     add_document_to_index(client, OS_INDEX_NAME, RANDOM_DOC_ID, doc)
