@@ -17,7 +17,7 @@ jobs:
           echo "operator-image-ref=${OIR}" >> $GITHUB_OUTPUT
 
       - name: Run Trivy vulnerability scanner in IaC mode
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@8bd2f9fbda2109502356ff8a6a89da55b1ead252 #master
         with:
           image-ref: ${{ steps.operator-image-ref.outputs.operator-image-ref }}
           format: 'sarif'
@@ -27,7 +27,7 @@ jobs:
 
       - name: Upload Trivy scan results to GitHub Security tab
         if: always()
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@17573ee1cc1b9d061760f3a006fc4aac4f944fd5 #v2
         with:
           sarif_file: 'trivy-results.sarif'
 
@@ -39,11 +39,11 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run gosec
-        uses: securego/gosec@v2.15.0
+        uses: securego/gosec@a459eb0ba387d9bd083d5c2e2354dbeef2465038 #v2.15.0
         with:
           args: '-no-fail -fmt sarif -out gosec.sarif ./...'
 
       - name: Upload gosec scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@17573ee1cc1b9d061760f3a006fc4aac4f944fd5 #v2
         with:
           sarif_file: 'gosec.sarif'
