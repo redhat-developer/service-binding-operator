@@ -23,7 +23,7 @@ type tokenRetriever struct {
 	token        string
 }
 
-//RoundTrip gets token
+// RoundTrip gets token
 func (t *tokenRetriever) RoundTrip(req *http.Request) (*http.Response, error) {
 	header := req.Header.Get("authorization")
 	switch {
