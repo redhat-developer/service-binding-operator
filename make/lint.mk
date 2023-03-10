@@ -30,7 +30,7 @@ lint-go-code: $(GOLANGCI_LINT_BIN) fmt vet
 	$(GO_LINT_CMD) varcheck
 
 $(GOLANGCI_LINT_BIN):
-	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.48.0
+	$(Q)curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./out v1.51.2
 
 .PHONY: lint-python-code
 ## Check the python code
