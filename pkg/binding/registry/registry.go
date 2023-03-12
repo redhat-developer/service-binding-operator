@@ -21,6 +21,11 @@ func New() Registry {
 				"service.binding/host":     "path={.metadata.name}",
 				"service.binding/password": "path={.spec.kubernetesConfig.redisSecret.name},objectType=Secret,sourceKey=password,optional=true",
 			},
+			schema.GroupVersionKind{Group: "redis.redis.opstreelabs.in", Version: "v1beta1", Kind: "RedisCluster"}: {
+				"service.binding/type":     "rediscluster",
+				"service.binding/host":     "path={.metadata.name}",
+				"service.binding/password": "path={.spec.kubernetesConfig.redisSecret.name},objectType=Secret,sourceKey=password,optional=true",
+			},
 			schema.GroupVersionKind{Group: "postgres-operator.crunchydata.com", Version: "v1beta1", Kind: "PostgresCluster"}: {
 				"service.binding/type":     "postgresql",
 				"service.binding/provider": "crunchydata",
