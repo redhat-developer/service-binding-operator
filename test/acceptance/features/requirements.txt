@@ -1,5 +1,5 @@
 behave==1.2.6
 requests==2.24.0
 polling2==0.5.0
-PyYAML==5.4
+PyYAML==6.0
 semver==2.13.0
