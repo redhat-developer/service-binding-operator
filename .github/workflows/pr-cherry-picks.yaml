@@ -17,11 +17,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@fc49353b67b2b7c1e0e6a600572d01a69f2672dd #v0.5.4
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
       - name: Cherry pick into release-v1.1.x
-        uses: pmacik/github-cherry-pick-action@main
+        uses: pmacik/github-cherry-pick-action@8dcbeacb35b51706f9dc209a5944159baf3e0288 #main
         with:
           cherry-pick-repo: ${{ secrets.SBO_CHERRY_PICK_REPO }}
           token: ${{ secrets.SBO_CHERRY_PICK_BOT_TOKEN }}
@@ -42,11 +42,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@fc49353b67b2b7c1e0e6a600572d01a69f2672dd #v0.5.4
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
       - name: Cherry pick into release-v1.2.x
-        uses: pmacik/github-cherry-pick-action@main
+        uses: pmacik/github-cherry-pick-action@8dcbeacb35b51706f9dc209a5944159baf3e0288 #main
         with:
           cherry-pick-repo: ${{ secrets.SBO_CHERRY_PICK_REPO }}
           token: ${{ secrets.SBO_CHERRY_PICK_BOT_TOKEN }}
@@ -67,11 +67,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@fc49353b67b2b7c1e0e6a600572d01a69f2672dd #v0.5.4
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
       - name: Cherry pick into release-v1.2.x
-        uses: pmacik/github-cherry-pick-action@main
+        uses: pmacik/github-cherry-pick-action@8dcbeacb35b51706f9dc209a5944159baf3e0288 #main
         with:
           cherry-pick-repo: ${{ secrets.SBO_CHERRY_PICK_REPO }}
           token: ${{ secrets.SBO_CHERRY_PICK_BOT_TOKEN }}

@@ -28,7 +28,7 @@ jobs:
           wait-interval: 60
 
       - name: Download images
-        uses: pmacik/action-download-multiple-artifacts@node16
+        uses: pmacik/action-download-multiple-artifacts@d5a97e5ca4863fd85690e0df73816c312c27de4b #node16
         with:
           names: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
 
