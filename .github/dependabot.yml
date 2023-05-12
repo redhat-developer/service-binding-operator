@@ -7,8 +7,8 @@ updates:
     ignore:
       # These projects usually require more manual intervention to bump than
       # usual, so let's ignore them from normal dependabot updates for now.
-      - "k8s.io/*"
-      - "sigs.k8s.io/*"
+      - dependency-name: "k8s.io/*"
+      - dependency-name: "sigs.k8s.io/*"
 
 
   - package-ecosystem: gomod
