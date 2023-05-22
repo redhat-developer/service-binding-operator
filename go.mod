@@ -9,7 +9,7 @@ require (
 	github.com/onsi/gomega v1.17.0
 	github.com/operator-framework/api v0.3.8
 	github.com/stretchr/testify v1.8.3
-	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac
+	golang.org/x/time v0.3.0
 	k8s.io/api v0.23.0
 	k8s.io/apiextensions-apiserver v0.23.0
 	k8s.io/apimachinery v0.23.0
