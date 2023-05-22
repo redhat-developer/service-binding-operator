@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/go-logr/logr v1.2.4
-	github.com/golang/mock v1.5.0
+	github.com/golang/mock v1.6.0
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
 	github.com/operator-framework/api v0.3.8
