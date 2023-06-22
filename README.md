@@ -125,7 +125,7 @@ posted here on GitHub.
 
 ## Community, discussion, contribution, and support
 
-The Service Binding community meets weekly on Thursdays at 1:00 PM UTC via
+The Service Binding community meets bi-weekly on Thursdays at 1:00 PM UTC via
 [Google Meet](https://meet.google.com/wsc-jjsy-eih), and the meeting agenda is
 maintained
 [here](https://docs.google.com/document/d/1HwhAKqpM6l4Ur3h3IApDFzbH2Y_xvj_n1x1pEdwRuSY/edit?usp=sharing).
