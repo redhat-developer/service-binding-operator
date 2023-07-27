@@ -49,14 +49,16 @@ var _ = Describe("Validate", func() {
 
 	var _ = Describe("Create", func() {
 		It("should accept a valid mapping", func() {
-			err := validator.ValidateCreate(ctx, &mapping)
+			msg, err := validator.ValidateCreate(ctx, &mapping)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(msg).To(BeEmpty())
 		})
 
 		It("should reject an invalid mapping", func() {
 			mapping.Spec.Versions[0].Volumes = "foo.bar"
-			err := validator.ValidateCreate(ctx, &mapping)
+			msg, err := validator.ValidateCreate(ctx, &mapping)
 			Expect(err).To(HaveOccurred())
+			Expect(msg).To(BeEmpty())
 		})
 	})
 
@@ -64,16 +66,18 @@ var _ = Describe("Validate", func() {
 		It("should reject an invalid mapping", func() {
 			oldMapping := mapping.DeepCopy()
 			mapping.Spec.Versions[0].Volumes = "foo.bar"
-			err := validator.ValidateUpdate(ctx, oldMapping, &mapping)
+			msg, err := validator.ValidateUpdate(ctx, oldMapping, &mapping)
 			Expect(err).To(HaveOccurred())
+			Expect(msg).To(BeEmpty())
 		})
 
 		It("should accept a valid mapping", func() {
 			oldMapping := mapping.DeepCopy()
 			mapping.Spec.Versions[0].Volumes = ".spec.volumes"
 			validator.client = fake.NewSimpleDynamicClient(scheme)
-			err := validator.ValidateUpdate(ctx, oldMapping, &mapping)
+			msg, err := validator.ValidateUpdate(ctx, oldMapping, &mapping)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(msg).To(BeEmpty())
 		})
 
 		It("should serialize old mappings into relevant service bindings", func() {
@@ -112,8 +116,9 @@ var _ = Describe("Validate", func() {
 			fooGVR := schema.GroupVersionResource{Group: "bar", Version: "v1", Resource: "foos"}
 			lookup.EXPECT().ResourceForKind(fooGVK).Return(&fooGVR, nil).Times(2)
 
-			err := validator.ValidateUpdate(ctx, oldMapping, &mapping)
+			msg, err := validator.ValidateUpdate(ctx, oldMapping, &mapping)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(msg).To(BeEmpty())
 
 			oldData, err := json.Marshal(oldMapping)
 			Expect(err).NotTo(HaveOccurred())
@@ -132,8 +137,9 @@ var _ = Describe("Validate", func() {
 
 	var _ = Describe("Delete", func() {
 		It("should not need to validate deletes", func() {
-			err := validator.ValidateDelete(ctx, &mapping)
+			msg, err := validator.ValidateDelete(ctx, &mapping)
 			Expect(err).NotTo(HaveOccurred())
+			Expect(msg).To(BeEmpty())
 		})
 	})
 })

@@ -19,7 +19,7 @@ type application struct {
 	persistedResource      *unstructured.Unstructured
 	resource               *unstructured.Unstructured
 	bindingPath            *v1alpha1.BindingPath
-	bindableContainerNames sets.String
+	bindableContainerNames sets.Set[string]
 	resourceMapping        pipeline.WorkloadMapping
 }
 

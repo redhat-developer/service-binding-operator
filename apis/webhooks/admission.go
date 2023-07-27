@@ -14,7 +14,10 @@ import (
 
 func SetupWithManager(mgr ctrl.Manager, serviceAccountName string) {
 	mgr.GetWebhookServer().Register("/mutate-servicebinding", &webhook.Admission{
-		Handler: &admissionHandler{serviceAccountName: serviceAccountName},
+		Handler: &admissionHandler{
+			serviceAccountName: serviceAccountName,
+			decoder:            admission.NewDecoder(mgr.GetScheme()),
+		},
 	})
 }
 

@@ -17,7 +17,8 @@ var _ = Describe("Validation Webhook", func() {
 				Conditions: []v1.Condition{*apis.Conditions().NotBindingReady().Build()},
 			},
 		}
-		Expect(sb.ValidateUpdate(sb)).ShouldNot(HaveOccurred())
+		_, err := sb.ValidateUpdate(sb)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("should not allow spec updates on ready bindings", func() {
@@ -29,7 +30,8 @@ var _ = Describe("Validation Webhook", func() {
 		}
 		sb := old.DeepCopy()
 		sb.Spec.BindAsFiles = true
-		Expect(sb.ValidateUpdate(old)).Should(HaveOccurred())
+		_, err := sb.ValidateUpdate(old)
+		Expect(err).To(HaveOccurred())
 	})
 
 	It("should allow metadata updates on ready bindings", func() {
@@ -43,7 +45,8 @@ var _ = Describe("Validation Webhook", func() {
 		sb.Annotations = map[string]string{
 			"foo": "bar",
 		}
-		Expect(sb.ValidateUpdate(old)).ShouldNot(HaveOccurred())
+		_, err := sb.ValidateUpdate(old)
+		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("should return error if both application name and selecter is specified during creation", func() {
@@ -71,7 +74,8 @@ var _ = Describe("Validation Webhook", func() {
 				Application: ref,
 			},
 		}
-		Expect(sb.ValidateCreate()).Should(HaveOccurred())
+		_, err := sb.ValidateCreate()
+		Expect(err).To(HaveOccurred())
 
 	})
 
@@ -100,7 +104,8 @@ var _ = Describe("Validation Webhook", func() {
 				Application: ref,
 			},
 		}
-		Expect(sb.ValidateUpdate(sb)).Should(HaveOccurred())
+		_, err := sb.ValidateUpdate(sb)
+		Expect(err).To(HaveOccurred())
 
 	})
 

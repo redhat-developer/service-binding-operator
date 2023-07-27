@@ -151,7 +151,7 @@ var _ = Describe("Application", func() {
 				},
 			},
 		}
-		app := &application{persistedResource: u, bindableContainerNames: sets.NewString("c2", "c3", "c1"), resourceMapping: deploymentWorkloadMapping}
+		app := &application{persistedResource: u, bindableContainerNames: sets.New("c2", "c3", "c1"), resourceMapping: deploymentWorkloadMapping}
 		containers, err := app.BindablePods()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(*containers).To(Equal(mct))

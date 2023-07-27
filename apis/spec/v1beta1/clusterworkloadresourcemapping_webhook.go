@@ -25,6 +25,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/util/jsonpath"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -35,19 +36,19 @@ import (
 var _ webhook.Validator = &ClusterWorkloadResourceMapping{}
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (m *ClusterWorkloadResourceMapping) ValidateCreate() error {
-	return m.validate()
+func (m *ClusterWorkloadResourceMapping) ValidateCreate() (admission.Warnings, error) {
+	return nil, m.validate()
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (m *ClusterWorkloadResourceMapping) ValidateUpdate(old runtime.Object) error {
-	return m.validate()
+func (m *ClusterWorkloadResourceMapping) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
+	return nil, m.validate()
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (m *ClusterWorkloadResourceMapping) ValidateDelete() error {
+func (m *ClusterWorkloadResourceMapping) ValidateDelete() (admission.Warnings, error) {
 	// don't currently need validation of resource removal
-	return nil
+	return nil, nil
 }
 
 func (m *ClusterWorkloadResourceMapping) validate() error {
