@@ -24,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 // log is for logging in this package.
@@ -52,28 +53,28 @@ func checkNameAndSelector(r *ServiceBinding) error {
 }
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
-func (r *ServiceBinding) ValidateCreate() error {
-	return checkNameAndSelector(r)
+func (r *ServiceBinding) ValidateCreate() (admission.Warnings, error) {
+	return nil, checkNameAndSelector(r)
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type
-func (sb *ServiceBinding) ValidateUpdate(old runtime.Object) error {
+func (sb *ServiceBinding) ValidateUpdate(old runtime.Object) (admission.Warnings, error) {
 	oldSb, ok := old.(*ServiceBinding)
 	if !ok {
-		return errors.New("Old object is not service binding")
+		return nil, errors.New("Old object is not service binding")
 	}
 	err := apis.CanUpdateBinding(sb, oldSb)
 	if err != nil {
 		log.Error(err, "Update failed")
-		return err
+		return nil, err
 	}
-	return checkNameAndSelector(sb)
+	return nil, checkNameAndSelector(sb)
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type
-func (r *ServiceBinding) ValidateDelete() error {
+func (r *ServiceBinding) ValidateDelete() (admission.Warnings, error) {
 	log.Info("validate delete", "name", r.Name)
 
 	// TODO(user): fill in your validation logic upon object deletion.
-	return nil
+	return nil, nil
 }

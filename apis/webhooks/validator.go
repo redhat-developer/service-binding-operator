@@ -17,6 +17,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 type MappingValidator struct {
@@ -49,32 +50,32 @@ func (validator *MappingValidator) SetupWebhookWithManager(mgr ctrl.Manager) err
 
 var _ webhook.CustomValidator = &MappingValidator{}
 
-func (validator *MappingValidator) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+func (validator *MappingValidator) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
 	mapping := obj.(*v1beta1.ClusterWorkloadResourceMapping)
-	err := mapping.ValidateCreate()
+	_, err := mapping.ValidateCreate()
 	if err != nil {
 		log.Error(err, "Error validating mapping (create)", "mapping", mapping.Name)
 	}
-	return err
+	return nil, err
 }
 
-func (validator *MappingValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) error {
+func (validator *MappingValidator) ValidateUpdate(ctx context.Context, oldObj, newObj runtime.Object) (admission.Warnings, error) {
 	mapping := newObj.(*v1beta1.ClusterWorkloadResourceMapping)
-	if err := mapping.ValidateCreate(); err != nil {
+	if _, err := mapping.ValidateCreate(); err != nil {
 		log.Error(err, "Error validating mapping (update)", "mapping", mapping.Name)
-		return err
+		return nil, err
 	}
 	oldMapping := oldObj.(*v1beta1.ClusterWorkloadResourceMapping)
 	err := Serialize(ctx, oldMapping, validator.client, validator.lookup)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (validator *MappingValidator) ValidateDelete(ctx context.Context, obj runtime.Object) error {
-	return nil
+func (validator *MappingValidator) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	return nil, nil
 }
 
 func Serialize(ctx context.Context, mapping *v1beta1.ClusterWorkloadResourceMapping, client dynamic.Interface, lookup kubernetes.K8STypeLookup) error {

@@ -177,7 +177,7 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 			i.applications = append(i.applications, &application{
 				gvr:                    gvr,
 				persistedResource:      u,
-				bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Workload.Containers...),
+				bindableContainerNames: sets.New(i.serviceBinding.Spec.Workload.Containers...),
 				resourceMapping:        *mappingTemplate,
 			})
 		}
@@ -205,7 +205,7 @@ func (i *specImpl) Applications() ([]pipeline.Application, error) {
 					return nil, fmt.Errorf("cannot update application resource %s in namespace %s", name, i.serviceBinding.Namespace)
 				}
 
-				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindableContainerNames: sets.NewString(i.serviceBinding.Spec.Workload.Containers...), resourceMapping: *mappingTemplate})
+				i.applications = append(i.applications, &application{gvr: gvr, persistedResource: &(objList.Items[index]), bindableContainerNames: sets.New(i.serviceBinding.Spec.Workload.Containers...), resourceMapping: *mappingTemplate})
 			}
 		}
 	}

@@ -1,4 +1,4 @@
-FROM quay.io/redhat-developer/go-toolset:builder-golang-1.18 as builder
+FROM quay.io/redhat-developer/go-toolset:builder-golang-1.20 as builder
 
 WORKDIR /workspace
 COPY / /workspace/
