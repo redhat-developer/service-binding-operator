@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/redhat-developer/service-binding-operator v0.0.0
 	k8s.io/apimachinery v0.27.4
-	sigs.k8s.io/controller-runtime v0.15.0
+	sigs.k8s.io/controller-runtime v0.15.1
 )
 
 require (
