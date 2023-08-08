@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
       - name: Cherry pick into release-v1.1.x
@@ -42,7 +42,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
       - name: Cherry pick into release-v1.2.x
@@ -67,7 +67,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
-        uses: webfactory/ssh-agent@v0.5.4
+        uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
       - name: Cherry pick into release-v1.2.x
