@@ -45,7 +45,11 @@ class App(object):
     def get_generation(self):
         deployment_name = self.openshift.get_deployment_name_in_namespace(
                             self.format_pattern(self.deployment_name_pattern), self.namespace, resource=self.resource)
-        return int(self.openshift.get_resource_info_by_jsonpath(self.resource, deployment_name, self.namespace, "{.metadata.generation}"))
+        generation = polling2.poll(
+                target=lambda: self.openshift.get_resource_info_by_jsonpath(self.resource, deployment_name, self.namespace, "{.metadata.generation}"),
+                check_success=lambda x: x is not None,
+                step=5, timeout=800)
+        return int(generation)
 
 
 @step(u'jsonpath "{json_path}" on "{res_name}" should return "{json_value}"')
