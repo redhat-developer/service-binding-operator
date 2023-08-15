@@ -563,7 +563,7 @@ spec:
 
     def new_app(self, name, image_name, namespace, bindingRoot=None, asDeploymentConfig=False):
         if ctx.cli == "oc":
-            cmd = f"{ctx.cli} new-app --docker-image={image_name} --name={name} -n {namespace}"
+            cmd = f"{ctx.cli} new-app --image={image_name} --name={name} -n {namespace}"
             if bindingRoot:
                 cmd = cmd + f" -e SERVICE_BINDING_ROOT={bindingRoot}"
             if asDeploymentConfig:
