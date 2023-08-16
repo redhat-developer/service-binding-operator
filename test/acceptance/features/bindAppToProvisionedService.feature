@@ -86,6 +86,7 @@ Feature: Bind application to provisioned service
 
   @openshift
   @external-feedback
+  @disable-openshift-4.14+
   Scenario: Bind provisioned service to application deployed as deployment config
     Given Generic test application is running as deployment config
     When Service Binding is applied
