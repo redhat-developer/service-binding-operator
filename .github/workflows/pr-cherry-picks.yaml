@@ -29,6 +29,7 @@ jobs:
           exclude-labels: |
             release/v1.2.x
             release/v1.3.x
+            release/v1.4.x
           labels: |
             cherry-pick
           title-prefix: "cherry-pick(release-v1.1.x): "
@@ -54,6 +55,7 @@ jobs:
           exclude-labels: |
             release/v1.1.x
             release/v1.3.x
+            release/v1.4.x
           labels: |
             cherry-pick
           title-prefix: "cherry-pick(release-v1.2.x): "
@@ -70,7 +72,7 @@ jobs:
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
-      - name: Cherry pick into release-v1.2.x
+      - name: Cherry pick into release-v1.3.x
         uses: pmacik/github-cherry-pick-action@main
         with:
           cherry-pick-repo: ${{ secrets.SBO_CHERRY_PICK_REPO }}
@@ -79,6 +81,33 @@ jobs:
           exclude-labels: |
             release/v1.1.x
             release/v1.2.x
+            release/v1.4.x
           labels: |
             cherry-pick
           title-prefix: "cherry-pick(release-v1.3.x): "
+  cherry_pick_release_v1_4_x:
+    runs-on: ubuntu-latest
+    name: Cherry pick into release-v1.4.x branch
+    if: contains(github.event.pull_request.labels.*.name, 'release/v1.4.x') && github.event.pull_request.merged
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup SSH for cherry-pick repo
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SBO_CHERRY_PICK_REPO_SSH_PRIVATE_KEY }}
+      - name: Cherry pick into release-v1.4.x
+        uses: pmacik/github-cherry-pick-action@main
+        with:
+          cherry-pick-repo: ${{ secrets.SBO_CHERRY_PICK_REPO }}
+          token: ${{ secrets.SBO_CHERRY_PICK_BOT_TOKEN }}
+          branch: release-v1.4.x
+          exclude-labels: |
+            release/v1.1.x
+            release/v1.2.x
+            release/v1.3.x
+          labels: |
+            cherry-pick
+          title-prefix: "cherry-pick(release-v1.4.x): "
