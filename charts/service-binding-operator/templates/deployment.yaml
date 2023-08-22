@@ -29,7 +29,7 @@ spec:
         - --zap-log-level=info
         command:
         - /manager
-        image: {{.Values.image.image | default (printf "%s/%s" .Values.image.repository "servicebinding-operator@sha256:e4259939a496f292a31b5e57760196d63a8182b999164d93a446da48c4ea24eb") | quote}}
+        image: {{.Values.image.image | default (printf "%s/%s" .Values.image.repository "servicebinding-operator@sha256:ac47f496fb7ecdcbc371f8c809fad2687ec0c35bbc8c522a7ab63b3e5ffd90ea") | quote}}
         imagePullPolicy: {{.Values.image.pullPolicy}}
         securityContext:
           allowPrivilegeEscalation: false
