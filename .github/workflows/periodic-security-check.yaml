@@ -1,4 +1,8 @@
 on:
+  push:
+    branch:
+      - master
+      - 'release-v**.x'
   schedule:
     - cron: '0 0 * * *'
 
