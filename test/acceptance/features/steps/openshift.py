@@ -568,15 +568,23 @@ spec:
                 cmd = cmd + f" -e SERVICE_BINDING_ROOT={bindingRoot}"
             if asDeploymentConfig:
                 cmd = cmd + " --as-deployment-config=true"
-            (output, exit_code) = self.cmd.run(cmd)
+            (output, exit_code) = polling2.poll(lambda: self.cmd.run(cmd),
+                                                step=1, timeout=30,
+                                                check_success=lambda x: x[1] == 0)
         else:
             cmd = f"{ctx.cli} create deployment {name} -n {namespace} --image={image_name}"
             if bindingRoot:
-                (output, exit_code) = self.cmd.run(f"{ctx.cli} apply -f -",
-                                                   self.deployment_template.format(name=name, image_name=image_name,
-                                                                                   namespace=namespace, bindingRoot=bindingRoot))
+                (output, exit_code) = polling2.poll(
+                    lambda: self.cmd.run(f"{ctx.cli} apply -f -",
+                                         self.deployment_template.format(name=name,
+                                                                         image_name=image_name,
+                                                                         namespace=namespace,
+                                                                         bindingRoot=bindingRoot)),
+                    step=1, timeout=30,
+                    check_success=lambda x: x[1] == 0)
             else:
-                (output, exit_code) = self.cmd.run(cmd)
+                (output, exit_code) = polling2.poll(lambda: self.cmd.run(cmd), step=1, timeout=30,
+                                                    check_success=lambda x: x[1] == 0)
         assert exit_code == 0, f"Non-zero exit code ({exit_code}) returned when attempting to create a new app using following command line {cmd}\n: {output}"
 
     def set_label(self, name, label, namespace):
