@@ -1,8 +1,9 @@
 on:
   push:
-    branch:
+    branches:
       - master
       - 'release-v**.x'
+  pull_request:
   schedule:
     - cron: '0 0 * * *'
 
