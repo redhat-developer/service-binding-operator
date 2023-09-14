@@ -35,7 +35,7 @@ jobs:
           architecture: "x64"
 
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run linters
         run: make lint
@@ -51,7 +51,7 @@ jobs:
           go-version: "^1.18"
 
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Unit Tests with Code Coverage
         run: |
@@ -75,7 +75,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -155,7 +155,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -236,7 +236,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -316,7 +316,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -396,7 +396,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -487,7 +487,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Check if acceptance tests can be skipped
         id: check-skip-acceptance
@@ -578,7 +578,7 @@ jobs:
 
     steps:
       - name: Checkout Git Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -596,7 +596,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Wait for push
         uses: lewagon/wait-on-check-action@e106e5c43e8ca1edea6383a39a01c5ca495fd812
@@ -637,7 +637,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Run gosec
         uses: securego/gosec@v2.17.0
