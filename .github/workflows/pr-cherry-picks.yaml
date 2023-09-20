@@ -13,7 +13,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'release/v1.1.x') && github.event.pull_request.merged
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
@@ -39,7 +39,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'release/v1.2.x') && github.event.pull_request.merged
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
@@ -65,7 +65,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'release/v1.3.x') && github.event.pull_request.merged
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
@@ -91,7 +91,7 @@ jobs:
     if: contains(github.event.pull_request.labels.*.name, 'release/v1.4.x') && github.event.pull_request.merged
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Setup SSH for cherry-pick repo
