@@ -68,13 +68,13 @@ jobs:
           tar -czvf ${ARTIFACTS}/registry.tar.gz -C ${GITHUB_WORKSPACE} registry
 
       - name: Archive images
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: operator-images-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
           path: ${{env.ARTIFACTS}}/*.tar.gz
 
       - name: Archive image references
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: operator-refs-${{github.event.pull_request.number}}-${{github.event.pull_request.head.sha}}
           path: ${{env.ARTIFACTS}}/*.refs
