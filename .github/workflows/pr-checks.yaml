@@ -139,7 +139,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: kubernetes-with-olm-test-results
@@ -219,7 +219,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: optional-annotations
@@ -300,7 +300,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: supported-operators-kubernetes
@@ -380,7 +380,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: workload-resource-mapping
@@ -469,7 +469,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: upgrade-with-olm
@@ -566,7 +566,7 @@ jobs:
         run: |
           testspace [${{ env.TEST_RUN }}]${{ env.TEST_RESULTS }}/TEST*.xml
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: ${{ steps.check-skip-acceptance.outputs.can_skip != 'true' && always() }}
         with:
           name: kubernetes-without-olm-test-results
