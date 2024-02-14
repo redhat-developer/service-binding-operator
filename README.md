@@ -1,3 +1,12 @@
+# Deprecation Notice
+
+As of February 2024, Service Binding Operator has been deprecated.  No further feature development is
+expected at this time.  Security-related releases may happen on an as-need basis, but no schedule for
+them can be guaranteed at this time.  This repository will be archived at a future date.
+
+Usage of this project for new deployments is no longer recommended, and existing uses of this project
+are recommended to transition to a new solution.
+
 # The Service Binding Operator
 ## Connecting Applications with Services on Kubernetes and OpenShift
 
