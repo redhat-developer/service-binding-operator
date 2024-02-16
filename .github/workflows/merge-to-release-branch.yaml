@@ -62,7 +62,7 @@ jobs:
           make test
 
       - name: Upload Code Coverage Report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: cover.out
           verbose: true
