@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>Introduction :: Service Binding Operator Documentation</title>
+    <title>Deprecation Notice :: Service Binding Operator Documentation</title>
     <link rel="canonical" href="https://redhat-developer.github.io/service-binding-operator/userguide/intro.html">
     <meta name="generator" content="Antora 3.1.1">
     <link rel="stylesheet" href="../_/css/site.css">
@@ -45,7 +45,7 @@
   <li class="nav-item" data-depth="0">
 <ul class="nav-list">
   <li class="nav-item is-current-page" data-depth="1">
-    <a class="nav-link" href="intro.html">Introduction</a>
+    <a class="nav-link" href="intro.html">Deprecation Notice</a>
   </li>
 </ul>
   </li>
@@ -147,7 +147,7 @@
   </div>
   <ul class="components">
     <li class="component">
-      <a class="title" href="../devguide/architecture.html">Developer Guide</a>
+      <div class="title"><a href="../devguide/architecture.html">Developer Guide</a></div>
       <ul class="versions">
         <li class="version is-latest">
           <a href="../devguide/architecture.html">master</a>
@@ -167,7 +167,7 @@
       </ul>
     </li>
     <li class="component is-current">
-      <a class="title" href="intro.html">User Guide</a>
+      <div class="title"><a href="intro.html">User Guide</a></div>
       <ul class="versions">
         <li class="version is-current is-latest">
           <a href="intro.html">master</a>
@@ -198,7 +198,7 @@
 <nav class="breadcrumbs" aria-label="breadcrumbs">
   <ul>
     <li><a href="intro.html">User Guide</a></li>
-    <li><a href="intro.html">Introduction</a></li>
+    <li><a href="intro.html">Deprecation Notice</a></li>
   </ul>
 </nav>
 <div class="page-versions">
@@ -218,8 +218,22 @@
   <div class="toc-menu"></div>
 </aside>
 <article class="doc">
-<h1 class="page">Introduction</h1>
+<h1 class="page">Deprecation Notice</h1>
 <div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>As of February 2024, Service Binding Operator has been deprecated.  No further feature development is
+expected at this time.  Security-related releases may happen on an as-need basis, but no schedule for
+them can be guaranteed.</p>
+</div>
+<div class="paragraph">
+<p>Usage of this project for new deployments is no longer recommended, and existing uses of this project
+are recommended to transition to a new solution.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="introduction-sbo"><a class="anchor" href="#introduction-sbo"></a>Introduction</h2>
 <div class="sectionbody">
 <div class="paragraph">
 <p>The Service Binding Operator consists of a controller and an accompanying custom resource definition (CRD) for service binding. It manages the data plane for workloads and backing services. The Service Binding Controller reads the data made available by the control plane of backing services. Then, it projects this data to workloads according to the rules specified through the <code>ServiceBinding</code> resource.</p>
