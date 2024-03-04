@@ -8,7 +8,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.30.0
 	github.com/operator-framework/api v0.20.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	golang.org/x/time v0.5.0
 	k8s.io/api v0.28.3
 	k8s.io/apiextensions-apiserver v0.28.3
