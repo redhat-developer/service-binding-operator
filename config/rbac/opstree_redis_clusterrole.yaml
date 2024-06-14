@@ -9,6 +9,7 @@ rules:
       - redis.redis.opstreelabs.in
     resources:
       - redis
+      - rediscluster
     verbs:
       - get
       - list
