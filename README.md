@@ -5,7 +5,11 @@ expected at this time.  Security-related releases may happen on an as-need basis
 them can be guaranteed at this time.  This repository will be archived at a future date.
 
 Usage of this project for new deployments is no longer recommended, and existing uses of this project
-are recommended to transition to a new solution.
+are recommended to transition to a new solution.  We recommend using the reference implementation of
+service bindings, which can be found [here](https://github.com/servicebinding/runtime).
+
+The developers would like to express their sincere gratitude to everyone who has contributed over the
+last few years.
 
 # The Service Binding Operator
 ## Connecting Applications with Services on Kubernetes and OpenShift
